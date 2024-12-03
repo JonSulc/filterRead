@@ -9,6 +9,9 @@ new_file_interface <- function(
                                gzipped  = is_gzipped(filename)),
                           class    = c("file_interface", "character"))
   finterface$values_are_quoted <- are_values_quoted(finterface)
+  if (finterface$values_are_quoted) {
+    warning("Quoted values are not yet implemented")
+  }
   finterface$column_indices <- get_column_names(finterface)
   finterface$values_are_comma_separated <- is_file_csv(finterface)
   finterface
@@ -42,6 +45,7 @@ fhead_cmd <- function(
 are_values_quoted <- function(
   finterface
 ) {
+  # TODO Return for each column instead
   head(finterface, nlines = 1, quote = "") |>
     names() |>
     stringr::str_detect("\"") |>
@@ -90,24 +94,30 @@ add_condition <- function(
 #' @export
 `[.file_interface` <- function(
   finterface,
-  conditions
+  conditions,
+  ...,
+  return_only_cmd = FALSE
 ) {
   e <-c(
     list(rlang::caller_env()),
     finterface$column_indices,
-    list(`<`  = `<.filter_condition`,
-         `<=` = `<=.filter_condition`,
-         `>`  = `>.filter_condition`,
-         `>=` = `>=.filter_condition`,
-         `==` = `==.filter_condition`,
+    list(`<`    = `<.filter_condition`,
+         `<=`   = `<=.filter_condition`,
+         `>`    = `>.filter_condition`,
+         `>=`   = `>=.filter_condition`,
+         `==`   = `==.filter_condition`,
          `%in%` = `%in%.filter_condition`,
-         `&`  = `&.filter_condition`)
+         `&`    = `&.filter_condition`,
+         `|`    = `|.filter_condition`)
   )
 
-  eval(rlang::enexpr(conditions),
+  cmd <- eval(rlang::enexpr(conditions),
        e) |>
-    purrr::list_flatten() |>
+    as.list() |>
+    purrr::list_c() |>
     as_cmd(finterface = finterface)
+  if (return_only_cmd) return(cmd)
+  data.table::fread(cmd = cmd, ...)
 }
 
 #' @export
@@ -140,14 +150,16 @@ wrap_initial_condition <- function(
 ) {
   if (finterface$gzipped) {
     return(
-      sprintf("zcat %s | awk%s '%s'",
+      sprintf("zcat %s | awk%s '%s%s'",
               finterface$filename,
-              ifelse(finterface$values_are_comma_separated, " -F',", ""),
+              ifelse(finterface$values_are_comma_separated, " -F','", ""),
+              ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
               single_condition)
     )
   }
-  sprintf("awk%s '%s' %s",
-          ifelse(finterface$values_are_comma_separated, " -F',", ""),
+  sprintf("awk%s '%s%s' %s",
+          ifelse(finterface$values_are_comma_separated, " -F','", ""),
+          ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
           single_condition,
           finterface$filename)
 }
@@ -157,6 +169,6 @@ wrap_non_initial_condition <- function(
   finterface
 ) {
   sprintf("awk%s '%s'",
-          ifelse(finterface$values_are_comma_separated, " -F',", ""),
+          ifelse(finterface$values_are_comma_separated, " -F','", ""),
           single_condition)
 }
