@@ -32,7 +32,8 @@ test_that("Non-quoted values work properly", {
   local_csv_file(filename = "data.csv")
   finterface <- new_file_interface("data.csv") |>
     suppressWarnings()
-  expect_false(all(finterface$values_are_quoted))
+  expect_equal(finterface$quoted_values,
+               c(char = FALSE, num = FALSE))
   expect_false(finterface$gzipped)
 })
 
@@ -40,14 +41,16 @@ test_that("Quoted values work", {
   local_csv_file(filename = "data.csv", quote = TRUE)
   finterface <- new_file_interface("data.csv") |>
     suppressWarnings()
-  expect_true(any(finterface$values_are_quoted))
+  expect_equal(finterface$quoted_values,
+               c(char = TRUE, num = FALSE))
   expect_false(finterface$gzipped)
 })
 
 test_that("Gzipped files are handled", {
   local_csv_file("data.csv.gz")
   finterface <- new_file_interface("data.csv.gz")
-  expect_false(all(finterface$values_are_quoted))
+  expect_equal(finterface$quoted_values,
+               c(char = FALSE, num = FALSE))
   expect_true(finterface$gzipped)
 })
 
@@ -73,6 +76,13 @@ test_that("Head works", {
                head(dummy_dt(), 1))
   expect_equal(head(finterface, 2),
                head(dummy_dt(), 2))
+
+  local_csv_file("data.tsv", sep = "\t")
+  finterface <- new_file_interface("data.tsv")
+  expect_equal(head(finterface, 1),
+               head(dummy_dt(), 1))
+  expect_equal(head(finterface, 2),
+               head(dummy_dt(), 2))
 })
 
 test_that("Math conditions work", {
@@ -85,6 +95,10 @@ test_that("Math conditions work", {
                dummy_dt()[3 <= num])
   expect_equal(finterface[3 >= num],
                dummy_dt()[3 >= num])
+  expect_equal(finterface[char == "a"],
+               dummy_dt()[char == "a"])
+  expect_equal(finterface[num == 3],
+               dummy_dt()[num == 3])
 })
 
 test_that("Combining conditions works", {

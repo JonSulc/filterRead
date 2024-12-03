@@ -2,6 +2,16 @@
 #' @importFrom stringr str_detect str_match str_trim
 #' @importFrom rlang enexpr caller_env env
 
+new_filter_condition <- function(
+  cmd,
+  chainable
+) {
+  structure(
+    cmd,
+    chainable = chainable
+  )
+}
+
 get_indices_from_column_names <- function(
   column_names
 ) {
@@ -13,72 +23,65 @@ get_indices_from_column_names <- function(
     as.list()
 }
 
-#' @export
-`<.filter_condition` <- function(
+lt_filter_condition <- function(
     column_name,
     value
 ) {
-  fcondition <- sprintf("%s < %s", column_name, value)
-  attr(fcondition, "chainable") <- TRUE
-  fcondition
+  sprintf("%s < %s", column_name, value) |>
+    new_filter_condition(chainable = TRUE)
 }
-#' @export
-`<=.filter_condition` <- function(
+lte_filter_condition <- function(
     column_name,
     value
 ) {
-  fcondition <- sprintf("%s <= %s", column_name, value)
-  attr(fcondition, "chainable") <- TRUE
-  fcondition
+  sprintf("%s <= %s", column_name, value) |>
+    new_filter_condition(chainable = TRUE)
 }
-#' @export
-`>.filter_condition` <- function(
+gt_filter_condition <- function(
     column_name,
     value
 ) {
-  fcondition <- sprintf("%s > %s", column_name, value)
-  attr(fcondition, "chainable") <- TRUE
-  fcondition
+  sprintf("%s > %s", column_name, value) |>
+    new_filter_condition(chainable = TRUE)
 }
-#' @export
-`>=.filter_condition` <- function(
+gte_filter_condition <- function(
     column_name,
     value
 ) {
-  fcondition <- sprintf("%s >= %s", column_name, value)
-  attr(fcondition, "chainable") <- TRUE
-  fcondition
+  sprintf("%s >= %s", column_name, value) |>
+    new_filter_condition(chainable = TRUE)
 }
-#' @export
-`==.filter_condition` <- function(
+eq_filter_condition <- function(
     column_name,
     value
 ) {
-  fcondition <- sprintf("%s == %s", column_name, value)
-  attr(fcondition, "chainable") <- TRUE
-  fcondition
+  quotes_needed <- withr::with_environment(
+    rlang::caller_env(),
+    quoted_values[[as.character(rlang::enexpr(column_name))]]
+  )
+  sprintf("%s == %s",
+          column_name,
+          check_quotes(value,
+                       quotes_needed)) |>
+    new_filter_condition(chainable = TRUE)
 }
-#' @export
-`%in%.filter_condition` <- function(
+in_filter_condition <- function(
   column_name,
   values
 ) {
-  fcondition <- sprintf(
+  sprintf(
     paste("BEGIN {split(\"%s\", vals);",
           "for (i in vals) arr[vals[i]]}",
           "{if (%s in arr) print $0}"),
     paste(
-      c(rlang::enexpr(column_name),
-        values),
+      check_quotes(values, quoted_values[column_name]),
       collapse = " "
     ),
     column_name
-  )
-  attr(fcondition, "chainable") <- FALSE
-  fcondition
+  ) |>
+    new_filter_condition(chainable = FALSE)
 }
-#' @export
-`&.filter_condition` <- function(
+and_filter_condition <- function(
     condition1,
     condition2
 ) {
@@ -97,8 +100,7 @@ get_indices_from_column_names <- function(
   }
   list(condition1, condition2)
 }
-#' @export
-`|.filter_condition` <- function(
+or_filter_condition <- function(
     condition1,
     condition2
 ) {

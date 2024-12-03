@@ -8,12 +8,12 @@ new_file_interface <- function(
   finterface <- structure(list(filename = filename,
                                gzipped  = is_gzipped(filename)),
                           class    = c("file_interface", "character"))
-  finterface$values_are_quoted <- are_values_quoted(finterface)
-  if (finterface$values_are_quoted) {
+  finterface$quoted_values <- are_values_quoted(finterface)
+  if (any(finterface$quoted_values)) {
     warning("Quoted values are not yet implemented")
   }
   finterface$column_indices <- get_column_names(finterface)
-  finterface$values_are_comma_separated <- is_file_csv(finterface)
+  finterface$sep <- get_file_separator(finterface)
   finterface
 }
 
@@ -45,20 +45,36 @@ fhead_cmd <- function(
 are_values_quoted <- function(
   finterface
 ) {
-  # TODO Return for each column instead
-  head(finterface, nlines = 1, quote = "") |>
-    names() |>
-    stringr::str_detect("\"") |>
-    all()
+  quoted_values <- head(finterface, nlines = 1, quote = "") |>
+    sapply(stringr::str_detect, "\"")
+  names(quoted_values) <- names(quoted_values) |>
+    stringr::str_replace_all("\"", "")
+  quoted_values
 }
 
-is_file_csv <- function(
+check_quotes <- function(
+    value,
+    value_needs_to_be_quoted
+) {
+  if (is_value_numeric(value)) return(value)
+  if (!value_needs_to_be_quoted) return(paste0("\"", value, "\""))
+  paste0("\"\\\"", value, "\\\"\"")
+}
+
+is_value_numeric <- function(
+    value
+) {
+  !is.na(as.numeric(value)) |>
+    suppressWarnings()
+}
+
+get_file_separator <- function(
   finterface
 ) {
   dt_output <- head(finterface, nlines = 1, verbose = TRUE) |>
     capture.output() |>
     stringr::str_match("sep='([^']+)'")
-  dt_output[!is.na(dt_output[, 1]), 2][1] == ","
+  dt_output[!is.na(dt_output[, 1]), 2][1]
 }
 
 get_column_names <- function(
@@ -100,15 +116,16 @@ add_condition <- function(
 ) {
   e <-c(
     list(rlang::caller_env()),
+    finterface,
     finterface$column_indices,
-    list(`<`    = `<.filter_condition`,
-         `<=`   = `<=.filter_condition`,
-         `>`    = `>.filter_condition`,
-         `>=`   = `>=.filter_condition`,
-         `==`   = `==.filter_condition`,
-         `%in%` = `%in%.filter_condition`,
-         `&`    = `&.filter_condition`,
-         `|`    = `|.filter_condition`)
+    list(`<`    =  lt_filter_condition,
+         `<=`   = lte_filter_condition,
+         `>`    =  gt_filter_condition,
+         `>=`   = gte_filter_condition,
+         `==`   =  eq_filter_condition,
+         `%in%` =  in_filter_condition,
+         `&`    = and_filter_condition,
+         `|`    =  or_filter_condition)
   )
 
   cmd <- eval(rlang::enexpr(conditions),
@@ -116,8 +133,13 @@ add_condition <- function(
     as.list() |>
     purrr::list_c() |>
     as_cmd(finterface = finterface)
+
   if (return_only_cmd) return(cmd)
-  data.table::fread(cmd = cmd, ...)
+  data.table::fread(
+    cmd = cmd,
+    ...,
+    col.names = names(head(finterface, 0))
+  )
 }
 
 #' @export
@@ -144,6 +166,12 @@ as_cmd <- function(
     paste(collapse = " | ")
 }
 
+is_sep_whitespace <- function(
+  finterface
+) {
+  finterface$sep %in% c(" ", "\t")
+}
+
 wrap_initial_condition <- function(
   single_condition,
   finterface
@@ -152,13 +180,13 @@ wrap_initial_condition <- function(
     return(
       sprintf("zcat %s | awk%s '%s%s'",
               finterface$filename,
-              ifelse(finterface$values_are_comma_separated, " -F','", ""),
+              ifelse(is_sep_whitespace(finterface), "", " -F','"),
               ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
               single_condition)
     )
   }
   sprintf("awk%s '%s%s' %s",
-          ifelse(finterface$values_are_comma_separated, " -F','", ""),
+          ifelse(is_sep_whitespace(finterface), "", " -F','"),
           ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
           single_condition,
           finterface$filename)
