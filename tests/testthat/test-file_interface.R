@@ -99,6 +99,20 @@ test_that("Math conditions work", {
                dummy_dt()[char == "a"])
   expect_equal(finterface[num == 3],
                dummy_dt()[num == 3])
+
+  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE)
+  expect_equal(fquoted[num < 3],
+               dummy_dt()[num < 3])
+  expect_equal(fquoted[num > 3],
+               dummy_dt()[num > 3])
+  expect_equal(fquoted[3 <= num],
+               dummy_dt()[3 <= num])
+  expect_equal(fquoted[3 >= num],
+               dummy_dt()[3 >= num])
+  expect_equal(fquoted[char == "a"],
+               dummy_dt()[char == "a"])
+  expect_equal(fquoted[num == 3],
+               dummy_dt()[num == 3])
 })
 
 test_that("Combining conditions works", {
@@ -106,5 +120,11 @@ test_that("Combining conditions works", {
   expect_equal(finterface[3 <= num & num <= 5],
                dummy_dt()[3 <= num & num <= 5])
   expect_equal(finterface[1 < num & num < 3 | 5 < num],
+               dummy_dt()[1 < num & num < 3 | 5 < num])
+
+  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE)
+  expect_equal(fquoted[3 <= num & num <= 5],
+               dummy_dt()[3 <= num & num <= 5])
+  expect_equal(fquoted[1 < num & num < 3 | 5 < num],
                dummy_dt()[1 < num & num < 3 | 5 < num])
 })

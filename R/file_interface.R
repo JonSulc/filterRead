@@ -9,9 +9,6 @@ new_file_interface <- function(
                                gzipped  = is_gzipped(filename)),
                           class    = c("file_interface", "character"))
   finterface$quoted_values <- are_values_quoted(finterface)
-  if (any(finterface$quoted_values)) {
-    warning("Quoted values are not yet implemented")
-  }
   finterface$column_indices <- get_column_names(finterface)
   finterface$sep <- get_file_separator(finterface)
   finterface
