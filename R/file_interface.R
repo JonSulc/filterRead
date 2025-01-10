@@ -1,17 +1,63 @@
 #' @import data.table
 
 new_file_interface <- function(
-  filename
+  filename,
+  column_names = NULL
 ) {
   stopifnot(is.character(filename))
   stopifnot(file.exists(filename))
   finterface <- structure(list(filename = filename,
                                gzipped  = is_gzipped(filename)),
-                          class    = c("file_interface", "character"))
-  finterface$quoted_values <- are_values_quoted(finterface)
-  finterface$column_indices <- get_column_names(finterface)
+                          class = c("file_interface", "character"))
+  finterface$column_info <- get_column_info(
+    finterface,
+    column_names = column_names
+  )
+
   finterface$sep <- get_file_separator(finterface)
   finterface
+}
+
+get_column_info <- function(
+  finterface,
+  column_names = NULL
+) {
+  file_colnames <- get_column_names(finterface) |>
+    swap_in_column_names(column_names)
+
+  data.frame(
+    row.names     = names(file_colnames),
+    index         = seq_along(file_colnames),
+    column_index  = unlist(file_colnames),
+    quoted_values = are_values_quoted(finterface)
+  )
+}
+
+swap_in_column_names <- function(
+  column_indices,
+  column_names = NULL
+) {
+  if (is.null(column_names)) return(column_indices)
+  new_names <- flip_column_names(column_names)[names(column_indices)]
+  to_replace <- !sapply(new_names, is.null)
+  names(column_indices)[to_replace] <- new_names[to_replace]
+  column_indices
+}
+
+flip_column_names <- function(
+  column_names
+) {
+  lapply(
+    names(column_names),
+    \(cname) {
+      setNames(
+        rep(cname, length(column_names[[cname]])),
+        column_names[[cname]]
+      )
+    }
+  ) |>
+    unlist() |>
+    as.list()
 }
 
 is_gzipped <- function(
@@ -26,7 +72,19 @@ head.file_interface <- function(
   nlines = 1,
   ...
 ) {
-  data.table::fread(cmd = fhead_cmd(finterface, nlines + 1), ...)
+  if (!"column_indices" %in% names(finterface)) {
+    return(
+      data.table::fread(
+        cmd = fhead_cmd(finterface, nlines + 1),
+        ...
+      )
+    )
+  }
+  data.table::fread(
+    cmd = fhead_cmd(finterface, nlines + 1),
+    col.names = names(finterface$column_indices),
+    ...
+  )
 }
 
 fhead_cmd <- function(
@@ -53,6 +111,13 @@ check_quotes <- function(
     value,
     value_needs_to_be_quoted
 ) {
+  if (length(value) > 1) {
+    # withr::with_environment(
+    #   rlang::caller_env(),
+    #   sapply(value, check_quotes, value_needs_to_be_quoted)
+    # )
+    return(sapply(value, check_quotes, value_needs_to_be_quoted))
+  }
   if (is_value_numeric(value)) return(value)
   if (!value_needs_to_be_quoted) return(paste0("\"", value, "\""))
   paste0("\"\\\"", value, "\\\"\"")
@@ -111,24 +176,42 @@ add_condition <- function(
   ...,
   return_only_cmd = FALSE
 ) {
-  e <-c(
-    list(rlang::caller_env()),
-    finterface,
-    finterface$column_indices,
-    list(`<`    =  lt_filter_condition,
-         `<=`   = lte_filter_condition,
-         `>`    =  gt_filter_condition,
-         `>=`   = gte_filter_condition,
-         `==`   =  eq_filter_condition,
-         `%in%` =  in_filter_condition,
-         `&`    = and_filter_condition,
-         `|`    =  or_filter_condition)
-  )
+  # e <-c(
+  #   list(rlang::caller_env()),
+  #   finterface,
+  #   finterface$column_indices,
+  #   list(`<`    =  lt_filter_condition,
+  #        `<=`   = lte_filter_condition,
+  #        `>`    =  gt_filter_condition,
+  #        `>=`   = gte_filter_condition,
+  #        `==`   =  eq_filter_condition,
+  #        `%in%` =  in_filter_condition,
+  #        `&`    = and_filter_condition,
+  #        `|`    =  or_filter_condition)
+  # )
 
-  cmd <- eval(rlang::enexpr(conditions),
-       e) |>
-    as.list() |>
-    purrr::list_c() |>
+  # cmd <- eval(rlang::enexpr(conditions),
+  #      e) |>
+  #   as.list() |>
+  #   purrr::list_c() |>
+  #   as_cmd(finterface = finterface)
+
+  conditions_sub <- substitute(conditions)
+  print(rlang::enexpr(conditions_sub))
+
+  print(eval(substitute(
+    substitute2(.filter_condition, finterface$column_indices),
+    list(.filter_condition = substitute(conditions))
+  )))
+  print(eval(substitute(
+    substitute2(.filter_condition, column_names),
+    list(.filter_condition = substitute(conditions))
+  )))
+
+  cmd <- eval(substitute(
+    substitute2(.filter_condition, column_names),
+    list(.filter_condition = substitute(conditions))
+  )) |>
     as_cmd(finterface = finterface)
 
   if (return_only_cmd) return(cmd)

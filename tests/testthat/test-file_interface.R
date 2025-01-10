@@ -85,6 +85,66 @@ test_that("Head works", {
                head(dummy_dt(), 2))
 })
 
+test_that("Flipping column names works", {
+  expect_equal(
+    flip_column_names(setNames(1:3, letters[1:3])),
+    setNames(as.list(letters[1:3]), 1:3)
+  )
+
+  expect_equal(
+    flip_column_names(list(test = letters[1:3])),
+    list(a = "test", b = "test", c = "test")
+  )
+  expect_equal(
+    flip_column_names(list(test1 = letters[1:3],
+                           test2 = letters[4:6])),
+    list(a = "test1", b = "test1", c = "test1",
+         d = "test2", e = "test2", f = "test2")
+  )
+})
+
+test_that("Swapping in the column names works", {
+  column_names <- list(
+    chr = c("chr", "char"),
+    pos = c("num", "position")
+  )
+  expect_equal(
+    swap_in_column_names(
+      list(test1 = "$1",
+           test2 = "$2")
+    ),
+    list(test1 = "$1",
+         test2 = "$2")
+  )
+  expect_equal(
+    swap_in_column_names(
+      list(test1 = "$1",
+           test2 = "$2"),
+      column_names
+    ),
+    list(test1 = "$1",
+         test2 = "$2")
+  )
+  expect_equal(
+    swap_in_column_names(
+      list(char  = "$1",
+           test2 = "$2"),
+      column_names
+    ),
+    list(chr   = "$1",
+         test2 = "$2")
+  )
+  expect_equal(
+    swap_in_column_names(
+      list(char  = "$1",
+           num   = "$2"),
+      column_names
+    ),
+    list(chr = "$1",
+         pos = "$2")
+  )
+})
+
 test_that("Math conditions work", {
   finterface <- local_file_interface("data.csv")
   expect_equal(finterface[num < 3],
@@ -127,4 +187,20 @@ test_that("Combining conditions works", {
                dummy_dt()[3 <= num & num <= 5])
   expect_equal(fquoted[1 < num & num < 3 | 5 < num],
                dummy_dt()[1 < num & num < 3 | 5 < num])
+})
+
+test_that("Set belonging works", {
+  finterface <- local_file_interface("data.csv")
+  expect_equal(finterface[char %in% "a"],
+               dummy_dt()[char %in% "a"])
+  expect_equal(finterface[char %in% c("a", "b")],
+               dummy_dt()[char %in% c("a", "b")])
+  expect_equal(finterface[char %in% c("a", 1)],
+               dummy_dt()[char %in% c("a", 1)])
+  expect_equal(finterface[num %in% 1],
+               dummy_dt()[num %in% 1])
+  expect_equal(finterface[num %in% c("a", 1)],
+               dummy_dt()[num %in% c("a", 1)])
+  expect_equal(finterface[num %in% 1:4],
+               dummy_dt()[num %in% 1:4])
 })
