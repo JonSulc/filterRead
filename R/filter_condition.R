@@ -40,11 +40,7 @@ new_filter_condition <- function(
     fcall[-1] <- lapply(fcall[-1], new_filter_condition)
     fcall[[1]] <- combine_filter_condition_functions[[fcall1]] |>
       as.symbol()
-    setattr(
-      fcall, "chainable",
-      # all(sapply(fcall[-1], is_chainable))
-      is_chainable(fcall[[2]])
-    )
+    # attr(fcall, "chainable") <- is_chainable(fcall[[2]])
   } else if (fcall1 %chin% names(chainable_filter_condition_functions)) {
     fcall[[1]] <- chainable_filter_condition_functions[[fcall1]] |>
       as.symbol()
@@ -63,6 +59,9 @@ is_chainable <- function(
     if (fcall[[1]] == "lp_filter_condition") {
       return(all(sapply(fcall[-1], is_chainable)))
     }
+    if (1L < length(fcall)) {
+      return(all(sapply(fcall[-1], is_chainable)))
+    }
     warning("NULL value chainable, defaulting to non-chainable")
     return(FALSE)
   }
@@ -73,6 +72,10 @@ are_chainable <- function(
   left,
   right
 ) {
+  if (!is.null(attr(left, "chainable")) & !is.null(attr(right, "chainable"))) {
+    return(is_chainable(left) & is_chainable(right))
+  }
+
   if (1L < length(left)) {
     return(are_chainable(left[[length(left)]], right))
   }
@@ -346,7 +349,6 @@ and_filter_condition <- function(
   }
   structure(
     list(condition1, condition2),
-    # chainable = is_chainable(condition1),
     operation = "and_filter_condition"
   )
 }
@@ -383,7 +385,6 @@ or_filter_condition <- function(
   }
   structure(
     list(condition1, condition2),
-    # chainable = is_chainable(condition1),
     operation = "or_filter_condition"
   )
 }
@@ -391,5 +392,12 @@ or_filter_condition <- function(
 lp_filter_condition <- function(
   filter_condition
 ) {
-
+  if (is_chainable(filter_condition)) {
+    return(
+      structure(sprintf("(%s)", eval(filter_condition)),
+                chainable = TRUE)
+    )
+  }
+  structure(eval(filter_condition),
+            chainable = FALSE)
 }

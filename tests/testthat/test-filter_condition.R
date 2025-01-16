@@ -300,3 +300,66 @@ test_that("as_command_line splits/merges conditions where necessary", {
          "awk '5 < $1' data.csv")
   )
 })
+
+test_that("Parenthese work as expected", {
+  column_indices <- get_indices_from_column_names(letters[24:26])
+
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (x < 3 & y == "a")
+    )) |>
+      to_awk(column_indices),
+    structure(
+      "($1 < 3 && $2 == a)",
+      chainable = TRUE
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (x < 3 & y == "a") | (123 < x & x < 234 & y == "b")
+    )) |>
+      to_awk(column_indices),
+    structure(
+      "($1 < 3 && $2 == a) || (123 < $1 && $1 < 234 && $2 == b)",
+      chainable = TRUE
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (x < 3 & y == "a") | (x < 12 & y %in% letters[1:3])
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    structure(
+      list(structure("($1 < 3 && $2 == a)",
+                     chainable = TRUE),
+           c("$1 < 12", "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"))
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (x < 3 & y == "a") | (123 < x & x < 234 & y == "b") | (x < 12 & y %in% letters[1:3])
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    structure(
+      list(structure("($1 < 3 && $2 == a) || (123 < $1 && $1 < 234 && $2 == b)",
+                     chainable = TRUE),
+           c("$1 < 12", "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"))
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (x < 3 & y == "a") | (x < 12 & y %in% letters[1:3]) | (123 < x & x < 234 & y == "b")
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    structure(
+      list(structure("($1 < 3 && $2 == a)",
+                     chainable = TRUE),
+           c("$1 < 12", "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
+           structure("(123 < $1 && $1 < 234 && $2 == b)",
+                     chainable = TRUE))
+    )
+  )
+})
