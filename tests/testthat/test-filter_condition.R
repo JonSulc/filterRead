@@ -32,7 +32,7 @@ test_that("Basic filter_condition initialization works", {
                ))
   expect_equal(new_filter_condition(rlang::expr(x == 3)),
                structure(
-                 rlang::expr(eq_filter_condition(x, 3)),
+                 rlang::expr(eq_filter_condition(x, 3, values_are_quoted = FALSE)),
                  class = c("filter_condition", "call"),
                  chainable = TRUE
                ))
@@ -44,9 +44,18 @@ test_that("%in% parsing works", {
       rlang::expr(x %in% letters[1:5])
     ),
     structure(
-      rlang::expr(in_filter_condition(x, letters[1:5])),
+      rlang::expr(in_filter_condition(x, letters[1:5], sep = " ")),
       class = c("filter_condition", "call"),
       chainable = FALSE
+    )
+  )
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x %in% letters[1:5])
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list(
+      "awk 'BEGIN {split(\"a b c d e\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}' data.csv"
     )
   )
 })
@@ -140,7 +149,6 @@ test_that("Parsing to command line works", {
     )
   )
 })
-
 
 test_that("Flattening cl_bits works", {
   and <- \(a, b) {
@@ -310,7 +318,7 @@ test_that("Parenthese work as expected", {
     )) |>
       to_awk(column_indices),
     structure(
-      "($1 < 3 && $2 == a)",
+      "($1 < 3 && $2 == \"a\")",
       chainable = TRUE
     )
   )
@@ -320,7 +328,7 @@ test_that("Parenthese work as expected", {
     )) |>
       to_awk(column_indices),
     structure(
-      "($1 < 3 && $2 == a) || (123 < $1 && $1 < 234 && $2 == b)",
+      "($1 < 3 && $2 == \"a\") || (123 < $1 && $1 < 234 && $2 == \"b\")",
       chainable = TRUE
     )
   )
@@ -331,7 +339,7 @@ test_that("Parenthese work as expected", {
       to_awk(column_indices) |>
       flatten_cl_bits(),
     structure(
-      list(structure("($1 < 3 && $2 == a)",
+      list(structure("($1 < 3 && $2 == \"a\")",
                      chainable = TRUE),
            c("$1 < 12", "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"))
     )
@@ -343,7 +351,7 @@ test_that("Parenthese work as expected", {
       to_awk(column_indices) |>
       flatten_cl_bits(),
     structure(
-      list(structure("($1 < 3 && $2 == a) || (123 < $1 && $1 < 234 && $2 == b)",
+      list(structure("($1 < 3 && $2 == \"a\") || (123 < $1 && $1 < 234 && $2 == \"b\")",
                      chainable = TRUE),
            c("$1 < 12", "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"))
     )
@@ -355,11 +363,24 @@ test_that("Parenthese work as expected", {
       to_awk(column_indices) |>
       flatten_cl_bits(),
     structure(
-      list(structure("($1 < 3 && $2 == a)",
+      list(structure("($1 < 3 && $2 == \"a\")",
                      chainable = TRUE),
            c("$1 < 12", "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
-           structure("(123 < $1 && $1 < 234 && $2 == b)",
+           structure("(123 < $1 && $1 < 234 && $2 == \"b\")",
                      chainable = TRUE))
+    )
+  )
+})
+
+test_that("Comma-separated values are handled correctly", {
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x %in% letters[1:5]),
+      sep = ","
+    ) |>
+      as_command_line("data.csv", list(x = "$1"), sep = ","),
+    list(
+      "awk -F',' 'BEGIN {split(\"a,b,c,d,e\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}' data.csv"
     )
   )
 })

@@ -8,8 +8,7 @@ chainable_filter_condition_functions <- list(
   "<"  =  "lt_filter_condition",
   "<=" = "lte_filter_condition",
   ">"  =  "gt_filter_condition",
-  ">=" = "gte_filter_condition",
-  "==" =  "eq_filter_condition"
+  ">=" = "gte_filter_condition"
 )
 
 combine_filter_condition_functions <- list(
@@ -20,7 +19,9 @@ combine_filter_condition_functions <- list(
 
 new_filter_condition <- function(
   fcall,
-  column_names = NULL
+  column_names = NULL,
+  sep = " ",
+  values_are_quoted = FALSE
 ) {
   if (!is.null(column_names)) {
     fcall <- eval(substitute(
@@ -44,10 +45,15 @@ new_filter_condition <- function(
   } else if (fcall1 %chin% names(chainable_filter_condition_functions)) {
     fcall[[1]] <- chainable_filter_condition_functions[[fcall1]] |>
       as.symbol()
-    setattr(fcall, "chainable", TRUE)
+    attr(fcall, "chainable") <- TRUE
+  } else if (fcall1 == "==") {
+    fcall[[1]] <- as.symbol("eq_filter_condition")
+    fcall$values_are_quoted <- values_are_quoted
+    attr(fcall, "chainable") <- TRUE
   } else if (fcall1 %chin% c("%in%", "%chin%")) {
     fcall[[1]] <- as.symbol("in_filter_condition")
-    setattr(fcall, "chainable", FALSE)
+    fcall$sep <- sep
+    attr(fcall, "chainable") <- FALSE
   }
   fcall
 }
@@ -282,9 +288,15 @@ gte_filter_condition <- function(
 }
 eq_filter_condition <- function(
     column_name,
-    value
+    value,
+    values_are_quoted
 ) {
   # TODO Check vector length
+  if (substr(column_name, 1, 1) == "$") {
+    if (is.character(value)) {
+      value <- check_quotes(value, values_are_quoted)
+    }
+  }
   cmd <- sprintf("%s == %s",
                  column_name,
                  value)
@@ -293,22 +305,16 @@ eq_filter_condition <- function(
 }
 in_filter_condition <- function(
   column_name,
-  values
+  values,
+  sep
 ) {
   cmd <- sprintf(
     paste("BEGIN {split(\"%s\", vals);",
           "for (i in vals) arr[vals[i]]}",
           "{if (%s in arr) print $0}"),
     paste(
-      withr::with_environment(
-        rlang::caller_env(),
-        {
-          # sapply(values, check_quotes, quoted_values[[rlang::enexpr(column_name)]])
-          # check_quotes(values, quoted_values[[rlang::enexpr(column_name)]])
-          values
-        }
-      ),
-      collapse = " "
+      values,
+      collapse = sep
     ),
     column_name
   )

@@ -162,13 +162,6 @@ validate_file_interface <- function(
   stopifnot(file.exists(finterface))
 }
 
-add_condition <- function(
-  finterface,
-  condition
-) {
-
-}
-
 #' @export
 `[.file_interface` <- function(
   finterface,
@@ -176,50 +169,64 @@ add_condition <- function(
   ...,
   return_only_cmd = FALSE
 ) {
-  # e <-c(
-  #   list(rlang::caller_env()),
-  #   finterface,
-  #   finterface$column_indices,
-  #   list(`<`    =  lt_filter_condition,
-  #        `<=`   = lte_filter_condition,
-  #        `>`    =  gt_filter_condition,
-  #        `>=`   = gte_filter_condition,
-  #        `==`   =  eq_filter_condition,
-  #        `%in%` =  in_filter_condition,
-  #        `&`    = and_filter_condition,
-  #        `|`    =  or_filter_condition)
-  # )
+  conditions <- new_filter_condition(rlang::enexpr(conditions), sep = finterface$sep)
+  command_line <- as_command_line(
+    conditions,
+    finterface$filename,
+    setNames(as.list(finterface$column_info$column_index), rownames(column_info)),
+    sep = finterface$sep
+  )
 
-  # cmd <- eval(rlang::enexpr(conditions),
-  #      e) |>
-  #   as.list() |>
-  #   purrr::list_c() |>
+  # # e <-c(
+  # #   list(rlang::caller_env()),
+  # #   finterface,
+  # #   finterface$column_indices,
+  # #   list(`<`    =  lt_filter_condition,
+  # #        `<=`   = lte_filter_condition,
+  # #        `>`    =  gt_filter_condition,
+  # #        `>=`   = gte_filter_condition,
+  # #        `==`   =  eq_filter_condition,
+  # #        `%in%` =  in_filter_condition,
+  # #        `&`    = and_filter_condition,
+  # #        `|`    =  or_filter_condition)
+  # # )
+  #
+  # # cmd <- eval(rlang::enexpr(conditions),
+  # #      e) |>
+  # #   as.list() |>
+  # #   purrr::list_c() |>
+  # #   as_cmd(finterface = finterface)
+  #
+  # conditions_sub <- substitute(conditions)
+  # print(rlang::enexpr(conditions_sub))
+  #
+  # print(eval(substitute(
+  #   substitute2(.filter_condition, finterface$column_indices),
+  #   list(.filter_condition = substitute(conditions))
+  # )))
+  # print(eval(substitute(
+  #   substitute2(.filter_condition, finterface$column_info),
+  #   list(.filter_condition = substitute(conditions))
+  # )))
+  #
+  # cmd <- eval(substitute(
+  #   substitute2(.filter_condition, finterface$column_info),
+  #   list(.filter_condition = substitute(conditions))
+  # )) |>
   #   as_cmd(finterface = finterface)
 
-  conditions_sub <- substitute(conditions)
-  print(rlang::enexpr(conditions_sub))
-
-  print(eval(substitute(
-    substitute2(.filter_condition, finterface$column_indices),
-    list(.filter_condition = substitute(conditions))
-  )))
-  print(eval(substitute(
-    substitute2(.filter_condition, column_names),
-    list(.filter_condition = substitute(conditions))
-  )))
-
-  cmd <- eval(substitute(
-    substitute2(.filter_condition, column_names),
-    list(.filter_condition = substitute(conditions))
-  )) |>
-    as_cmd(finterface = finterface)
-
-  if (return_only_cmd) return(cmd)
-  data.table::fread(
-    cmd = cmd,
-    ...,
-    col.names = names(head(finterface, 0))
-  )
+  if (return_only_cmd) return(command_line)
+  lapply(
+    command_line,
+    \(cmd) {
+      data.table::fread(
+        cmd = cmd,
+        ...,
+        col.names = names(head(finterface, 0))
+      )
+    }
+  ) |>
+    data.table::rbindlist()
 }
 
 #' @export
@@ -236,15 +243,15 @@ print.file_interface <- function(
       "\n")
 }
 
-as_cmd <- function(
-  conditions_list,
-  finterface
-) {
-  wrap_initial_condition(conditions_list[[1]], finterface) |>
-    list() |>
-    c(lapply(conditions_list[-1], wrap_non_initial_condition, finterface)) |>
-    paste(collapse = " | ")
-}
+# as_cmd <- function(
+#   conditions_list,
+#   finterface
+# ) {
+#   wrap_initial_condition(conditions_list[[1]], finterface) |>
+#     list() |>
+#     c(lapply(conditions_list[-1], wrap_non_initial_condition, finterface)) |>
+#     paste(collapse = " | ")
+# }
 
 is_sep_whitespace <- function(
   finterface
