@@ -252,31 +252,31 @@ is_sep_whitespace <- function(
   finterface$sep %in% c(" ", "\t")
 }
 
-wrap_initial_condition <- function(
-  single_condition,
-  finterface
-) {
-  if (finterface$gzipped) {
-    return(
-      sprintf("zcat %s | awk%s '%s%s'",
-              finterface$filename,
-              ifelse(is_sep_whitespace(finterface), "", " -F','"),
-              ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
-              single_condition)
-    )
-  }
-  sprintf("awk%s '%s%s' %s",
-          ifelse(is_sep_whitespace(finterface), "", " -F','"),
-          ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
-          single_condition,
-          finterface$filename)
-}
-
-wrap_non_initial_condition <- function(
-  single_condition,
-  finterface
-) {
-  sprintf("awk%s '%s'",
-          ifelse(finterface$values_are_comma_separated, " -F','", ""),
-          single_condition)
-}
+# wrap_initial_condition <- function(
+#   single_condition,
+#   finterface
+# ) {
+#   if (finterface$gzipped) {
+#     return(
+#       sprintf("zcat %s | awk%s '%s%s'",
+#               finterface$filename,
+#               ifelse(is_sep_whitespace(finterface), "", " -F','"),
+#               ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
+#               single_condition)
+#     )
+#   }
+#   sprintf("awk%s '%s%s' %s",
+#           ifelse(is_sep_whitespace(finterface), "", " -F','"),
+#           ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
+#           single_condition,
+#           finterface$filename)
+# }
+#
+# wrap_non_initial_condition <- function(
+#   single_condition,
+#   finterface
+# ) {
+#   sprintf("awk%s '%s'",
+#           ifelse(finterface$values_are_comma_separated, " -F','", ""),
+#           single_condition)
+# }
