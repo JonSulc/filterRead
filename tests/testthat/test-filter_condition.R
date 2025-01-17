@@ -32,10 +32,55 @@ test_that("Basic filter_condition initialization works", {
                ))
   expect_equal(new_filter_condition(rlang::expr(x == 3)),
                structure(
-                 rlang::expr(eq_filter_condition(x, 3, values_are_quoted = FALSE)),
+                 rlang::expr(eq_filter_condition(x, 3)),
                  class = c("filter_condition", "call"),
                  chainable = TRUE
                ))
+})
+
+test_that("Chaining conditions are properly assessed", {
+  expect_true(
+    are_chainable(structure(1, chainable = TRUE),
+                  structure(2, chainable = TRUE),
+                  operation = "or_filter_condition")
+  )
+  expect_false(
+    are_chainable(structure(1, chainable = FALSE),
+                  structure(2, chainable = TRUE),
+                  operation = "or_filter_condition")
+  )
+  expect_false(
+    are_chainable(structure(1, chainable = TRUE),
+                  structure(2, chainable = FALSE),
+                  operation = "or_filter_condition")
+  )
+  expect_false(
+    are_chainable(structure(1, chainable = FALSE),
+                  structure(2, chainable = FALSE),
+                  operation = "or_filter_condition")
+  )
+  expect_true(
+    are_chainable(structure(1, chainable = TRUE),
+                  structure(2, chainable = TRUE),
+                  operation = "and_filter_condition")
+  )
+  expect_false(
+    are_chainable(structure(1, chainable = FALSE),
+                  structure(2, chainable = TRUE),
+                  operation = "and_filter_condition")
+  )
+  expect_false(
+    are_chainable(structure(1, chainable = TRUE),
+                  structure(2, chainable = FALSE),
+                  operation = "and_filter_condition")
+  )
+  expect_false(
+    are_chainable(structure(1, chainable = FALSE),
+                  structure(2, chainable = FALSE),
+                  operation = "and_filter_condition")
+  )
+
+
 })
 
 test_that("%in% parsing works", {
@@ -261,7 +306,8 @@ test_that("as_command_line splits/merges conditions where necessary", {
       filename = "data.csv",
       column_indices = list(x = "$1", y = "$2")
     ),
-    list("awk '$1 < 3 || 5 < $1' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
+    list("awk '$1 < 3' data.csv",
+         "awk '5 < $1' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
   )
   expect_equal(
     as_command_line(
@@ -271,7 +317,8 @@ test_that("as_command_line splits/merges conditions where necessary", {
       filename = "data.csv",
       column_indices = list(x = "$1", y = "$2")
     ),
-    list("awk '$1 < 3 || 5 < $1 && $2 < 2' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
+    list("awk '$1 < 3' data.csv",
+         "awk '5 < $1 && $2 < 2' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
   )
   expect_equal(
     as_command_line(
@@ -382,5 +429,56 @@ test_that("Comma-separated values are handled correctly", {
     list(
       "awk -F',' 'BEGIN {split(\"a,b,c,d,e\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}' data.csv"
     )
+  )
+})
+
+test_that("Quoted values are handled correctly", {
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x == "a")
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk '$1 == \"a\"' data.csv")
+  )
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x == "a"),
+      quoted_values = list(test = TRUE, x = FALSE)
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk '$1 == \"a\"' data.csv")
+  )
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x == "a"),
+      quoted_values = list(test = FALSE, x = TRUE)
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk '$1 == \"\\\"a\\\"\"' data.csv")
+  )
+  expect_equal(
+    new_filter_condition(
+      rlang::expr("a" == x),
+      quoted_values = list(test = TRUE, x = FALSE)
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk '\"a\" == $1' data.csv")
+  )
+  expect_equal(
+    new_filter_condition(
+      rlang::expr("a" == x),
+      quoted_values = list(test = FALSE, x = TRUE)
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk '\"\\\"a\\\"\" == $1' data.csv")
+  )
+
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x %in% c("a", 1)),
+      quoted_values = list(test = FALSE, x = TRUE)
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk 'BEGIN {split(\"\\\"a\\\" 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}' data.csv")
   )
 })

@@ -21,7 +21,7 @@ new_filter_condition <- function(
   fcall,
   column_names = NULL,
   sep = " ",
-  values_are_quoted = FALSE
+  quoted_values = NULL
 ) {
   if (!is.null(column_names)) {
     fcall <- eval(substitute(
@@ -36,23 +36,48 @@ new_filter_condition <- function(
   fcall1 <- as.character(fcall[[1]])
   if (fcall1 == "(") {
     fcall[[1]] <- as.symbol("lp_filter_condition")
-    fcall[-1] <- lapply(fcall[-1], new_filter_condition)
+    fcall[-1] <- lapply(fcall[-1],
+                        new_filter_condition,
+                        sep = sep,
+                        quoted_values = quoted_values)
   } else if (fcall1 %chin% names(combine_filter_condition_functions)) {
-    fcall[-1] <- lapply(fcall[-1], new_filter_condition)
     fcall[[1]] <- combine_filter_condition_functions[[fcall1]] |>
       as.symbol()
-    # attr(fcall, "chainable") <- is_chainable(fcall[[2]])
+    fcall[-1] <- lapply(fcall[-1],
+                        new_filter_condition,
+                        sep = sep,
+                        quoted_values = quoted_values)
   } else if (fcall1 %chin% names(chainable_filter_condition_functions)) {
     fcall[[1]] <- chainable_filter_condition_functions[[fcall1]] |>
       as.symbol()
     attr(fcall, "chainable") <- TRUE
   } else if (fcall1 == "==") {
+    if (1L < length(fcall[[2]]) | 1L < length(fcall[[3]])) {
+      stop("More than 1 element on a side of '==':\n", fcall)
+    }
     fcall[[1]] <- as.symbol("eq_filter_condition")
-    fcall$values_are_quoted <- values_are_quoted
+    if (is.character(fcall[[3]])) {
+      stopifnot(is.symbol(fcall[[2]]))
+      fcall[[3]] <- check_quotes(
+        fcall[[3]],
+        ifelse(as.character(fcall[[2]]) %in% names(quoted_values),
+               quoted_values[[as.character(fcall[[2]])]],
+               FALSE)
+      )
+    } else if (is.character(fcall[[2]])) {
+      stopifnot(is.symbol(fcall[[3]]))
+      fcall[[2]] <- check_quotes(
+        fcall[[2]],
+        ifelse(as.character(fcall[[3]]) %in% names(quoted_values),
+               quoted_values[[as.character(fcall[[3]])]],
+               FALSE)
+      )
+    }
     attr(fcall, "chainable") <- TRUE
   } else if (fcall1 %chin% c("%in%", "%chin%")) {
     fcall[[1]] <- as.symbol("in_filter_condition")
     fcall$sep <- sep
+    fcall$quoted_values <- quoted_values
     attr(fcall, "chainable") <- FALSE
   }
   fcall
@@ -66,7 +91,8 @@ is_chainable <- function(
       return(all(sapply(fcall[-1], is_chainable)))
     }
     if (1L < length(fcall)) {
-      return(all(sapply(fcall[-1], is_chainable)))
+      if (is.call(fcall)) return(all(sapply(fcall[-1], is_chainable)))
+      return(all(sapply(fcall, is_chainable)))
     }
     warning("NULL value chainable, defaulting to non-chainable")
     return(FALSE)
@@ -76,17 +102,19 @@ is_chainable <- function(
 
 are_chainable <- function(
   left,
-  right
+  right,
+  operation
 ) {
-  if (!is.null(attr(left, "chainable")) & !is.null(attr(right, "chainable"))) {
+  if ((!is.null(attr(left, "chainable")) & !is.null(attr(right, "chainable"))) |
+      operation == "or_filter_condition") {
     return(is_chainable(left) & is_chainable(right))
   }
 
   if (1L < length(left)) {
-    return(are_chainable(left[[length(left)]], right))
+    return(are_chainable(left[[length(left)]], right, operation = operation))
   }
   if (1L < length(right)) {
-    return(are_chainable(left, right[[1]]))
+    return(are_chainable(left, right[[1]], operation = operation))
   }
   return(is_chainable(left) & is_chainable(right))
 }
@@ -292,11 +320,6 @@ eq_filter_condition <- function(
     values_are_quoted
 ) {
   # TODO Check vector length
-  if (substr(column_name, 1, 1) == "$") {
-    if (is.character(value)) {
-      value <- check_quotes(value, values_are_quoted)
-    }
-  }
   cmd <- sprintf("%s == %s",
                  column_name,
                  value)
@@ -306,13 +329,25 @@ eq_filter_condition <- function(
 in_filter_condition <- function(
   column_name,
   values,
-  sep
+  sep,
+  quoted_values = NULL
 ) {
+  # if (column_name %in% names(quoted_values)) {
+    values <- check_quotes(values,
+                           quoted_values[[column_name]],
+                           base_enquote = FALSE)
+  # }
+
   cmd <- sprintf(
     paste("BEGIN {split(\"%s\", vals);",
           "for (i in vals) arr[vals[i]]}",
           "{if (%s in arr) print $0}"),
     paste(
+      # ifelse(
+      #   column_name %in% names(quoted_values),
+      #   check_quotes(values, quoted_values[[column_name]]),
+      #   values
+      # ),
       values,
       collapse = sep
     ),
@@ -326,7 +361,7 @@ and_filter_condition <- function(
     condition2
 ) {
   # TODO Check vector length
-  if (are_chainable(condition1, condition2)) {
+  if (are_chainable(condition1, condition2, "and_filter_condition")) {
     if (length(condition1) > 1L) {
       if (length(condition2) > 1L) {
         condition1[[length(condition1)]] <- paste(
@@ -363,7 +398,7 @@ or_filter_condition <- function(
   condition2
 ) {
   # TODO Check vector length
-  if (are_chainable(condition1, condition2)) {
+  if (are_chainable(condition1, condition2, "or_filter_condition")) {
     if (length(condition1) > 1L) {
       if (length(condition2) > 1L) {
         condition1[[length(condition1)]] <- paste(

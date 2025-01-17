@@ -25,12 +25,20 @@ get_column_info <- function(
   file_colnames <- get_column_names(finterface) |>
     swap_in_column_names(column_names)
 
-  data.frame(
-    row.names     = names(file_colnames),
-    index         = seq_along(file_colnames),
-    column_index  = unlist(file_colnames),
-    quoted_values = are_values_quoted(finterface)
+  list(
+    index         = setNames(seq_along(file_colnames),
+                             names(file_colnames)),
+    bash_index    = file_colnames,
+    quoted_values = are_values_quoted(finterface) |>
+      as.list()
   )
+
+  # data.frame(
+  #   row.names     = names(file_colnames),
+  #   index         = seq_along(file_colnames),
+  #   column_index  = unlist(file_colnames),
+  #   quoted_values = are_values_quoted(finterface)
+  # )
 }
 
 swap_in_column_names <- function(
@@ -109,18 +117,33 @@ are_values_quoted <- function(
 
 check_quotes <- function(
     value,
-    value_needs_to_be_quoted
+    value_needs_to_be_quoted,
+    base_enquote = TRUE
 ) {
-  if (length(value) > 1) {
-    # withr::with_environment(
-    #   rlang::caller_env(),
-    #   sapply(value, check_quotes, value_needs_to_be_quoted)
-    # )
-    return(sapply(value, check_quotes, value_needs_to_be_quoted))
+  if (is.null(value_needs_to_be_quoted)) {
+    value_needs_to_be_quoted <- FALSE
   }
-  if (is_value_numeric(value)) return(value)
-  if (!value_needs_to_be_quoted) return(paste0("\"", value, "\""))
+
+  number_of_quotes <- value_needs_to_be_quoted + (!all(is.numeric(value)) & base_enquote)
+
+  if (number_of_quotes == 0) return(value)
+  if (number_of_quotes == 1) return(paste0("\"", value, "\""))
   paste0("\"\\\"", value, "\\\"\"")
+
+  # if (!value_needs_to_be_quoted) {
+  #   if (all(is.numeric(value)) | !base_enquote) {
+  #     return(value)
+  #   } else {
+  #     return(paste0("\"", value, "\""))
+  #   }
+  # }
+  # if (value_needs_to_be_quoted) {
+  #   return(paste0("\"\\\"", value, "\\\"\""))
+  # } else if (all(is_value_numeric(value))) {
+  #   return(value)
+  # }
+  # paste0("\"", value, "\"")
+
 }
 
 is_value_numeric <- function(
@@ -169,51 +192,16 @@ validate_file_interface <- function(
   ...,
   return_only_cmd = FALSE
 ) {
-  conditions <- new_filter_condition(rlang::enexpr(conditions), sep = finterface$sep)
-  command_line <- as_command_line(
-    conditions,
-    finterface$filename,
-    setNames(as.list(finterface$column_info$column_index), rownames(column_info)),
-    sep = finterface$sep
-  )
-
-  # # e <-c(
-  # #   list(rlang::caller_env()),
-  # #   finterface,
-  # #   finterface$column_indices,
-  # #   list(`<`    =  lt_filter_condition,
-  # #        `<=`   = lte_filter_condition,
-  # #        `>`    =  gt_filter_condition,
-  # #        `>=`   = gte_filter_condition,
-  # #        `==`   =  eq_filter_condition,
-  # #        `%in%` =  in_filter_condition,
-  # #        `&`    = and_filter_condition,
-  # #        `|`    =  or_filter_condition)
-  # # )
-  #
-  # # cmd <- eval(rlang::enexpr(conditions),
-  # #      e) |>
-  # #   as.list() |>
-  # #   purrr::list_c() |>
-  # #   as_cmd(finterface = finterface)
-  #
-  # conditions_sub <- substitute(conditions)
-  # print(rlang::enexpr(conditions_sub))
-  #
-  # print(eval(substitute(
-  #   substitute2(.filter_condition, finterface$column_indices),
-  #   list(.filter_condition = substitute(conditions))
-  # )))
-  # print(eval(substitute(
-  #   substitute2(.filter_condition, finterface$column_info),
-  #   list(.filter_condition = substitute(conditions))
-  # )))
-  #
-  # cmd <- eval(substitute(
-  #   substitute2(.filter_condition, finterface$column_info),
-  #   list(.filter_condition = substitute(conditions))
-  # )) |>
-  #   as_cmd(finterface = finterface)
+  command_line <- new_filter_condition(
+    rlang::enexpr(conditions),
+    sep = finterface$sep,
+    quoted_values = finterface$column_info$quoted_values
+  ) |>
+    as_command_line(
+      finterface$filename,
+      column_indices = finterface$column_info$bash_index,
+      sep = finterface$sep
+    )
 
   if (return_only_cmd) return(command_line)
   lapply(
@@ -235,55 +223,17 @@ print.file_interface <- function(
 ) {
   cat(sprintf("\"%s\"\n", finterface$filename))
   cat(sprintf("Columns: %s",
-              paste(names(finterface$column_indices), collapse = ", ")),
+              paste(names(finterface$column_info$index), collapse = ", ")),
       "\n")
-  cat(sprintf("Gzipped: %s, Quoted: %s",
-              finterface$gzipped,
-              finterface$values_are_quoted),
+  cat(sprintf(
+    "Gzipped: %s, Quoted: %s",
+    finterface$gzipped,
+    ifelse(any(unlist(finterface$column_info$quoted_values)),
+           paste(names(finterface$column_info$quoted_values)[
+             unlist(finterface$column_info$quoted_values)
+           ],
+                 collapse = ", "),
+           FALSE)
+  ),
       "\n")
 }
-
-# as_cmd <- function(
-#   conditions_list,
-#   finterface
-# ) {
-#   wrap_initial_condition(conditions_list[[1]], finterface) |>
-#     list() |>
-#     c(lapply(conditions_list[-1], wrap_non_initial_condition, finterface)) |>
-#     paste(collapse = " | ")
-# }
-
-is_sep_whitespace <- function(
-  finterface
-) {
-  finterface$sep %in% c(" ", "\t")
-}
-
-# wrap_initial_condition <- function(
-#   single_condition,
-#   finterface
-# ) {
-#   if (finterface$gzipped) {
-#     return(
-#       sprintf("zcat %s | awk%s '%s%s'",
-#               finterface$filename,
-#               ifelse(is_sep_whitespace(finterface), "", " -F','"),
-#               ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
-#               single_condition)
-#     )
-#   }
-#   sprintf("awk%s '%s%s' %s",
-#           ifelse(is_sep_whitespace(finterface), "", " -F','"),
-#           ifelse(is_chainable_condition(single_condition), "NR == 1 || ", ""),
-#           single_condition,
-#           finterface$filename)
-# }
-#
-# wrap_non_initial_condition <- function(
-#   single_condition,
-#   finterface
-# ) {
-#   sprintf("awk%s '%s'",
-#           ifelse(finterface$values_are_comma_separated, " -F','", ""),
-#           single_condition)
-# }
