@@ -80,7 +80,66 @@ test_that("Chaining conditions are properly assessed", {
                   operation = "and_filter_condition")
   )
 
+  expect_true(
+    are_chainable(list(structure(1, chainable = FALSE),
+                       structure(1, chainable = TRUE)),
+                  structure(2, chainable = TRUE),
+                  operation = "and_filter_condition")
+  )
+  expect_false(
+    are_chainable(list(structure(1, chainable = TRUE),
+                       structure(1, chainable = FALSE)),
+                  structure(2, chainable = TRUE),
+                  operation = "and_filter_condition")
+  )
+  expect_false(
+    are_chainable(list(structure(1, chainable = FALSE),
+                       structure(1, chainable = TRUE)),
+                  list(structure(1, chainable = FALSE),
+                       structure(1, chainable = TRUE)),
+                  operation = "and_filter_condition")
+  )
+  expect_true(
+    are_chainable(list(structure(1, chainable = FALSE),
+                       structure(1, chainable = TRUE)),
+                  list(structure(1, chainable = TRUE),
+                       structure(1, chainable = FALSE)),
+                  operation = "and_filter_condition")
+  )
 
+  expect_false(
+    are_chainable(list(structure(1, chainable = FALSE),
+                       structure(1, chainable = TRUE)),
+                  structure(2, chainable = TRUE),
+                  operation = "or_filter_condition")
+  )
+  expect_false(
+    are_chainable(list(structure(1, chainable = TRUE),
+                       structure(1, chainable = FALSE)),
+                  structure(2, chainable = TRUE),
+                  operation = "or_filter_condition")
+  )
+  expect_false(
+    are_chainable(list(structure(1, chainable = FALSE),
+                       structure(1, chainable = TRUE)),
+                  list(structure(1, chainable = FALSE),
+                       structure(1, chainable = TRUE)),
+                  operation = "or_filter_condition")
+  )
+  expect_false(
+    are_chainable(list(structure(1, chainable = FALSE),
+                       structure(1, chainable = TRUE)),
+                  list(structure(1, chainable = TRUE),
+                       structure(1, chainable = FALSE)),
+                  operation = "or_filter_condition")
+  )
+  expect_true(
+    are_chainable(list(structure(1, chainable = TRUE),
+                       structure(1, chainable = TRUE)),
+                  list(structure(1, chainable = TRUE),
+                       structure(1, chainable = TRUE)),
+                  operation = "or_filter_condition")
+  )
 })
 
 test_that("%in% parsing works", {
@@ -356,7 +415,7 @@ test_that("as_command_line splits/merges conditions where necessary", {
   )
 })
 
-test_that("Parenthese work as expected", {
+test_that("Parentheses work as expected", {
   column_indices <- get_indices_from_column_names(letters[24:26])
 
   expect_equal(
@@ -415,6 +474,42 @@ test_that("Parenthese work as expected", {
            c("$1 < 12", "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
            structure("(123 < $1 && $1 < 234 && $2 == \"b\")",
                      chainable = TRUE))
+    )
+  )
+
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (3 <= x | x %in% c("a", 1)) & x <= 5
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    list(
+      c("3 <= $1",
+        "$1 <= 5"),
+      c("BEGIN {split(\"a,1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
+        "$1 <= 5")
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (3 <= x | x < 4) & x <= 5
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    structure(
+      list("(3 <= $1 || $1 < 4) && $1 <= 5"),
+      chainable = TRUE
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (3 <= x | x < 4) & y %in% letters[1:3]
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    list(
+      c("(3 <= $1 || $1 < 4)",
+        "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
     )
   )
 })
@@ -479,6 +574,6 @@ test_that("Quoted values are handled correctly", {
       quoted_values = list(test = FALSE, x = TRUE)
     ) |>
       as_command_line("data.csv", list(x = "$1")),
-    list("awk 'BEGIN {split(\"\\\"a\\\" 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}' data.csv")
+    list("awk 'BEGIN {split(\"\\\"a\\\" \\\"1\\\"\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}' data.csv")
   )
 })

@@ -32,13 +32,6 @@ get_column_info <- function(
     quoted_values = are_values_quoted(finterface) |>
       as.list()
   )
-
-  # data.frame(
-  #   row.names     = names(file_colnames),
-  #   index         = seq_along(file_colnames),
-  #   column_index  = unlist(file_colnames),
-  #   quoted_values = are_values_quoted(finterface)
-  # )
 }
 
 swap_in_column_names <- function(
@@ -129,21 +122,6 @@ check_quotes <- function(
   if (number_of_quotes == 0) return(value)
   if (number_of_quotes == 1) return(paste0("\"", value, "\""))
   paste0("\"\\\"", value, "\\\"\"")
-
-  # if (!value_needs_to_be_quoted) {
-  #   if (all(is.numeric(value)) | !base_enquote) {
-  #     return(value)
-  #   } else {
-  #     return(paste0("\"", value, "\""))
-  #   }
-  # }
-  # if (value_needs_to_be_quoted) {
-  #   return(paste0("\"\\\"", value, "\\\"\""))
-  # } else if (all(is_value_numeric(value))) {
-  #   return(value)
-  # }
-  # paste0("\"", value, "\"")
-
 }
 
 is_value_numeric <- function(

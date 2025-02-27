@@ -17,6 +17,19 @@ combine_filter_condition_functions <- list(
 )
 
 
+as_filter_condition <- function(
+  fcall
+) {
+  if (!is.call(fcall)) return(fcall)
+  class(fcall) <- c("filter_condition", class(fcall)) |>
+    unique()
+  # if (1L < length(fcall)) {
+  #   fcall[-1] <- lapply(fcall[-1], as_filter_condition)
+  # }
+  fcall
+}
+
+
 new_filter_condition <- function(
   fcall,
   column_names = NULL,
@@ -31,23 +44,44 @@ new_filter_condition <- function(
   }
 
   if (!is.call(fcall)) return(fcall)
-  class(fcall) <- c("filter_condition", class(fcall))
+  if (!as.character(fcall)[[1]] %in% c(names(chainable_filter_condition_functions),
+                                       names(combine_filter_condition_functions),
+                                       "%in%", "%chin%", "==", "(")) return(fcall)
+  fcall <- as_filter_condition(fcall)
 
   fcall1 <- as.character(fcall[[1]])
   if (fcall1 == "(") {
     fcall[[1]] <- as.symbol("lp_filter_condition")
+    # fcall[[2]] <- new_filter_condition(fcall[[2]],
+    #                                    sep = sep,
+    #                                    quoted_values = quoted_values)
     fcall[-1] <- lapply(fcall[-1],
                         new_filter_condition,
                         sep = sep,
                         quoted_values = quoted_values)
-  } else if (fcall1 %chin% names(combine_filter_condition_functions)) {
+  } else if (fcall1 %in% names(combine_filter_condition_functions)) {
     fcall[[1]] <- combine_filter_condition_functions[[fcall1]] |>
       as.symbol()
     fcall[-1] <- lapply(fcall[-1],
                         new_filter_condition,
                         sep = sep,
                         quoted_values = quoted_values)
-  } else if (fcall1 %chin% names(chainable_filter_condition_functions)) {
+    # TODO PICK UP HERE
+    if (fcall1 == "&") {
+      # fcall[-1] <- and_combine_fconditions(fcall[[2]], fcall[[3]])
+      #
+      # if (as.character(fcall[[2]][[1]]) == "lp_filter_condition") {
+      #   lp_filter <- fcall[[2]]
+      #   distributive_fcondition <- fcall[[3]]
+      #
+      #
+      #
+      #   if (is_chainable(fcall[[2]][[2]]) & is_chainable(fcall[[3]])) {
+      #     fcall[[2]] <- fcall[[2]][[2]]
+      #   }
+      # }
+    }
+  } else if (fcall1 %in% names(chainable_filter_condition_functions)) {
     fcall[[1]] <- chainable_filter_condition_functions[[fcall1]] |>
       as.symbol()
     attr(fcall, "chainable") <- TRUE
@@ -77,7 +111,9 @@ new_filter_condition <- function(
   } else if (fcall1 %chin% c("%in%", "%chin%")) {
     fcall[[1]] <- as.symbol("in_filter_condition")
     fcall$sep <- sep
-    fcall$quoted_values <- quoted_values
+    if (as.character(fcall[[2]]) %in% names(quoted_values)) {
+      fcall$values_need_to_be_quoted <- quoted_values[[as.character(fcall[[2]])]]
+    }
     attr(fcall, "chainable") <- FALSE
   }
   fcall
@@ -86,18 +122,16 @@ new_filter_condition <- function(
 is_chainable <- function(
   fcall
 ) {
-  if (is.null(attr(fcall, "chainable"))) {
-    if (fcall[[1]] == "lp_filter_condition") {
-      return(all(sapply(fcall[-1], is_chainable)))
-    }
-    if (1L < length(fcall)) {
-      if (is.call(fcall)) return(all(sapply(fcall[-1], is_chainable)))
-      return(all(sapply(fcall, is_chainable)))
-    }
+  if (!is.null(attr(fcall, "chainable")))
+    return(attr(fcall, "chainable"))
+  if (fcall[[1]] == "lp_filter_condition")
+    return(all(sapply(fcall[-1], is_chainable)))
+  if (length(fcall) == 1) {
     warning("NULL value chainable, defaulting to non-chainable")
     return(FALSE)
   }
-  attr(fcall, "chainable")
+  if (is.call(fcall)) return(all(sapply(fcall[-1], is_chainable)))
+  all(sapply(fcall, is_chainable))
 }
 
 are_chainable <- function(
@@ -117,6 +151,15 @@ are_chainable <- function(
     return(are_chainable(left, right[[1]], operation = operation))
   }
   return(is_chainable(left) & is_chainable(right))
+}
+
+is_pipable <- function(
+  fcall
+) {
+  fcall1 <- as.character(fcall[[1]])
+  if (fcall1 == "lp_filter_condition") {
+
+  }
 }
 
 get_indices_from_column_names <- function(
@@ -330,24 +373,17 @@ in_filter_condition <- function(
   column_name,
   values,
   sep,
-  quoted_values = NULL
+  values_need_to_be_quoted = FALSE
 ) {
-  # if (column_name %in% names(quoted_values)) {
-    values <- check_quotes(values,
-                           quoted_values[[column_name]],
-                           base_enquote = FALSE)
-  # }
+  if (values_need_to_be_quoted) {
+    values <- paste0("\\\"", values, "\\\"")
+  }
 
   cmd <- sprintf(
     paste("BEGIN {split(\"%s\", vals);",
           "for (i in vals) arr[vals[i]]}",
           "{if (%s in arr) print $0}"),
     paste(
-      # ifelse(
-      #   column_name %in% names(quoted_values),
-      #   check_quotes(values, quoted_values[[column_name]]),
-      #   values
-      # ),
       values,
       collapse = sep
     ),
@@ -356,12 +392,13 @@ in_filter_condition <- function(
   attr(cmd, "chainable") <- FALSE
   cmd
 }
+
 and_filter_condition <- function(
     condition1,
     condition2
 ) {
   # TODO Check vector length
-  if (are_chainable(condition1, condition2, "and_filter_condition")) {
+  if (are_chainable(condition1, condition2, operation = "and_filter_condition")) {
     if (length(condition1) > 1L) {
       if (length(condition2) > 1L) {
         condition1[[length(condition1)]] <- paste(
@@ -398,7 +435,7 @@ or_filter_condition <- function(
   condition2
 ) {
   # TODO Check vector length
-  if (are_chainable(condition1, condition2, "or_filter_condition")) {
+  if (are_chainable(condition1, condition2, operation = "or_filter_condition")) {
     if (length(condition1) > 1L) {
       if (length(condition2) > 1L) {
         condition1[[length(condition1)]] <- paste(
