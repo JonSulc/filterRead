@@ -10,31 +10,36 @@ test_that("Basic filter_condition initialization works", {
                structure(
                  rlang::expr(lt_filter_condition(x, 3)),
                  class = c("filter_condition", "call"),
-                 chainable = TRUE
+                 chainable = TRUE,
+                 pipable = TRUE
                ))
   expect_equal(new_filter_condition(rlang::expr(x > 3)),
                structure(
                  rlang::expr(gt_filter_condition(x, 3)),
                  class = c("filter_condition", "call"),
-                 chainable = TRUE
+                 chainable = TRUE,
+                 pipable = TRUE
                ))
   expect_equal(new_filter_condition(rlang::expr(x <= 3)),
                structure(
                  rlang::expr(lte_filter_condition(x, 3)),
                  class = c("filter_condition", "call"),
-                 chainable = TRUE
+                 chainable = TRUE,
+                 pipable = TRUE
                ))
   expect_equal(new_filter_condition(rlang::expr(x >= 3)),
                structure(
                  rlang::expr(gte_filter_condition(x, 3)),
                  class = c("filter_condition", "call"),
-                 chainable = TRUE
+                 chainable = TRUE,
+                 pipable = TRUE
                ))
   expect_equal(new_filter_condition(rlang::expr(x == 3)),
                structure(
                  rlang::expr(eq_filter_condition(x, 3)),
                  class = c("filter_condition", "call"),
-                 chainable = TRUE
+                 chainable = TRUE,
+                 pipable = TRUE
                ))
 })
 
@@ -142,6 +147,82 @@ test_that("Chaining conditions are properly assessed", {
   )
 })
 
+test_that("Pipable is correctly recorded", {
+  expect_true(
+    new_filter_condition(rlang::expr(x < 123 | x > 234 & y == "a")) |>
+      attr("pipable")
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(x < 123 | x > 234 & y %in% "a")) |>
+      attr("pipable")
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(x < 123 | x %in% 234 & y == "a")) |>
+      attr("pipable")
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(x %in% 123 | x > 234 & y == "a")) |>
+      attr("pipable")
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(x < 123 & x > 234 & y %in% "a")) |>
+      is_pipable()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(x < 123 & x %in% 234 & y == "a")) |>
+      is_pipable()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(x %in% 123 & x > 234 & y == "a")) |>
+      is_pipable()
+  )
+})
+
+test_that("Parentheses needing distributing are correctly detected", {
+  expect_false(
+    new_filter_condition(
+      rlang::expr(x < 3)
+    ) |>
+      needs_parenthesis_handling()
+  )
+  expect_false(
+    new_filter_condition(
+      rlang::expr(x < 3 | y == 2)
+    ) |>
+      needs_parenthesis_handling()
+  )
+  expect_false(
+    new_filter_condition(
+      rlang::expr((x < 3 | y == 2))
+    ) |>
+      needs_parenthesis_handling()
+  )
+  expect_false(
+    new_filter_condition(
+      rlang::expr((x < 3 | y == 2) & z > 3)
+    ) |>
+      needs_parenthesis_handling()
+  )
+  expect_false(
+    new_filter_condition(
+      rlang::expr((x %in% 3 | y == 2) & z > 3)
+    ) |>
+      needs_parenthesis_handling()
+  )
+  expect_false(
+    new_filter_condition(
+      rlang::expr((x < 3 | y %in% 2) & z > 3)
+    ) |>
+      needs_parenthesis_handling()
+  )
+  expect_false(
+    new_filter_condition(
+      rlang::expr((x < 3 | y == 2) & z %in% 3)
+    ) |>
+      needs_parenthesis_handling()
+  )
+})
+
 test_that("%in% parsing works", {
   expect_equal(
     new_filter_condition(
@@ -150,7 +231,8 @@ test_that("%in% parsing works", {
     structure(
       rlang::expr(in_filter_condition(x, letters[1:5], sep = " ")),
       class = c("filter_condition", "call"),
-      chainable = FALSE
+      chainable = FALSE,
+      pipable = TRUE
     )
   )
   expect_equal(
@@ -484,9 +566,20 @@ test_that("Parentheses work as expected", {
       to_awk(column_indices) |>
       flatten_cl_bits(),
     list(
-      c("3 <= $1",
-        "$1 <= 5"),
-      c("BEGIN {split(\"a,1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
+      structure(c("3 <= $1 && $1 <= 5"), chainable = TRUE),
+      c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
+        "$1 <= 5")
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      x <= 5 & (3 <= x | x %in% c("a", 1))
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    list(
+      structure(c("3 <= $1 && $1 <= 5"), chainable = TRUE),
+      c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
         "$1 <= 5")
     )
   )
@@ -496,9 +589,18 @@ test_that("Parentheses work as expected", {
     )) |>
       to_awk(column_indices) |>
       flatten_cl_bits(),
-    structure(
-      list("(3 <= $1 || $1 < 4) && $1 <= 5"),
-      chainable = TRUE
+    list(
+      structure("(3 <= $1 || $1 < 4) && $1 <= 5", chainable = TRUE)
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      x <= 5 & (3 <= x | x < 4)
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    list(
+      structure("$1 <= 5 && (3 <= $1 || $1 < 4)", chainable = TRUE)
     )
   )
   expect_equal(
@@ -508,8 +610,73 @@ test_that("Parentheses work as expected", {
       to_awk(column_indices) |>
       flatten_cl_bits(),
     list(
-      c("(3 <= $1 || $1 < 4)",
+      c("3 <= $1 || $1 < 4",
         "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      y %in% letters[1:3] & (3 <= x | x < 4)
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    list(
+      c("BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}",
+        "3 <= $1 || $1 < 4")
+    )
+  )
+
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      3 <= x & (x <= 5 & y %in% "a")
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    list(c("3 <= $1 && $1 <= 5",
+           "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"))
+  )
+
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (3 <= x | x %in% c("a", 1)) & (x <= 5 & y == "a")
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    list(
+      structure(c("3 <= $1 && ($1 <= 5 && $2 == \"a\")"), chainable = TRUE),
+      c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
+        "($1 <= 5 && $2 == \"a\")")
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (3 <= x | x %in% c("a", 1)) & (x <= 5 & y %in% "a")
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    list(
+      c("3 <= $1 && $1 <= 5",
+        "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
+      c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
+        "$1 <= 5",
+        "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
+    )
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(
+      (3 <= x | x %in% c("a", 1)) & (x <= 5 | y %in% "a")
+    )) |>
+      to_awk(column_indices) |>
+      flatten_cl_bits(),
+    list("3 <= $1 && $1 <= 5",
+        structure(c("BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}",
+                    "$1 <= 5"),
+                  chainable = FALSE),
+      c("3 <= $1",
+        "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
+      structure(c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
+                  "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
+                chainable = FALSE)
     )
   )
 })
