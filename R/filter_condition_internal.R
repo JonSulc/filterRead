@@ -102,10 +102,14 @@ chainable_to_fc <- function(
   fcall,
   operator
 ) {
-  stopifnot(operator %in% names(chainable_filter_condition_functions))
+  stopifnot(operator %in% c("<", "<=", ">", ">="))
 
-  fcall[[1]] <- chainable_filter_condition_functions[[operator]] |>
-    as.symbol()
+  fcall[[1]] <- list(
+    "<"  = as.symbol("lt_filter_condition"),
+    "<=" = as.symbol("lte_filter_condition"),
+    ">"  = as.symbol("gt_filter_condition"),
+    ">=" = as.symbol("gte_filter_condition")
+  )[[operator]]
   attr(fcall, "chainable") <- TRUE
   attr(fcall, "pipable") <- TRUE
   fcall

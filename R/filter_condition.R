@@ -5,18 +5,6 @@
 
 is.filter_condition <- function(x) inherits(x, "filter_condition")
 
-chainable_filter_condition_functions <- list(
-  "<"  =  "lt_filter_condition",
-  "<=" = "lte_filter_condition",
-  ">"  =  "gt_filter_condition",
-  ">=" = "gte_filter_condition"
-)
-
-combine_filter_condition_functions <- list(
-  "&" = "and_filter_condition",
-  "|" =  "or_filter_condition"
-)
-
 fc_convert <- list(
   "<"      = lt_to_fc,
   "<="     = lte_to_fc,
@@ -35,7 +23,10 @@ as_filter_condition <- function(
   fcall,
   ...
 ) {
-  if (!is.call(fcall)) return(fcall)
+  if (!is.call(fcall)) {
+    warning("Attempting to set non-call object to filter_condition")
+    return(fcall)
+  }
   structure(
     fcall,
     class = c("filter_condition", class(fcall)) |>
@@ -51,6 +42,8 @@ new_filter_condition <- function(
   sep = " ",
   quoted_values = NULL
 ) {
+  # If column_names is provided, substitutes the condition variables with the
+  # column names
   if (!is.null(column_names)) {
     fcall <- eval(substitute(
       substitute(.fcall, lapply(column_names, as.symbol)),
@@ -62,10 +55,12 @@ new_filter_condition <- function(
 
   fcall <- as_filter_condition(fcall)
 
-  fcall1 <- as.character(fcall[[1]])
-
-  if (fcall1 %in% names(fc_convert))
-    return(fc_convert[[fcall1]](fcall, sep = sep, quoted_values = quoted_values))
+  if (as.character(fcall[[1]]) %in% names(fc_convert))
+    return(
+      fc_convert[[as.character(fcall[[1]])]](fcall,
+                                             sep = sep,
+                                             quoted_values = quoted_values)
+    )
 
   fcall
 }
@@ -338,78 +333,61 @@ in_filter_condition <- function(
   )
 }
 
-and_filter_condition <- function(
-    condition1,
-    condition2
+combine_filter_condition <- function(
+  condition1,
+  condition2,
+  operation
 ) {
+  if (operation == "and_filter_condition") {
+    operator <- "&&"
+  } else {
+    operator <- "||"
+  }
   # TODO Check vector length
-  if (are_chainable(condition1, condition2, operation = "and_filter_condition")) {
+  if (are_chainable(condition1, condition2, operation = operation)) {
     if (length(condition1) > 1L) {
       if (length(condition2) > 1L) {
         condition1[[length(condition1)]] <- paste(
-          condition1[[length(condition1)]], "&&", condition2[[1]]
+          condition1[[length(condition1)]], operator, condition2[[1]]
         )
         attr(condition1, "chainable") <- TRUE
         return(get(attr(condition2, "operation"))(condition1, condition2[[2]]))
       }
       condition1[[length(condition1)]] <- paste(
-        condition1[[length(condition1)]], "&&", condition2
+        condition1[[length(condition1)]], operator, condition2
       )
       attr(condition1, "chainable") <- TRUE
       return(condition1)
     } else {
       if (length(condition2) > 1L) {
         condition12 <- paste(
-          condition1, "&&", condition2[[1]]
+          condition1, operator, condition2[[1]]
         )
         attr(condition12, "chainable") <- TRUE
         return(get(attr(condition2, "operation"))(condition12, condition2[[2]]))
       }
-      conditions12 <- paste(condition1, "&&", condition2)
+      conditions12 <- paste(condition1, operator, condition2)
       attr(conditions12, "chainable") <- TRUE
       return(conditions12)
     }
   }
   structure(
     list(condition1, condition2),
-    operation = "and_filter_condition"
+    operation = operation
   )
+}
+
+and_filter_condition <- function(
+  condition1,
+  condition2
+) {
+  combine_filter_condition(condition1, condition2, "and_filter_condition")
 }
 or_filter_condition <- function(
   condition1,
   condition2
 ) {
-  # TODO Check vector length
-  if (are_chainable(condition1, condition2, operation = "or_filter_condition")) {
-    if (length(condition1) > 1L) {
-      if (length(condition2) > 1L) {
-        condition1[[length(condition1)]] <- paste(
-          condition1[[length(condition1)]], "||", condition2[[1]]
-        )
-        attr(condition1, "chainable") <- TRUE
-        return(get(attr(condition2, "operation"))(condition1, condition2[[2]]))
-      }
-      condition1[[length(condition1)]] <- paste(
-        condition1[[length(condition1)]], "||", condition2
-      )
-      attr(condition1, "chainable") <- TRUE
-      return(condition1)
-    }
-    if (length(condition2) > 1L) {
-      condition1[[length(condition1)]] <- paste(
-        condition1[[length(condition1)]], "||", condition2[[1]]
-      )
-      attr(condition1, "chainable") <- TRUE
-      return(get(attr(condition2, "operation"))(condition1, condition2[[2]]))
-    }
-    conditions12 <- paste(condition1, "||", condition2)
-    attr(conditions12, "chainable") <- TRUE
-    return(conditions12)
-  }
-  structure(
-    list(condition1, condition2),
-    operation = "or_filter_condition"
-  )
+  combine_filter_condition(condition1, condition2, "or_filter_condition")
 }
 
 lp_filter_condition <- function(
