@@ -295,7 +295,7 @@ test_that("Parsing to command line works", {
   expect_equal(
     new_filter_condition(rlang::expr(x > 3)) |>
       to_awk(column_indices = column_indices),
-    structure("3 < $1", chainable = TRUE)
+    structure("$1 > 3", chainable = TRUE)
   )
   expect_equal(
     new_filter_condition(rlang::expr(x <= 3)) |>
@@ -305,7 +305,7 @@ test_that("Parsing to command line works", {
   expect_equal(
     new_filter_condition(rlang::expr(x >= 3)) |>
       to_awk(column_indices = column_indices),
-    structure("3 <= $1", chainable = TRUE)
+    structure("$1 >= 3", chainable = TRUE)
   )
   expect_equal(
     new_filter_condition(rlang::expr(x == 3)) |>
@@ -316,12 +316,12 @@ test_that("Parsing to command line works", {
   expect_equal(
     new_filter_condition(rlang::expr(x < 3 | y > 42)) |>
       to_awk(column_indices = column_indices),
-    structure("$1 < 3 || 42 < $2", chainable = TRUE)
+    structure("$1 < 3 || $2 > 42", chainable = TRUE)
   )
   expect_equal(
     new_filter_condition(rlang::expr(x < 3 & y > 42)) |>
       to_awk(column_indices = column_indices),
-    structure("$1 < 3 && 42 < $2", chainable = TRUE)
+    structure("$1 < 3 && $2 > 42", chainable = TRUE)
   )
 
   expect_equal(
@@ -437,7 +437,7 @@ test_that("as_command_line splits/merges conditions where necessary", {
       filename = "data.csv",
       column_indices = list(x = "$1", y = "$2")
     ),
-    list("awk '$1 < 3 && 5 < $1' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
+    list("awk '$1 < 3 && $1 > 5' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
   )
   expect_equal(
     as_command_line(
@@ -448,7 +448,7 @@ test_that("as_command_line splits/merges conditions where necessary", {
       column_indices = list(x = "$1", y = "$2")
     ),
     list("awk '$1 < 3' data.csv",
-         "awk '5 < $1' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
+         "awk '$1 > 5' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
   )
   expect_equal(
     as_command_line(
@@ -459,7 +459,7 @@ test_that("as_command_line splits/merges conditions where necessary", {
       column_indices = list(x = "$1", y = "$2")
     ),
     list("awk '$1 < 3' data.csv",
-         "awk '5 < $1 && $2 < 2' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
+         "awk '$1 > 5 && $2 < 2' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'")
   )
   expect_equal(
     as_command_line(
@@ -469,7 +469,7 @@ test_that("as_command_line splits/merges conditions where necessary", {
       filename = "data.csv",
       column_indices = list(x = "$1", y = "$2")
     ),
-    list("awk '$1 < 3' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}' | awk '5 < $1'")
+    list("awk '$1 < 3' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}' | awk '$1 > 5'")
   )
 
   expect_equal(
@@ -481,7 +481,7 @@ test_that("as_command_line splits/merges conditions where necessary", {
       column_indices = list(x = "$1", y = "$2")
     ),
     list("awk '$1 < 3' data.csv | awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}'",
-         "awk '5 < $1' data.csv")
+         "awk '$1 > 5' data.csv")
   )
   expect_equal(
     as_command_line(
@@ -493,7 +493,7 @@ test_that("as_command_line splits/merges conditions where necessary", {
     ),
     list("awk '$1 < 3' data.csv",
          "awk 'BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}' data.csv",
-         "awk '5 < $1' data.csv")
+         "awk '$1 > 5' data.csv")
   )
 })
 

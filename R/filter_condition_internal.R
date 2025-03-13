@@ -86,7 +86,18 @@ strip_parentheses <- function(fcondition) {
   strip_parentheses(fcondition[[2]])
 }
 
-
+lt_to_fc <- function(fcall, ...) {
+  chainable_to_fc(fcall, "<")
+}
+lte_to_fc <- function(fcall, ...) {
+  chainable_to_fc(fcall, "<=")
+}
+gt_to_fc <- function(fcall, ...) {
+  chainable_to_fc(fcall, ">")
+}
+gte_to_fc <- function(fcall, ...) {
+  chainable_to_fc(fcall, ">=")
+}
 chainable_to_fc <- function(
   fcall,
   operator
@@ -103,7 +114,8 @@ chainable_to_fc <- function(
 
 eq_to_fc <- function(
   fcall,
-  quoted_values
+  quoted_values,
+  ...
 ) {
   stopifnot(fcall[[1]] == as.symbol("=="))
 

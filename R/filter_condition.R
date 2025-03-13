@@ -1,6 +1,7 @@
 #' @import data.table
 #' @importFrom stringr str_detect str_match str_trim
 #' @importFrom rlang enexpr caller_env env
+#' @include filter_condition_internal.R
 
 is.filter_condition <- function(x) inherits(x, "filter_condition")
 
@@ -14,6 +15,19 @@ chainable_filter_condition_functions <- list(
 combine_filter_condition_functions <- list(
   "&" = "and_filter_condition",
   "|" =  "or_filter_condition"
+)
+
+fc_convert <- list(
+  "<"      = lt_to_fc,
+  "<="     = lte_to_fc,
+  ">"      = gt_to_fc,
+  ">="     = gte_to_fc,
+  "=="     = eq_to_fc,
+  "&"      = and_to_fc,
+  "|"      = or_to_fc,
+  "("      = lp_to_fc,
+  "%in%"   = in_to_fc,
+  "%chin%" = in_to_fc
 )
 
 
@@ -45,35 +59,13 @@ new_filter_condition <- function(
   }
 
   if (!is.call(fcall)) return(fcall)
-  if (!as.character(fcall)[[1]] %in% c(names(chainable_filter_condition_functions),
-                                       names(combine_filter_condition_functions),
-                                       "%in%", "%chin%", "==", "(")) return(fcall)
+
   fcall <- as_filter_condition(fcall)
 
   fcall1 <- as.character(fcall[[1]])
-  if (fcall1 == "(")
-    return(lp_to_fc(fcall,
-                    sep = sep,
-                    quoted_values = quoted_values))
 
-  if (fcall1 == "&")
-    return(and_to_fc(fcall,
-                     sep = sep,
-                     quoted_values = quoted_values))
-
-  if (fcall1 == "|")
-    return(or_to_fc(fcall,
-                    sep = sep,
-                    quoted_values = quoted_values))
-
-  if (fcall1 %in% names(chainable_filter_condition_functions))
-    return(chainable_to_fc(fcall, fcall1))
-
-  if (fcall1 == "==")
-    return(eq_to_fc(fcall, quoted_values))
-
-  if (fcall1 %chin% c("%in%", "%chin%"))
-    return(in_to_fc(fcall, sep = sep, quoted_values = quoted_values))
+  if (fcall1 %in% names(fc_convert))
+    return(fc_convert[[fcall1]](fcall, sep = sep, quoted_values = quoted_values))
 
   fcall
 }
@@ -279,14 +271,6 @@ and_cl_bit <- function(
   paste(awk_cl1, "|", wrap_next_awk(awk_cl2, ...))
 }
 
-or_cl_bit <- function(
-  awk_cl1,
-  awk_cl2
-) {
-  list(awk_cl1, awk_cl2)
-}
-
-
 
 lt_filter_condition <- function(
     column_name,
@@ -294,36 +278,32 @@ lt_filter_condition <- function(
     env = NULL
 ) {
   # TODO Check vector length
-  cmd <- sprintf("%s < %s", column_name, value)
-  attr(cmd, "chainable") <- TRUE
-  cmd
+  structure(sprintf("%s < %s", column_name, value),
+            chainable = TRUE)
 }
 lte_filter_condition <- function(
     column_name,
     value
 ) {
   # TODO Check vector length
-  cmd <- sprintf("%s <= %s", column_name, value)
-  attr(cmd, "chainable") <- TRUE
-  cmd
+  structure(sprintf("%s <= %s", column_name, value),
+            chainable = TRUE)
 }
 gt_filter_condition <- function(
     column_name,
     value
 ) {
-  lt_filter_condition(value, column_name)
-  # # TODO Check vector length
-  # sprintf("%s > %s", column_name, value) |>
-  #   new_filter_condition(chainable = TRUE)
+  # TODO Check vector length
+  structure(sprintf("%s > %s", column_name, value),
+            chainable = TRUE)
 }
 gte_filter_condition <- function(
     column_name,
     value
 ) {
-  lte_filter_condition(value, column_name)
-  # # TODO Check vector length
-  # sprintf("%s >= %s", column_name, value) |>
-  #   new_filter_condition(chainable = TRUE)
+  # TODO Check vector length
+  structure(sprintf("%s >= %s", column_name, value),
+            chainable = TRUE)
 }
 eq_filter_condition <- function(
     column_name,
@@ -331,11 +311,10 @@ eq_filter_condition <- function(
     values_are_quoted
 ) {
   # TODO Check vector length
-  cmd <- sprintf("%s == %s",
-                 column_name,
-                 value)
-  attr(cmd, "chainable") <- TRUE
-  cmd
+  structure(sprintf("%s == %s",
+                    column_name,
+                    value),
+            chainable = TRUE)
 }
 in_filter_condition <- function(
   column_name,
@@ -346,19 +325,17 @@ in_filter_condition <- function(
   if (values_need_to_be_quoted) {
     values <- paste0("\\\"", values, "\\\"")
   }
-
-  cmd <- sprintf(
-    paste("BEGIN {split(\"%s\", vals);",
-          "for (i in vals) arr[vals[i]]}",
-          "{if (%s in arr) print $0}"),
-    paste(
-      values,
-      collapse = sep
-    ),
-    column_name
+  structure(
+    sprintf(paste("BEGIN {split(\"%s\", vals);",
+                  "for (i in vals) arr[vals[i]]}",
+                  "{if (%s in arr) print $0}"),
+            paste(
+              values,
+              collapse = sep
+            ),
+            column_name),
+    chainable = FALSE
   )
-  attr(cmd, "chainable") <- FALSE
-  cmd
 }
 
 and_filter_condition <- function(
