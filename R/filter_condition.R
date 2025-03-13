@@ -18,15 +18,16 @@ combine_filter_condition_functions <- list(
 
 
 as_filter_condition <- function(
-  fcall
+  fcall,
+  ...
 ) {
   if (!is.call(fcall)) return(fcall)
-  class(fcall) <- c("filter_condition", class(fcall)) |>
-    unique()
-  # if (1L < length(fcall)) {
-  #   fcall[-1] <- lapply(fcall[-1], as_filter_condition)
-  # }
-  fcall
+  structure(
+    fcall,
+    class = c("filter_condition", class(fcall)) |>
+      unique(),
+    ...
+  )
 }
 
 
@@ -50,65 +51,30 @@ new_filter_condition <- function(
   fcall <- as_filter_condition(fcall)
 
   fcall1 <- as.character(fcall[[1]])
-  if (fcall1 == "(") {
-    fcall[[1]] <- as.symbol("lp_filter_condition")
-    fcall[-1] <- lapply(fcall[-1],
-                        new_filter_condition,
-                        sep = sep,
-                        quoted_values = quoted_values)
-  } else if (fcall1 %in% names(combine_filter_condition_functions)) {
-    fcall[[1]] <- combine_filter_condition_functions[[fcall1]] |>
-      as.symbol()
-    fcall[-1] <- lapply(fcall[-1],
-                        new_filter_condition,
-                        sep = sep,
-                        quoted_values = quoted_values)
+  if (fcall1 == "(")
+    return(lp_to_fc(fcall,
+                    sep = sep,
+                    quoted_values = quoted_values))
 
-    if (fcall1 == "&" & !is_chainable(fcall)
-        & (any(sapply(fcall[-1], needs_parenthesis_handling))
-           | any(sapply(fcall[-1], \(x) x[[1]] == as.symbol("lp_filter_condition"))))) {
-      return(and_combine_fconditions(fcall[[2]], fcall[[3]]))
-    }
-  } else if (fcall1 %in% names(chainable_filter_condition_functions)) {
-    fcall[[1]] <- chainable_filter_condition_functions[[fcall1]] |>
-      as.symbol()
-    attr(fcall, "chainable") <- TRUE
-    attr(fcall, "pipable") <- TRUE
+  if (fcall1 == "&")
+    return(and_to_fc(fcall,
+                     sep = sep,
+                     quoted_values = quoted_values))
 
-  } else if (fcall1 == "==") {
-    if (1L < length(fcall[[2]]) | 1L < length(fcall[[3]])) {
-      stop("More than 1 element on a side of '==':\n", fcall)
-    }
-    fcall[[1]] <- as.symbol("eq_filter_condition")
-    if (is.character(fcall[[3]])) {
-      stopifnot(is.symbol(fcall[[2]]))
-      fcall[[3]] <- check_quotes(
-        fcall[[3]],
-        ifelse(as.character(fcall[[2]]) %in% names(quoted_values),
-               quoted_values[[as.character(fcall[[2]])]],
-               FALSE)
-      )
-    } else if (is.character(fcall[[2]])) {
-      stopifnot(is.symbol(fcall[[3]]))
-      fcall[[2]] <- check_quotes(
-        fcall[[2]],
-        ifelse(as.character(fcall[[3]]) %in% names(quoted_values),
-               quoted_values[[as.character(fcall[[3]])]],
-               FALSE)
-      )
-    }
-    attr(fcall, "chainable") <- TRUE
-    attr(fcall, "pipable") <- TRUE
-  } else if (fcall1 %chin% c("%in%", "%chin%")) {
-    fcall[[1]] <- as.symbol("in_filter_condition")
-    fcall$sep <- sep
-    if (as.character(fcall[[2]]) %in% names(quoted_values)) {
-      fcall$values_need_to_be_quoted <- quoted_values[[as.character(fcall[[2]])]]
-    }
-    attr(fcall, "chainable") <- FALSE
-    attr(fcall, "pipable") <- TRUE
-  }
-  if (fcall1 == "|") attr(fcall, "pipable") <- is_chainable(fcall)
+  if (fcall1 == "|")
+    return(or_to_fc(fcall,
+                    sep = sep,
+                    quoted_values = quoted_values))
+
+  if (fcall1 %in% names(chainable_filter_condition_functions))
+    return(chainable_to_fc(fcall, fcall1))
+
+  if (fcall1 == "==")
+    return(eq_to_fc(fcall, quoted_values))
+
+  if (fcall1 %chin% c("%in%", "%chin%"))
+    return(in_to_fc(fcall, sep = sep, quoted_values = quoted_values))
+
   fcall
 }
 
@@ -116,7 +82,6 @@ needs_parenthesis_handling <- function(fcall) {
   if (!is.call(fcall)) return(FALSE)
   if (fcall[[1]] == as.symbol("lp_filter_condition")) {
     return(!is_pipable(fcall))
-    # return(!is_chainable(fcall))
   } else {
     return(any(sapply(fcall[-1], needs_parenthesis_handling)))
   }

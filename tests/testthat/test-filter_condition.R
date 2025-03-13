@@ -578,9 +578,9 @@ test_that("Parentheses work as expected", {
       to_awk(column_indices) |>
       flatten_cl_bits(),
     list(
-      structure(c("3 <= $1 && $1 <= 5"), chainable = TRUE),
-      c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
-        "$1 <= 5")
+      structure(c("$1 <= 5 && 3 <= $1"), chainable = TRUE),
+      c("$1 <= 5",
+        "BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}")
     )
   )
   expect_equal(
@@ -610,7 +610,7 @@ test_that("Parentheses work as expected", {
       to_awk(column_indices) |>
       flatten_cl_bits(),
     list(
-      c("3 <= $1 || $1 < 4",
+      c("(3 <= $1 || $1 < 4)",
         "BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
     )
   )
@@ -622,7 +622,7 @@ test_that("Parentheses work as expected", {
       flatten_cl_bits(),
     list(
       c("BEGIN {split(\"a b c\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}",
-        "3 <= $1 || $1 < 4")
+        "(3 <= $1 || $1 < 4)")
     )
   )
 
@@ -632,7 +632,8 @@ test_that("Parentheses work as expected", {
     )) |>
       to_awk(column_indices) |>
       flatten_cl_bits(),
-    list(c("3 <= $1 && $1 <= 5",
+    list(c("3 <= $1",
+           "$1 <= 5",
            "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"))
   )
 
@@ -655,7 +656,8 @@ test_that("Parentheses work as expected", {
       to_awk(column_indices) |>
       flatten_cl_bits(),
     list(
-      c("3 <= $1 && $1 <= 5",
+      c("3 <= $1",
+        "$1 <= 5",
         "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
       c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
         "$1 <= 5",
@@ -668,15 +670,22 @@ test_that("Parentheses work as expected", {
     )) |>
       to_awk(column_indices) |>
       flatten_cl_bits(),
-    list("3 <= $1 && $1 <= 5",
-        structure(c("BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}",
-                    "$1 <= 5"),
-                  chainable = FALSE),
-      c("3 <= $1",
-        "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
-      structure(c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
-                  "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
-                chainable = FALSE)
+    list(
+      structure(
+        "3 <= $1 && $1 <= 5", chainable = TRUE
+      ),
+      structure(
+        c("3 <= $1",
+          "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
+      ),
+      structure(
+        c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
+          "$1 <= 5")
+      ),
+      structure(
+        c("BEGIN {split(\"a 1\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
+          "BEGIN {split(\"a\", vals); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
+      )
     )
   )
 })

@@ -12,14 +12,14 @@ test_that("And combinations work", {
   }
 
   expect_equal(
-    distributive_and(
+    distribute_and_fc(
       non_chainable_fc,
       chainable_fc
     ),
     and_fc(non_chainable_fc, chainable_fc)
   )
   expect_equal(
-    distributive_and(
+    distribute_and_fc(
       chainable_fc,
       chainable_fc
     ),
@@ -27,7 +27,7 @@ test_that("And combinations work", {
   )
 
   expect_equal(
-    distributive_and(
+    distribute_and_fc(
       non_pipable_fc,
       non_chainable_fc
     ),
