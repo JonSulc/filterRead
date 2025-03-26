@@ -1,7 +1,7 @@
 Package: filterRead
 Type: Package
 Title: Pre-filters files using awk for faster fread
-Version: 0.1.0
+Version: 1.0.1
 Author: Jonathan Sulc
 Maintainer: Jonathan Sulc <jonsulc@gmail.com>
 Description: Creates an easy-to-use interface for loading tab/comma-separated
@@ -19,7 +19,7 @@ Imports:
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Collate: 
     'file_interface.R'
     'filter_condition_internal.R'

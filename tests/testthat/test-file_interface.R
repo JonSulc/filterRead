@@ -234,3 +234,13 @@ test_that("Quoting works properly", {
     "\"\\\"a\\\"\""
   )
 })
+
+test_that("Full command line with gz detection works", {
+  expect_equal(
+    new_file_interface(
+      gz_filename,
+      column_names = list(chr = "Chromsome")
+    )[chr == 10, return_only_cmd = TRUE],
+    list("zcat ~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz | awk '$2 == 10'")
+  )
+})

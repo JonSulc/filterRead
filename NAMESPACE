@@ -3,6 +3,7 @@
 S3method("[",file_interface)
 S3method(head,file_interface)
 S3method(print,file_interface)
+export(new_file_interface)
 import(data.table)
 importFrom(rlang,caller_env)
 importFrom(rlang,enexpr)

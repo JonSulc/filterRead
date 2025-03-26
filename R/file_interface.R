@@ -1,5 +1,6 @@
 #' @import data.table
 
+#' @export
 new_file_interface <- function(
   filename,
   column_names = NULL
@@ -178,7 +179,8 @@ validate_file_interface <- function(
     as_command_line(
       finterface$filename,
       column_indices = finterface$column_info$bash_index,
-      sep = finterface$sep
+      sep = finterface$sep,
+      gzipped = finterface$gzipped
     )
 
   if (return_only_cmd) return(command_line)
