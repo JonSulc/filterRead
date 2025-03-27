@@ -74,7 +74,7 @@ head.file_interface <- function(
   nlines = 1,
   ...
 ) {
-  if (!"column_indices" %in% names(finterface)) {
+  if (!"column_info" %in% names(finterface)) {
     return(
       data.table::fread(
         cmd = fhead_cmd(finterface, nlines + 1),
@@ -84,7 +84,7 @@ head.file_interface <- function(
   }
   data.table::fread(
     cmd = fhead_cmd(finterface, nlines + 1),
-    col.names = names(finterface$column_indices),
+    col.names = names(finterface$column_info$index),
     ...
   )
 }
