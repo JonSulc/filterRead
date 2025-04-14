@@ -21,6 +21,7 @@ Suggests:
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2
 Collate: 
+    'columns.R'
     'file_interface.R'
     'filter_condition_internal.R'
     'filter_condition.R'

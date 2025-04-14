@@ -244,3 +244,61 @@ test_that("Full command line with gz detection works", {
     list("zcat ~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz | awk '$2 == 10'")
   )
 })
+
+test_that("Prefixes are handled correctly", {
+  finterface <- local_summary_stats_interface(
+    "data.csv",
+    chr    = 1,
+    prefix = list(chr = "chr")
+  )
+
+  expect_equal(
+    check_single_column_prefix(finterface,
+                               col_index = "$1",
+                               prefix    = "chr"),
+    "chr"
+  )
+  expect_equal(
+    check_single_column_prefix(finterface,
+                               col_index = "$1",
+                               prefix    = "incorrect"),
+    NULL
+  )
+
+  expect_equal(
+    get_prefixes(
+      finterface,
+      file_colnames = list(chr = "$1"),
+      prefixes      = list(chr = "chr")
+    ),
+    list(chr = "chr")
+  )
+  expect_equal(
+    get_prefixes(
+      finterface,
+      file_colnames = list(chr = "$1"),
+      prefixes      = list(chr = "chr")
+    ),
+    get_prefixes(
+      finterface,
+      file_colnames  = list(chr = "$1"),
+      prefixes       = list(chr = "chr"),
+      nrows_to_check = NULL
+    )
+  )
+  expect_equal(
+    get_prefixes(
+      finterface,
+      file_colnames = list(chr = "$1"),
+      prefixes      = list(chr = "incorrect")
+    ),
+    list() |>
+      setNames(character())
+  )
+
+  expect_equal(
+    finterface[chr == 1] |>
+      suppressWarnings(),
+    finterface[chr == "chr1"]
+  )
+})

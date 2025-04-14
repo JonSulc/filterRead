@@ -3,7 +3,8 @@
 #' @export
 new_file_interface <- function(
   filename,
-  column_names = NULL
+  column_names = NULL,
+  prefixes     = NULL
 ) {
   stopifnot(is.character(filename))
   stopifnot(file.exists(filename))
@@ -12,7 +13,8 @@ new_file_interface <- function(
                           class = c("file_interface", "character"))
   finterface$column_info <- get_column_info(
     finterface,
-    column_names = column_names
+    column_names = column_names,
+    prefixes     = prefixes
   )
 
   finterface$sep <- get_file_separator(finterface)
@@ -21,7 +23,8 @@ new_file_interface <- function(
 
 get_column_info <- function(
   finterface,
-  column_names = NULL
+  column_names = NULL,
+  prefixes = summary_stats_prefixes
 ) {
   file_colnames <- get_column_names(finterface) |>
     swap_in_column_names(column_names)
@@ -31,7 +34,8 @@ get_column_info <- function(
                              names(file_colnames)),
     bash_index    = file_colnames,
     quoted_values = are_values_quoted(finterface) |>
-      as.list()
+      as.list(),
+    prefixes      = get_prefixes(finterface, file_colnames, prefixes)
   )
 }
 
@@ -110,9 +114,9 @@ are_values_quoted <- function(
 }
 
 check_quotes <- function(
-    value,
-    value_needs_to_be_quoted,
-    base_enquote = TRUE
+  value,
+  value_needs_to_be_quoted,
+  base_enquote = TRUE
 ) {
   if (is.null(value_needs_to_be_quoted)) {
     value_needs_to_be_quoted <- FALSE
@@ -123,6 +127,54 @@ check_quotes <- function(
   if (number_of_quotes == 0) return(value)
   if (number_of_quotes == 1) return(paste0("\"", value, "\""))
   paste0("\"\\\"", value, "\\\"\"")
+}
+
+get_prefixes <- function(
+  finterface,
+  file_colnames,
+  prefixes = NULL,
+  nrows_to_check = 500
+) {
+  intersect(
+    names(file_colnames),
+    names(prefixes)
+  ) |>
+    setNames(nm = _) |>
+    lapply(
+      \(colname) {
+        check_single_column_prefix(
+          finterface     = finterface,
+          col_index      = file_colnames[[colname]],
+          prefix         = prefixes[[colname]],
+          nrows_to_check = nrows_to_check
+        )
+      }
+    ) |>
+    {\(x) x[!sapply(x, is.null)]}()
+}
+
+check_single_column_prefix <- function(
+  finterface,
+  col_index,
+  prefix,
+  nrows_to_check = 500
+) {
+  awk_script <- sprintf(
+    "NR > 1 && %s !~ (\"^%s\") { exit 1 }",
+    col_index,
+    prefix
+  )
+  if (is.null(nrows_to_check)) {
+    cmd <- wrap_first_awk(
+      awk_script,
+      finterface$filename
+    )
+  } else {
+    cmd <- fhead_cmd(finterface, nrows_to_check) |>
+      paste("|", wrap_next_awk(awk_script))
+  }
+  if (system(cmd) == 1) return()
+  prefix
 }
 
 is_value_numeric <- function(
@@ -202,9 +254,18 @@ print.file_interface <- function(
   finterface
 ) {
   cat(sprintf("\"%s\"\n", finterface$filename))
-  cat(sprintf("Columns: %s",
-              paste(names(finterface$column_info$index), collapse = ", ")),
-      "\n")
+  cat(sprintf("Columns: %s\n",
+              paste(names(finterface$column_info$index), collapse = ", ")))
+  cat(sprintf(
+    "Prefixes: %s\n",
+    ifelse(length(finterface$column_info$prefixes) == 0,
+           "none",
+           sapply(names(finterface$column_info$prefixes),
+                  \(col_name) {
+                    sprintf("%s - \"%s\"", col_name, finterface$column_info$prefixes[[col_name]])
+                  }) |>
+             paste(collapse = ", "))
+  ))
   cat(sprintf(
     "Gzipped: %s, Quoted: %s",
     finterface$gzipped,
