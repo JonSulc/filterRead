@@ -164,7 +164,7 @@ local_summary_stats <- function(
   ref_col_names     = summary_stats_column_names,
   random_names      = TRUE,
   values_are_quoted = FALSE,
-  prefix = NULL,
+  prefixes = NULL,
   ...,
   env    = parent.frame()
 ) {
@@ -180,7 +180,7 @@ local_summary_stats <- function(
     ref_col_names = ref_col_names,
     random_names = random_names,
     values_are_quoted = FALSE,
-    prefix = prefix
+    prefixes = prefixes
   ) |>
     local_csv_file(
       filename = filename,
@@ -192,10 +192,11 @@ local_summary_stats <- function(
 
 local_summary_stats_interface <- function(
   filename = "data.csv",
+  prefixes = NULL,
   ...,
   column_names = summary_stats_column_names,
   env = parent.frame()
 ) {
-  local_summary_stats(filename = filename, ..., env = env)
-  new_file_interface(filename, column_names = column_names)
+  local_summary_stats(filename = filename, prefixes = prefixes, ..., env = env)
+  new_file_interface(filename, column_names = column_names, prefixes = prefixes)
 }
