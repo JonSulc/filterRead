@@ -38,9 +38,10 @@ as_filter_condition <- function(
 
 new_filter_condition <- function(
   fcall,
-  column_names = NULL,
-  sep = " ",
-  quoted_values = NULL
+  column_names  = NULL,
+  sep           = " ",
+  quoted_values = NULL,
+  prefixes      = NULL
 ) {
   # If column_names is provided, substitutes the condition variables with the
   # column names
@@ -58,8 +59,9 @@ new_filter_condition <- function(
   if (as.character(fcall[[1]]) %in% names(fc_convert))
     return(
       fc_convert[[as.character(fcall[[1]])]](fcall,
-                                             sep = sep,
-                                             quoted_values = quoted_values)
+                                             sep           = sep,
+                                             quoted_values = quoted_values,
+                                             prefixes      = prefixes)
     )
 
   fcall
@@ -315,11 +317,19 @@ in_filter_condition <- function(
   column_name,
   values,
   sep,
-  values_need_to_be_quoted = FALSE
+  values_need_to_be_quoted = FALSE,
+  prefix = NULL
 ) {
   if (values_need_to_be_quoted) {
     values <- paste0("\\\"", values, "\\\"")
   }
+  if (!is.null(prefix)) {
+    values <- sapply(values, \(value) {
+      if (stringr::str_detect(value, paste0("^", prefix))) return(value)
+      paste0(prefix, value)
+    })
+  }
+
   structure(
     sprintf(paste("BEGIN {split(\"%s\", vals);",
                   "for (i in vals) arr[vals[i]]}",

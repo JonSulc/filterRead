@@ -753,3 +753,39 @@ test_that("Quoted values are handled correctly", {
     list("awk 'BEGIN {split(\"\\\"a\\\" \\\"1\\\"\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}' data.csv")
   )
 })
+
+test_that("Prefixes are handled properly",  {
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x == 1),
+      prefixes = list(x = "test")
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk '$1 == \"test1\"' data.csv")
+  )
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x == "test1"),
+      prefixes = list(x = "test")
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk '$1 == \"test1\"' data.csv")
+  )
+
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x %in% 1:3),
+      prefixes = list(x = "test")
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk 'BEGIN {split(\"test1 test2 test3\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}' data.csv")
+  )
+  expect_equal(
+    new_filter_condition(
+      rlang::expr(x %in% paste0("test", 1:3)),
+      prefixes = list(x = "test")
+    ) |>
+      as_command_line("data.csv", list(x = "$1")),
+    list("awk 'BEGIN {split(\"test1 test2 test3\", vals); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}' data.csv")
+  )
+})

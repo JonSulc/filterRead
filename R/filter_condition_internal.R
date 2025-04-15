@@ -1,4 +1,5 @@
 #' @import data.table
+#' @importFrom stringr str_detect
 
 lp_to_fc <- function(
   fcall,
@@ -116,9 +117,33 @@ chainable_to_fc <- function(
 }
 
 
+check_prefixes <- function(
+  fcallm1,
+  prefixes
+) {
+  if (is.symbol(fcallm1[[1]])) {
+    if (as.character(fcallm1[[1]]) %in% names(prefixes)) {
+      if (!stringr::str_detect(fcallm1[[2]],
+                               paste0("^", prefixes[[as.character(fcallm1[[1]])]]))) {
+        fcallm1[[2]] <- paste0(prefixes[[as.character(fcallm1[[1]])]], fcallm1[[2]])
+      }
+    }
+  } else if (is.symbol(fcallm1[[2]])) {
+    if (as.character(fcallm1[[2]]) %in% names(prefixes)) {
+      if (!stringr::str_detect(fcallm1[[1]],
+                               paste0("^", prefixes[[as.character(fcallm1[[2]])]]))) {
+        fcallm1[[1]] <- paste0(prefixes[[as.character(fcallm1[[2]])]], fcallm1[[1]])
+      }
+    }
+  }
+  fcallm1
+}
+
+
 eq_to_fc <- function(
   fcall,
   quoted_values,
+  prefixes,
   ...
 ) {
   stopifnot(fcall[[1]] == as.symbol("=="))
@@ -127,6 +152,11 @@ eq_to_fc <- function(
     stop("More than 1 element on a side of '==':\n", fcall)
   }
   fcall[[1]] <- as.symbol("eq_filter_condition")
+
+  if (!is.null(prefixes)) {
+    fcall[-1] <- check_prefixes(fcall[-1], prefixes)
+  }
+
   if (is.character(fcall[[3]])) {
     stopifnot(is.symbol(fcall[[2]]))
     fcall[[3]] <- check_quotes(
@@ -153,12 +183,16 @@ eq_to_fc <- function(
 in_to_fc <- function(
   fcall,
   sep,
-  quoted_values
+  quoted_values,
+  prefixes
 ) {
   fcall[[1]] <- as.symbol("in_filter_condition")
   fcall$sep <- sep
   if (as.character(fcall[[2]]) %in% names(quoted_values)) {
     fcall$values_need_to_be_quoted <- quoted_values[[as.character(fcall[[2]])]]
+  }
+  if (as.character(fcall[[2]]) %in% names(prefixes)) {
+    fcall$prefix <- prefixes[[as.character(fcall[[2]])]]
   }
   attr(fcall, "chainable") <- FALSE
   attr(fcall, "pipable") <- TRUE

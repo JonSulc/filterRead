@@ -29,13 +29,19 @@ get_column_info <- function(
   file_colnames <- get_column_names(finterface) |>
     swap_in_column_names(column_names)
 
-  list(
+  finterface$column_info <- list(
     index         = setNames(seq_along(file_colnames),
                              names(file_colnames)),
-    bash_index    = file_colnames,
-    quoted_values = are_values_quoted(finterface) |>
-      as.list(),
-    prefixes      = get_prefixes(finterface, file_colnames, prefixes)
+    bash_index    = file_colnames
+  )
+
+  c(
+    finterface$column_info,
+    list(
+      quoted_values = are_values_quoted(finterface) |>
+        as.list(),
+      prefixes      = get_prefixes(finterface, file_colnames, prefixes)
+    )
   )
 }
 
@@ -227,8 +233,9 @@ validate_file_interface <- function(
 ) {
   command_line <- new_filter_condition(
     rlang::enexpr(conditions),
-    sep = finterface$sep,
-    quoted_values = finterface$column_info$quoted_values
+    sep           = finterface$sep,
+    quoted_values = finterface$column_info$quoted_values,
+    prefixes      = finterface$column_info$prefixes
   ) |>
     as_command_line(
       finterface$filename,

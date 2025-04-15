@@ -304,12 +304,9 @@ test_that("Prefixes are handled correctly", {
         setNames(character())
     )
 
-    # suppressWarnings() used temporarily for simplicity, to be removed when functional
     expect_equal(
-      finterface[chr == 1] |>
-        suppressWarnings(),
-      finterface[chr == "chr1"] |>
-        suppressWarnings()
+      finterface[chr == 1],
+      finterface[chr == "chr1"]
     )
   }
 })
