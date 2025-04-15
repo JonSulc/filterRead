@@ -56,3 +56,9 @@ test_that("Simulated stats initialize properly", {
 test_that("Dummy summary stats cleanup works", {
   expect_false(file.exists(filename = "data.csv"))
 })
+
+test_that("Quoted summary stats work", {
+  local_summary_stats(filename = "data.csv", values_are_quoted = TRUE)
+  test <- data.table::fread("data.csv", quote = "")
+  expect_true(all(stringr::str_detect(names(test), "\"[^\"]")))
+})

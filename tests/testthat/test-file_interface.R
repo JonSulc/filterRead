@@ -246,59 +246,70 @@ test_that("Full command line with gz detection works", {
 })
 
 test_that("Prefixes are handled correctly", {
-  finterface <- local_summary_stats_interface(
+  finterface_b <- local_summary_stats_interface(
     "data.csv",
     chr    = 1,
     prefix = list(chr = "chr")
   )
-
-  expect_equal(
-    check_single_column_prefix(finterface,
-                               col_index = "$1",
-                               prefix    = "chr"),
-    "chr"
+  finterface_q <- local_summary_stats_interface(
+    "data_q.csv",
+    chr    = 1,
+    prefix = list(chr = "chr"),
+    values_are_quoted = TRUE
   )
-  expect_equal(
-    check_single_column_prefix(finterface,
-                               col_index = "$1",
-                               prefix    = "incorrect"),
-    NULL
+  finterface_gz <- local_summary_stats_interface(
+    "data.csv.gz",
+    chr    = 1,
+    prefix = list(chr = "chr")
   )
 
-  expect_equal(
-    get_prefixes(
-      finterface,
-      file_colnames = list(chr = "$1"),
-      prefixes      = list(chr = "chr")
-    ),
-    list(chr = "chr")
-  )
-  expect_equal(
-    get_prefixes(
-      finterface,
-      file_colnames = list(chr = "$1"),
-      prefixes      = list(chr = "chr")
-    ),
-    get_prefixes(
-      finterface,
-      file_colnames  = list(chr = "$1"),
-      prefixes       = list(chr = "chr"),
-      nrows_to_check = NULL
+  for (finterface in list(finterface_b, finterface_q, finterface_gz)) {
+    expect_equal(
+      check_single_column_prefix(finterface,
+                                 col_index = "$1",
+                                 prefix    = "chr"),
+      "chr"
     )
-  )
-  expect_equal(
-    get_prefixes(
-      finterface,
-      file_colnames = list(chr = "$1"),
-      prefixes      = list(chr = "incorrect")
-    ),
-    list() |>
-      setNames(character())
-  )
+    expect_equal(
+      check_single_column_prefix(finterface,
+                                 col_index = "$1",
+                                 prefix    = "incorrect"),
+      NULL
+    )
 
-  expect_equal(
-    finterface[chr == 1] |>
-      suppressWarnings(),
-    finterface[chr == "chr1"]
-  )
+    expect_equal(
+      get_prefixes(
+        finterface,
+        file_colnames = list(chr = "$1"),
+        prefixes      = list(chr = "chr")
+      ),
+      list(chr = "chr")
+    )
+    expect_equal(
+      get_prefixes(
+        finterface,
+        file_colnames = list(chr = "$1"),
+        prefixes      = list(chr = "chr"),
+        nrows_to_check = NULL
+      ),
+      list(chr = "chr")
+    )
+    expect_equal(
+      get_prefixes(
+        finterface,
+        file_colnames = list(chr = "$1"),
+        prefixes      = list(chr = "incorrect")
+      ),
+      list() |>
+        setNames(character())
+    )
+
+    # suppressWarnings() used temporarily for simplicity, to be removed when functional
+    expect_equal(
+      finterface[chr == 1] |>
+        suppressWarnings(),
+      finterface[chr == "chr1"] |>
+        suppressWarnings()
+    )
+  }
 })

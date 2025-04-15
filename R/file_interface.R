@@ -160,14 +160,16 @@ check_single_column_prefix <- function(
   nrows_to_check = 500
 ) {
   awk_script <- sprintf(
-    "NR > 1 && %s !~ (\"^%s\") { exit 1 }",
+    "NR > 1 && %s !~ (\"^[\\\"]?%s\") { exit 1 }",
     col_index,
     prefix
   )
   if (is.null(nrows_to_check)) {
     cmd <- wrap_first_awk(
       awk_script,
-      finterface$filename
+      filename = finterface$filename,
+      sep      = finterface$sep,
+      gzipped  = finterface$gzipped
     )
   } else {
     cmd <- fhead_cmd(finterface, nrows_to_check) |>

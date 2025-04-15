@@ -12,27 +12,43 @@ dummy_dt <- function(
 apply_formatting <- function(
   dt,
   values_are_quoted = FALSE,
-  prefix = NULL
+  prefixes = NULL
+) {
+  add_prefixes_to_dt(dt, prefixes)
+  add_quotes_to_dt(dt, values_are_quoted)
+  invisible(dt)
+}
+
+add_prefixes_to_dt <- function(
+  dt,
+  prefixes
 ) {
   purrr::walk(
-    names(prefix),
+    names(prefixes),
     \(column_name) {
       dt[
         ,
-        (column_name) := paste0(prefix[[column_name]], get(column_name))
+        (column_name) := paste0(prefixes[[column_name]], get(column_name))
       ][]
     }
   )
+  invisible(dt)
+}
+add_quotes_to_dt <- function(
+  dt,
+  values_are_quoted
+) {
   if (!values_are_quoted) return(dt)
   dt[
     ,
-    char := add_quotes(char)
+    names(.SD) := lapply(.SD, add_quotes),
+    .SDcols = is.character
   ][]
   data.table::setnames(
     dt,
     add_quotes(names(dt))
   )
-  dt
+  invisible(dt)
 }
 
 # If `x` argument of sample is length 1 integer, will sample from 1:x instead
@@ -58,7 +74,7 @@ dummy_summary_stats <- function(
   ref_col_names     = summary_stats_column_names,
   random_names      = TRUE,
   values_are_quoted = FALSE,
-  prefix = NULL
+  prefixes = NULL
 ) {
   if (is.null(pval)) pval <- runif(nrows)
   if (is.null(effect)) effect <- rnorm(nrows)
@@ -82,9 +98,7 @@ dummy_summary_stats <- function(
     c("chr", "pos", "ref", "alt", "effect", "pval")
   )
 
-  dt <- apply_formatting(dt,
-                         values_are_quoted = values_are_quoted,
-                         prefix = prefix)
+  add_prefixes_to_dt(dt, prefixes)
 
   if (random_names) {
     data.table::setnames(
@@ -95,6 +109,8 @@ dummy_summary_stats <- function(
       )
     )
   }
+
+  add_quotes_to_dt(dt, values_are_quoted)
 
   dt
 }
@@ -163,12 +179,13 @@ local_summary_stats <- function(
     pval = pval,
     ref_col_names = ref_col_names,
     random_names = random_names,
-    values_are_quoted = values_are_quoted,
+    values_are_quoted = FALSE,
     prefix = prefix
   ) |>
     local_csv_file(
       filename = filename,
       dt = _,
+      quote = values_are_quoted,
       env = env
     )
 }
