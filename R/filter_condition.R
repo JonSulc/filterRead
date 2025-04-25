@@ -41,7 +41,9 @@ new_filter_condition <- function(
   column_names  = NULL,
   sep           = " ",
   quoted_values = NULL,
-  prefixes      = NULL
+  prefixes      = NULL,
+  encoded_column_names = NULL,
+  encoded_pattern = NULL # TODO Pass arguments from file_interface
 ) {
   # If column_names is provided, substitutes the condition variables with the
   # column names
@@ -56,15 +58,17 @@ new_filter_condition <- function(
 
   fcall <- as_filter_condition(fcall)
 
-  if (as.character(fcall[[1]]) %in% names(fc_convert))
-    return(
-      fc_convert[[as.character(fcall[[1]])]](fcall,
-                                             sep           = sep,
-                                             quoted_values = quoted_values,
-                                             prefixes      = prefixes)
-    )
+  if (!as.character(fcall[[1]]) %in% names(fc_convert)) return(fcall)
 
-  fcall
+  fcondition <- fc_convert[[as.character(fcall[[1]])]](
+    fcall,
+    sep           = sep,
+    quoted_values = quoted_values,
+    prefixes      = prefixes,
+    encoded_column_names = encoded_column_names
+  )
+  attr(fcondition, "encoded_pattern") <- encoded_pattern
+  fcondition
 }
 
 needs_parenthesis_handling <- function(fcall) {
@@ -88,7 +92,6 @@ is_chainable <- function(
   if (is.call(fcall)) return(all(sapply(fcall[-1], is_chainable)))
   all(sapply(fcall, is_chainable))
 }
-
 are_chainable <- function(
   left,
   right,
@@ -121,6 +124,19 @@ is_pipable <- function(
   all(sapply(fcall, is_pipable))
 }
 
+is_encoded <- function(
+  fcall,
+  encoded_column_names = NULL
+) {
+  if (is.null(encoded_column_names)) return(FALSE)
+  if (!is.null(attr(fcall, "encoded")))
+    return(attr(fcall, "encoded"))
+
+  if (is.symbol(fcall)) return(as.character(fcall) %in% encoded_column_names)
+  if (!is.call(fcall)) return(FALSE)
+  any(sapply(fcall[-1], is_encoded, encoded_column_names = encoded_column_names))
+}
+
 get_indices_from_column_names <- function(
   column_names
 ) {
@@ -145,16 +161,17 @@ to_awk <- function(
 as_command_line <- function(
   fcall,
   filename,
+  column_info,
   column_indices,
   ...
 ) {
-  cl_bits <- to_awk(
+  # TODO Pick up here, change how internals process conditions
+  to_awk(
     fcall,
     column_indices
   ) |>
-    flatten_cl_bits()
-
-  lapply(cl_bits, wrap_awk, filename, ...)
+    flatten_cl_bits() |>
+    lapply(wrap_awk, filename, encoded_pattern = attr(fcall, "encoded_pattern"), ...)
 }
 
 flatten_cl_bits <- function(
@@ -210,13 +227,14 @@ wrap_first_awk <- function(
   single_awk_cl,
   filename,
   sep = " ",
-  gzipped = FALSE
+  gzipped = FALSE,
+  encoded_pattern = NULL
 ) {
   if (1L < length(single_awk_cl)) {
     single_awk_cl[[1L]] <- wrap_first_awk(single_awk_cl[[1L]],
-                                         filename,
-                                         sep = sep,
-                                         gzipped = gzipped)
+                                          filename,
+                                          sep = sep,
+                                          gzipped = gzipped)
     single_awk_cl[-1L] <- wrap_next_awk(single_awk_cl[-1L], sep = sep)
     return(single_awk_cl)
   }
@@ -225,23 +243,34 @@ wrap_first_awk <- function(
       sprintf("zcat %s | awk%s '%s'",
               filename,
               ifelse(sep == ",", " -F','", ""),
-              single_awk_cl)
+              encoded_to_awk(single_awk_cl, encoded_pattern = encoded_pattern))
     )
   }
   sprintf("awk%s '%s' %s",
           ifelse(sep == ",", " -F','", ""),
-          single_awk_cl,
+          encoded_to_awk(single_awk_cl, encoded_pattern = encoded_pattern),
           filename)
+}
+
+encoded_to_awk <- function(
+  single_awk_cl,
+  encoded_pattern
+) {
+  if (is.null(attr(single_awk_cl, "encoded"))) return(single_awk_cl)
+  if (is.null(encoded_pattern))
+    stop("Values are encoded but no pattern is provided")
+  sprintf(encoded_pattern, single_awk_cl)
 }
 
 wrap_next_awk <- function(
   single_awk_cl,
   sep = " ",
+  encoded_pattern = NULL,
   ...
 ) {
   sprintf("awk%s '%s'",
           ifelse(sep == ",", " -F','", ""),
-          single_awk_cl)
+          encoded_to_awk(single_awk_cl, encoded_pattern = encoded_pattern))
 }
 
 and_cl_bit <- function(
@@ -272,46 +301,54 @@ and_cl_bit <- function(
 lt_filter_condition <- function(
     column_name,
     value,
-    env = NULL
+    encoded
 ) {
   # TODO Check vector length
   structure(sprintf("%s < %s", column_name, value),
-            chainable = TRUE)
+            chainable = TRUE,
+            encoded   = encoded)
 }
 lte_filter_condition <- function(
     column_name,
-    value
+    value,
+    encoded
 ) {
   # TODO Check vector length
   structure(sprintf("%s <= %s", column_name, value),
-            chainable = TRUE)
+            chainable = TRUE,
+            encoded   = encoded)
 }
 gt_filter_condition <- function(
     column_name,
-    value
+    value,
+    encoded
 ) {
   # TODO Check vector length
   structure(sprintf("%s > %s", column_name, value),
-            chainable = TRUE)
+            chainable = TRUE,
+            encoded   = encoded)
 }
 gte_filter_condition <- function(
     column_name,
-    value
+    value,
+    encoded
 ) {
   # TODO Check vector length
   structure(sprintf("%s >= %s", column_name, value),
-            chainable = TRUE)
+            chainable = TRUE,
+            encoded   = encoded)
 }
 eq_filter_condition <- function(
     column_name,
     value,
-    values_are_quoted
+    encoded = FALSE
 ) {
-  # TODO Check vector length
+  # TODO Check quoted values are properly handled
   structure(sprintf("%s == %s",
                     column_name,
                     value),
-            chainable = TRUE)
+            chainable = TRUE,
+            encoded   = encoded)
 }
 in_filter_condition <- function(
   column_name,

@@ -11,8 +11,11 @@ summary_stats_column_names <- list(
           "CHR",
           "ISmet_chr",
           "Chr",
-          "Chromsome" # Yup...
-          ),
+          "Chromsome", # Yup...
+          "chrom",
+          "WMHmet_chr",
+          "CHROMOSOME",
+          "BImet_chr"),
 
   pos = c("pos",
           "SNPPos",
@@ -24,7 +27,13 @@ summary_stats_column_names <- list(
           "BP",
           "Pos",
           "Pos_b37",
-          "MapInfo"),
+          "MapInfo",
+          "Physical_Location",
+          "PhysPos",
+          "chromStart",
+          "WMHmet_position",
+          "POSITION",
+          "BImet_pos"),
 
   ref = c("ref",
           "OtherAllele",
@@ -35,7 +44,9 @@ summary_stats_column_names <- list(
           "NEA",
           "Noncoded_allele",
           "noncoded_all",
-          "Other_allele"),
+          "Other_allele",
+          "WMHmet_NonEffAllele",
+          "BImet_ref.noncoded"),
 
   alt = c("alt",
           "AssessedAllele",
@@ -75,7 +86,9 @@ summary_stats_column_names <- list(
            "PVAL",
            "P",
            "P.value",
-           "ISmet_pvalue"),
+           "ISmet_pvalue",
+           "WMHmet_P",
+           "BImet_meta.p"),
 
   log10p = c("LOG10P"),
 
@@ -88,7 +101,8 @@ summary_stats_column_names <- list(
                 "StdErr"),
 
   zscore = c("Zscore",
-             "Test statistic"),
+             "Test statistic",
+             "WMHmet_ZScore"),
 
   odds_ratio = c("OR")
 )
@@ -117,3 +131,68 @@ summary_stats_extra_column_names <- list(
 summary_stats_prefixes <- list(
   chr = "chr"
 )
+
+# In some CHARGE files, there is no position column but it is encoded in other
+# columns (in ~/Databases/CHARGE/authorized_data/deflated_organized/submission)
+# The name of the list element indicates the column name in the file
+summary_stats_encoded_columns <- list(
+  MarkerName = list(
+    # e.g., sub20200527/accumbens_eur_z_ldsc_unrestricted_NG05SEP19.out
+    list(pattern = "%s:%s",
+         regex   = "^([^:]{1,2}):([0-9]+)$",
+         names   = c("chr", "pos"),
+         substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
+         awk     = "BEGIN{OFS=FS} {
+    # Split the content of the relevant column (e.g., $1) into the array `parts` using `:` as delimiter
+    split(%s, encoded, \":\");
+
+    if (%%s) {
+        # If conditions are met, print the whole line
+        print $0
+    }
+}",
+         sprintf_in = c("column_index", "condition")),
+
+    # e.g., sub20180725/SVE.european.results.metal.csv
+    list(pattern = "%s-c%s:%s-$",
+         regex   = "^(b3[6-8])-c([^:]{1,2}):([0-9]+)-[0-9]+$",
+         names   = c("build", "chr", "pos")),
+
+    # e.g., sub20190511/invnormFT4_overall_150611_invvar1.txt-QCfiltered_GC.rsid.txt
+    list(pattern = "%s:%s:SNP",
+         regex   = "^([^:]+):([0-9]+):[^:]+$",
+         names   = c("chr", "pos")),
+
+    # e.g., sub20201231_01/BP-ICE_EUR_SBP_transformed_15-04-2020.txt
+    list(pattern = "chr%s:%i:",
+         regex   = "^(chr[^:]{1,2}):([0-9]+):[a-zA-Z]+:[a-zA-Z]+$",
+         names   = c("chr", "pos"))
+  ),
+
+  chr_colon_pos = list(
+    # e.g., sub20180818/vv.results.metal.txt
+    list(pattern = "%s:%s",
+         regex   = "^([^:]{1,2}):([0-9]+)$",
+         names   = c("chr", "pos"))
+  ),
+
+  Chr_Pos = list(
+    # e.g., sub20200523/FVIIactivity_EA_AA_trans.csv
+    list(pattern = "%s:%s",
+         regex   = "^([^:]{1,2}):([0-9]+)$",
+         names   = c("chr", "pos"))
+  )
+)
+# In other files (e.g., sub20171222/appendicularleanmass.results.metal.txt)
+# there are only rsids, currently unsupported
+
+# TODO Check specific files once the encoded column parsing is implemented
+# Check:
+#   sub20181231/fgf23gwas.model1.txt
+#   sub20181227/Plaque_meta_032218.csv
+#   sub20170706/mwmh_meta_final_SD.csv
+#   sub20190101/1KG_CRP_GWAS_AJHG_2018.txt
+#   sub20170708/mSCI_meta_final_Josh_SD.csv
+#   sub20200523/FVIIactivity_EA_AA_trans.csv
+# Should fail properly:
+#   sub20200329/Hispanic.QRS.GWAS.FullResults.GenomicControl.Final.csv

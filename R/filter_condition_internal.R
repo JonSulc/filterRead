@@ -88,20 +88,22 @@ strip_parentheses <- function(fcondition) {
 }
 
 lt_to_fc <- function(fcall, ...) {
-  chainable_to_fc(fcall, "<")
+  chainable_to_fc(fcall, "<", ...)
 }
 lte_to_fc <- function(fcall, ...) {
-  chainable_to_fc(fcall, "<=")
+  chainable_to_fc(fcall, "<=", ...)
 }
 gt_to_fc <- function(fcall, ...) {
-  chainable_to_fc(fcall, ">")
+  chainable_to_fc(fcall, ">", ...)
 }
 gte_to_fc <- function(fcall, ...) {
-  chainable_to_fc(fcall, ">=")
+  chainable_to_fc(fcall, ">=", ...)
 }
 chainable_to_fc <- function(
   fcall,
-  operator
+  operator,
+  encoded_pattern,
+  ...
 ) {
   stopifnot(operator %in% c("<", "<=", ">", ">="))
 
@@ -113,6 +115,9 @@ chainable_to_fc <- function(
   )[[operator]]
   attr(fcall, "chainable") <- TRUE
   attr(fcall, "pipable") <- TRUE
+  fcall[length(fcall) + 1] <- list(
+    encoded = is_encoded(fcall, ...)
+  )
   fcall
 }
 
@@ -144,6 +149,8 @@ eq_to_fc <- function(
   fcall,
   quoted_values,
   prefixes,
+  encoded_column_names = NULL,
+  encoded_pattern = NULL,
   ...
 ) {
   stopifnot(fcall[[1]] == as.symbol("=="))
@@ -176,6 +183,9 @@ eq_to_fc <- function(
   }
   attr(fcall, "chainable") <- TRUE
   attr(fcall, "pipable") <- TRUE
+  fcall[length(fcall) + 1] <- list(
+    encoded = is_encoded(fcall, encoded_column_names = encoded_column_names)
+  )
   fcall
 }
 

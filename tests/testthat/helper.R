@@ -200,3 +200,10 @@ local_summary_stats_interface <- function(
   local_summary_stats(filename = filename, prefixes = prefixes, ..., env = env)
   new_file_interface(filename, column_names = column_names, prefixes = prefixes)
 }
+
+combine_values <- function(
+  summary_stats,
+  pattern
+) {
+
+}

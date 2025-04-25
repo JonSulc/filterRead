@@ -3,19 +3,23 @@
 #' @export
 new_file_interface <- function(
   filename,
-  column_names = NULL,
-  prefixes     = NULL
+  column_names    = summary_stats_column_names,
+  prefixes        = summary_stats_prefixes,
+  encoded_columns = summary_stats_encoded_columns
 ) {
   stopifnot(is.character(filename))
   stopifnot(file.exists(filename))
   finterface <- structure(list(filename = filename,
                                gzipped  = is_gzipped(filename)),
                           class = c("file_interface", "character"))
+
   finterface$column_info <- get_column_info(
     finterface,
-    column_names = column_names,
-    prefixes     = prefixes
+    column_names    = column_names,
+    prefixes        = prefixes
   )
+
+  finterface <- add_encoded_columns(finterface, encoded_columns)
 
   finterface$sep <- get_file_separator(finterface)
   finterface
@@ -23,8 +27,8 @@ new_file_interface <- function(
 
 get_column_info <- function(
   finterface,
-  column_names = NULL,
-  prefixes = summary_stats_prefixes
+  column_names    = NULL,
+  prefixes        = summary_stats_prefixes
 ) {
   file_colnames <- get_column_names(finterface) |>
     swap_in_column_names(column_names)
@@ -35,14 +39,71 @@ get_column_info <- function(
     bash_index    = file_colnames
   )
 
+  column_prefixes <- get_prefixes(finterface, file_colnames, prefixes)
+
   c(
     finterface$column_info,
     list(
-      quoted_values = are_values_quoted(finterface) |>
+      quoted_values    = are_values_quoted(finterface) |>
         as.list(),
-      prefixes      = get_prefixes(finterface, file_colnames, prefixes)
+      prefixes         = column_prefixes,
+      encoding_columns = encoding_columns
     )
   )
+}
+
+add_encoded_columns <- function(
+  finterface,
+  encoded_columns
+) {
+  encoding_columns <- get_encoding_columns(finterface, encoded_columns)
+
+  if (length(encoding_columns) == 0) return(finterface)
+
+  encoded_in_dt <- lapply(encoding_columns, \(x) x$substitutes) |>
+    unname() |>
+    unlist(recursive = FALSE)
+
+  finterface$column_info$encoded_columns <- encoded_in_dt
+
+  finterface$column_info$bash_index <- finterface$column_info$bash_index |>
+    c(encoded_in_dt[setdiff(names(encoded_in_dt),
+                            names(finterface$column_info$bash_index))])
+
+  finterface
+}
+
+get_encoding_columns <- function(
+  finterface,
+  encoded_columns
+) {
+  encoded <- intersect(names(encoded_columns), names(finterface$column_info$bash_index))
+  if (length(encoded) == 0) {
+    return()
+  }
+
+  encoded_dt <- head(finterface)[, .SD, .SDcols = encoded]
+
+  encoding_pattern_matches <- setNames(nm = encoded) |>
+    lapply(\(column_name) {
+      sapply(encoded_columns[[encoded]], \(pattern) {
+        if (grepl(pattern$regex, encoded_dt[[encoded]]) & any(!pattern$names %in% file_colnames)) {
+          pattern
+        }
+      })
+    })
+
+  # TODO Check for 0 regex matches
+  encoding_pattern_matches |>
+    lapply(\(column_patterns) {
+      single_match <- column_patterns[!sapply(column_patterns, is.null)]
+      if (1 < length(single_match)) {
+        warning("Several regex patterns match columns encoding data:\n",
+                paste(sapply(single_match, \(x) x$regex), collapse = "\n"), "\n",
+                "Using the first one.")
+      }
+      single_match[[1]]
+    })
 }
 
 swap_in_column_names <- function(
@@ -239,6 +300,7 @@ validate_file_interface <- function(
   ) |>
     as_command_line(
       finterface$filename,
+      column_info = finterface$column_info,
       column_indices = finterface$column_info$bash_index,
       sep = finterface$sep,
       gzipped = finterface$gzipped
