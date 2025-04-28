@@ -38,22 +38,8 @@ as_filter_condition <- function(
 
 new_filter_condition <- function(
   fcall,
-  column_names    = NULL,
-  sep             = " ",
-  quoted_values   = NULL,
-  prefixes        = NULL,
-  encoded_columns = NULL,
-  encoded_pattern = NULL # TODO Pass arguments from file_interface (1 sprintf remaining)
+  finterface = NULL
 ) {
-  # If column_names is provided, substitutes the condition variables with the
-  # column names
-  if (!is.null(column_names)) {
-    fcall <- eval(substitute(
-      substitute(.fcall, lapply(column_names, as.symbol)),
-      list(.fcall = fcall)
-    ))
-  }
-
   if (!is.call(fcall)) return(fcall)
 
   fcall <- as_filter_condition(fcall)
@@ -62,12 +48,8 @@ new_filter_condition <- function(
 
   fcondition <- fc_convert[[as.character(fcall[[1]])]](
     fcall,
-    sep           = sep,
-    quoted_values = quoted_values,
-    prefixes      = prefixes,
-    encoded_column_names = names(encoded_columns)
+    finterface = finterface
   )
-  attr(fcondition, "encoded_pattern") <- encoded_pattern
   fcondition
 }
 
@@ -126,15 +108,28 @@ is_pipable <- function(
 
 is_encoded <- function(
   fcall,
-  encoded_column_names = NULL
+  finterface
 ) {
-  if (is.null(encoded_column_names)) return(FALSE)
   if (!is.null(attr(fcall, "encoded")))
     return(attr(fcall, "encoded"))
 
-  if (is.symbol(fcall)) return(as.character(fcall) %in% encoded_column_names)
+  if (is.symbol(fcall)) return(as.character(fcall) %in% finterface$column_info$encoded_columns)
   if (!is.call(fcall)) return(FALSE)
-  any(sapply(fcall[-1], is_encoded, encoded_column_names = encoded_column_names))
+  any(sapply(fcall[-1], is_encoded, finterface = finterface))
+}
+
+get_decoding_awk <- function(
+  fcall,
+  finterface
+) {
+  encoded_symbols <- intersect(as.character(fcall),
+                               finterface$column_info$encoded_columns)
+  if (length(encoded_symbols) == 0) return()
+  finterface$column_info$encoding_columns[
+    encoded_symbols,
+    paste(pattern, collapse = ""),
+    on = "encoded_column"
+  ]
 }
 
 get_indices_from_column_names <- function(
@@ -150,26 +145,25 @@ get_indices_from_column_names <- function(
 
 to_awk <- function(
   fcondition,
-  column_indices
+  finterface
 ) {
   with(
-    column_indices,
+    finterface$column_info$bash_index,
     eval(fcondition)
   )
 }
 
 as_command_line <- function(
   fcondition,
-  filename,
-  column_indices,
+  finterface,
   ...
 ) {
   to_awk(
     fcondition,
-    column_indices
+    finterface = finterface
   ) |>
     flatten_cl_bits() |>
-    lapply(wrap_awk, filename, encoded_pattern = attr(fcondition, "encoded_pattern"), ...)
+    lapply(wrap_awk, finterface = finterface)
 }
 
 flatten_cl_bits <- function(
@@ -206,10 +200,11 @@ flatten_cl_bits <- function(
 
 wrap_awk <- function(
   awk_cl,
-  ...
+  finterface
 ) {
   if (length(awk_cl) == 1) {
-    return(wrap_first_awk(awk_cl, ...))
+    # TODO Check that single cl is handled correctly
+    return(wrap_first_awk(awk_cl, finterface = finterface))
   }
 
   awk_cl[[1L]] <- wrap_first_awk(
@@ -223,54 +218,48 @@ wrap_awk <- function(
 
 wrap_first_awk <- function(
   single_awk_cl,
-  filename,
-  sep = " ",
-  gzipped = FALSE,
-  encoded_pattern = NULL
+  finterface
 ) {
   if (1L < length(single_awk_cl)) {
     single_awk_cl[[1L]] <- wrap_first_awk(single_awk_cl[[1L]],
-                                          filename,
-                                          sep = sep,
-                                          gzipped = gzipped)
+                                          finterface = finterface)
     single_awk_cl[-1L] <- wrap_next_awk(single_awk_cl[-1L],
-                                        sep = sep,
-                                        encoded_pattern = encoded_pattern)
+                                        finterface = finterface)
     return(single_awk_cl)
   }
-  if (gzipped) {
+  if (finterface$gzipped) {
     return(
       sprintf("zcat %s | awk%s '%s'",
-              filename,
-              ifelse(sep == ",", " -F','", ""),
-              encoded_to_awk(single_awk_cl, encoded_pattern = encoded_pattern))
+              finterface$filename,
+              ifelse(finterface$sep == ",", " -F','", ""),
+              encoded_to_awk(single_awk_cl, finterface))
     )
   }
   sprintf("awk%s '%s' %s",
-          ifelse(sep == ",", " -F','", ""),
-          encoded_to_awk(single_awk_cl, encoded_pattern = encoded_pattern),
+          ifelse(finterface$sep == ",", " -F','", ""),
+          encoded_to_awk(single_awk_cl, decoding_awk = attr(single_awk_cl, "decoding_awk")),
           filename)
 }
 
 encoded_to_awk <- function(
   single_awk_cl,
-  encoded_pattern
+  decoding_awk
 ) {
   if (is.null(attr(single_awk_cl, "encoded"))) return(single_awk_cl)
-  if (is.null(encoded_pattern))
+  if (is.null(decoding_awk))
     stop("Values are encoded but no pattern is provided")
-  sprintf(encoded_pattern, single_awk_cl)
+  sprintf(encoded_column_awk_wrapper, decoding_awk, single_awk_cl)
 }
 
 wrap_next_awk <- function(
   single_awk_cl,
   sep = " ",
-  encoded_pattern = NULL,
+  decoding_awk = NULL,
   ...
 ) {
   sprintf("awk%s '%s'",
           ifelse(sep == ",", " -F','", ""),
-          encoded_to_awk(single_awk_cl, encoded_pattern = encoded_pattern))
+          encoded_to_awk(single_awk_cl, decoding_awk = decoding_awk))
 }
 
 and_cl_bit <- function(
@@ -301,54 +290,64 @@ and_cl_bit <- function(
 lt_filter_condition <- function(
     column_name,
     value,
-    encoded
+    encoded,
+    decoding_awk = NULL
 ) {
   # TODO Check vector length
   structure(sprintf("%s < %s", column_name, value),
             chainable = TRUE,
-            encoded   = encoded)
+            encoded   = encoded,
+            decoding_awk = decoding_awk)
 }
 lte_filter_condition <- function(
     column_name,
     value,
-    encoded
+    encoded,
+    decoding_awk = NULL
 ) {
   # TODO Check vector length
   structure(sprintf("%s <= %s", column_name, value),
             chainable = TRUE,
-            encoded   = encoded)
+            encoded   = encoded,
+            decoding_awk = decoding_awk)
 }
 gt_filter_condition <- function(
     column_name,
     value,
-    encoded
+    encoded,
+    decoding_awk = NULL
 ) {
   # TODO Check vector length
   structure(sprintf("%s > %s", column_name, value),
             chainable = TRUE,
-            encoded   = encoded)
+            encoded   = encoded,
+            decoding_awk = decoding_awk)
 }
 gte_filter_condition <- function(
     column_name,
     value,
-    encoded
+    encoded,
+    decoding_awk = NULL
 ) {
   # TODO Check vector length
   structure(sprintf("%s >= %s", column_name, value),
             chainable = TRUE,
-            encoded   = encoded)
+            encoded   = encoded,
+            decoding_awk = decoding_awk)
 }
 eq_filter_condition <- function(
     column_name,
     value,
-    encoded = FALSE
+    encoded = FALSE,
+    decoding_awk = NULL
 ) {
   # TODO Check quoted values are properly handled
   structure(sprintf("%s == %s",
                     column_name,
                     value),
-            chainable = TRUE,
-            encoded   = encoded)
+            chainable    = TRUE,
+            encoded      = encoded,
+            decoding_awk = decoding_awk)
 }
 in_filter_condition <- function(
   column_name,
@@ -392,13 +391,20 @@ combine_filter_condition <- function(
   }
   # TODO Check vector length
   if (are_chainable(condition1, condition2, operation = operation)) {
-    if (length(condition1) > 1L) {
-      if (length(condition2) > 1L) {
+    if (1L < length(condition1)) {
+      if (1L < length(condition2)) {
         condition1[[length(condition1)]] <- paste(
           condition1[[length(condition1)]], operator, condition2[[1]]
         )
         attr(condition1, "chainable") <- TRUE
-        return(get(attr(condition2, "operation"))(condition1, condition2[[2]]))
+        return(get(attr(condition2, "operation"))(
+          condition1,
+          condition2[[2]],
+          encoded = any(attr(condition1, "encoded"), attr(condition2, "encoded")),
+          decoding_awk = c(attr(condition1, "decoding_awk"), attr(condition2, "decoding_awk")) |>
+            unique() |>
+            paste(collapse = "")
+        ))
       }
       condition1[[length(condition1)]] <- paste(
         condition1[[length(condition1)]], operator, condition2
@@ -411,16 +417,34 @@ combine_filter_condition <- function(
           condition1, operator, condition2[[1]]
         )
         attr(condition12, "chainable") <- TRUE
-        return(get(attr(condition2, "operation"))(condition12, condition2[[2]]))
+        return(get(attr(condition2, "operation"))(
+          condition12,
+          condition2[[2]],
+          encoded = any(attr(condition1, "encoded"), attr(condition2, "encoded")),
+          decoding_awk = c(attr(condition1, "decoding_awk"), attr(condition2, "decoding_awk")) |>
+            unique() |>
+            paste(collapse = "")
+        ))
       }
       conditions12 <- paste(condition1, operator, condition2)
       attr(conditions12, "chainable") <- TRUE
-      return(conditions12)
+      return(structure(
+        paste(condition1, operator, condition2),
+        chainable = TRUE,
+        encoded = any(attr(condition1, "encoded"), attr(condition2, "encoded")),
+        decoding_awk = c(attr(condition1, "decoding_awk"), attr(condition2, "decoding_awk")) |>
+          unique() |>
+          paste(collapse = "")
+      ))
     }
   }
   structure(
     list(condition1, condition2),
-    operation = operation
+    operation    = operation,
+    encoded      = any(attr(condition1, "encoded"), attr(condition2, "encoded")),
+    decoding_awk = c(attr(condition1, "decoding_awk"), attr(condition2, "decoding_awk")) |>
+      unique() |>
+      paste(collapse = "")
   )
 }
 
@@ -438,14 +462,18 @@ or_filter_condition <- function(
 }
 
 lp_filter_condition <- function(
-  filter_condition
+  condition
 ) {
-  if (is_chainable(filter_condition)) {
+  if (is_chainable(condition)) {
     return(
-      structure(sprintf("(%s)", eval(filter_condition)),
-                chainable = TRUE)
+      structure(sprintf("(%s)", eval(condition)),
+                chainable    = TRUE,
+                encoded      = attr(condition, "encoded"),
+                decoding_awk = attr(condition, "decoding_awk"))
     )
   }
-  structure(eval(filter_condition),
-            chainable = FALSE)
+  structure(eval(condition),
+            chainable = FALSE,
+            encoded      = attr(condition, "encoded"),
+            decoding_awk = attr(condition, "decoding_awk"))
 }

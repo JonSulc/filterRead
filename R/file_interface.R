@@ -57,17 +57,13 @@ add_encoded_columns <- function(
 ) {
   encoding_columns <- get_encoding_columns(finterface, encoded_columns)
 
-  if (length(encoding_columns) == 0) return(finterface)
+  if (is.null(encoding_columns)) return(finterface)
 
-  encoded_in_dt <- lapply(encoding_columns, \(x) x$substitutes) |>
-    unname() |>
-    unlist(recursive = FALSE)
-
-  finterface$column_info$encoded_columns <- encoded_in_dt
+  finterface$column_info$encoded_columns <- encoding_columns$encoded_column
+  finterface$column_info$encoding_columns <- encoding_columns
 
   finterface$column_info$bash_index <- finterface$column_info$bash_index |>
-    c(encoded_in_dt[setdiff(names(encoded_in_dt),
-                            names(finterface$column_info$bash_index))])
+    c(encoding_columns[, as.list(setNames(substitutes, encoded_column))])
 
   finterface
 }
@@ -76,7 +72,8 @@ get_encoding_columns <- function(
   finterface,
   encoded_columns
 ) {
-  encoded <- intersect(names(encoded_columns), names(finterface$column_info$bash_index))
+  encoded <- intersect(names(encoded_columns),
+                       names(finterface$column_info$bash_index))
   if (length(encoded) == 0) {
     return()
   }
@@ -86,14 +83,18 @@ get_encoding_columns <- function(
   encoding_pattern_matches <- setNames(nm = encoded) |>
     lapply(\(column_name) {
       sapply(encoded_columns[[encoded]], \(pattern) {
-        if (grepl(pattern$regex, encoded_dt[[encoded]]) & any(!pattern$names %in% names(finterface$column_info$index))) {
+        if (grepl(pattern$regex, encoded_dt[[encoded]])
+            # Only return as an encoding column if the values are not also in
+            # another column
+            & any(!names(pattern$substitutes) %in% names(finterface$column_info$index))) {
           pattern
         }
       })
     })
 
   # TODO Check for 0 regex matches
-  encoding_pattern_matches |>
+  # TODO Check returning multiple
+  encoding_pattern_matches <- encoding_pattern_matches |>
     lapply(\(column_patterns) {
       single_match <- column_patterns[!sapply(column_patterns, is.null)]
       if (1 < length(single_match)) {
@@ -103,6 +104,30 @@ get_encoding_columns <- function(
       }
       single_match[[1]]
     })
+
+  encoded_columns <- lapply(seq_along(encoding_pattern_matches), \(i) {
+    encoding_column_name <- names(encoding_pattern_matches)[i]
+    encoding_column_index <- finterface$column_info$bash_index[[encoding_column_name]]
+    delimiter <- encoding_pattern_matches[[i]]$delimiter
+
+    list(
+      encoding_column_name = encoding_column_name,
+      pattern = sprintf(single_encoded_column_awk,
+                        encoding_column_index,
+                        i,
+                        delimiter),
+      encoded_column = encoding_pattern_matches[[i]]$names,
+      substitutes = sprintf(
+        "encoded%i[%i]",
+        i,
+        seq_along(encoding_pattern_matches[[i]]$names)
+      ) |>
+        setNames(encoding_pattern_matches[[i]]$names)
+    )
+  }) |>
+    data.table::rbindlist()
+
+  encoded_columns[!duplicated(encoded_column)]
 }
 
 swap_in_column_names <- function(
@@ -293,16 +318,10 @@ validate_file_interface <- function(
 ) {
   command_line <- new_filter_condition(
     rlang::enexpr(conditions),
-    sep           = finterface$sep,
-    quoted_values = finterface$column_info$quoted_values,
-    prefixes      = finterface$column_info$prefixes
+    finterface = finterface
   ) |>
     as_command_line(
-      finterface$filename,
-      column_info = finterface$column_info,
-      column_indices = finterface$column_info$bash_index,
-      sep = finterface$sep,
-      gzipped = finterface$gzipped
+      finterface = finterface
     )
 
   if (return_only_cmd) return(command_line)

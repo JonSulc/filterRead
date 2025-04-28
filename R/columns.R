@@ -135,16 +135,10 @@ summary_stats_prefixes <- list(
 # In some CHARGE files, there is no position column but it is encoded in other
 # columns (in ~/Databases/CHARGE/authorized_data/deflated_organized/submission)
 # The name of the list element indicates the column name in the file
-# The awk command uses sprintf to inject arguments into it 3 separate times:
-#   - First the delimiter (done in this file for the creation of patterns)
-#   - Second the column number
-#   - Thrid the awk-formatted condition for filtering
-encoded_columns_awk <- "BEGIN{OFS=FS} {
-    # Split the content of the relevant column
-    split(%%s, encoded, \"%s\");
-
-    if (%%%%s) {
-        # If conditions are met, return the whole line
+single_encoded_column_awk <- "split(%s, encoded%s, \"%s\");\n"
+encoded_column_awk_wrapper <- "BEGIN{OFS=FS} {
+    %s
+    if (%s) {
         print $0
     }
 }"
@@ -155,28 +149,28 @@ summary_stats_encoded_columns <- list(
          regex   = "^([^:]{1,2}):([0-9]+)$",
          names   = c("chr", "pos"),
          substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
-         awk = sprintf(encoded_columns_awk, ":")),
+         delimiter = ":"),
 
     # e.g., sub20180725/SVE.european.results.metal.csv
     list(pattern = "%s-c%s:%s-$",
          regex   = "^(b3[6-8])-c([^:]{1,2}):([0-9]+)-[0-9]+$",
          names   = c("build", "chr", "pos"),
          substitutes = list(build = "encoded[1]", chr = "encoded[2]", pos = "encoded[3]"),
-         awk = sprintf(encoded_columns_awk, "-c|:|-")),
+         delimiter = "-c|:|-"),
 
     # e.g., sub20190511/invnormFT4_overall_150611_invvar1.txt-QCfiltered_GC.rsid.txt
     list(pattern = "%s:%s:SNP",
          regex   = "^([^:]+):([0-9]+):[^:]+$",
          names   = c("chr", "pos"),
          substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
-         awk = sprintf(encoded_columns_awk, ":")),
+         delimiter = ":"),
 
     # e.g., sub20201231_01/BP-ICE_EUR_SBP_transformed_15-04-2020.txt
     list(pattern = "chr%s:%i:",
          regex   = "^(chr[^:]{1,2}):([0-9]+):[a-zA-Z]+:[a-zA-Z]+$",
          names   = c("chr", "pos"),
          substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
-         awk = sprintf(encoded_columns_awk, ":"))
+         delimiter = ":")
   ),
 
   chr_colon_pos = list(
@@ -185,7 +179,7 @@ summary_stats_encoded_columns <- list(
          regex   = "^([^:]{1,2}):([0-9]+)$",
          names   = c("chr", "pos"),
          substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
-         awk = sprintf(encoded_columns_awk, ":"))
+         delimiter = ":")
   ),
 
   Chr_Pos = list(
@@ -194,7 +188,7 @@ summary_stats_encoded_columns <- list(
          regex   = "^([^:]{1,2}):([0-9]+)$",
          names   = c("chr", "pos"),
          substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
-         awk = sprintf(encoded_columns_awk, ":"))
+         delimiter = ":")
   )
 )
 # In other files (e.g., sub20171222/appendicularleanmass.results.metal.txt)
