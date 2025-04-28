@@ -46,8 +46,7 @@ get_column_info <- function(
     list(
       quoted_values    = are_values_quoted(finterface) |>
         as.list(),
-      prefixes         = column_prefixes,
-      encoding_columns = encoding_columns
+      prefixes         = column_prefixes
     )
   )
 }
@@ -87,7 +86,7 @@ get_encoding_columns <- function(
   encoding_pattern_matches <- setNames(nm = encoded) |>
     lapply(\(column_name) {
       sapply(encoded_columns[[encoded]], \(pattern) {
-        if (grepl(pattern$regex, encoded_dt[[encoded]]) & any(!pattern$names %in% file_colnames)) {
+        if (grepl(pattern$regex, encoded_dt[[encoded]]) & any(!pattern$names %in% names(finterface$column_info$index))) {
           pattern
         }
       })

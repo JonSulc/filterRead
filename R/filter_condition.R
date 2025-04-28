@@ -38,12 +38,12 @@ as_filter_condition <- function(
 
 new_filter_condition <- function(
   fcall,
-  column_names  = NULL,
-  sep           = " ",
-  quoted_values = NULL,
-  prefixes      = NULL,
-  encoded_column_names = NULL,
-  encoded_pattern = NULL # TODO Pass arguments from file_interface
+  column_names    = NULL,
+  sep             = " ",
+  quoted_values   = NULL,
+  prefixes        = NULL,
+  encoded_columns = NULL,
+  encoded_pattern = NULL # TODO Pass arguments from file_interface (1 sprintf remaining)
 ) {
   # If column_names is provided, substitutes the condition variables with the
   # column names
@@ -65,7 +65,7 @@ new_filter_condition <- function(
     sep           = sep,
     quoted_values = quoted_values,
     prefixes      = prefixes,
-    encoded_column_names = encoded_column_names
+    encoded_column_names = names(encoded_columns)
   )
   attr(fcondition, "encoded_pattern") <- encoded_pattern
   fcondition
@@ -149,29 +149,27 @@ get_indices_from_column_names <- function(
 }
 
 to_awk <- function(
-  fcall,
+  fcondition,
   column_indices
 ) {
   with(
     column_indices,
-    eval(fcall)
+    eval(fcondition)
   )
 }
 
 as_command_line <- function(
-  fcall,
+  fcondition,
   filename,
-  column_info,
   column_indices,
   ...
 ) {
-  # TODO Pick up here, change how internals process conditions
   to_awk(
-    fcall,
+    fcondition,
     column_indices
   ) |>
     flatten_cl_bits() |>
-    lapply(wrap_awk, filename, encoded_pattern = attr(fcall, "encoded_pattern"), ...)
+    lapply(wrap_awk, filename, encoded_pattern = attr(fcondition, "encoded_pattern"), ...)
 }
 
 flatten_cl_bits <- function(
@@ -235,7 +233,9 @@ wrap_first_awk <- function(
                                           filename,
                                           sep = sep,
                                           gzipped = gzipped)
-    single_awk_cl[-1L] <- wrap_next_awk(single_awk_cl[-1L], sep = sep)
+    single_awk_cl[-1L] <- wrap_next_awk(single_awk_cl[-1L],
+                                        sep = sep,
+                                        encoded_pattern = encoded_pattern)
     return(single_awk_cl)
   }
   if (gzipped) {
