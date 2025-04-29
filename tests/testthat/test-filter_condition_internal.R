@@ -1,8 +1,10 @@
 test_that("And combinations work", {
-  column_indices <- get_indices_from_column_names(letters[24:26])
-  chainable_fc <- new_filter_condition(rlang::expr(x < 2))
-  non_chainable_fc <- new_filter_condition(rlang::expr(y %in% letters[1:3]))
-  non_pipable_fc <- new_filter_condition(rlang::expr(x < 2 | y == 3))
+  chainable_fc <- new_filter_condition(rlang::expr(x < 2),
+                                       finterface = dummy_finterface())
+  non_chainable_fc <- new_filter_condition(rlang::expr(y %in% letters[1:3]),
+                                           finterface = dummy_finterface())
+  non_pipable_fc <- new_filter_condition(rlang::expr(x < 2 | y == 3),
+                                         finterface = dummy_finterface())
 
   and_fc <- function(fc1, fc2) {
     ab <- rlang::expr(and_filter_condition())
@@ -31,6 +33,7 @@ test_that("And combinations work", {
       non_pipable_fc,
       non_chainable_fc
     ),
-    new_filter_condition(rlang::expr(x < 2 & y %in% letters[1:3] | y == 3 & y %in% letters[1:3]))
+    new_filter_condition(rlang::expr(x < 2 & y %in% letters[1:3] | y == 3 & y %in% letters[1:3]),
+                         finterface = dummy_finterface())
   )
 })

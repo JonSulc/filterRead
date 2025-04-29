@@ -13,6 +13,7 @@ new_file_interface <- function(
                                gzipped  = is_gzipped(filename)),
                           class = c("file_interface", "character"))
 
+  finterface$sep <- get_file_separator(finterface)
   finterface$column_info <- get_column_info(
     finterface,
     column_names    = column_names,
@@ -21,7 +22,6 @@ new_file_interface <- function(
 
   finterface <- add_encoded_columns(finterface, encoded_columns)
 
-  finterface$sep <- get_file_separator(finterface)
   finterface
 }
 
@@ -169,6 +169,7 @@ head.file_interface <- function(
   nlines = 1,
   ...
 ) {
+  # TODO Improve handling of gzipped files (broken pipe)
   if (!"column_info" %in% names(finterface)) {
     return(
       data.table::fread(
@@ -235,7 +236,7 @@ get_prefixes <- function(
       \(colname) {
         check_single_column_prefix(
           finterface     = finterface,
-          col_index      = file_colnames[[colname]],
+          file_colname   = file_colnames[[colname]],
           prefix         = prefixes[[colname]],
           nrows_to_check = nrows_to_check
         )
@@ -246,25 +247,23 @@ get_prefixes <- function(
 
 check_single_column_prefix <- function(
   finterface,
-  col_index,
+  file_colname,
   prefix,
   nrows_to_check = 500
 ) {
   awk_script <- sprintf(
     "NR > 1 && %s !~ (\"^[\\\"]?%s\") { exit 1 }",
-    col_index,
+    file_colname,
     prefix
   )
   if (is.null(nrows_to_check)) {
     cmd <- wrap_first_awk(
       awk_script,
-      filename = finterface$filename,
-      sep      = finterface$sep,
-      gzipped  = finterface$gzipped
+      finterface = finterface
     )
   } else {
     cmd <- fhead_cmd(finterface, nrows_to_check) |>
-      paste("|", wrap_next_awk(awk_script))
+      paste("|", wrap_next_awk(awk_script, finterface = finterface))
   }
   if (system(cmd) == 1) return()
   prefix

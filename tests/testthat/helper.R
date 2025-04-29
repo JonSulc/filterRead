@@ -9,6 +9,31 @@ dummy_dt <- function(
     apply_formatting(...)
 }
 
+dummy_finterface <- function(
+  filename      = "data.csv",
+  gzipped       = FALSE,
+  sep           = " ",
+  index         = c(   x = 1,     y = 2,     z = 3),
+  bash_index    = list(x = "$1",  y = "$2",  z = "$3"),
+  quoted_values = list(x = FALSE, y = FALSE, z = FALSE),
+  prefixes      = list()
+) {
+  structure(
+    list(
+      filename    = filename,
+      gzipped     = gzipped,
+      column_info = list(
+        index         = index,
+        bash_index    = bash_index,
+        quoted_values = quoted_values,
+        prefixes      = prefixes
+      ),
+      sep         = sep
+    ),
+    class = c("file_interface", "list")
+  )
+}
+
 apply_formatting <- function(
   dt,
   values_are_quoted = FALSE,

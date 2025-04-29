@@ -266,14 +266,14 @@ test_that("Prefixes are handled correctly", {
   for (finterface in list(finterface_b, finterface_q, finterface_gz)) {
     expect_equal(
       check_single_column_prefix(finterface,
-                                 col_index = "$1",
-                                 prefix    = "chr"),
+                                 file_colname = "$1",
+                                 prefix       = "chr"),
       "chr"
     )
     expect_equal(
       check_single_column_prefix(finterface,
-                                 col_index = "$1",
-                                 prefix    = "incorrect"),
+                                 file_colname = "$1",
+                                 prefix       = "incorrect"),
       NULL
     )
 
