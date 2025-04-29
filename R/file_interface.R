@@ -112,10 +112,9 @@ get_encoding_columns <- function(
 
     list(
       encoding_column_name = encoding_column_name,
-      pattern = sprintf(single_encoded_column_awk,
-                        encoding_column_index,
-                        i,
-                        delimiter),
+      pattern = awk_array(encoding_column_index,
+                          paste0("encoded", i),
+                          delimiter),
       encoded_column = encoding_pattern_matches[[i]]$names,
       substitutes = sprintf(
         "encoded%i[%i]",

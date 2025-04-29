@@ -135,13 +135,6 @@ summary_stats_prefixes <- list(
 # In some CHARGE files, there is no position column but it is encoded in other
 # columns (in ~/Databases/CHARGE/authorized_data/deflated_organized/submission)
 # The name of the list element indicates the column name in the file
-single_encoded_column_awk <- "split(%s, encoded%s, \"%s\");\n"
-encoded_column_awk_wrapper <- "BEGIN{OFS=FS} {
-    %s
-    if (%s) {
-        print $0
-    }
-}"
 summary_stats_encoded_columns <- list(
   MarkerName = list(
     # e.g., sub20200527/accumbens_eur_z_ldsc_unrestricted_NG05SEP19.out
@@ -152,7 +145,7 @@ summary_stats_encoded_columns <- list(
          delimiter = ":"),
 
     # e.g., sub20180725/SVE.european.results.metal.csv
-    list(pattern = "%s-c%s:%s-$",
+    list(pattern = "%s-c%s:%s-123",
          regex   = "^(b3[6-8])-c([^:]{1,2}):([0-9]+)-[0-9]+$",
          names   = c("build", "chr", "pos"),
          substitutes = list(build = "encoded[1]", chr = "encoded[2]", pos = "encoded[3]"),

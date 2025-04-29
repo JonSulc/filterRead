@@ -226,9 +226,26 @@ local_summary_stats_interface <- function(
   new_file_interface(filename, column_names = column_names, prefixes = prefixes)
 }
 
-combine_values <- function(
+encode_column <- function(
   summary_stats,
-  pattern
+  column_name = names(summary_stats_encoded_columns)[index],
+  column_encoding = sample(summary_stats_encoded_columns[[index]], 1)[[1]],
+  index = sample(seq_along(summary_stats_encoded_columns), 1),
+  drop_columns = column_encoding$names
 ) {
-
+  if ("build" %in% column_encoding$names & !"build" %in% names(summary_stats)) {
+    summary_stats <- summary_stats[, c(.(build = "b37"), .SD)]
+    drop_columns <- c(drop_columns, "build")
+  }
+  summary_stats[
+    ,
+    .(do.call(
+      sprintf,
+      list(column_encoding$pattern) |>
+        c(mget(column_encoding$names))
+    )) |>
+      setNames(column_name) |>
+      c(.SD),
+    .SDcols = -drop_columns
+  ]
 }
