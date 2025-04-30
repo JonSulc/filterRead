@@ -104,10 +104,8 @@ summary_stats_column_names <- list(
              "Test statistic",
              "WMHmet_ZScore"),
 
-  odds_ratio = c("OR")
-)
+  odds_ratio = c("OR"),
 
-summary_stats_extra_column_names <- list(
   allele1 = c("Allele_1",
               "Allele 1",
               "Allele1",
@@ -115,21 +113,14 @@ summary_stats_extra_column_names <- list(
               "A1",
               "allele1",
               "ISmet_allele1"),
+
   allele2 = c("Allele_2",
               "Allele 2",
               "Allele2",
               "a2",
               "A2",
               "allele2",
-              "ISmet_allele2"),
-  position_encoding = data.table::data.table(
-    column_name = c("MarkerName"),
-    regex       = c("^chr[^:]+:([0-9]+):[a-zA-Z]")
-  )
-)
-
-summary_stats_prefixes <- list(
-  chr = "chr"
+              "ISmet_allele2")
 )
 
 # In some CHARGE files, there is no position column but it is encoded in other
@@ -140,29 +131,29 @@ summary_stats_encoded_columns <- list(
     # e.g., sub20200527/accumbens_eur_z_ldsc_unrestricted_NG05SEP19.out
     list(pattern = "%s:%s",
          regex   = "^([^:]{1,2}):([0-9]+)$",
-         names   = c("chr", "pos"),
-         substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
+         encoded_names = list(c("chr", "pos")),
+         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":"),
 
     # e.g., sub20180725/SVE.european.results.metal.csv
     list(pattern = "%s-c%s:%s-123",
          regex   = "^(b3[6-8])-c([^:]{1,2}):([0-9]+)-[0-9]+$",
-         names   = c("build", "chr", "pos"),
-         substitutes = list(build = "encoded[1]", chr = "encoded[2]", pos = "encoded[3]"),
+         encoded_names = list(c("build", "chr", "pos")),
+         # substitutes = list(c(build = "encoded[1]", chr = "encoded[2]", pos = "encoded[3]")),
          delimiter = "-c|:|-"),
 
     # e.g., sub20190511/invnormFT4_overall_150611_invvar1.txt-QCfiltered_GC.rsid.txt
     list(pattern = "%s:%s:SNP",
          regex   = "^([^:]+):([0-9]+):[^:]+$",
-         names   = c("chr", "pos"),
-         substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
+         encoded_names = list(c("chr", "pos")),
+         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":"),
 
     # e.g., sub20201231_01/BP-ICE_EUR_SBP_transformed_15-04-2020.txt
     list(pattern = "chr%s:%i:",
          regex   = "^(chr[^:]{1,2}):([0-9]+):[a-zA-Z]+:[a-zA-Z]+$",
-         names   = c("chr", "pos"),
-         substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
+         encoded_names = list(c("chr", "pos")),
+         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":")
   ),
 
@@ -170,8 +161,8 @@ summary_stats_encoded_columns <- list(
     # e.g., sub20180818/vv.results.metal.txt
     list(pattern = "%s:%s",
          regex   = "^([^:]{1,2}):([0-9]+)$",
-         names   = c("chr", "pos"),
-         substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
+         encoded_names = list(c("chr", "pos")),
+         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":")
   ),
 
@@ -179,11 +170,40 @@ summary_stats_encoded_columns <- list(
     # e.g., sub20200523/FVIIactivity_EA_AA_trans.csv
     list(pattern = "%s:%s",
          regex   = "^([^:]{1,2}):([0-9]+)$",
-         names   = c("chr", "pos"),
-         substitutes = list(chr = "encoded[1]", pos = "encoded[2]"),
+         encoded_names = list(c("chr", "pos")),
+         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":")
   )
 )
+summary_stats_standard_names_dt <- data.table::data.table(
+  standard_name = names(summary_stats_column_names)
+)[
+  ,
+  .(input_name = summary_stats_column_names[[standard_name]]),
+  by = standard_name
+]
+summary_stats_standard_names_dt[
+  standard_name == "chr",
+  possible_prefixes := .("chr")
+][]
+
+summary_stats_encoded_columns_dt <- data.table::data.table(
+  input_name    = names(summary_stats_encoded_columns),
+  standard_name = names(summary_stats_encoded_columns)
+)[
+  ,
+  data.table::rbindlist(summary_stats_encoded_columns[[input_name]]),
+  by = input_name
+]
+
+summary_stats_standard_names_dt <- list(
+  summary_stats_standard_names_dt,
+  summary_stats_encoded_columns_dt
+) |>
+  data.table::rbindlist(fill = TRUE, use.names = TRUE)
+
+
+
 # In other files (e.g., sub20171222/appendicularleanmass.results.metal.txt)
 # there are only rsids, currently unsupported
 

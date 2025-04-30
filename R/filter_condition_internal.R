@@ -115,7 +115,6 @@ chainable_to_fc <- function(
   attr(fcall, "chainable") <- TRUE
   attr(fcall, "pipable") <- TRUE
   fcall$encoded <- is_encoded(fcall, finterface = finterface)
-  # if (!is_encoded(fcall, finterface = finterface)) return(fcall)
   fcall$decoding_awk <- get_decoding_awk(fcall, finterface = finterface)
   fcall
 }

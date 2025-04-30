@@ -99,7 +99,8 @@ dummy_summary_stats <- function(
   ref_col_names     = summary_stats_column_names,
   random_names      = TRUE,
   values_are_quoted = FALSE,
-  prefixes = NULL
+  prefixes          = NULL,
+  encode_columns    = FALSE
 ) {
   if (is.null(pval)) pval <- runif(nrows)
   if (is.null(effect)) effect <- rnorm(nrows)
@@ -125,12 +126,19 @@ dummy_summary_stats <- function(
 
   add_prefixes_to_dt(dt, prefixes)
 
+  if (encode_columns) {
+    dt <- encode_column(dt)
+  }
+
   if (random_names) {
     data.table::setnames(
       dt,
       new = sapply(
         names(dt),
-        \(cname) sample(summary_stats_column_names[[cname]], 1)
+        \(cname) {
+          if (!cname %in% names(summary_stats_column_names)) return(cname)
+          sample(summary_stats_column_names[[cname]], 1)
+        }
       )
     )
   }
@@ -189,8 +197,8 @@ local_summary_stats <- function(
   ref_col_names     = summary_stats_column_names,
   random_names      = TRUE,
   values_are_quoted = FALSE,
-  prefixes = NULL,
-  ...,
+  prefixes          = NULL,
+  encode_columns    = FALSE,
   env    = parent.frame()
 ) {
   dummy_summary_stats(
@@ -202,10 +210,11 @@ local_summary_stats <- function(
     alt = alt,
     effect = effect,
     pval = pval,
-    ref_col_names = ref_col_names,
-    random_names = random_names,
+    ref_col_names     = ref_col_names,
+    random_names      = random_names,
     values_are_quoted = FALSE,
-    prefixes = prefixes
+    prefixes          = prefixes,
+    encode_columns    = encode_columns
   ) |>
     local_csv_file(
       filename = filename,
@@ -228,23 +237,22 @@ local_summary_stats_interface <- function(
 
 encode_column <- function(
   summary_stats,
-  column_name = names(summary_stats_encoded_columns)[index],
-  column_encoding = sample(summary_stats_encoded_columns[[index]], 1)[[1]],
-  index = sample(seq_along(summary_stats_encoded_columns), 1),
-  drop_columns = column_encoding$names
+  pattern = summary_stats_standard_names_dt[!sapply(pattern, is.na)][sample(.N, 1)],
+  drop_columns = pattern$encoded_names[[1]]
 ) {
-  if ("build" %in% column_encoding$names & !"build" %in% names(summary_stats)) {
+  if (pattern[, "build" %in% encoded_names[[1]]] & !"build" %in% names(summary_stats)) {
     summary_stats <- summary_stats[, c(.(build = "b37"), .SD)]
     drop_columns <- c(drop_columns, "build")
   }
+
   summary_stats[
     ,
     .(do.call(
       sprintf,
-      list(column_encoding$pattern) |>
-        c(mget(column_encoding$names))
+      list(pattern$pattern) |>
+        c(mget(pattern$encoded_names[[1]]))
     )) |>
-      setNames(column_name) |>
+      setNames(pattern$input_name) |>
       c(.SD),
     .SDcols = -drop_columns
   ]
