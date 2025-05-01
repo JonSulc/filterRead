@@ -18,53 +18,9 @@ and_to_fc <- function(
 ) {
   stopifnot(fcall[[1]] == as.symbol("&"))
   fcall[-1] <- lapply(fcall[-1], new_filter_condition, ...)
-  if (needs_and_distributed(fcall[[2]])
-      | needs_and_distributed(fcall[[3]])) {
-    return(distribute_and_fc(fcall[[2]], fcall[[3]]))
-  }
+
   fcall[[1]] <- as.symbol("and_filter_condition")
   fcall |>
-    as_filter_condition()
-}
-
-needs_and_distributed <- function(fcall) {
-  if (!is.call(fcall)) return(FALSE)
-  if (fcall[[1]] == as.symbol("lp_filter_condition")) {
-    return(!is_pipable(fcall))
-  } else {
-    return(any(sapply(fcall[-1], needs_parenthesis_handling)))
-  }
-}
-
-distribute_and_fc <- function(
-  fcondition1,
-  fcondition2,
-  ...
-) {
-  if (needs_and_distributed(fcondition1))
-    fcondition1 <- strip_parentheses(fcondition1)
-  if (needs_and_distributed(fcondition2))
-    fcondition2 <- strip_parentheses(fcondition2)
-
-  done_distributing <- function(fcall) {
-    !as.character(fcall[[1]]) %in% c("and_filter_condition", "or_filter_condition")
-  }
-
-  if (!done_distributing(fcondition1)) {
-    to_return <- fcondition1[1] |>
-      as_filter_condition(pipable = FALSE)
-    to_return[2:3] <- lapply(fcondition1[2:3], distribute_and_fc, fcondition2, ...)
-    return(to_return)
-  }
-  if (!done_distributing(fcondition2)) {
-    to_return <- fcondition2[1] |>
-      as_filter_condition(pipable = FALSE)
-    to_return[2:3] <- lapply(fcondition2[2:3], distribute_and_fc, fcondition1 = fcondition1, ...)
-    return(to_return)
-  }
-  to_return <- rlang::expr(and_filter_condition())
-  to_return[2:3] <- list(fcondition1, fcondition2)
-  to_return |>
     as_filter_condition()
 }
 
@@ -79,135 +35,115 @@ or_to_fc <- function(
                       new_filter_condition,
                       ...)
   fcall |>
-    as_filter_condition(pipable = is_chainable(fcall))
+    as_filter_condition()
 }
 
-strip_parentheses <- function(fcondition) {
-  if (fcondition[[1]] != as.symbol("lp_filter_condition")) return(fcondition)
-  strip_parentheses(fcondition[[2]])
-}
 
-lt_to_fc <- function(fcall, ...) {
-  chainable_to_fc(fcall, "<", ...)
-}
-lte_to_fc <- function(fcall, ...) {
-  chainable_to_fc(fcall, "<=", ...)
-}
-gt_to_fc <- function(fcall, ...) {
-  chainable_to_fc(fcall, ">", ...)
-}
-gte_to_fc <- function(fcall, ...) {
-  chainable_to_fc(fcall, ">=", ...)
-}
 chainable_to_fc <- function(
   fcall,
-  operator,
-  finterface
+  finterface,
+  env
 ) {
-  stopifnot(operator %in% c("<", "<=", ">", ">="))
-
   fcall[[1]] <- list(
     "<"  = as.symbol("lt_filter_condition"),
     "<=" = as.symbol("lte_filter_condition"),
     ">"  = as.symbol("gt_filter_condition"),
     ">=" = as.symbol("gte_filter_condition")
-  )[[operator]]
-  attr(fcall, "chainable") <- TRUE
-  attr(fcall, "pipable") <- TRUE
-  fcall$encoded <- is_encoded(fcall, finterface = finterface)
-  fcall$decoding_awk <- get_decoding_awk(fcall, finterface = finterface)
+  )[[as.character(fcall[[1]])]]
   fcall
-}
-
-
-check_prefixes <- function(
-  fcallm1,
-  prefixes
-) {
-  if (is.symbol(fcallm1[[1]])) {
-    if (as.character(fcallm1[[1]]) %in% names(prefixes)) {
-      if (
-        !stringr::str_detect(
-          fcallm1[[2]],
-          paste0("^", prefixes[[as.character(fcallm1[[1]])]])
-        )
-      ) {
-        fcallm1[[2]] <- paste0(prefixes[[as.character(fcallm1[[1]])]], fcallm1[[2]])
-      }
-    }
-  } else if (is.symbol(fcallm1[[2]])) {
-    if (as.character(fcallm1[[2]]) %in% names(prefixes)) {
-      if (
-        !stringr::str_detect(
-          fcallm1[[1]],
-          paste0("^", prefixes[[as.character(fcallm1[[2]])]])
-        )
-      ) {
-        fcallm1[[1]] <- paste0(prefixes[[as.character(fcallm1[[2]])]], fcallm1[[1]])
-      }
-    }
-  }
-  fcallm1
 }
 
 
 eq_to_fc <- function(
   fcall,
-  finterface
+  finterface,
+  env
 ) {
   stopifnot(fcall[[1]] == as.symbol("=="))
-
-  if (1L < length(fcall[[2]]) | 1L < length(fcall[[3]])) {
-    stop("More than 1 element on a side of '==':\n", fcall)
-  }
   fcall[[1]] <- as.symbol("eq_filter_condition")
 
-  fcall[-1] <- check_prefixes(fcall[-1], finterface$column_info$prefixes)
-
-  # TODO Enforce that arg1 is the column name?
-  # TODO Handle variables being passed (check for quoted specifically)
-  if (is.character(fcall[[3]])) {
-    stopifnot(is.symbol(fcall[[2]]))
-    fcall[[3]] <- check_quotes(
-      fcall[[3]],
-      ifelse(
-        as.character(fcall[[2]]) %in% names(finterface$column_info$quoted_values),
-        finterface$column_info$quoted_values[[as.character(fcall[[2]])]],
-        FALSE
-      )
-    )
-  } else if (is.character(fcall[[2]])) {
-    stopifnot(is.symbol(fcall[[3]]))
-    fcall[[2]] <- check_quotes(
-      fcall[[2]],
-      ifelse(
-        as.character(fcall[[3]]) %in% names(finterface$column_info$quoted_values),
-        finterface$column_info$quoted_values[[as.character(fcall[[3]])]],
-        FALSE
-      )
-    )
+  if (is_column_symbol(fcall[[2]], finterface)
+      & !is_column_symbol(fcall[[3]], finterface)) {
+    fcall[[3]] <- eval(fcall[[3]], env) |>
+      check_post_processing(fcall[[2]], finterface)
+  } else if (is_column_symbol(fcall[[3]], finterface)
+             & !is_column_symbol(fcall[[2]], finterface)) {
+    fcall[[2]] <- eval(fcall[[2]], env) |>
+      check_post_processing(fcall[[3]], finterface)
   }
-  attr(fcall, "chainable") <- TRUE
-  attr(fcall, "pipable") <- TRUE
-  fcall$encoded <- is_encoded(fcall, finterface = finterface)
-  # if (!is_encoded(fcall, finterface = finterface)) return(fcall)
-  fcall$decoding_awk <- get_decoding_awk(fcall, finterface = finterface)
+
+  # if (1L < length(fcall[[2]]) | 1L < length(fcall[[3]])) {
+  #   stop("More than 1 element on a side of '==':\n",
+  #        toString(fcall[[2]]), " == ", toString(fcall[[3]]))
+  # }
+
   fcall
 }
 
 
 in_to_fc <- function(
   fcall,
-  finterface
+  finterface,
+  env
 ) {
   fcall[[1]] <- as.symbol("in_filter_condition")
-  fcall$finterface <- finterface
-  attr(fcall, "chainable") <- FALSE
-  attr(fcall, "pipable") <- TRUE
-  fcall$values_need_to_be_quoted <- finterface$column_info$quoted_values[[as.character(fcall[[2]])]]
 
-  fcall$encoded <- is_encoded(fcall, finterface = finterface)
-  # if (!is_encoded(fcall, finterface = finterface)) return(fcall)
-  fcall$decoding_awk <- get_decoding_awk(fcall, finterface = finterface)
+  fcall[[3]] <- eval(fcall[[3]], env) |>
+    check_post_processing(fcall[[2]], finterface)
+
   fcall
+}
+
+is_column_symbol <- function(
+  fcall,
+  finterface
+) {
+  if (length(fcall) != 1) return(FALSE)
+  as.character(fcall) %in% finterface$column_info$name
+}
+
+check_post_processing <- function(
+  values,
+  column_symbol,
+  finterface
+) {
+  column_name <- as.character(column_symbol)
+  if (!column_name %in% finterface$column_info$name) return(values)
+
+  post_processing_to_check <- finterface$column_info[
+    column_name,
+    .(quoted, prefix),
+    on = "name"
+  ]
+
+  values |>
+    check_prefix(post_processing_to_check$prefix) |>
+    check_quotes(post_processing_to_check$quoted)
+}
+
+check_prefix <- function(
+  values,
+  prefix
+) {
+  if (is.na(prefix)) return(values)
+  data.table::fifelse(
+    grepl(paste0("^", prefix), values),
+    as.character(values),
+    paste0(prefix, values)
+  )
+}
+
+check_quotes <- function(
+  values,
+  quoted
+) {
+  if (!isTRUE(quoted)) {
+    if (is.numeric(values)) return(values)
+    return(sprintf("\"%s\"", values))
+  }
+  data.table::fifelse(
+    grepl("^\".*\"$", values),
+    sprintf("\"%s\"", values),
+    sprintf("\"\\\"%s\\\"\"", values)
+  )
 }

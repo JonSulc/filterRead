@@ -150,7 +150,7 @@ summary_stats_encoded_columns <- list(
          delimiter = ":"),
 
     # e.g., sub20201231_01/BP-ICE_EUR_SBP_transformed_15-04-2020.txt
-    list(pattern = "chr%s:%i:",
+    list(pattern = "chr%s:%i:a:c",
          regex   = "^(chr[^:]{1,2}):([0-9]+):[a-zA-Z]+:[a-zA-Z]+$",
          encoded_names = list(c("chr", "pos")),
          # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),

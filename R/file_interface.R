@@ -22,7 +22,8 @@ new_file_interface <- function(
 
 get_column_info <- function(
   finterface,
-  standard_names_dt = summary_stats_standard_names_dt
+  standard_names_dt = summary_stats_standard_names_dt,
+  nrows_to_check = 500
 ) {
   column_info <- data.table::data.table(
     input_name = head(finterface) |> names()
@@ -74,6 +75,9 @@ get_column_info <- function(
   to_check <- head(finterface, nrows_to_check)
 
   column_info[
+    ,
+    prefix := character(0)
+  ][
     !is.na(possible_prefixes),
     prefix := check_single_column_prefix(finterface,
                                          bash_index = bash_index,
@@ -85,6 +89,64 @@ get_column_info <- function(
   ][
     !sapply(encoded_names, is.null),
     encoded_column_index := seq_len(.N)
+  ][
+    ,
+    encoding_column := NA_character_
+  ][]
+
+  if (any(!sapply(column_info$regex, is.na))) {
+    column_info[
+      !sapply(regex, is.na),
+      split_encoding_column := sprintf(
+        "split(%s, encoded%i, \"%s\")",
+        bash_index,
+        encoded_column_index,
+        delimiter
+      )
+    ][
+      !sapply(regex, is.na),
+      recode_columns := sprintf(
+        "%s = %s",
+        bash_index,
+        sprintf("encoded%i[%i]", encoded_column_index, seq_along(encoded_names[[1]])) |>
+          paste(collapse = " OFS ")
+      ),
+      by = bash_index
+    ][]
+  }
+
+  column_info <- column_info[
+    ,
+    {
+      if (is.null(encoded_names[[1]])) {
+        .SD
+      } else {
+        list(
+          .SD,
+          .(standard_name         = unlist(encoded_names),
+            regex                 = regex,
+            delimiter             = delimiter,
+            input_index           = input_index,
+            bash_index            = sprintf("encoded%i[%i]",
+                                            encoded_column_index,
+                                            seq_along(encoded_names[[1]])),
+            quoted                = FALSE,
+            encoding_column       = input_name,
+            split_encoding_column = split_encoding_column,
+            recode_columns        = recode_columns) |>
+            data.table::as.data.table()
+        ) |>
+          data.table::rbindlist(fill = TRUE, use.names = TRUE)
+      }
+    },
+    by = seq_len(nrow(column_info))
+  ][
+    ,
+    -"seq_len"
+  ]
+  column_info[
+    ,
+    name := data.table::fcoalesce(standard_name, input_name)
   ][]
 }
 
@@ -92,28 +154,6 @@ is_gzipped <- function(
   filename
 ) {
   stringr::str_detect(filename, "[.]gz$")
-}
-
-#' @export
-head.file_interface <- function(
-  finterface,
-  nlines = 1,
-  ...
-) {
-  # TODO Improve handling of gzipped files (broken pipe)
-  if (!"column_info" %in% names(finterface)) {
-    return(
-      data.table::fread(
-        cmd = fhead_cmd(finterface, nlines + 1),
-        ...
-      )
-    )
-  }
-  data.table::fread(
-    cmd = compile_awk_cmds(finterface, nlines + 1),
-    col.names = column_names(finterface),
-    ...
-  )
 }
 
 are_values_quoted <- function(
@@ -126,31 +166,15 @@ are_values_quoted <- function(
   quoted_values
 }
 
-check_quotes <- function(
-  value,
-  value_needs_to_be_quoted,
-  base_enquote = TRUE
-) {
-  if (is.null(value_needs_to_be_quoted)) {
-    value_needs_to_be_quoted <- FALSE
-  }
-
-  number_of_quotes <- value_needs_to_be_quoted + (!all(is.numeric(value)) & base_enquote)
-
-  if (number_of_quotes == 0) return(value)
-  if (number_of_quotes == 1) return(paste0("\"", value, "\""))
-  paste0("\"\\\"", value, "\\\"\"")
-}
-
 check_single_column_prefix <- function(
   finterface,
   bash_index,
   possible_prefixes,
-  nrows_to_check = 500
+  nrows_to_check = 500L
 ) {
-  if (length(bash_index) == 0 || length(possible_prefixes) == 0) return()
+  if (length(bash_index) == 0L || length(possible_prefixes) == 0L) return()
   awk_script <- sprintf(
-    "NR > 1 && %s !~ (\"^[\\\"]?%s\") { exit 1 }",
+    "'NR > 1 && %s !~ (\"^[\\\"]?%s\") { exit 1 }'",
     bash_index,
     possible_prefixes
   )
@@ -160,11 +184,14 @@ check_single_column_prefix <- function(
       finterface = finterface
     )
   } else {
-    cmd <- fhead_cmd(finterface, nrows_to_check) |>
-      paste("|", wrap_next_awk(awk_script, finterface = finterface))
+    cmd <- awk_load_file_cmd(finterface, nlines = nrows_to_check + 1L) |>
+      paste(awk_script)
   }
-  if (system(cmd) == 1) return()
-  possible_prefixes
+  if (system(cmd) == 1L) return()
+  if (length(possible_prefixes) == 1) return(possible_prefixes)
+  sapply(possible_prefixes, \(prefix) {
+    check_single_column_prefix(finterface, bash_index, prefix, nrows_to_check)
+  })
 }
 
 is_value_numeric <- function(
@@ -177,18 +204,10 @@ is_value_numeric <- function(
 get_file_separator <- function(
   finterface
 ) {
-  dt_output <- head(finterface, nlines = 1, verbose = TRUE) |>
+  dt_output <- head(finterface, nlines = 1L, verbose = TRUE) |>
     capture.output() |>
     stringr::str_match("sep='([^']+)'")
-  dt_output[!is.na(dt_output[, 1]), 2][1]
-}
-
-get_column_names <- function(
-  finterface
-) {
-  column_names <- head(finterface) |>
-    names() |>
-    get_indices_from_column_names()
+  dt_output[!is.na(dt_output[, 1L]), 2L][1L]
 }
 
 validate_file_interface <- function(
@@ -207,6 +226,29 @@ validate_file_interface <- function(
 }
 
 #' @export
+head.file_interface <- function(
+    finterface,
+    nlines = 1,
+    ...
+) {
+  # TODO Improve handling of gzipped files (broken pipe)
+  if (!"column_info" %in% names(finterface)) {
+    return(
+      data.table::fread(
+        cmd = compile_awk_cmds(finterface,
+                               nlines = nlines + 1),
+        ...
+      )
+    )
+  }
+  data.table::fread(
+    cmd = compile_awk_cmds(finterface, nlines = nlines + 1),
+    col.names = column_names(finterface),
+    ...
+  )
+}
+
+#' @export
 `[.file_interface` <- function(
   finterface,
   conditions,
@@ -217,7 +259,7 @@ validate_file_interface <- function(
     rlang::enexpr(conditions),
     finterface = finterface
   ) |>
-    as_command_line(
+    fcondition_to_awk(
       finterface = finterface
     )
 
@@ -228,7 +270,7 @@ validate_file_interface <- function(
       data.table::fread(
         cmd = cmd,
         ...,
-        col.names = names(head(finterface, 0))
+        col.names = column_names(finterface)
       )
     }
   ) |>
@@ -241,7 +283,7 @@ print.file_interface <- function(
 ) {
   cat(sprintf("\"%s\"\n", finterface$filename))
   cat(sprintf("Columns: %s\n",
-              paste(names(finterface$column_info$index), collapse = ", ")))
+              paste(finterface$column_info$name, collapse = ", ")))
   cat(sprintf(
     "Prefixes: %s\n",
     ifelse(length(finterface$column_info$prefixes) == 0,
@@ -269,18 +311,11 @@ column_names <- function(
   finterface,
   original = FALSE
 ) {
-  if (original | !"column_info" %in% names(finterface))
+  if (original)
     return(finterface$column_info$input_name)
 
   finterface$column_info[
-    ,
-    {
-      if (length(encoded_names[[1]]) == 0) {
-        standard_name
-      } else {
-        encoded_names
-      }
-    },
-    by = input_index
-  ]$V1
+    sapply(encoded_names, is.null),
+    data.table::fcoalesce(standard_name, input_name)
+  ]
 }

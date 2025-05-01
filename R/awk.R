@@ -1,16 +1,5 @@
 #' @import data.table
 
-# TODO to be removed once replaced and test-covered
-single_encoded_column_awk <- "split(%s, encoded%s, \"%s\");\n"
-
-
-encoded_column_awk_wrapper <- "BEGIN{OFS=FS} {
-    %s
-    if (%s) {
-        print $0
-    }
-}"
-
 setup_column_array <- function(
   bash_index,
   array_name,
@@ -32,35 +21,42 @@ setup_column_array <- function(
 setup_variable_array <- function(
   values,
   filename,
-  filename_handle = "testfile",
-  variable_handle = "test"
+  variable_handle
 ) {
   writeLines(as.character(values), filename)
-  "if (FILENAME == %s) {
+  "if (FILENAME == \"%s\") {
     %s[$0] = 1
     next
   }" |>
     sprintf(
-      filename_handle,
+      filename,
       variable_handle
     )
+}
+
+eval_fcondition <- function(
+  fcondition,
+  finterface
+) {
+  with(
+    finterface$column_info[
+      !sapply(name, is.na),
+      setNames(bash_index, name)
+    ] |> as.list(),
+    eval(fcondition)
+  )
 }
 
 fcondition_to_awk <- function(
   fcondition,
   finterface
 ) {
-  awk_condition_list <- with(
-    finterface$column_info$bash_index,
-    eval(fcondition)
-  )
+  awk_condition_list <- eval_fcondition(fcondition, finterface)
   compile_awk_cmds(
     finterface       = finterface,
     awk_condition    = awk_condition_list$condition,
     variable_arrays  = awk_condition_list$variable_arrays,
-    additional_files = awk_condition_list$additional_files,
-    column_arrays    = awk_condition_list$column_arrays,
-    return_line      = awk_condition_list$return_line
+    additional_files = awk_condition_list$additional_files
   )
 }
 
@@ -68,29 +64,28 @@ compile_awk_cmds <- function(
   finterface,
   awk_condition    = NULL,
   variable_arrays  = NULL,
-  additional_files = NULL,
+  additional_files = list(),
   column_arrays    = get_awk_column_arrays(finterface),
-  return_line      = get_awk_return_line(finterface),
   nlines           = NULL
 ) {
+  only_read <- is.null(awk_condition) &
+    is.null(variable_arrays) &
+    is.null(column_arrays)
   load_file <- awk_load_file_cmd(finterface,
-                                 additional_files = additional_files,
-                                 nlines = nlines)
-  if (is.null(awk_condition)
-      & is.null(variable_arrays)
-      & is.null(column_arrays)
-      & return_line == "print $0")
+                                 nlines = nlines,
+                                 only_read = only_read)
+  if (only_read)
     return(load_file)
 
   if (is.null(awk_condition)) {
-    condition_block <- return_line
+    condition_block <- "print $0"
   } else {
+    # TODO Move column split blocks to output if not used in condition
     condition_block <- sprintf(
       "if (%s) {
-    %s
+    print $0
   }",
-      awk_condition,
-      return_line
+      awk_condition
     )
   }
 
@@ -109,9 +104,13 @@ compile_awk_cmds <- function(
       paste(column_arrays, collapse = "\n"),
       condition_block
     )
-  awk_final_filename <- ifelse(finterface$gzipped | !is.null(nlines),
-                               "",
-                               finterface$filename)
+  awk_final_filename <- c(
+    additional_files,
+    ifelse(finterface$gzipped | !is.null(nlines),
+           "",
+           finterface$filename)
+  ) |>
+    paste(collapse = " ")
 
   paste(load_file, awk_begin_code, awk_final_filename)
 }
@@ -120,66 +119,46 @@ compile_awk_cmds <- function(
 awk_load_file_cmd <- function(
   finterface,
   nlines  = NULL,
-  additional_files = list()
+  only_read = FALSE
 ) {
   if (finterface$gzipped) {
     return(
-      sprintf(
-        "zcat %s%s | awk %s",
+      c(
+        "zcat",
         finterface$filename,
         ifelse(is.null(nlines),
                "",
-               sprintf(" | head -n %i", nlines)),
-        paste(additional_files, collapse = " ")
-      )
+               sprintf("| head -n %i", nlines)),
+        ifelse(only_read,
+               "",
+               "| awk")
+      ) |>
+        paste(collapse = " ")
     )
   }
   if (is.null(nlines)) {
-    return(
-      sprintf("awk %s",
-              paste(additional_files, collapse = " "))
-    )
+    if (only_read) {
+      return(paste("cat", finterface$filename))
+    }
+    return("awk")
   }
-  sprintf(
-    "head -n %i %s | awk %s",
+  c(
+    "head -n",
     nlines,
     finterface$filename,
-    paste(additional_files, collapse = " ")
-  )
-}
-
-get_awk_return_line <- function(
-  finterface
-) {
-  return("print $0")
-  if (all(sapply(finterface$column_info$regex, is.na))) return("print $0")
-  column_decoding <- finterface$column_info[
-    !sapply(regex, is.na),
-    sprintf(
-      "        for (i = %s; i < %s; i++) {
-          printf \"%%s%%s\", $i, OFS
-        }
-        printf \"%s\", %s",
-      previous_non_encoded_index,
-      input_index,
-      rep("%s", length(encoded_names[[1]])) |>
-        paste(collapse = "%s"),
-      sprintf("encoded%i[%i]",
-              encoded_column_index,
-              seq_along(encoded_names[[1]])) |>
-        paste(collapse = ", OFS, ")
-    ),
-    by = input_index
-  ]$V1
-  column_decoding |>
-    paste(collapse = "\n        print OFS\n") |>
-    paste("\n        print\n")
+    ifelse(only_read,
+           "",
+           "| awk")
+  ) |>
+    paste(collapse = " ")
 }
 
 
 get_awk_column_arrays <- function(
   finterface
 ) {
+  if (!"column_info" %in% names(finterface)) return()
+  if (all(sapply(finterface$column_info$encoded_names, is.null))) return()
   finterface$column_info[
     !sapply(encoded_names, is.null),
     setup_column_array(
