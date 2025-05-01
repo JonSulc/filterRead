@@ -84,9 +84,6 @@ get_column_info <- function(
                                          possible_prefixes = possible_prefixes),
     by = bash_index
   ][
-    !sapply(regex, is.na),
-    previous_non_encoded_index := data.table::shift(input_index, n = 1L, fill = 1L)
-  ][
     !sapply(encoded_names, is.null),
     encoded_column_index := seq_len(.N)
   ][

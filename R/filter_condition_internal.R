@@ -89,7 +89,7 @@ in_to_fc <- function(
   fcall[[1]] <- as.symbol("in_filter_condition")
 
   fcall[[3]] <- eval(fcall[[3]], env) |>
-    check_post_processing(fcall[[2]], finterface)
+    check_post_processing(fcall[[2]], finterface, to_write = TRUE)
 
   fcall
 }
@@ -105,7 +105,13 @@ is_column_symbol <- function(
 check_post_processing <- function(
   values,
   column_symbol,
-  finterface
+  finterface,
+  to_write = FALSE,
+  check_quotes_function = ifelse(
+    to_write,
+    check_quotes_to_write,
+    check_quotes
+  )
 ) {
   column_name <- as.character(column_symbol)
   if (!column_name %in% finterface$column_info$name) return(values)
@@ -118,7 +124,7 @@ check_post_processing <- function(
 
   values |>
     check_prefix(post_processing_to_check$prefix) |>
-    check_quotes(post_processing_to_check$quoted)
+    check_quotes_function(post_processing_to_check$quoted)
 }
 
 check_prefix <- function(
@@ -138,12 +144,25 @@ check_quotes <- function(
   quoted
 ) {
   if (!isTRUE(quoted)) {
-    if (is.numeric(values)) return(values)
+    if (all(is.numeric(values))) return(values)
     return(sprintf("\"%s\"", values))
   }
   data.table::fifelse(
     grepl("^\".*\"$", values),
     sprintf("\"%s\"", values),
     sprintf("\"\\\"%s\\\"\"", values)
+  )
+}
+check_quotes_to_write <- function(
+  values,
+  quoted
+) {
+  if (!isTRUE(quoted) | all(is.numeric(values))) {
+    return(values)
+  }
+  data.table::fifelse(
+    grepl("^\".*\"$", values),
+    values,
+    sprintf("\"%s\"", values)
   )
 }

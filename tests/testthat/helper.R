@@ -145,18 +145,30 @@ local_csv_file <- function(
 }
 
 local_file_interface <- function(
-  filename = "data.csv",
+  filename          = "data.csv",
   ...,
-  prefix   = NULL,
-  nrows    = 6,
-  env      = parent.frame()
+  prefix            = NULL,
+  nrows             = 6,
+  env               = parent.frame(),
+  standard_names_dt = summary_stats_standard_names_dt
 ) {
   local_csv_file(filename = filename,
                  ...,
                  prefix   = prefix,
                  nrows    = nrows,
                  env      = env)
-  new_file_interface(filename)
+
+  if (!is.null(prefix)) {
+    standard_names_dt <- standard_names_dt[
+      data.table::data.table(
+        input_name        = names(prefix),
+        standard_name     = names(prefix),
+        possible_prefixes = unlist(prefix)
+      ),
+      on = c("input_name", "standard_name", "possible_prefixes")
+    ]
+  }
+  new_file_interface(filename, standard_names_dt = standard_names_dt)
 }
 
 local_summary_stats <- function(
