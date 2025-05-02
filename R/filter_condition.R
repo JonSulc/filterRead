@@ -149,3 +149,14 @@ get_used_columns <- function(
   intersect(finterface$column_info$name,
             as.character(fcondition))
 }
+
+#' @export
+`&.filter_condition` <- function(
+  fcondition1,
+  fcondition2
+) {
+  fcondition <- rlang::expr(and_filter_condition()) |>
+    as_filter_condition()
+  fcondition[2:3] <- list(fcondition1, fcondition2)
+  fcondition
+}
