@@ -261,7 +261,6 @@ head.file_interface <- function(
     finterface = finterface
   ) |>
     fcondition_to_awk(
-      finterface     = finterface,
       rsid_condition = rsid_condition
     )
 

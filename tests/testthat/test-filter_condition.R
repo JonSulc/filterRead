@@ -159,7 +159,7 @@ test_that("%in% parsing works", {
         rlang::expr(char %in% letters[1:5]),
         finterface = finterface
       ) |>
-        fcondition_to_awk(finterface = finterface)
+        fcondition_to_awk()
     )
   )
 })
