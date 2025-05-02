@@ -1,39 +1,35 @@
-test_that("And combinations work", {
-  chainable_fc <- new_filter_condition(rlang::expr(x < 2),
-                                       finterface = dummy_finterface())
-  non_chainable_fc <- new_filter_condition(rlang::expr(y %in% letters[1:3]),
-                                           finterface = dummy_finterface())
-  non_pipable_fc <- new_filter_condition(rlang::expr(x < 2 | y == 3),
-                                         finterface = dummy_finterface())
-
-  and_fc <- function(fc1, fc2) {
-    ab <- rlang::expr(and_filter_condition())
-    ab[2:3] <- list(fc1, fc2)
-    class(ab) <- c("filter_condition", "call")
-    ab
-  }
-
+test_that("Quoting works properly", {
   expect_equal(
-    distribute_and_fc(
-      non_chainable_fc,
-      chainable_fc
-    ),
-    and_fc(non_chainable_fc, chainable_fc)
+    check_quotes(1, FALSE),
+    1
   )
   expect_equal(
-    distribute_and_fc(
-      chainable_fc,
-      chainable_fc
-    ),
-    and_fc(chainable_fc, chainable_fc)
+    check_quotes("a", FALSE),
+    "\"a\""
+  )
+  expect_equal(
+    check_quotes(1, TRUE),
+    "\"\\\"1\\\"\""
+  )
+  expect_equal(
+    check_quotes("a", TRUE),
+    "\"\\\"a\\\"\""
   )
 
   expect_equal(
-    distribute_and_fc(
-      non_pipable_fc,
-      non_chainable_fc
-    ),
-    new_filter_condition(rlang::expr(x < 2 & y %in% letters[1:3] | y == 3 & y %in% letters[1:3]),
-                         finterface = dummy_finterface())
+    check_quotes_to_write(1, FALSE),
+    1
+  )
+  expect_equal(
+    check_quotes_to_write("a", FALSE),
+    "a"
+  )
+  expect_equal(
+    check_quotes_to_write(1, TRUE),
+    "\"1\""
+  )
+  expect_equal(
+    check_quotes_to_write("a", TRUE),
+    "\"a\""
   )
 })

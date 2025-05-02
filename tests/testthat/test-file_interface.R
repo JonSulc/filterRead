@@ -15,19 +15,6 @@ test_that("Initialization works", {
                c("file_interface", "character"))
 })
 
-# test_that("Validation works", {
-#   finterface <- new_file_interface(gz_filename)
-#   expect_no_error(validate_file_interface)
-#
-#   expect_error(validate_file_interface(gz_filename))
-#   expect_error(
-#     validate_file_interface(structure(finterface, gzipped = 1))
-#   )
-#   expect_error(
-#     validate_file_interface(structure(finterface, values_are_quoted = "test"))
-#   )
-# })
-
 test_that("Non-quoted values work properly", {
   local_csv_file(filename = "data.csv")
   finterface <- new_file_interface("data.csv")
@@ -82,66 +69,6 @@ test_that("Head works", {
   expect_equal(head(finterface, 2),
                head(dummy_dt(), 2))
 })
-
-# test_that("Flipping column names works", {
-#   expect_equal(
-#     flip_column_names(setNames(1:3, letters[1:3])),
-#     setNames(as.list(letters[1:3]), 1:3)
-#   )
-#
-#   expect_equal(
-#     flip_column_names(list(test = letters[1:3])),
-#     list(a = "test", b = "test", c = "test")
-#   )
-#   expect_equal(
-#     flip_column_names(list(test1 = letters[1:3],
-#                            test2 = letters[4:6])),
-#     list(a = "test1", b = "test1", c = "test1",
-#          d = "test2", e = "test2", f = "test2")
-#   )
-# })
-
-# test_that("Swapping in the column names works", {
-#   column_names <- list(
-#     chr = c("chr", "char"),
-#     pos = c("num", "position")
-#   )
-#   expect_equal(
-#     swap_in_column_names(
-#       list(test1 = "$1",
-#            test2 = "$2")
-#     ),
-#     list(test1 = "$1",
-#          test2 = "$2")
-#   )
-#   expect_equal(
-#     swap_in_column_names(
-#       list(test1 = "$1",
-#            test2 = "$2"),
-#       column_names
-#     ),
-#     list(test1 = "$1",
-#          test2 = "$2")
-#   )
-#   expect_equal(
-#     swap_in_column_names(
-#       list(char  = "$1",
-#            test2 = "$2"),
-#       column_names
-#     ),
-#     list(chr   = "$1",
-#          test2 = "$2")
-#   )
-#   expect_equal(
-#     swap_in_column_names(
-#       list(char  = "$1",
-#            num   = "$2"),
-#       column_names
-#     ),
-#     list(chr = "$1",
-#          pos = "$2")
-#   )
-# })
 
 test_that("Math conditions work", {
   finterface <- local_file_interface("data.csv")
@@ -214,32 +141,23 @@ test_that("Combining conditions works", {
                dummy_dt()[1 < num | num %in% 1:4 & num < 3 | 5 < num])
 })
 
-test_that("Quoting works properly", {
-  expect_equal(
-    check_quotes(1, FALSE, base_enquote = TRUE),
-    1
-  )
-  expect_equal(
-    check_quotes("a", FALSE, base_enquote = TRUE),
-    "\"a\""
-  )
-  expect_equal(
-    check_quotes(1, TRUE, base_enquote = FALSE),
-    "\"1\""
-  )
-  expect_equal(
-    check_quotes("a", TRUE, base_enquote = TRUE),
-    "\"\\\"a\\\"\""
-  )
-})
-
 test_that("Full command line with gz detection works", {
   expect_equal(
     new_file_interface(
-      gz_filename,
-      column_names = list(chr = "Chromsome")
+      gz_filename
     )[chr == 10, return_only_cmd = TRUE],
-    list("zcat ~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz | awk '$2 == 10'")
+    paste0("zcat ~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz  | ",
+           "awk 'BEGIN{\n",
+           "  FS = \"\\t\"\n",
+           "  OFS = FS\n",
+           "} {\n",
+           "  \n",
+           "  \n",
+           "  if ($2 == 10) {\n",
+           "    \n",
+           "    print $0\n",
+           "  }\n",
+           "}' ")
   )
 })
 
@@ -264,42 +182,15 @@ test_that("Prefixes are handled correctly", {
   for (finterface in list(finterface_b, finterface_q, finterface_gz)) {
     expect_equal(
       check_single_column_prefix(finterface,
-                                 file_colname = "$1",
-                                 prefix       = "chr"),
+                                 bash_index        = "$1",
+                                 possible_prefixes = "chr"),
       "chr"
     )
     expect_equal(
       check_single_column_prefix(finterface,
-                                 file_colname = "$1",
-                                 prefix       = "incorrect"),
+                                 bash_index        = "$1",
+                                 possible_prefixes = "incorrect"),
       NULL
-    )
-
-    expect_equal(
-      get_prefixes(
-        finterface,
-        file_colnames = list(chr = "$1"),
-        prefixes      = list(chr = "chr")
-      ),
-      list(chr = "chr")
-    )
-    expect_equal(
-      get_prefixes(
-        finterface,
-        file_colnames = list(chr = "$1"),
-        prefixes      = list(chr = "chr"),
-        nrows_to_check = NULL
-      ),
-      list(chr = "chr")
-    )
-    expect_equal(
-      get_prefixes(
-        finterface,
-        file_colnames = list(chr = "$1"),
-        prefixes      = list(chr = "incorrect")
-      ),
-      list() |>
-        setNames(character())
     )
 
     expect_equal(

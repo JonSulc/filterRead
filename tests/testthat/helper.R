@@ -101,8 +101,10 @@ dummy_summary_stats <- function(
 
   add_prefixes_to_dt(dt, prefixes)
 
-  if (encode_columns) {
+  if (isTRUE(encode_columns)) {
     dt <- encode_column(dt)
+  } else if (!isFALSE(encode_columns)) {
+    dt <- encode_column(dt, pattern = encode_columns)
   }
 
   if (random_names) {

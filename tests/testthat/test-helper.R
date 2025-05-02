@@ -3,6 +3,7 @@ test_that("Dummy csv initialization works", {
   local_csv_file(filename = "data.csv")
   expect_true(file.exists(filename = "data.csv"))
 })
+
 test_that("Dummy csv cleanup works", {
   expect_false(file.exists(filename = "data.csv"))
 })
@@ -53,6 +54,7 @@ test_that("Simulated stats initialize properly", {
   local_summary_stats(filename = "data.csv")
   expect_true(file.exists(filename = "data.csv"))
 })
+
 test_that("Dummy summary stats cleanup works", {
   expect_false(file.exists(filename = "data.csv"))
 })
@@ -61,4 +63,24 @@ test_that("Quoted summary stats work", {
   local_summary_stats(filename = "data.csv", values_are_quoted = TRUE)
   test <- data.table::fread("data.csv", quote = "")
   expect_true(all(stringr::str_detect(names(test), "\"[^\"]")))
+})
+
+test_that("Column encdoding works", {
+  finterface_enc <- local_summary_stats_interface(
+    "encoded.csv",
+    encode_columns = summary_stats_standard_names_dt[
+      list(input_name = "MarkerName", delimiter = "-c|:|-"),
+      on = c("input_name", "delimiter")
+    ],
+    random_names = FALSE
+  )
+  raw_data <- data.table::fread("encoded.csv")
+  expect_equal(
+    names(raw_data),
+    c("MarkerName", "ref", "alt", "effect", "pval")
+  )
+  expect_true(
+    grepl("^(b3[6-8])-c([^:]{1,2}):([0-9]+)-[0-9]+$", raw_data$MarkerName) |>
+      all()
+  )
 })

@@ -17,7 +17,7 @@ test_in_fc <- function(
     file_contents
   )
   filepath <- awk_condition_list$additional_files
-  random_code <- gsub("^/tmp/Rtmp[a-zA-Z]+/file",
+  random_code <- gsub("^/tmp/Rtmp[^/]+/file",
                       "",
                       awk_condition_list$additional_files)
   expect_equal(
@@ -127,12 +127,13 @@ test_that("%in% parsing works", {
         "^awk [']BEGIN[{]\n",
         "  FS = \",\"\n",
         "  OFS = FS\n[}] [{]\n",
-        "  if [(]FILENAME == \\\"/tmp/Rtmp([a-zA-Z]+)/file([a-f0-9]+)\\\"[)] [{]\n",
+        "  if [(]FILENAME == \\\"/tmp/Rtmp([^/]+)/file([a-f0-9]+)\\\"[)] [{]\n",
         "    var\\2[[][$]0[]] = 1\n",
         "    next\n",
         "  [}]\n",
         "  \n",
         "  if [(][(][$]1 in var\\2[)][)] [{]\n",
+        "    \n",
         "    print [$]0\n",
         "  [}]\n",
         "[}]['] /tmp/Rtmp\\1/file\\2 data[.]csv"

@@ -147,22 +147,23 @@ check_quotes <- function(
     if (all(is.numeric(values))) return(values)
     return(sprintf("\"%s\"", values))
   }
-  data.table::fifelse(
-    grepl("^\".*\"$", values),
-    sprintf("\"%s\"", values),
-    sprintf("\"\\\"%s\\\"\"", values)
+  # Strip existing quotation
+  values <- gsub("^(?:\")?(?:\\\")?(.*)(?:\\\")?(?:\")?$", "\\1", values)
+  sprintf(
+    "\"\\\"%s\\\"\"",
+    values
   )
 }
 check_quotes_to_write <- function(
   values,
   quoted
 ) {
-  if (!isTRUE(quoted) | all(is.numeric(values))) {
+  if (!isTRUE(quoted)) {
     return(values)
   }
   data.table::fifelse(
     grepl("^\".*\"$", values),
-    values,
+    as.character(values),
     sprintf("\"%s\"", values)
   )
 }

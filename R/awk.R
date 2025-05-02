@@ -195,7 +195,6 @@ awk_load_file_cmd <- function(
     paste(collapse = " ")
 }
 
-# TODO Check split is working properly
 get_awk_column_arrays <- function(
   finterface,
   fcondition = NULL
