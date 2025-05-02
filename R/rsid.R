@@ -18,35 +18,43 @@ tabix_colnames <- c("chr", "pos", "rsid", "ref", "alt", "qual", "filter", "info"
 awk_get_rsid_list <- function(
   chr,
   start,
-  stop,
+  end,
   rsid_bash_index,
   chr_names = chromosome_names
 ) {
-  process_substitution <- get_tabix_process_substitution(
-    chr   = chr,
-    start = start,
-    stop  = stop
-  )
-  print_prefix <- sprintf("tabix[%s] OFS ", rsid_bash_index)
+  if (missing(chr) & missing(start) & missing(end) & missing(rsid_bash_index))
+    return(NULL)
   awk_code_block <- "if (NR == FNR) {
     tabix[$3]=$1 OFS $2
   }"
+  print_prefix <- sprintf("tabix[%s] OFS ", rsid_bash_index)
+  process_substitution <- get_tabix_process_substitution(
+    chr   = chr,
+    start = start,
+    end   = end
+  )
+
+  list(
+    awk_code_block       = awk_code_block,
+    print_prefix         = print_prefix,
+    process_substitution = process_substitution
+  )
 }
 
 get_tabix_process_substitution <- function(
   chr,
   start,
-  stop,
+  end,
   dbsnp_filename = dbsnp_file,
   chr_names = chromosome_names
 ) {
   chr_name <- chr_names[tolower(chr)]
-  stopifnot(length(start) == length(stop))
+  stopifnot(length(start) == length(end))
   stopifnot(length(chr_name) == 1 | length(chr_name) == length(start))
   regions <- sprintf(
     "%s:%i-%i",
     chr_name,
-    start, stop
+    start, end
   )
   sprintf(
     "<(tabix %s %s)",
@@ -57,3 +65,10 @@ get_tabix_process_substitution <- function(
 
 # TODO Current (partial) implementation requires a genomic range, see if
 #  by condition is possible, otherwise implement in summary_stats
+# TODO Implement a conversion from chr and pos conditions to tabix ps
+
+fcondition_to_genomic_range <- function(
+
+) {
+
+}

@@ -249,6 +249,7 @@ head.file_interface <- function(
 `[.file_interface` <- function(
   finterface,
   conditions,
+  rsid_condition  = NULL, # data.table with chr, start, stop?
   ...,
   return_only_cmd = FALSE
 ) {
@@ -257,21 +258,17 @@ head.file_interface <- function(
     finterface = finterface
   ) |>
     fcondition_to_awk(
-      finterface = finterface
+      finterface     = finterface,
+      rsid_condition = rsid_condition
     )
 
   if (return_only_cmd) return(command_line)
-  lapply(
-    command_line,
-    \(cmd) {
-      data.table::fread(
-        cmd = cmd,
-        ...,
-        col.names = column_names(finterface)
-      )
-    }
-  ) |>
-    data.table::rbindlist()
+
+  data.table::fread(
+    cmd = command_line,
+    ...,
+    col.names = column_names(finterface)
+  )
 }
 
 #' @export

@@ -75,7 +75,8 @@ dummy_summary_stats <- function(
   random_names      = TRUE,
   values_are_quoted = FALSE,
   prefixes          = NULL,
-  encode_columns    = FALSE
+  encode_columns    = FALSE,
+  rsids  = FALSE # Currently unimplemented
 ) {
   if (is.null(pval)) pval <- runif(nrows)
   if (is.null(effect)) effect <- rnorm(nrows)
@@ -188,7 +189,8 @@ local_summary_stats <- function(
   values_are_quoted = FALSE,
   prefixes          = NULL,
   encode_columns    = FALSE,
-  env    = parent.frame()
+  env    = parent.frame(),
+  rsids  = FALSE
 ) {
   dummy_summary_stats(
     nrows = nrows,
@@ -203,7 +205,8 @@ local_summary_stats <- function(
     random_names      = random_names,
     values_are_quoted = FALSE,
     prefixes          = prefixes,
-    encode_columns    = encode_columns
+    encode_columns    = encode_columns,
+    rsids             = rsids
   ) |>
     local_csv_file(
       filename = filename,

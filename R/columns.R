@@ -120,7 +120,10 @@ summary_stats_column_names <- list(
               "a2",
               "A2",
               "allele2",
-              "ISmet_allele2")
+              "ISmet_allele2"),
+
+  rsid = c("rsid",
+           "id")
 )
 
 # In some CHARGE files, there is no position column but it is encoded in other

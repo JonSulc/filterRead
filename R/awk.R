@@ -71,17 +71,20 @@ eval_fcondition <- function(
 
 fcondition_to_awk <- function(
   fcondition,
-  finterface
+  finterface,
+  rsid_condition = NULL
 ) {
   awk_condition_list <- eval_fcondition(fcondition, finterface)
   column_arrays <- get_awk_column_arrays(finterface, fcondition = fcondition)
+  rsid_awk_list <- do.call(awk_get_rsid_list, as.list(rsid_condition))
   compile_awk_cmds(
     finterface       = finterface,
     awk_condition    = awk_condition_list$condition,
     variable_arrays  = awk_condition_list$variable_arrays,
     additional_files = awk_condition_list$additional_files,
     column_arrays_before_conditions = column_arrays$before_if,
-    column_arrays_after_conditions  = column_arrays$after_if
+    column_arrays_after_conditions  = column_arrays$after_if,
+    rsid_awk_list    = rsid_awk_list
   )
 }
 
