@@ -151,10 +151,7 @@ test_that("Full command line with gz detection works", {
            "  FS = \"\\t\"\n",
            "  OFS = FS\n",
            "} {\n",
-           "  \n",
-           "  \n",
            "  if ($2 == 10) {\n",
-           "    \n",
            "    print $0\n",
            "  }\n",
            "}' ")

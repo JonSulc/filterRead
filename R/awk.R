@@ -6,16 +6,6 @@ setup_column_array <- function(
   delimiter = " ",
   array_length = 1
 ) {
-  # sprintf(
-  #   "split(%s, %s, \"%s\")
-  #   %s = %s",
-  #   bash_index,
-  #   array_name,
-  #   delimiter,
-  #   bash_index,
-  #   sprintf("%s[%i]", array_name, seq_len(array_length)) |>
-  #     paste(collapse = " OFS ")
-  # )
   sprintf("%s  \n%s",
           awk_split_column(bash_index = bash_index,
                            array_name = array_name,
@@ -102,7 +92,8 @@ compile_awk_cmds <- function(
   additional_files = list(),
   column_arrays_before_conditions = NULL,
   column_arrays_after_conditions  = get_awk_column_arrays(finterface)$after_if,
-  nlines           = NULL
+  nlines           = NULL,
+  rsid_awk_list   = NULL
 ) {
   only_read <- is.null(awk_condition) &
     is.null(variable_arrays) &
@@ -114,39 +105,32 @@ compile_awk_cmds <- function(
   if (only_read)
     return(load_file)
 
-  if (is.null(awk_condition)) {
-    condition_block <- sprintf(
-      "%s
-  print $0",
-      paste(column_arrays_after_conditions, collapse = "\n  ")
-    )
-  } else {
-    condition_block <- sprintf(
-      "if (%s) {
-    %s
-    print $0
-  }",
-      awk_condition,
-      paste(column_arrays_after_conditions, collapse = "\n    ")
-    )
-  }
+  main_file_code <- wrap_main_file_code(
+    column_arrays_before_conditions = column_arrays_before_conditions,
+    condition                       = awk_condition,
+    column_arrays_after_conditions  = column_arrays_after_conditions,
+    print_prefix                    = rsid_awk_list$print_prefix,
+    there_are_other_files           = 0L < length(c(additional_files, rsid_awk_list$process_substitution))
+  )
 
-  awk_begin_code <-
-    "'BEGIN{
+  full_code_block <- wrap_full_code_block(
+    rsid_code       = rsid_awk_list$awk_code_block,
+    variable_arrays = variable_arrays,
+    main_file_code  = main_file_code
+  )
+
+  begin_code_block <-
+    "BEGIN{
   FS = \"%s\"
   OFS = FS
-} {
-  %s
-  %s
-  %s
-}'" |>
-    sprintf(
-      finterface$sep,
-      paste(variable_arrays, collapse = "\n"),
-      paste(column_arrays_before_conditions, collapse = "\n  "),
-      condition_block
-    )
+}" |>
+    sprintf(finterface$sep)
+
+  awk_code <- sprintf("'%s'",
+                      paste(begin_code_block, full_code_block))
+
   awk_final_filename <- c(
+    rsid_awk_list$process_substitution,
     additional_files,
     ifelse(finterface$gzipped | !is.null(nlines),
            "",
@@ -154,7 +138,73 @@ compile_awk_cmds <- function(
   ) |>
     paste(collapse = " ")
 
-  paste(load_file, awk_begin_code, awk_final_filename)
+  paste(load_file, awk_code, awk_final_filename)
+}
+
+
+wrap_condition_block <- function(
+  condition,
+  column_arrays_after_conditions,
+  print_prefix
+) {
+  print_line <- sprintf("print %s$0",
+                        ifelse(is.null(print_prefix),
+                               "",
+                               print_prefix))
+
+  if (is.null(condition)) {
+    return(
+      c(column_arrays_after_conditions, print_line) |>
+        paste(collapse = "\n  ")
+    )
+  }
+  sprintf(
+    "if (%s) {
+    %s
+  }",
+    condition,
+    c(column_arrays_after_conditions, print_line) |>
+      paste(collapse = "\n    ")
+  )
+}
+
+
+wrap_main_file_code <- function(
+  column_arrays_before_conditions,
+  condition,
+  column_arrays_after_conditions,
+  print_prefix,
+  there_are_other_files = TRUE
+) {
+  condition_block <- wrap_condition_block(condition,
+                                          column_arrays_after_conditions,
+                                          print_prefix)
+
+  full_code <- c(column_arrays_before_conditions, condition_block) |>
+    paste(collapse = "\n    ")
+
+  if (!there_are_other_files) return(full_code)
+
+  sprintf(
+    "{
+    %s
+  }",
+    full_code
+  )
+}
+
+wrap_full_code_block <- function(
+  rsid_code,
+  variable_arrays,
+  main_file_code
+) {
+  sprintf(
+    "{
+  %s
+}",
+    c(rsid_code, variable_arrays, main_file_code) |>
+      paste(collapse = "\n  else ")
+  )
 }
 
 

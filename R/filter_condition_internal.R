@@ -72,11 +72,6 @@ eq_to_fc <- function(
       check_post_processing(fcall[[3]], finterface)
   }
 
-  # if (1L < length(fcall[[2]]) | 1L < length(fcall[[3]])) {
-  #   stop("More than 1 element on a side of '==':\n",
-  #        toString(fcall[[2]]), " == ", toString(fcall[[3]]))
-  # }
-
   fcall
 }
 

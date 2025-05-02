@@ -26,3 +26,4 @@ Collate:
     'file_interface.R'
     'filter_condition_internal.R'
     'filter_condition.R'
+    'rsid.R'
