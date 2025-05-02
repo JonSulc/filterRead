@@ -36,8 +36,7 @@ or_to_fc <- function(
 
 chainable_to_fc <- function(
   fcall,
-  finterface,
-  env
+  ...
 ) {
   fcall[[1]] <- list(
     "<"  = as.symbol("lt_filter_condition"),
@@ -51,20 +50,20 @@ chainable_to_fc <- function(
 
 eq_to_fc <- function(
   fcall,
-  finterface,
+  finterface_env,
   env
 ) {
   stopifnot(fcall[[1]] == as.symbol("=="))
   fcall[[1]] <- as.symbol("eq_filter_condition")
 
-  if (is_column_symbol(fcall[[2]], finterface)
-      & !is_column_symbol(fcall[[3]], finterface)) {
+  if (is_column_symbol(fcall[[2]], finterface_env$finterface)
+      & !is_column_symbol(fcall[[3]], finterface_env$finterface)) {
     fcall[[3]] <- eval(fcall[[3]], env) |>
-      check_post_processing(fcall[[2]], finterface)
-  } else if (is_column_symbol(fcall[[3]], finterface)
-             & !is_column_symbol(fcall[[2]], finterface)) {
+      check_post_processing(fcall[[2]], finterface_env$finterface)
+  } else if (is_column_symbol(fcall[[3]], finterface_env$finterface)
+             & !is_column_symbol(fcall[[2]], finterface_env$finterface)) {
     fcall[[2]] <- eval(fcall[[2]], env) |>
-      check_post_processing(fcall[[3]], finterface)
+      check_post_processing(fcall[[3]], finterface_env$finterface)
   }
 
   fcall
@@ -73,13 +72,13 @@ eq_to_fc <- function(
 
 in_to_fc <- function(
   fcall,
-  finterface,
+  finterface_env,
   env
 ) {
   fcall[[1]] <- as.symbol("in_filter_condition")
 
   fcall[[3]] <- eval(fcall[[3]], env) |>
-    check_post_processing(fcall[[2]], finterface, to_write = TRUE)
+    check_post_processing(fcall[[2]], finterface_env$finterface, to_write = TRUE)
 
   fcall
 }

@@ -54,35 +54,46 @@ test_that("Basic filter_condition initialization works", {
   # expect_error(new_filter_condition(rlang::expr(x == 1:3),
   #                                   finterface = finterface))
 
+  finterface_env <- {
+    env <- new.env(parent = emptyenv())
+    env$finterface <- finterface
+    env
+  }
+
   expect_equal(new_filter_condition(rlang::expr(x < 3),
                                     finterface = finterface),
                structure(
                  rlang::expr(lt_filter_condition(x, 3)),
-                 class = c("filter_condition", "call")
+                 class = c("filter_condition", "call"),
+                 finterface_env = finterface_env
                ))
   expect_equal(new_filter_condition(rlang::expr(x > 3),
                                     finterface = finterface),
                structure(
                  rlang::expr(gt_filter_condition(x, 3)),
-                 class = c("filter_condition", "call")
+                 class = c("filter_condition", "call"),
+                 finterface_env = finterface_env
                ))
   expect_equal(new_filter_condition(rlang::expr(x <= 3),
                                     finterface = finterface),
                structure(
                  rlang::expr(lte_filter_condition(x, 3)),
-                 class = c("filter_condition", "call")
+                 class = c("filter_condition", "call"),
+                 finterface_env = finterface_env
                ))
   expect_equal(new_filter_condition(rlang::expr(x >= 3),
                                     finterface = finterface),
                structure(
                  rlang::expr(gte_filter_condition(x, 3)),
-                 class = c("filter_condition", "call")
+                 class = c("filter_condition", "call"),
+                 finterface_env = finterface_env
                ))
   expect_equal(new_filter_condition(rlang::expr(x == 3),
                                     finterface = finterface),
                structure(
                  rlang::expr(eq_filter_condition(x, 3)),
-                 class = c("filter_condition", "call")
+                 class = c("filter_condition", "call"),
+                 finterface_env = finterface_env
                ))
 })
 
@@ -112,7 +123,12 @@ test_that("%in% parsing works", {
         fcall[[3]] <- c("a", "b", "c", "d", "e")
         fcall
       },
-      class = c("filter_condition", "call")
+      class = c("filter_condition", "call"),
+      finterface_env = {
+        env <- new.env(parent = emptyenv())
+        env$finterface <- finterface
+        env
+      }
     )
   )
 

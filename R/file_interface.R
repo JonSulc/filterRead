@@ -20,6 +20,9 @@ new_file_interface <- function(
   finterface
 }
 
+#' @export
+is_file_interface <- function(finterface) inherits(finterface, "file_interface")
+
 get_column_info <- function(
   finterface,
   standard_names_dt = summary_stats_standard_names_dt,

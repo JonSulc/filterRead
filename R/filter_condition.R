@@ -18,6 +18,10 @@ fc_convert <- list(
   "%chin%" = in_to_fc
 )
 
+supported_fcondition_operations <- c(
+  "<", "<=", ">", ">=", "==", "&", "|", "(", "%in%", "%chin%"
+)
+
 
 as_filter_condition <- function(
   fcall,
@@ -47,9 +51,25 @@ new_filter_condition <- function(
 
   if (!as.character(fcall[[1]]) %in% names(fc_convert)) return(fcall)
 
+  if (is_file_interface(finterface)) {
+    attr(fcall, "finterface_env") <- new.env(parent = emptyenv())
+    attr(fcall, "finterface_env")$finterface <- finterface
+  } else {
+    attr(fcall, "finterface_env") <- finterface
+  }
+
+  # if (as.character(fcall[[1]]) %in% supported_fcondition_operations) {
+  #   fcall[-1] <- lapply(fcall[-1],
+  #                       new_filter_condition,
+  #                       finterface = finterface,
+  #                       env        = env)
+  # }
+  #
+  # eval(fcall)
+
   fcondition <- fc_convert[[as.character(fcall[[1]])]](
     fcall,
-    finterface = finterface,
+    finterface = attr(fcall, "finterface_env"),
     env = env
   )
   fcondition
@@ -142,12 +162,20 @@ get_used_columns <- function(
   finterface
 ){
   if (is.call(fcondition)) {
-    return(sapply(fcondition[-1], get_used_columns, finterface) |>
+    return(sapply(fcondition[-1],
+                  get_used_columns,
+                  get_file_interface(fcondition)) |>
              unlist() |>
              unique())
   }
   intersect(finterface$column_info$name,
             as.character(fcondition))
+}
+
+get_file_interface <- function(
+  fcondition
+) {
+  attr(fcondition, "finterface_env")$finterface
 }
 
 #' @export
