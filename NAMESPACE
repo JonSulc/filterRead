@@ -2,8 +2,10 @@
 
 S3method("&",filter_condition)
 S3method("[",file_interface)
+S3method("|",filter_condition)
 S3method(head,file_interface)
 S3method(print,file_interface)
+export(is_file_interface)
 export(new_file_interface)
 import(data.table)
 importFrom(rlang,caller_env)

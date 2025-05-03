@@ -193,3 +193,19 @@ get_file_interface <- function(
   attr(fcondition, "finterface_env") <- attr(fcondition1, "finterface_env")
   fcondition
 }
+
+#' @export
+`|.filter_condition` <- function(
+  fcondition1,
+  fcondition2
+) {
+  stopifnot(identical(
+    attr(fcondition1, "finterface_env"),
+    attr(fcondition2, "finterface_env")
+  ))
+  fcondition <- rlang::expr(or_filter_condition()) |>
+    as_filter_condition()
+  fcondition[2:3] <- list(fcondition1, fcondition2)
+  attr(fcondition, "finterface_env") <- attr(fcondition1, "finterface_env")
+  fcondition
+}

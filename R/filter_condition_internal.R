@@ -24,13 +24,7 @@ or_to_fc <- function(
   fcall,
   ...
 ) {
-  stopifnot(fcall[[1]] == as.symbol("|"))
-  fcall[[1]] <- as.symbol("or_filter_condition")
-  fcall[-1] <- lapply(fcall[-1],
-                      new_filter_condition,
-                      ...)
-  fcall |>
-    as_filter_condition()
+  new_filter_condition(fcall[[2]], ...) | new_filter_condition(fcall[[3]], ...)
 }
 
 
