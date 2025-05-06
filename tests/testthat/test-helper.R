@@ -84,3 +84,41 @@ test_that("Column encdoding works", {
       all()
   )
 })
+
+test_that("Creating RSID-coded summary stats works", {
+  summary_stats <- dummy_rsid_summary_stats(columns_to_drop = c("chr", "pos"))
+  expect_equal(
+    colnames(summary_stats),
+    c("rsid", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(
+    colnames(dummy_rsid_summary_stats(columns_to_drop = "chr")),
+    c("rsid", "pos", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(
+    colnames(dummy_rsid_summary_stats(columns_to_drop = "pos")),
+    c("rsid", "chr", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(
+    colnames(dummy_rsid_summary_stats(columns_to_drop = NULL)),
+    c("rsid", "chr", "pos", "ref", "alt", "effect", "pval")
+  )
+
+  expect_equal(
+    nrow(summary_stats),
+    500
+  )
+  expect_false(
+    any(duplicated(summary_stats$rsid))
+  )
+
+  finterface <- local_rsid_summary_stats_interface()
+  expect_equal(
+    column_names(finterface),
+    c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(
+    column_names(finterface, original = TRUE),
+    c("rsid", "ref", "alt", "effect", "pval")
+  )
+})

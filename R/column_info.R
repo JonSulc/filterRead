@@ -1,5 +1,32 @@
 #' @import data.table
 
+get_column_info <- function(
+    finterface,
+    standard_names_dt = summary_stats_standard_names_dt,
+    nrows_to_check = 500
+) {
+  column_info <- get_base_column_info(
+    finterface,
+    standard_names_dt = standard_names_dt
+  )
+
+  data_to_check <- head(finterface, nrows_to_check)
+  column_info <- filter_regex_matches(column_info, data_to_check)
+
+  add_quoted_column(column_info, finterface)
+
+  add_prefix_column(column_info, data_to_check)
+
+  add_encoding_columns(column_info)
+
+  column_info <- expand_encoded_columns(column_info)
+
+  column_info[
+    ,
+    name := data.table::fcoalesce(standard_name, input_name)
+  ][]
+}
+
 get_base_column_info <- function(
   finterface,
   standard_names_dt = summary_stats_standard_names_dt
@@ -69,6 +96,15 @@ add_quoted_column <- function(
     quoted := are_values_quoted(finterface)[input_name]
   ][] |>
     invisible()
+}
+are_values_quoted <- function(
+    finterface
+) {
+  quoted_values <- head(finterface, nlines = 1, quote = "") |>
+    sapply(stringr::str_detect, "\"")
+  names(quoted_values) <- names(quoted_values) |>
+    stringr::str_replace_all("\"", "")
+  quoted_values
 }
 
 add_prefix_column <- function(
@@ -182,5 +218,30 @@ expand_encoded_columns <- function(
   ][
     ,
     -"seq_len"
+  ]
+}
+
+needs_rsid_matching <- function(
+  finterface,
+  force = FALSE
+) {
+  if (!force & "needs_rsid_matching" %in% names(finterface))
+    return(finterface$needs_rsid_matching)
+
+  file_colnames <- column_names(finterface, original = TRUE)
+  "rsid" %in% file_colnames & !all(c("chr", "pos") %in% file_colnames)
+}
+
+column_names <- function(
+    finterface,
+    original     = FALSE,
+    rsid_parsing = TRUE
+) {
+  if (original)
+    return(finterface$column_info$input_name[!is.na(finterface$column_info$input_name)])
+
+  finterface$column_info[
+    sapply(encoded_names, is.null),
+    data.table::fcoalesce(standard_name, input_name)
   ]
 }

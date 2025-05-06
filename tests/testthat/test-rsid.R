@@ -22,3 +22,9 @@ test_that("tabix process substitution works", {
     sprintf("<(tabix %s NC_000001.11:123-234 NC_000002.12:456-567)", dbsnp_file)
   )
 })
+
+test_that("File reading works", {
+  finterface <- local_rsid_summary_stats_interface()
+  expect_true(needs_rsid_matching(finterface))
+  expect_no_error(head(finterface))
+})

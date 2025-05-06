@@ -17,60 +17,18 @@ new_file_interface <- function(
     standard_names_dt = standard_names_dt
   )
 
+  finterface$needs_rsid_matching <- needs_rsid_matching(finterface)
+
   finterface
 }
 
 #' @export
 is_file_interface <- function(finterface) inherits(finterface, "file_interface")
 
-get_column_info <- function(
-  finterface,
-  standard_names_dt = summary_stats_standard_names_dt,
-  nrows_to_check = 500
-) {
-  column_info <- get_base_column_info(
-    finterface,
-    standard_names_dt = standard_names_dt
-  )
-
-  data_to_check <- head(finterface, nrows_to_check)
-  column_info <- filter_regex_matches(column_info, data_to_check)
-
-  add_quoted_column(column_info, finterface)
-
-  add_prefix_column(column_info, data_to_check)
-
-  add_encoding_columns(column_info)
-
-  column_info <- expand_encoded_columns(column_info)
-
-  column_info[
-    ,
-    name := data.table::fcoalesce(standard_name, input_name)
-  ][]
-}
-
 is_gzipped <- function(
   filename
 ) {
   stringr::str_detect(filename, "[.]gz$")
-}
-
-are_values_quoted <- function(
-  finterface
-) {
-  quoted_values <- head(finterface, nlines = 1, quote = "") |>
-    sapply(stringr::str_detect, "\"")
-  names(quoted_values) <- names(quoted_values) |>
-    stringr::str_replace_all("\"", "")
-  quoted_values
-}
-
-is_value_numeric <- function(
-    value
-) {
-  !is.na(as.numeric(value)) |>
-    suppressWarnings()
 }
 
 get_file_separator <- function(
@@ -103,7 +61,6 @@ head.file_interface <- function(
     nlines = 1,
     ...
 ) {
-  # TODO Improve handling of gzipped files (broken pipe)
   if (!"column_info" %in% names(finterface)) {
     return(
       data.table::fread(
@@ -115,7 +72,11 @@ head.file_interface <- function(
   }
   data.table::fread(
     cmd = compile_awk_cmds(finterface, nlines = nlines + 1),
-    col.names = column_names(finterface),
+    col.names = {if (needs_rsid_matching(finterface)) {
+      column_names(finterface, original = TRUE)
+    } else {
+      column_names(finterface)
+    }},
     ...
   )
 }
@@ -173,18 +134,4 @@ print.file_interface <- function(
            FALSE)
   ),
       "\n")
-}
-
-column_names <- function(
-  finterface,
-  original     = FALSE,
-  rsid_parsing = TRUE
-) {
-  if (original)
-    return(finterface$column_info$input_name)
-
-  finterface$column_info[
-    sapply(encoded_names, is.null),
-    data.table::fcoalesce(standard_name, input_name)
-  ]
 }

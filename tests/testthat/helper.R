@@ -109,21 +109,28 @@ dummy_summary_stats <- function(
   }
 
   if (random_names) {
-    data.table::setnames(
-      dt,
-      new = sapply(
-        names(dt),
-        \(cname) {
-          if (!cname %in% names(summary_stats_column_names)) return(cname)
-          sample(summary_stats_column_names[[cname]], 1)
-        }
-      )
-    )
+    set_random_names(dt, ref_col_names = ref_col_names)
   }
 
   add_quotes_to_dt(dt, values_are_quoted)
 
   dt
+}
+
+set_random_names <- function(
+  dt,
+  ref_col_names = summary_stats_column_names
+) {
+  data.table::setnames(
+    dt,
+    new = sapply(
+      names(dt),
+      \(cname) {
+        if (!cname %in% names(summary_stats_column_names)) return(cname)
+        sample(summary_stats_column_names[[cname]], 1)
+      }
+    )
+  )
 }
 
 add_quotes <- function(something) {
@@ -247,4 +254,68 @@ encode_column <- function(
       c(.SD),
     .SDcols = -drop_columns
   ]
+}
+
+dummy_rsid_summary_stats <- function(
+  nrows           = 500,
+  # Default arguments provide 1473 SNPs
+  chr             = 1,
+  start           = 123,
+  end             = 12345,
+  columns_to_drop = c("chr", "pos"),
+  ...
+) {
+  rsids <- get_tabix_process_substitution(chr = chr, start = start, end = end) |>
+    sub("^<[(](.*)[)]$", "\\1", x = _) |>
+    data.table::fread(cmd = _, select = 3, col.names = "rsid")
+  while (nrow(rsids) < nrows) rsids <- rbind(rsids, rsids)
+
+  if (is.null(columns_to_drop)) {
+    return(
+      dummy_summary_stats(nrows = nrows, random_names = FALSE, ...)[
+        ,
+        .(rsid = rsids[seq_len(nrows), rsid]) |>
+          c(.SD)
+      ]
+    )
+  }
+  dummy_summary_stats(nrows = nrows, random_names = FALSE, ...)[
+    ,
+    .(rsid = rsids[seq_len(nrows), rsid]) |>
+      c(.SD),
+    .SDcols = -columns_to_drop
+  ]
+}
+
+local_rsid_summary_stats <- function(
+  filename = "data.csv",
+  nrows    = 500,
+  # Default arguments provide 1473 SNPs
+  chr      = 1,
+  start    = 123,
+  end      = 12345,
+  values_are_quoted = FALSE,
+  ...,
+  env      = parent.frame()
+) {
+  dummy_rsid_summary_stats(
+    nrows = nrows,
+    chr   = chr,
+    start = start,
+    end   = end,
+    ...
+  ) |>
+    local_csv_file(filename = filename,
+                   dt       = _,
+                   quote    = values_are_quoted,
+                   env      = env)
+}
+
+local_rsid_summary_stats_interface <- function(
+  filename = "data.csv",
+  ...,
+  env = parent.frame()
+) {
+  local_rsid_summary_stats(filename = filename, ..., env = env)
+  new_file_interface(filename)
 }
