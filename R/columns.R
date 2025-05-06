@@ -88,7 +88,8 @@ summary_stats_column_names <- list(
            "P.value",
            "ISmet_pvalue",
            "WMHmet_P",
-           "BImet_meta.p"),
+           "BImet_meta.p",
+           "P-value"),
 
   log10p = c("LOG10P"),
 
@@ -106,6 +107,9 @@ summary_stats_column_names <- list(
 
   odds_ratio = c("OR"),
 
+  # rsid = c("rsid",
+  #          "id"),
+
   allele1 = c("Allele_1",
               "Allele 1",
               "Allele1",
@@ -120,10 +124,7 @@ summary_stats_column_names <- list(
               "a2",
               "A2",
               "allele2",
-              "ISmet_allele2"),
-
-  rsid = c("rsid",
-           "id")
+              "ISmet_allele2")
 )
 
 # In some CHARGE files, there is no position column but it is encoded in other
@@ -135,28 +136,24 @@ summary_stats_encoded_columns <- list(
     list(pattern = "%s:%s",
          regex   = "^([^:]{1,2}):([0-9]+)$",
          encoded_names = list(c("chr", "pos")),
-         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":"),
 
     # e.g., sub20180725/SVE.european.results.metal.csv
     list(pattern = "%s-c%s:%s-123",
          regex   = "^(b3[6-8])-c([^:]{1,2}):([0-9]+)-[0-9]+$",
          encoded_names = list(c("build", "chr", "pos")),
-         # substitutes = list(c(build = "encoded[1]", chr = "encoded[2]", pos = "encoded[3]")),
          delimiter = "-c|:|-"),
 
     # e.g., sub20190511/invnormFT4_overall_150611_invvar1.txt-QCfiltered_GC.rsid.txt
     list(pattern = "%s:%s:SNP",
          regex   = "^([^:]+):([0-9]+):[^:]+$",
          encoded_names = list(c("chr", "pos")),
-         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":"),
 
     # e.g., sub20201231_01/BP-ICE_EUR_SBP_transformed_15-04-2020.txt
     list(pattern = "chr%s:%i:a:c",
          regex   = "^(chr[^:]{1,2}):([0-9]+):[a-zA-Z]+:[a-zA-Z]+$",
          encoded_names = list(c("chr", "pos")),
-         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":")
   ),
 
@@ -165,7 +162,6 @@ summary_stats_encoded_columns <- list(
     list(pattern = "%s:%s",
          regex   = "^([^:]{1,2}):([0-9]+)$",
          encoded_names = list(c("chr", "pos")),
-         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":")
   ),
 
@@ -174,7 +170,6 @@ summary_stats_encoded_columns <- list(
     list(pattern = "%s:%s",
          regex   = "^([^:]{1,2}):([0-9]+)$",
          encoded_names = list(c("chr", "pos")),
-         # substitutes = list(c(chr = "encoded[1]", pos = "encoded[2]")),
          delimiter = ":")
   )
 )
@@ -199,9 +194,17 @@ summary_stats_encoded_columns_dt <- data.table::data.table(
   by = input_name
 ]
 
+summary_stats_rsid_dt <- data.table::data.table(
+  input_name    = c("rsid", "id", "MarkerName"),
+  standard_name = "rsid",
+  pattern       = "rs%s",
+  regex         = "^(rs[0-9]+)$"
+)
+
 summary_stats_standard_names_dt <- list(
   summary_stats_standard_names_dt,
-  summary_stats_encoded_columns_dt
+  summary_stats_encoded_columns_dt,
+  summary_stats_rsid_dt
 ) |>
   data.table::rbindlist(fill = TRUE, use.names = TRUE)
 

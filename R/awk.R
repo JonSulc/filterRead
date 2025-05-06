@@ -75,7 +75,15 @@ fcondition_to_awk <- function(
 ) {
   awk_condition_list <- eval_fcondition(fcondition, get_file_interface(fcondition))
   column_arrays <- get_awk_column_arrays(get_file_interface(fcondition), fcondition = fcondition)
-  rsid_awk_list <- do.call(awk_get_rsid_list, as.list(rsid_condition))
+
+  rsid_bash_index <- get_file_interface(fcondition)$column_info[
+    "rsid",
+    bash_index,
+    on = "name"
+  ]
+
+  rsid_awk_list <- do.call(awk_get_rsid_list, as.list(rsid_condition) |>
+                             c(list(rsid_bash_index = rsid_bash_index)))
   compile_awk_cmds(
     finterface       = get_file_interface(fcondition),
     awk_condition    = awk_condition_list$condition,
@@ -95,7 +103,7 @@ compile_awk_cmds <- function(
   column_arrays_before_conditions = NULL,
   column_arrays_after_conditions  = get_awk_column_arrays(finterface)$after_if,
   nlines           = NULL,
-  rsid_awk_list   = NULL
+  rsid_awk_list    = NULL
 ) {
   only_read <- is.null(awk_condition) &
     is.null(variable_arrays) &
@@ -112,7 +120,8 @@ compile_awk_cmds <- function(
     condition                       = awk_condition,
     column_arrays_after_conditions  = column_arrays_after_conditions,
     print_prefix                    = rsid_awk_list$print_prefix,
-    there_are_other_files           = 0L < length(c(additional_files, rsid_awk_list$process_substitution))
+    there_are_other_files           = 0L < length(c(additional_files, rsid_awk_list$process_substitution)),
+    rsid_condition                  = rsid_awk_list$rsid_condition
   )
 
   full_code_block <- wrap_full_code_block(
@@ -147,27 +156,37 @@ compile_awk_cmds <- function(
 wrap_condition_block <- function(
   condition,
   column_arrays_after_conditions,
-  print_prefix
+  print_prefix,
+  rsid_condition = NULL
 ) {
   print_line <- sprintf("print %s$0",
                         ifelse(is.null(print_prefix),
                                "",
                                print_prefix))
 
-  if (is.null(condition)) {
-    return(
-      c(column_arrays_after_conditions, print_line) |>
-        paste(collapse = "\n  ")
-    )
+  if (is.null(rsid_condition)) {
+    condition_block <- "%s"
+  } else {
+    condition_block <- "if (%s) {
+    %%s
+  }" |>
+      sprintf(rsid_condition)
   }
-  sprintf(
-    "if (%s) {
+
+  if (is.null(condition)) {
+    inner_block <- c(column_arrays_after_conditions, print_line) |>
+      paste(collapse = "\n  ")
+  } else {
+    inner_block <- sprintf(
+      "if (%s) {
     %s
   }",
-    condition,
-    c(column_arrays_after_conditions, print_line) |>
-      paste(collapse = "\n    ")
-  )
+      condition,
+      c(column_arrays_after_conditions, print_line) |>
+        paste(collapse = "\n    ")
+    )
+  }
+  sprintf(condition_block, inner_block)
 }
 
 
@@ -176,11 +195,15 @@ wrap_main_file_code <- function(
   condition,
   column_arrays_after_conditions,
   print_prefix,
-  there_are_other_files = TRUE
+  there_are_other_files = TRUE,
+  rsid_condition        = NULL
 ) {
-  condition_block <- wrap_condition_block(condition,
-                                          column_arrays_after_conditions,
-                                          print_prefix)
+  condition_block <- wrap_condition_block(
+    condition                      = condition,
+    column_arrays_after_conditions = column_arrays_after_conditions,
+    print_prefix                   = print_prefix,
+    rsid_condition                 = rsid_condition
+  )
 
   full_code <- c(column_arrays_before_conditions, condition_block) |>
     paste(collapse = "\n    ")

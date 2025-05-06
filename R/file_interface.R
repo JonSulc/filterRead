@@ -28,98 +28,46 @@ get_column_info <- function(
   standard_names_dt = summary_stats_standard_names_dt,
   nrows_to_check = 500
 ) {
-  column_info <- data.table::data.table(
-    input_name = head(finterface) |> names()
-  )[
-    ,
-    c(.SD,
-      .(input_index = seq_len(.N),
-        bash_index = paste0("$", seq_len(.N))))
-  ]
-  column_info <- standard_names_dt[
-    column_info,
-    on = "input_name"
-  ]
+  column_info <- get_base_column_info(
+    finterface,
+    standard_names_dt = standard_names_dt
+  )
 
-  data_first_row <- head(finterface)
+  data_to_check <- head(finterface, nrows_to_check)
+  column_info <- filter_regex_matches(column_info, data_to_check)
 
-  column_info <- column_info[
-    ,
-    {
-      if (is.na(pattern[[1]])) {
-        .SD
-      } else {
-        row_match <- .SD[sapply(.SD$regex, grepl, data_first_row[[input_name]])]
-        if (nrow(row_match) == 0) {
-          row_match <- .SD[1]
-          row_match[
-            ,
-            c("pattern", "regex", "encoded_names", "substitutes", "delimiter") := .(
-              NA_character_, NA_character_, list(), list(), NA_character_
-            )
-          ]
-        } else if (1 < nrow(row_match)) {
-          warning("Column ", input_name, " matches multiple regex patterns:\n",
-                  paste(row_match$regex, collapse = "\n"), "\n\n",
-                  "Using first.")
-          row_match <- row_match[1]
-        } else {
-          row_match
-        }
-      }
-    },
-    by = input_name
-  ]
+  add_quoted_column(column_info, finterface)
 
-  column_info[
-    ,
-    quoted := are_values_quoted(finterface)[input_name]
-  ][]
-  to_check <- head(finterface, nrows_to_check)
+  add_prefix_column(column_info, data_to_check)
 
-  column_info[
-    ,
-    prefix := character(0)
-  ][
-    !is.na(possible_prefixes),
-    prefix := check_single_column_prefix(finterface,
-                                         bash_index = bash_index,
-                                         possible_prefixes = possible_prefixes),
-    by = bash_index
-  ][
-    !sapply(encoded_names, is.null),
-    encoded_column_index := seq_len(.N)
-  ][
-    ,
-    encoding_column := NA_character_
-  ][]
+  add_encoding_columns(column_info)
 
-  if (any(!sapply(column_info$regex, is.na))) {
-    column_info[
-      !sapply(regex, is.na),
-      split_encoding_column := sprintf(
-        "split(%s, encoded%i, \"%s\")",
-        bash_index,
-        encoded_column_index,
-        delimiter
-      )
-    ][
-      !sapply(regex, is.na),
-      recode_columns := sprintf(
-        "%s = %s",
-        bash_index,
-        sprintf("encoded%i[%i]", encoded_column_index, seq_along(encoded_names[[1]])) |>
-          paste(collapse = " OFS ")
-      ),
-      by = bash_index
-    ][]
-  }
+  # TODO Incomplete if only one of them missing
+  missing_rsid_columns <- c("chr", "pos")[
+    !c("chr", "pos") %in% c(column_info$standard_name, unlist(column_info$encoded_names))
+  ] |>
+    c("rsid")
 
   column_info <- column_info[
     ,
     {
-      if (is.null(encoded_names[[1]])) {
+      if (is.na(regex)) {
         .SD
+      } else if (regex == "^(rs[0-9]+)$") {
+        list(
+          .SD,
+          .(standard_name         = missing_rsid_columns,
+            regex                 = regex,
+            delimiter             = NA_character_,
+            input_index           = input_index,
+            bash_index            = NA_character_,
+            quoted                = FALSE,
+            encoding_column       = input_name,
+            split_encoding_column = NA_character_,
+            recode_columns        = NA_character_) |>
+            data.table::as.data.table()
+        ) |>
+          data.table::rbindlist(fill = TRUE, use.names = TRUE)
       } else {
         list(
           .SD,
@@ -144,6 +92,7 @@ get_column_info <- function(
     ,
     -"seq_len"
   ]
+
   column_info[
     ,
     name := data.table::fcoalesce(standard_name, input_name)
@@ -164,34 +113,6 @@ are_values_quoted <- function(
   names(quoted_values) <- names(quoted_values) |>
     stringr::str_replace_all("\"", "")
   quoted_values
-}
-
-check_single_column_prefix <- function(
-  finterface,
-  bash_index,
-  possible_prefixes,
-  nrows_to_check = 500L
-) {
-  if (length(bash_index) == 0L || length(possible_prefixes) == 0L) return()
-  awk_script <- sprintf(
-    "'NR > 1 && %s !~ (\"^[\\\"]?%s\") { exit 1 }'",
-    bash_index,
-    possible_prefixes
-  )
-  if (is.null(nrows_to_check)) {
-    cmd <- wrap_first_awk(
-      awk_script,
-      finterface = finterface
-    )
-  } else {
-    cmd <- awk_load_file_cmd(finterface, nlines = nrows_to_check + 1L) |>
-      paste(awk_script)
-  }
-  if (system(cmd) == 1L) return()
-  if (length(possible_prefixes) == 1) return(possible_prefixes)
-  sapply(possible_prefixes, \(prefix) {
-    check_single_column_prefix(finterface, bash_index, prefix, nrows_to_check)
-  })
 }
 
 is_value_numeric <- function(
@@ -252,7 +173,7 @@ head.file_interface <- function(
 `[.file_interface` <- function(
   finterface,
   conditions,
-  rsid_condition  = NULL, # data.table with chr, start, stop?
+  rsid_condition  = NULL, # data.table with chr, start, stop
   ...,
   return_only_cmd = FALSE
 ) {
@@ -267,7 +188,7 @@ head.file_interface <- function(
   if (return_only_cmd) return(command_line)
 
   data.table::fread(
-    cmd = command_line,
+    cmd = paste("bash -c", shQuote(command_line)),
     ...,
     col.names = column_names(finterface)
   )
@@ -305,7 +226,8 @@ print.file_interface <- function(
 
 column_names <- function(
   finterface,
-  original = FALSE
+  original     = FALSE,
+  rsid_parsing = TRUE
 ) {
   if (original)
     return(finterface$column_info$input_name)

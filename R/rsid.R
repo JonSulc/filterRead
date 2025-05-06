@@ -22,12 +22,12 @@ awk_get_rsid_list <- function(
   rsid_bash_index,
   chr_names = chromosome_names
 ) {
-  if (missing(chr) & missing(start) & missing(end) & missing(rsid_bash_index))
+  if (missing(chr) & missing(start) & missing(end))
     return(NULL)
   awk_code_block <- "if (NR == FNR) {
-    tabix[$3]=$1 OFS $2
+    rsid[$3]=$1 OFS $2
   }"
-  print_prefix <- sprintf("tabix[%s] OFS ", rsid_bash_index)
+  print_prefix <- sprintf("rsid[%s] OFS ", rsid_bash_index)
   process_substitution <- get_tabix_process_substitution(
     chr   = chr,
     start = start,
@@ -37,7 +37,8 @@ awk_get_rsid_list <- function(
   list(
     awk_code_block       = awk_code_block,
     print_prefix         = print_prefix,
-    process_substitution = process_substitution
+    process_substitution = process_substitution,
+    rsid_condition       = sprintf("%s in rsid", rsid_bash_index)
   )
 }
 
