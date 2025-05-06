@@ -284,132 +284,6 @@ test_that("Parentheses work as expected", {
     expected_condition = "(3 <= $2 || ($2 in var%s)) && $2 <= 5",
     file_contents = c("a", 1)
   )
-
-
-  # expect_equal(
-  #   new_filter_condition(rlang::expr(num <= 5 & (3 <= num | num %in% c("a", 1))),
-  #                        finterface = finterface) |>
-  #     to_awk(finterface = finterface) |>
-  #     flatten_cl_bits(),
-  #   list(
-  #     structure(c("$1 <= 5 && 3 <= $1"),
-  #               chainable = TRUE,
-  #               encoded   = FALSE),
-  #     c("$1 <= 5",
-  #       "BEGIN {split(\"a 1\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}")
-  #   )
-  # )
-  # expect_equal(
-  #   new_filter_condition(rlang::expr((3 <= num | num < 4) & num <= 5),
-  #                        finterface = finterface) |>
-  #     to_awk(finterface = finterface) |>
-  #     flatten_cl_bits(),
-  #   list(
-  #     structure("(3 <= $1 || $1 < 4) && $1 <= 5",
-  #               chainable = TRUE,
-  #               encoded   = FALSE)
-  #   )
-  # )
-  # expect_equal(
-  #   new_filter_condition(rlang::expr(num <= 5 & (3 <= num | num < 4)),
-  #                        finterface = finterface) |>
-  #     to_awk(finterface = finterface) |>
-  #     flatten_cl_bits(),
-  #   list(
-  #     structure("$1 <= 5 && (3 <= $1 || $1 < 4)",
-  #               chainable = TRUE,
-  #               encoded   = FALSE)
-  #   )
-  # )
-  # expect_equal(
-  #   new_filter_condition(rlang::expr((3 <= num | num < 4) & char %in% letters[1:3]),
-  #                        finterface = finterface) |>
-  #     to_awk(finterface = finterface) |>
-  #     flatten_cl_bits(),
-  #   list(
-  #     c("(3 <= $1 || $1 < 4)",
-  #       "BEGIN {split(\"a b c\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
-  #   )
-  # )
-  # expect_equal(
-  #   new_filter_condition(rlang::expr(char %in% letters[1:3] & (3 <= num | num < 4)),
-  #                        finterface = finterface) |>
-  #     to_awk(finterface = finterface) |>
-  #     flatten_cl_bits(),
-  #   list(
-  #     c("BEGIN {split(\"a b c\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}",
-  #       "(3 <= $1 || $1 < 4)")
-  #   )
-  # )
-  #
-  # expect_equal(
-  #   new_filter_condition(rlang::expr(3 <= num & (num <= 5 & char %in% "a")),
-  #                        finterface = finterface) |>
-  #     to_awk(finterface = finterface) |>
-  #     flatten_cl_bits(),
-  #   list(c("3 <= $1",
-  #          "$1 <= 5",
-  #          "BEGIN {split(\"a\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"))
-  # )
-  #
-  # expect_equal(
-  #   new_filter_condition(
-  #     rlang::expr((3 <= num | num %in% c("a", 1)) & (num <= 5 & char == "a")),
-  #     finterface = finterface
-  #   ) |>
-  #     to_awk(finterface = finterface) |>
-  #     flatten_cl_bits(),
-  #   list(
-  #     structure(c("3 <= $1 && ($1 <= 5 && $2 == \"a\")"),
-  #               chainable = TRUE,
-  #               encoded   = FALSE),
-  #     c("BEGIN {split(\"a 1\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
-  #       "($1 <= 5 && $2 == \"a\")")
-  #   )
-  # )
-  # expect_equal(
-  #   new_filter_condition(
-  #     rlang::expr((3 <= num | num %in% c("a", 1)) & (num <= 5 & char %in% "a")),
-  #     finterface = finterface
-  #   ) |>
-  #     to_awk(finterface = finterface) |>
-  #     flatten_cl_bits(),
-  #   list(
-  #     c("3 <= $1",
-  #       "$1 <= 5",
-  #       "BEGIN {split(\"a\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}"),
-  #     c("BEGIN {split(\"a 1\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
-  #       "$1 <= 5",
-  #       "BEGIN {split(\"a\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
-  #   )
-  # )
-  # expect_equal(
-  #   new_filter_condition(
-  #     rlang::expr((3 <= num | num %in% c("a", 1)) & (num <= 5 | char %in% "a")),
-  #     finterface = finterface
-  #   ) |>
-  #     to_awk(finterface = finterface) |>
-  #     flatten_cl_bits(),
-  #   list(
-  #     structure(
-  #       "3 <= $1 && $1 <= 5",
-  #       chainable = TRUE,
-  #       encoded   = FALSE
-  #     ),
-  #     structure(
-  #       c("3 <= $1",
-  #         "BEGIN {split(\"a\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
-  #     ),
-  #     structure(
-  #       c("BEGIN {split(\"a 1\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
-  #         "$1 <= 5")
-  #     ),
-  #     structure(
-  #       c("BEGIN {split(\"a 1\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($1 in arr) print $0}",
-  #         "BEGIN {split(\"a\", vals, \" \"); for (i in vals) arr[vals[i]]} {if ($2 in arr) print $0}")
-  #     )
-  #   )
-  # )
 })
 
 test_that("Quoted values are handled correctly", {
@@ -478,5 +352,229 @@ test_that("Prefixes are handled properly",  {
     finterface = finterface,
     expected_condition = "($1 in var%s)",
     file_contents = paste0("test", 1:3)
+  )
+})
+
+test_that("And-block detection works", {
+  finterface <- local_summary_stats_interface()
+  expect_true(is_and_block(1))
+  expect_true(is_and_block("1"))
+  expect_true(is_and_block(new_filter_condition(rlang::expr(chr == 1), finterface)))
+  expect_true(is_and_block(new_filter_condition(rlang::expr(pos < 1), finterface)))
+  expect_true(is_and_block(new_filter_condition(rlang::expr(123 < pos & pos < 456), finterface)))
+  expect_true(is_and_block(new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 456), finterface)))
+
+  expect_false(is_and_block(new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 456), finterface)))
+  expect_false(is_and_block(new_filter_condition(rlang::expr(chr == 1 & 123 < pos | pos < 456), finterface)))
+  expect_false(is_and_block(new_filter_condition(rlang::expr(chr == 1 | 123 < pos | pos < 456), finterface)))
+})
+
+test_that("Genomic position conditions are correctly detected", {
+  expect_true(is_genomic_symbol(rlang::expr(chr)))
+  expect_true(is_genomic_symbol(rlang::expr(pos)))
+  expect_false(is_genomic_symbol(rlang::expr(ref)))
+  expect_false(is_genomic_symbol(1))
+
+  finterface <- local_summary_stats_interface()
+
+  expect_false(
+    has_chromosome_condition(
+      new_filter_condition(rlang::expr(ref == "A"),
+                           finterface)
+    )
+  )
+  expect_false(
+    has_chromosome_condition(
+      new_filter_condition(rlang::expr(pval < .05),
+                           finterface)
+    )
+  )
+  expect_false(
+    has_chromosome_condition(
+      new_filter_condition(rlang::expr(123 < pos & pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_true(
+    has_chromosome_condition(
+      new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_true(
+    has_chromosome_condition(
+      new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+
+  expect_false(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1),
+                           finterface)
+    )
+  )
+  expect_false(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(pos < 1),
+                           finterface)
+    )
+  )
+  expect_false(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(123 < pos & pos < 456),
+                           finterface)
+    )
+  )
+  expect_false(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 456),
+                           finterface)
+    )
+  )
+  expect_false(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 456),
+                           finterface)
+    )
+  )
+  expect_false(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1 & 123 < pos | pos < 456),
+                           finterface)
+    )
+  )
+  expect_false(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1 | 123 < pos | pos < 456),
+                           finterface)
+    )
+  )
+  expect_true(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(ref == "A"),
+                           finterface)
+    )
+  )
+  expect_true(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(pval < .05),
+                           finterface)
+    )
+  )
+  expect_true(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(123 < pos & pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_true(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_true(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_true(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1 & 123 < pos | pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_true(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1 | 123 < pos | pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+
+  expect_true(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(chr == 1),
+                           finterface)
+    )
+  )
+  expect_false(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(pos < 1),
+                           finterface)
+    )
+  )
+  expect_false(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(123 < pos & pos < 456),
+                           finterface)
+    )
+  )
+  expect_true(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 456),
+                           finterface)
+    )
+  )
+  expect_true(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 456),
+                           finterface)
+    )
+  )
+  expect_true(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(chr == 1 & 123 < pos | pos < 456),
+                           finterface)
+    )
+  )
+  expect_true(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(chr == 1 | 123 < pos | pos < 456),
+                           finterface)
+    )
+  )
+  expect_false(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(ref == "A"),
+                           finterface)
+    )
+  )
+  expect_false(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(pval < .05),
+                           finterface)
+    )
+  )
+  expect_false(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(123 < pos & pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_false(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_false(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_false(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(chr == 1 & 123 < pos | pos < 456 & pval < .05),
+                           finterface)
+    )
+  )
+  expect_false(
+    is_genomic_position_condition(
+      new_filter_condition(rlang::expr(chr == 1 | 123 < pos | pos < 456 & pval < .05),
+                           finterface)
+    )
   )
 })

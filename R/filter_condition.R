@@ -18,10 +18,6 @@ fc_convert <- list(
   "%chin%" = in_to_fc
 )
 
-supported_fcondition_operations <- c(
-  "<", "<=", ">", ">=", "==", "&", "|", "(", "%in%", "%chin%"
-)
-
 
 as_filter_condition <- function(
   fcall,
@@ -59,15 +55,6 @@ new_filter_condition <- function(
   if (length(fcall) == 0) return(fcall)
 
   if (!as.character(fcall[[1]]) %in% names(fc_convert)) return(fcall)
-
-  # if (as.character(fcall[[1]]) %in% supported_fcondition_operations) {
-  #   fcall[-1] <- lapply(fcall[-1],
-  #                       new_filter_condition,
-  #                       finterface = finterface,
-  #                       env        = env)
-  # }
-  #
-  # eval(fcall)
 
   fcondition <- fc_convert[[as.character(fcall[[1]])]](
     fcall,
@@ -210,4 +197,49 @@ get_file_interface <- function(
   fcondition[2:3] <- list(fcondition1, fcondition2)
   attr(fcondition, "finterface_env") <- attr(fcondition1, "finterface_env")
   fcondition
+}
+
+is_and_block <- function(
+  fcondition
+) {
+  if (!is.call(fcondition)) return(TRUE)
+
+  if (fcondition[[1]] == as.symbol("or_filter_condition")) return(FALSE)
+
+  all(sapply(fcondition[-1], is_and_block))
+}
+
+has_chromosome_condition <- function(
+  fcondition
+) {
+  if (is.call(fcondition)) return(any(sapply(fcondition[-1], has_chromosome_condition)))
+  fcondition == as.symbol("chr")
+}
+
+has_non_genomic_condition <- function(
+  fcondition
+) {
+  if (as.character(fcondition[[1]]) %in% c("and_filter_condition", "or_filter_condition")) {
+    return(any(sapply(fcondition[2:3], has_non_genomic_condition)))
+  }
+  if (as.character(fcondition[[1]]) == "in_filter_condition") {
+    return(!is_genomic_symbol(fcondition[[2]]))
+  }
+  if (as.character(fcondition[[1]]) %in% c("lt_filter_condition", "lte_filter_condition",
+                                           "gt_filter_condition", "gte_filter_condition",
+                                           "eq_filter_condition")) {
+    return(!is_genomic_symbol(fcondition[[2]]) & !is_genomic_symbol(fcondition[[3]]))
+  }
+  !is_genomic_symbol(fcondition)
+}
+
+is_genomic_position_condition <- function(
+  fcondition
+) {
+  has_chromosome_condition(fcondition) & !has_non_genomic_condition(fcondition)
+}
+is_genomic_symbol <- function(
+  symbol
+) {
+  symbol == as.symbol("chr") | symbol == as.symbol("pos")
 }

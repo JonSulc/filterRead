@@ -235,7 +235,7 @@ local_summary_stats_interface <- function(
 
 encode_column <- function(
   summary_stats,
-  pattern = summary_stats_standard_names_dt[!sapply(pattern, is.na)][sample(.N, 1)],
+  pattern = summary_stats_standard_names_dt[!sapply(delimiter, is.na)][sample(.N, 1)],
   drop_columns = pattern$encoded_names[[1]]
 ) {
   if (pattern[, "build" %in% encoded_names[[1]]] & !"build" %in% names(summary_stats)) {
