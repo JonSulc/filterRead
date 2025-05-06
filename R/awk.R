@@ -239,19 +239,19 @@ awk_load_file_cmd <- function(
   only_read = FALSE
 ) {
   if (finterface$gzipped) {
-    return(
-      c(
-        "zcat",
-        finterface$filename,
-        ifelse(is.null(nlines),
-               "",
-               sprintf("| head -n %i", nlines)),
-        ifelse(only_read,
-               "",
-               "| awk")
-      ) |>
-        paste(collapse = " ")
-    )
+    if (is.null(nlines)) {
+      cmd <- sprintf("zcat %s", finterface$filename)
+    } else {
+      cmd <- paste("bash -c",
+                   sprintf("head -n %i < <(zcat %s 2>/dev/null)",
+                           nlines,
+                           finterface$filename) |>
+                     shQuote())
+    }
+    if (!only_read) {
+      cmd <- paste(cmd, "| awk")
+    }
+    return(cmd)
   }
   if (is.null(nlines)) {
     if (only_read) {
