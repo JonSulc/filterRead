@@ -102,7 +102,11 @@ head.file_interface <- function(
   data.table::fread(
     cmd = paste("bash -c", shQuote(command_line)),
     ...,
-    col.names = column_names(finterface)
+    col.names = {if (needs_rsid_matching(finterface) & is.null(rsid_condition)) {
+      column_names(finterface, original = TRUE)
+    } else {
+      column_names(finterface)
+    }}
   )
 }
 

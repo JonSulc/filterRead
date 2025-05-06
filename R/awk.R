@@ -132,8 +132,7 @@ compile_awk_cmds <- function(
 
   begin_code_block <-
     "BEGIN{
-  FS = \"%s\"
-  OFS = FS
+  OFS = \"%s\"
 }" |>
     sprintf(finterface$sep)
 
@@ -141,11 +140,12 @@ compile_awk_cmds <- function(
                       paste(begin_code_block, full_code_block))
 
   awk_final_filename <- c(
-    rsid_awk_list$process_substitution,
+    paste("FS=\"\\t\"", rsid_awk_list$process_substitution),
     additional_files,
-    ifelse(finterface$gzipped | !is.null(nlines),
-           "",
-           finterface$filename)
+    paste(sprintf("FS=\"%s\"", finterface$sep),
+          ifelse(finterface$gzipped | !is.null(nlines),
+                 "",
+                 finterface$filename))
   ) |>
     paste(collapse = " ")
 

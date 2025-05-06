@@ -27,4 +27,9 @@ test_that("File reading works", {
   finterface <- local_rsid_summary_stats_interface()
   expect_true(needs_rsid_matching(finterface))
   expect_no_error(head(finterface))
+  expect_true(all(finterface[pval < .05]$pval < .05))
+  expect_equal(colnames(finterface[pval < .05]),
+               c("rsid", "ref", "alt", "effect", "pval"))
+  expect_true(colnames(finterface[pval < .05, rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345)]),
+              c("chr", "pos", "rsid", "ref", "alt", "effect", "pval"))
 })

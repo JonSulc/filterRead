@@ -289,20 +289,11 @@ dummy_rsid_summary_stats <- function(
 
 local_rsid_summary_stats <- function(
   filename = "data.csv",
-  nrows    = 500,
-  # Default arguments provide 1473 SNPs
-  chr      = 1,
-  start    = 123,
-  end      = 12345,
   values_are_quoted = FALSE,
   ...,
   env      = parent.frame()
 ) {
   dummy_rsid_summary_stats(
-    nrows = nrows,
-    chr   = chr,
-    start = start,
-    end   = end,
     ...
   ) |>
     local_csv_file(filename = filename,
