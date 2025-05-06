@@ -30,6 +30,47 @@ test_that("File reading works", {
   expect_true(all(finterface[pval < .05]$pval < .05))
   expect_equal(colnames(finterface[pval < .05]),
                c("rsid", "ref", "alt", "effect", "pval"))
-  expect_true(colnames(finterface[pval < .05, rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345)]),
-              c("chr", "pos", "rsid", "ref", "alt", "effect", "pval"))
+  expect_equal(colnames(finterface[pval < .05, rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345)]),
+               c("chr", "pos", "rsid", "ref", "alt", "effect", "pval"))
+  expect_equal(
+    finterface[pval < .05,
+               rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345),
+               return_only_cmd = TRUE],
+    paste0(
+      "awk 'BEGIN{
+  OFS = \",\"
+} {
+  if (NR == FNR) {
+    rsid[$3]=$1 OFS $2
+  }
+  else {
+    if ($1 in rsid) {
+    if ($5 < 0.05) {
+    print rsid[$1] OFS $0
+  }
+  }
+  }
+}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
+    )
+  )
+  expect_equal(
+    finterface[rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345),
+               return_only_cmd = TRUE],
+    paste0(
+      "awk 'BEGIN{
+  OFS = \",\"
+} {
+  if (NR == FNR) {
+    rsid[$3]=$1 OFS $2
+  }
+  else {
+    if ($1 in rsid) {
+    print rsid[$1] OFS $0
+  }
+  }
+}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
+    )
+  )
+  expect_equal(colnames(finterface[rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345)]),
+               c("chr", "pos", "rsid", "ref", "alt", "effect", "pval"))
 })

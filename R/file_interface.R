@@ -84,7 +84,7 @@ head.file_interface <- function(
 #' @export
 `[.file_interface` <- function(
   finterface,
-  conditions,
+  conditions = NULL,
   rsid_condition  = NULL, # data.table with chr, start, stop
   ...,
   return_only_cmd = FALSE

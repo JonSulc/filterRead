@@ -27,10 +27,6 @@ as_filter_condition <- function(
   fcall,
   ...
 ) {
-  if (!is.call(fcall)) {
-    warning("Attempting to set non-call object to filter_condition")
-    return(fcall)
-  }
   structure(
     fcall,
     class = c("filter_condition", class(fcall)) |>
@@ -45,11 +41,13 @@ new_filter_condition <- function(
   finterface,
   env = parent.frame()
 ) {
-  if (!is.call(fcall)) return(fcall)
+  if (is.null(fcall)) {
+    fcall <- structure(list(), class = c("filter_condition"))
+  } else if (!is.call(fcall)) {
+    return(fcall)
+  }
 
   fcall <- as_filter_condition(fcall)
-
-  if (!as.character(fcall[[1]]) %in% names(fc_convert)) return(fcall)
 
   if (is_file_interface(finterface)) {
     attr(fcall, "finterface_env") <- new.env(parent = emptyenv())
@@ -57,6 +55,10 @@ new_filter_condition <- function(
   } else {
     attr(fcall, "finterface_env") <- finterface
   }
+
+  if (length(fcall) == 0) return(fcall)
+
+  if (!as.character(fcall[[1]]) %in% names(fc_convert)) return(fcall)
 
   # if (as.character(fcall[[1]]) %in% supported_fcondition_operations) {
   #   fcall[-1] <- lapply(fcall[-1],

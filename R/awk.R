@@ -60,6 +60,7 @@ eval_fcondition <- function(
   fcondition,
   finterface
 ) {
+  if (is.null(fcondition)) return()
   with(
     get_file_interface(fcondition)$column_info[
       !sapply(name, is.na),
@@ -108,7 +109,8 @@ compile_awk_cmds <- function(
   only_read <- is.null(awk_condition) &
     is.null(variable_arrays) &
     is.null(column_arrays_before_conditions) &
-    is.null(column_arrays_after_conditions)
+    is.null(column_arrays_after_conditions) &
+    is.null(rsid_awk_list)
   load_file <- awk_load_file_cmd(finterface,
                                  nlines = nlines,
                                  only_read = only_read)
@@ -140,7 +142,11 @@ compile_awk_cmds <- function(
                       paste(begin_code_block, full_code_block))
 
   awk_final_filename <- c(
-    paste("FS=\"\\t\"", rsid_awk_list$process_substitution),
+    {if (is.null(rsid_awk_list$process_substitution)) {
+      NULL
+    } else {
+      paste("FS=\"\\t\"", rsid_awk_list$process_substitution)
+    }},
     additional_files,
     paste(sprintf("FS=\"%s\"", finterface$sep),
           ifelse(finterface$gzipped | !is.null(nlines),

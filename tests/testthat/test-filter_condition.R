@@ -141,8 +141,7 @@ test_that("%in% parsing works", {
     grepl(
       paste0(
         "^awk [']BEGIN[{]\n",
-        "  FS = \",\"\n",
-        "  OFS = FS\n",
+        "  OFS = \",\"\n",
         "[}] [{]\n",
         "  if [(]FILENAME == \\\"/tmp/Rtmp([^/]+)/file([a-f0-9]+)\\\"[)] [{]\n",
         "    var\\2[[][$]0[]] = 1\n",
@@ -153,7 +152,7 @@ test_that("%in% parsing works", {
         "    print [$]0\n",
         "  [}]\n",
         "  [}]\n",
-        "[}]['] /tmp/Rtmp\\1/file\\2 data[.]csv"
+        "[}]['] /tmp/Rtmp\\1/file\\2 FS=\",\" data[.]csv"
       ),
       new_filter_condition(
         rlang::expr(char %in% letters[1:5]),
