@@ -42,56 +42,7 @@ get_column_info <- function(
 
   add_encoding_columns(column_info)
 
-  # TODO Incomplete if only one of them missing
-  missing_rsid_columns <- c("chr", "pos")[
-    !c("chr", "pos") %in% c(column_info$standard_name, unlist(column_info$encoded_names))
-  ] |>
-    c("rsid")
-
-  column_info <- column_info[
-    ,
-    {
-      if (is.na(regex)) {
-        .SD
-      } else if (regex == "^(rs[0-9]+)$") {
-        list(
-          .SD,
-          .(standard_name         = missing_rsid_columns,
-            regex                 = regex,
-            delimiter             = NA_character_,
-            input_index           = input_index,
-            bash_index            = NA_character_,
-            quoted                = FALSE,
-            encoding_column       = input_name,
-            split_encoding_column = NA_character_,
-            recode_columns        = NA_character_) |>
-            data.table::as.data.table()
-        ) |>
-          data.table::rbindlist(fill = TRUE, use.names = TRUE)
-      } else {
-        list(
-          .SD,
-          .(standard_name         = unlist(encoded_names),
-            regex                 = regex,
-            delimiter             = delimiter,
-            input_index           = input_index,
-            bash_index            = sprintf("encoded%i[%i]",
-                                            encoded_column_index,
-                                            seq_along(encoded_names[[1]])),
-            quoted                = FALSE,
-            encoding_column       = input_name,
-            split_encoding_column = split_encoding_column,
-            recode_columns        = recode_columns) |>
-            data.table::as.data.table()
-        ) |>
-          data.table::rbindlist(fill = TRUE, use.names = TRUE)
-      }
-    },
-    by = seq_len(nrow(column_info))
-  ][
-    ,
-    -"seq_len"
-  ]
+  column_info <- expand_encoded_columns(column_info)
 
   column_info[
     ,

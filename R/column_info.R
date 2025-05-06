@@ -105,7 +105,7 @@ add_encoding_columns <- function(
     encoded_column_index := seq_len(.N)
   ][
     ,
-    encoding_column := NA_character_
+    c("encoding_column", "split_encoding_column", "recode_columns") := NA_character_
   ][]
   if (any(!sapply(column_info$delimiter, is.na))) {
     column_info[
@@ -128,4 +128,59 @@ add_encoding_columns <- function(
     ][]
   }
   invisible(column_info)
+}
+
+expand_encoded_columns <- function(
+  column_info
+) {
+  # TODO Incomplete if only one of them missing
+  missing_rsid_columns <- c("chr", "pos")[
+    !c("chr", "pos") %in% c(column_info$standard_name, unlist(column_info$encoded_names))
+  ]
+
+  column_info[
+    ,
+    {
+      if (is.na(regex)) {
+        .SD
+      } else if (regex == "^(rs[0-9]+)$") {
+        list(
+          data.table::data.table(
+            standard_name         = missing_rsid_columns,
+            regex                 = regex,
+            delimiter             = NA_character_,
+            input_index           = input_index,
+            quoted                = FALSE,
+            encoding_column       = input_name,
+            split_encoding_column = NA_character_,
+            recode_columns        = NA_character_
+          ),
+          .SD
+        ) |>
+          data.table::rbindlist(fill = TRUE, use.names = TRUE) |>
+          data.table::setcolorder(names(column_info))
+      } else {
+        list(
+          .SD,
+          .(standard_name         = unlist(encoded_names),
+            regex                 = regex,
+            delimiter             = delimiter,
+            input_index           = input_index,
+            bash_index            = sprintf("encoded%i[%i]",
+                                            encoded_column_index,
+                                            seq_along(encoded_names[[1]])),
+            quoted                = FALSE,
+            encoding_column       = input_name,
+            split_encoding_column = split_encoding_column,
+            recode_columns        = recode_columns) |>
+            data.table::as.data.table()
+        ) |>
+          data.table::rbindlist(fill = TRUE, use.names = TRUE)
+      }
+    },
+    by = seq_len(nrow(column_info))
+  ][
+    ,
+    -"seq_len"
+  ]
 }
