@@ -168,6 +168,45 @@ get_file_interface <- function(
 }
 
 #' @export
+format.filter_condition <- function(
+  fcondition
+) {
+  fcondition_operations <- c(
+    lt_filter_condition  = "<",
+    lte_filter_condition = "<=",
+    gt_filter_condition  = ">",
+    gte_filter_condition = ">=",
+    eq_filter_condition  = "==",
+    in_filter_condition  = "%in%"
+  )
+  if (as.character(fcondition[[1]]) %in% names(fcondition_operations)) {
+    return(paste(fcondition[[2]],
+                 fcondition_operations[as.character(fcondition[[1]])],
+                 fcondition[[3]]))
+  }
+  if (as.character(fcondition[[1]]) == "lp_filter_condition") {
+    return(sprintf("(%s)", fcondition[[2]]))
+  }
+  if (as.character(fcondition[[1]]) == "and_filter_condition") {
+    return(paste(format(fcondition[[2]]), "&", format(fcondition[[3]])))
+  }
+  if (as.character(fcondition[[1]]) == "or_filter_condition") {
+    return(paste(format(fcondition[[2]]), "|", format(fcondition[[3]])))
+  }
+  filter_condition
+}
+
+#' @export
+print.filter_condition <- function(
+  fcondition,
+  ...,
+  quote = FALSE
+) {
+  format(fcondition) |>
+    cat()
+}
+
+#' @export
 `&.filter_condition` <- function(
   fcondition1,
   fcondition2
@@ -176,6 +215,14 @@ get_file_interface <- function(
     attr(fcondition1, "finterface_env"),
     attr(fcondition2, "finterface_env")
   ))
+
+  if (fcondition1[[1]] == as.symbol("or_filter_condition")) {
+    return(fcondition1[[2]] & fcondition2 | fcondition1[[3]] & fcondition2)
+  }
+  if (fcondition2[[1]] == as.symbol("or_filter_condition")) {
+    return(fcondition1 & fcondition2[[2]] | fcondition1 & fcondition2[[3]])
+  }
+
   fcondition <- rlang::expr(and_filter_condition()) |>
     as_filter_condition()
   fcondition[2:3] <- list(fcondition1, fcondition2)
@@ -242,4 +289,48 @@ is_genomic_symbol <- function(
   symbol
 ) {
   symbol == as.symbol("chr") | symbol == as.symbol("pos")
+}
+
+needs_and_distributed <- function(
+  fcondition
+) {
+  if (!is.call(fcondition)) return(FALSE)
+  if (is_and_block(fcondition)) return(FALSE)
+  if (fcondition[[1]] == as.symbol("lp_filter_condition")) return(TRUE)
+  any(sapply(fcondition[-1], needs_and_distributed))
+}
+
+strip_parentheses <- function(
+  fcondition
+) {
+  if (fcondition[[1]] == as.symbol("lp_filter_condition"))
+    return(strip_parentheses(fcondition[[2]]))
+  fcondition
+}
+
+distribute_and <- function(
+  fcondition1,
+  fcondition2
+) {
+  if (needs_and_distributed(fcondition1))
+    fcondition1 <- strip_parentheses(fcondition1)
+  if (needs_and_distributed(fcondition2))
+    fcondition2 <- strip_parentheses(fcondition2)
+
+  done_distributing <- function(fcondition) {
+    !as.character(fcondition[[1]]) %in% c("and_filter_condition", "or_filter_condition")
+  }
+
+  if (!done_distributing(fcondition1)) {
+    to_return <- fcondition1[1]
+    to_return[2:3] <- lapply(fcondition1[2:3], distribute_and, fcondition2)
+    return(to_return)
+  }
+  if (!done_distributing(fcondition2)) {
+    to_return <- fcondition2[1]
+    to_return[2:3] <- lapply(fcondition2[2:3], distribute_and, fcondition1 = fcondition1)
+    return(to_return)
+  }
+
+  fcondition1 & fcondition2
 }
