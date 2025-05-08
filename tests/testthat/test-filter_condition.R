@@ -462,6 +462,12 @@ test_that("Genomic position conditions are correctly detected", {
                            finterface)
     )
   )
+  expect_false(
+    has_non_genomic_condition(
+      new_filter_condition(rlang::expr(chr == 1 & (pos < 123 | 345 < pos)),
+                           finterface)
+    )
+  )
   expect_true(
     has_non_genomic_condition(
       new_filter_condition(rlang::expr(123 < pos & pos < 456 & pval < .05),
@@ -494,87 +500,225 @@ test_that("Genomic position conditions are correctly detected", {
   )
 
   expect_true(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(chr == 1),
                            finterface)
     )
   )
   expect_false(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(pos < 1),
                            finterface)
     )
   )
   expect_false(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(123 < pos & pos < 456),
                            finterface)
     )
   )
   expect_true(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 456),
                            finterface)
     )
   )
   expect_true(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 456),
                            finterface)
     )
   )
   expect_true(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(chr == 1 & 123 < pos | pos < 456),
                            finterface)
     )
   )
   expect_true(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(chr == 1 | 123 < pos | pos < 456),
                            finterface)
     )
   )
   expect_false(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(ref == "A"),
                            finterface)
     )
   )
   expect_false(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(pval < .05),
                            finterface)
     )
   )
   expect_false(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(123 < pos & pos < 456 & pval < .05),
                            finterface)
     )
   )
   expect_false(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 456 & pval < .05),
                            finterface)
     )
   )
   expect_false(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 456 & pval < .05),
                            finterface)
     )
   )
   expect_false(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(chr == 1 & 123 < pos | pos < 456 & pval < .05),
                            finterface)
     )
   )
   expect_false(
-    is_genomic_position_condition(
+    is_only_genomic_position_condition(
       new_filter_condition(rlang::expr(chr == 1 | 123 < pos | pos < 456 & pval < .05),
                            finterface)
     )
+  )
+})
+
+test_that("Can detect conditions that require isolation of genomic part", {
+  finterface_norm <- local_summary_stats_interface()
+  finterface_rsid <- local_rsid_summary_stats_interface("rsid.csv")
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1),
+                         finterface_norm) |>
+      needs_genomic_condition_isolation()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(pval < .05),
+                         finterface_norm) |>
+      needs_genomic_condition_isolation()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1 & (pos < 123 | 345 < pos)),
+                         finterface_norm) |>
+      needs_genomic_condition_isolation()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1 & pval < .05),
+                         finterface_norm) |>
+      needs_genomic_condition_isolation()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1 & (pos < 123 | 345 < pos) & pval < .05),
+                         finterface_norm) |>
+      needs_genomic_condition_isolation()
+  )
+
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1),
+                         finterface_rsid) |>
+      needs_genomic_condition_isolation()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(pval < .05),
+                         finterface_norm) |>
+      needs_genomic_condition_isolation()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1 & (pos < 123 | 345 < pos)),
+                         finterface_rsid) |>
+      needs_genomic_condition_isolation()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 & pval < .05),
+                         finterface_rsid) |>
+      needs_genomic_condition_isolation()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 & (pos < 123 | 345 < pos) & pval < .05),
+                         finterface_rsid) |>
+      needs_genomic_condition_isolation()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 & (pos < 123 | 345 < pos) | pval < .05),
+                         finterface_rsid) |>
+      needs_genomic_condition_isolation()
+  )
+})
+
+test_that("Parenthesis stripping works", {
+  finterface <- local_summary_stats_interface()
+
+  expect_equal(new_filter_condition(rlang::expr((chr == 1)),
+                                    finterface)[[1]],
+               as.symbol("lp_filter_condition"))
+  expect_equal(new_filter_condition(rlang::expr(chr == 1),
+                                    finterface)[[1]],
+               as.symbol("eq_filter_condition"))
+  expect_equal(new_filter_condition(rlang::expr((chr == 1)),
+                                    finterface) |>
+                 strip_parentheses(),
+               new_filter_condition(rlang::expr(chr == 1),
+                                    finterface))
+})
+
+test_that("Getting genomic regions works", {
+  finterface <- local_summary_stats_interface()
+  expect_equal(
+    new_filter_condition(rlang::expr(chr == 1 & 123 <= pos & pos <= 234),
+                         finterface) |>
+      make_genomic_ranges(),
+    data.table::data.table(chr = "1", start = 123, end = 234)
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(123 <= pos & pos <= 234),
+                         finterface) |>
+      make_genomic_ranges(),
+    data.table::data.table(chr = character(), start = numeric(), end = numeric())
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234),
+                         finterface) |>
+      make_genomic_ranges(),
+    data.table::data.table(chr = "1", start = 124, end = 233)
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(chr < 2 & 123 < pos & pos < 234),
+                         finterface) |>
+      make_genomic_ranges(),
+    data.table::data.table(chr = "1", start = 124, end = 233)
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr(chr == 1 & 123 <= pos & pos <= 234
+                                     | chr == "X" & 21 <= pos & pos <= 42),
+                         finterface) |>
+      make_genomic_ranges(),
+    data.table::data.table(chr = c("1", "X"), start = c(123, 21), end = c(234, 42))
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr((chr == 1 | chr == "X") & 123 <= pos & pos <= 234),
+                         finterface) |>
+      make_genomic_ranges(),
+    data.table::data.table(chr = c("1", "X"), start = 123, end = 234)
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr((chr == 1 & chr == "X") & 123 <= pos & pos <= 234),
+                         finterface) |>
+      make_genomic_ranges(),
+    data.table::data.table(chr = character(), start = numeric(), end = numeric())
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr((chr == 1 | chr == "X") & 234 <= pos & pos <= 123),
+                         finterface) |>
+      make_genomic_ranges(),
+    data.table::data.table(chr = c("1", "X"), start = 234, end = 123)
+  )
+  expect_equal(
+    new_filter_condition(rlang::expr((chr == 1 | chr == "X")
+                                     & 42 < pos & 123 <= pos
+                                     & pos <= 234 & pos < 512),
+                         finterface) |>
+      make_genomic_ranges(),
+    data.table::data.table(chr = c("1", "X"), start = 123, end = 234)
   )
 })
