@@ -14,7 +14,7 @@ test_that("Wrapping the condition block works", {
       print_prefix                  = NULL
     ),
     "$1 = encoded1[1] OFS encoded1[2]
-  print $0"
+print $0"
   )
   expect_equal(
     wrap_condition_block(
@@ -22,9 +22,9 @@ test_that("Wrapping the condition block works", {
       column_arrays_after_condition = NULL,
       print_prefix                  = NULL
     ),
-    "if ($1 == 1) {
-    print $0
-  }"
+    paste0("if ($1 == 1) {\n",
+           "  print $0\n",
+           "}")
   )
   expect_equal(
     wrap_condition_block(
@@ -33,9 +33,9 @@ test_that("Wrapping the condition block works", {
       print_prefix                  = NULL
     ),
     "if ($1 == 1) {
-    $1 = encoded1[1] OFS encoded1[2]
-    print $0
-  }"
+  $1 = encoded1[1] OFS encoded1[2]
+  print $0
+}"
   )
   expect_equal(
     wrap_condition_block(
@@ -52,8 +52,8 @@ test_that("Wrapping the condition block works", {
       print_prefix                  = "tabix[$1] OFS "
     ),
     "if ($1 == 1) {
-    print tabix[$1] OFS $0
-  }"
+  print tabix[$1] OFS $0
+}"
   )
   expect_equal(
     wrap_condition_block(
@@ -62,75 +62,44 @@ test_that("Wrapping the condition block works", {
       print_prefix                  = "tabix[$1] OFS "
     ),
     "if ($1 == 1) {
-    $1 = encoded1[1] OFS encoded1[2]
-    print tabix[$1] OFS $0
-  }"
+  $1 = encoded1[1] OFS encoded1[2]
+  print tabix[$1] OFS $0
+}"
   )
 })
 
 test_that("Wrapping the main file code works", {
   expect_equal(
     wrap_main_file_code(
+      fcondition_awk_dt               = data.table::data.table(index = integer()),
       column_arrays_before_conditions = NULL,
-      condition                       = NULL,
-      column_arrays_after_conditions  = NULL,
-      print_prefix                    = NULL,
-      there_are_other_files           = FALSE
+      column_arrays_after_conditions  = NULL
     ),
     "print $0"
   )
   expect_equal(
     wrap_main_file_code(
-      column_arrays_before_conditions = NULL,
-      condition                       = NULL,
-      column_arrays_after_conditions  = NULL,
-      print_prefix                    = NULL,
-      there_are_other_files           = TRUE
-    ),
-    "{
-    print $0
-  }"
-  )
-  expect_equal(
-    wrap_main_file_code(
+      fcondition_awk_dt               = data.table::data.table(index = integer()),
       column_arrays_before_conditions = "split($1, encoded1, \":\")",
-      condition                       = NULL,
-      column_arrays_after_conditions  = NULL,
-      print_prefix                    = NULL,
-      there_are_other_files           = FALSE
+      column_arrays_after_conditions  = NULL
     ),
     "split($1, encoded1, \":\")
-    print $0"
-  )
-  expect_equal(
-    wrap_main_file_code(
-      column_arrays_before_conditions = "split($1, encoded1, \":\")",
-      condition                       = NULL,
-      column_arrays_after_conditions  = NULL,
-      print_prefix                    = NULL,
-      there_are_other_files           = TRUE
-    ),
-    "{
-    split($1, encoded1, \":\")
-    print $0
-  }"
+  print $0"
   )
 })
 
 test_that("Wrapping the full code block works", {
   expect_equal(
     wrap_full_code_block(
-      rsid_code       = NULL,
-      variable_arrays = NULL,
-      main_file_code  = NULL
+      fcondition_awk_dt = data.table::data.table(index = integer()),
+      main_file_code    = NULL
     ),
     "{\n  \n}"
   )
   expect_equal(
     wrap_full_code_block(
-      rsid_code       = NULL,
-      variable_arrays = NULL,
-      main_file_code  = "print $0"
+      fcondition_awk_dt = data.table::data.table(index = integer()),
+      main_file_code    = "print $0"
     ),
     "{
   print $0
@@ -138,9 +107,11 @@ test_that("Wrapping the full code block works", {
   )
   expect_equal(
     wrap_full_code_block(
-      rsid_code       = "if (NR == FNR) {tabix stuff}",
-      variable_arrays = "if (FILENAME == dont_read_42.txt) {oops}",
-      main_file_code  = "if (something) {print $0}"
+      fcondition_awk_dt = data.table::data.table(
+        awk_code_block  = "if (NR == FNR) {tabix stuff}",
+        variable_arrays = "if (FILENAME == dont_read_42.txt) {oops}"
+      ),
+      main_file_code    = "if (something) {print $0}"
     ),
     "{
   if (NR == FNR) {tabix stuff}
@@ -150,10 +121,12 @@ test_that("Wrapping the full code block works", {
   )
   expect_equal(
     wrap_full_code_block(
-      rsid_code       = "if (NR == FNR) {tabix stuff}",
-      variable_arrays = c("if (FILENAME == dont_read_42.txt) {oops}",
-                          "if (FILENAME == read_this.txt) {good}"),
-      main_file_code  = "if (something) {print $0}"
+      fcondition_awk_dt = data.table::data.table(
+        awk_code_block  = "if (NR == FNR) {tabix stuff}",
+        variable_arrays = list(c("if (FILENAME == dont_read_42.txt) {oops}",
+                                 "if (FILENAME == read_this.txt) {good}"))
+      ),
+      main_file_code    = "if (something) {print $0}"
     ),
     "{
   if (NR == FNR) {tabix stuff}

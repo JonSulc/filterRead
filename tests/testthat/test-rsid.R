@@ -30,47 +30,158 @@ test_that("File reading works", {
   expect_true(all(finterface[pval < .05]$pval < .05))
   expect_equal(colnames(finterface[pval < .05]),
                c("rsid", "ref", "alt", "effect", "pval"))
-  expect_equal(colnames(finterface[pval < .05, rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345)]),
+  expect_equal(colnames(finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345]),
                c("chr", "pos", "rsid", "ref", "alt", "effect", "pval"))
   expect_equal(
-    finterface[pval < .05,
-               rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345),
+    finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345,
                return_only_cmd = TRUE],
     paste0(
       "awk 'BEGIN{
   OFS = \",\"
 } {
   if (NR == FNR) {
-    rsid[$3]=$1 OFS $2
+    rsid0[$3]=$1 OFS $2
   }
   else {
-    if ($1 in rsid) {
-    if ($5 < 0.05) {
-    print rsid[$1] OFS $0
-  }
-  }
+    if ($1 in rsid0) {
+      if ($5 < 0.05) {
+        print rsid0[$1] OFS $0
+      }
+    }
   }
 }' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
     )
   )
+#   expect_equal(
+#     finterface[rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345),
+#                return_only_cmd = TRUE],
+#     paste0(
+#       "awk 'BEGIN{
+#   OFS = \",\"
+# } {
+#   if (NR == FNR) {
+#     rsid[$3]=$1 OFS $2
+#   }
+#   else {
+#     if ($1 in rsid) {
+#     print rsid[$1] OFS $0
+#   }
+#   }
+# }' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
+#     )
+#   )
+  # expect_equal(colnames(finterface[rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345)]),
+  #              c("chr", "pos", "rsid", "ref", "alt", "effect", "pval"))
+})
+
+test_that("Genomic blocks are correctly identified", {
+  finterface <- local_rsid_summary_stats_interface()
+  expect_true(
+    new_filter_condition(rlang::expr(pval < .05),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 & pval < .05),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 | pval < .05),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 & pos < 123 | pval < .05),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234 | pval < .05),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234
+                                     & pval < .05 & ref == "A"),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_true(
+    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234
+                                     | chr == 2 & 21 < pos & pos < 42),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1 & 123 < pos | pos < 234 & pval < .05),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 234 & pval < .05),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05
+                                     | chr == 2 & 21 < pos & pos < 42),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234
+                                     | chr == 2 & 21 < pos & pos < 42 & pval < .01),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+  expect_false(
+    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05
+                                     | chr == 2 & 21 < pos & pos < 42 & pval < .01),
+                         finterface) |>
+      is_single_genomic_range_block()
+  )
+})
+
+test_that("Multiple genomic range-other condition combinations can be handled", {
+  finterface <- local_rsid_summary_stats_interface()
   expect_equal(
-    finterface[rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345),
-               return_only_cmd = TRUE],
-    paste0(
-      "awk 'BEGIN{
+    new_filter_condition(rlang::expr((chr == 1 & 123 < pos & pos < 234 & pval < .05)
+                                     | (chr == 2 & 21 < pos & pos < 42 & pval < .01)),
+                         finterface) |>
+      fcondition_to_awk(),
+    "awk 'BEGIN{
   OFS = \",\"
 } {
   if (NR == FNR) {
-    rsid[$3]=$1 OFS $2
+    rsid0[$3]=$1 OFS $2
+  }
+  else if (NR == FNR + 1) {
+    rsid1[$3]=$1 OFS $2
   }
   else {
-    if ($1 in rsid) {
-    print rsid[$1] OFS $0
+    if ($1 in rsid0) {
+      if ($5 < 0.05) {
+        print rsid0[$1] OFS $0
+      }
+    }
+    else if ($1 in rsid1) {
+      if ($5 < 0.01) {
+        print rsid1[$1] OFS $0
+      }
+    }
   }
-  }
-}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
-    )
+}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:124-233) <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000002.12:22-41) FS=\",\" data.csv"
   )
-  expect_equal(colnames(finterface[rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345)]),
-               c("chr", "pos", "rsid", "ref", "alt", "effect", "pval"))
 })

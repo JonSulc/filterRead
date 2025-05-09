@@ -8,6 +8,7 @@ lp_to_fc <- function(
   stopifnot(fcall[[1]] == as.symbol("("))
   fcall[[1]] <- as.symbol("lp_filter_condition")
   fcall[-1] <- lapply(fcall[-1], new_filter_condition, ...)
+  attributes(fcall) <- attributes(fcall[[2]])
   fcall |>
     as_filter_condition()
 }

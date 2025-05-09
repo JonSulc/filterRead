@@ -29,9 +29,9 @@ test_in_fc <- function(
     awk_condition_list$variable_arrays,
     paste0(
       "if (FILENAME == \"%s\") {\n",
-      "    var%s[$0] = 1\n",
-      "    next\n",
-      "  }"
+      "  var%s[$0] = 1\n",
+      "  next\n",
+      "}"
     ) |>
       sprintf(filepath, random_code)
   )
@@ -149,8 +149,8 @@ test_that("%in% parsing works", {
         "  [}]\n",
         "  else [{]\n",
         "    if [(][(][$]1 in var\\2[)][)] [{]\n",
-        "    print [$]0\n",
-        "  [}]\n",
+        "      print [$]0\n",
+        "    [}]\n",
         "  [}]\n",
         "[}]['] /tmp/Rtmp\\1/file\\2 FS=\",\" data[.]csv"
       ),
@@ -674,7 +674,7 @@ test_that("Getting genomic regions works", {
     new_filter_condition(rlang::expr(123 <= pos & pos <= 234),
                          finterface) |>
       make_genomic_ranges(),
-    data.table::data.table(chr = character(), start = numeric(), end = numeric())
+    data.table::data.table(chr = c(1:22, "X", "Y", "MT"), start = 123, end = 234)
   )
   expect_equal(
     new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234),
@@ -720,5 +720,36 @@ test_that("Getting genomic regions works", {
                          finterface) |>
       make_genomic_ranges(),
     data.table::data.table(chr = c("1", "X"), start = 123, end = 234)
+  )
+})
+
+test_that("Combining genomic ranges works", {
+  expect_equal(
+    combine_genomic_ranges(
+      data.table::data.table(chr = 1, start = 123, end = 234),
+      data.table::data.table(chr = 1, start = 42,  end = 221)
+    ),
+    data.table::data.table(chr = 1, start = 123, end = 221)
+  )
+  expect_equal(
+    combine_genomic_ranges(
+      data.table::data.table(chr = 1, start = 123, end = 234),
+      data.table::data.table(chr = 2, start = 42,  end = 221)
+    ),
+    data.table::data.table(chr = numeric(), start = numeric(), end = numeric())
+  )
+  expect_equal(
+    combine_genomic_ranges(
+      NULL,
+      data.table::data.table(chr = 2, start = 42,  end = 221)
+    ),
+    data.table::data.table(chr = 2, start = 42,  end = 221)
+  )
+  expect_equal(
+    combine_genomic_ranges(
+      data.table::data.table(chr = 1, start = 123, end = 234),
+      NULL
+    ),
+    data.table::data.table(chr = 1, start = 123, end = 234)
   )
 })

@@ -85,24 +85,22 @@ head.file_interface <- function(
 `[.file_interface` <- function(
   finterface,
   conditions = NULL,
-  rsid_condition  = NULL, # data.table with chr, start, stop
   ...,
   return_only_cmd = FALSE
 ) {
-  command_line <- new_filter_condition(
+  fcondition <- new_filter_condition(
     rlang::enexpr(conditions),
     finterface = finterface
-  ) |>
-    fcondition_to_awk(
-      rsid_condition = rsid_condition
-    )
+  )
+  command_line <- fcondition_to_awk(fcondition)
 
   if (return_only_cmd) return(command_line)
 
   data.table::fread(
     cmd = paste("bash -c", shQuote(command_line)),
     ...,
-    col.names = {if (needs_rsid_matching(finterface) & is.null(rsid_condition)) {
+    col.names = {if (needs_rsid_matching(finterface)
+                     & !has_genomic_condition(fcondition)) {
       column_names(finterface, original = TRUE)
     } else {
       column_names(finterface)
