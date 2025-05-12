@@ -299,10 +299,14 @@ combine_genomic_ranges <- function(
     nomatch = NULL
   ][
     ,
-    .(start = max(start, i.start, na.rm = TRUE) |>
-        suppressWarnings(),
-      end   = min(end,   i.end,   na.rm = TRUE) |>
-        suppressWarnings()),
+    .(start = ifelse(all(is.na(c(start, i.start))),
+                     NA_real_,
+                     max(start, i.start, na.rm = TRUE) |>
+                       suppressWarnings()),
+      end   = ifelse(all(is.na(c(end, i.end))),
+                     NA_real_,
+                     min(end, i.end, na.rm = TRUE) |>
+                       suppressWarnings())),
     by = chr
   ]
 }
@@ -405,23 +409,10 @@ has_non_genomic_condition <- function(
     return(has_non_genomic_condition(fcondition[[2]]))
   !is_genomic_symbol(fcondition)
 }
-
-is_only_genomic_position_condition <- function(
-  fcondition
-) {
-  has_chromosome_condition(fcondition) & !has_non_genomic_condition(fcondition)
-}
 is_genomic_symbol <- function(
   symbol
 ) {
   symbol == as.symbol("chr") | symbol == as.symbol("pos")
-}
-
-needs_genomic_condition_isolation <- function(
-  fcondition
-) {
-  has_chromosome_condition(fcondition) & has_non_genomic_condition(fcondition) &
-    needs_rsid_matching(get_file_interface(fcondition))
 }
 
 split_genomic_conditions <- function(
@@ -465,7 +456,6 @@ make_genomic_ranges <- function(
   }
   stopifnot(is_and_block(fcondition))
   if (!has_chromosome_condition(fcondition)) {
-    # return(data.table::data.table(chr = character(), start = numeric(), end = numeric()))
     genomic_ranges <- data.table::data.table(
       chr = c(1:22, "X", "Y", "MT")
     ) |>
@@ -498,8 +488,15 @@ make_genomic_ranges <- function(
     genomic_ranges <- genomic_ranges[!sapply(chr, is.na)]
   }
 
-  if (!"start" %in% names(genomic_ranges)) genomic_ranges$start <- NA_real_
   if (  !"end" %in% names(genomic_ranges)) genomic_ranges$end   <- NA_real_
+  if (!"start" %in% names(genomic_ranges)) {
+    genomic_ranges <- genomic_ranges[
+      ,
+      .(chr   = chr,
+        start = NA_real_,
+        end   = end)
+    ]
+  }
 
   genomic_ranges
 }
@@ -596,15 +593,6 @@ pos_condition_to_genomic_region <- function(
   NULL
 }
 
-needs_and_distributed <- function(
-  fcondition
-) {
-  if (!is.call(fcondition)) return(FALSE)
-  if (is_and_block(fcondition)) return(FALSE)
-  if (fcondition[[1]] == as.symbol("lp_filter_condition")) return(TRUE)
-  any(sapply(fcondition[-1], needs_and_distributed))
-}
-
 strip_parentheses <- function(
   fcondition,
   recursive = TRUE
@@ -621,31 +609,4 @@ strip_parentheses <- function(
              | strip_parentheses(fcondition[[3]], recursive = recursive))
   }
   fcondition
-}
-
-distribute_and <- function(
-  fcondition1,
-  fcondition2
-) {
-  if (needs_and_distributed(fcondition1))
-    fcondition1 <- strip_parentheses(fcondition1)
-  if (needs_and_distributed(fcondition2))
-    fcondition2 <- strip_parentheses(fcondition2)
-
-  done_distributing <- function(fcondition) {
-    !as.character(fcondition[[1]]) %in% c("and_filter_condition", "or_filter_condition")
-  }
-
-  if (!done_distributing(fcondition1)) {
-    to_return <- fcondition1[1]
-    to_return[2:3] <- lapply(fcondition1[2:3], distribute_and, fcondition2)
-    return(to_return)
-  }
-  if (!done_distributing(fcondition2)) {
-    to_return <- fcondition2[1]
-    to_return[2:3] <- lapply(fcondition2[2:3], distribute_and, fcondition1 = fcondition1)
-    return(to_return)
-  }
-
-  fcondition1 & fcondition2
 }

@@ -52,26 +52,6 @@ test_that("File reading works", {
 }' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
     )
   )
-#   expect_equal(
-#     finterface[rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345),
-#                return_only_cmd = TRUE],
-#     paste0(
-#       "awk 'BEGIN{
-#   OFS = \",\"
-# } {
-#   if (NR == FNR) {
-#     rsid[$3]=$1 OFS $2
-#   }
-#   else {
-#     if ($1 in rsid) {
-#     print rsid[$1] OFS $0
-#   }
-#   }
-# }' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
-#     )
-#   )
-  # expect_equal(colnames(finterface[rsid_condition = data.table::data.table(chr = 1, start = 123, end = 12345)]),
-  #              c("chr", "pos", "rsid", "ref", "alt", "effect", "pval"))
 })
 
 test_that("Genomic blocks are correctly identified", {
@@ -183,5 +163,24 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
     }
   }
 }' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:124-233) <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000002.12:22-41) FS=\",\" data.csv"
+  )
+})
+
+test_that("Genomic ranges are correctly identified", {
+  finterface <- local_rsid_summary_stats_interface()
+  expect_equal(
+    new_filter_condition(rlang::expr(chr == 1 & pos < 123), finterface) |>
+      attr("genomic_range"),
+    data.table::data.table(chr = "1", start = NA_real_, end = 122)
+  )
+})
+
+test_that("Genomic ranges are correctly structured", {
+  finterface <- local_rsid_summary_stats_interface()
+  expect_equal(
+    new_filter_condition(rlang::expr(pos < 123), finterface) |>
+      attr("genomic_range"),
+    data.table::data.table(chr = as.character(c(1:22, "X", "Y", "MT")),
+                           start = NA_real_, end = 122)
   )
 })

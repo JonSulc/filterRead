@@ -36,56 +36,6 @@ is_single_genomic_range_block <- function(
   FALSE
 }
 
-# awk_get_rsid_list <- function(
-#   fcondition,
-#   rsid_bash_index,
-#   index = 0,
-#   chr_names = chromosome_names
-# ) {
-#   genomic_range <- attr(fcondition, "genomic_range")
-#   if (is.null(genomic_range) & is_single_genomic_range_block(fcondition))
-#     return()
-#
-#   if (!is_single_genomic_range_block(fcondition)) {
-#     stopifnot(fcondition[[1]] == as.symbol("or_filter_condition"))
-#     to_return <- awk_get_rsid_list(fcondition[[2]],
-#                                    rsid_bash_index,
-#                                    index     = index,
-#                                    chr_names = chr_names)
-#     return(
-#       rbind(to_return,
-#             awk_get_rsid_list(fcondition[[3]],
-#                               rsid_bash_index,
-#                               index     = max(to_return$index) + 1,
-#                               chr_names = chr_names))
-#     )
-#   }
-#
-#   genomic_range[
-#     ,
-#     .(
-#       index                = index,
-#       awk_code_block       = paste0("if (NR == FNR%s) {\n",
-#                                     "    rsid%i[$3]=$1 OFS $2\n",
-#                                     "  }") |>
-#         sprintf(ifelse(index == 0,
-#                        "",
-#                        paste0(" + ", index)),
-#                 index),
-#       print_prefix         = sprintf("rsid%i[%s] OFS ",
-#                                      index,
-#                                      rsid_bash_index),
-#       process_substitution = get_tabix_process_substitution(
-#         chr   = chr,
-#         start = start,
-#         end   = end,
-#         chr_names = chr_names
-#       ),
-#       rsid_condition       = sprintf("%s in rsid%i", rsid_bash_index, index)
-#     )
-#   ]
-# }
-
 get_tabix_process_substitution <- function(
   chr,
   start,
