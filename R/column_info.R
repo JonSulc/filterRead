@@ -228,8 +228,8 @@ needs_rsid_matching <- function(
   if (!force & "needs_rsid_matching" %in% names(finterface))
     return(finterface$needs_rsid_matching)
 
-  file_colnames <- column_names(finterface, original = TRUE)
-  "rsid" %in% file_colnames & !all(c("chr", "pos") %in% file_colnames)
+  "rsid" %in% column_names(finterface) &
+    !all(c("chr", "pos") %in% column_names(finterface, original = TRUE))
 }
 
 column_names <- function(

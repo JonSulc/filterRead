@@ -75,7 +75,8 @@ eval_fcondition <- function(
 fcondition_to_awk <- function(
   fcondition
 ) {
-  column_arrays <- get_awk_column_arrays(get_file_interface(fcondition), fcondition = fcondition)
+  column_arrays <- get_awk_column_arrays(get_file_interface(fcondition),
+                                         fcondition = fcondition)
 
   fcondition_and_rsid_to_awk(fcondition) |>
   compile_awk_cmds(

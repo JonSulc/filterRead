@@ -119,15 +119,19 @@ dummy_summary_stats <- function(
 
 set_random_names <- function(
   dt,
-  ref_col_names = summary_stats_column_names
+  ref_col_names = summary_stats_standard_names_dt
 ) {
   data.table::setnames(
     dt,
     new = sapply(
       names(dt),
       \(cname) {
-        if (!cname %in% names(summary_stats_column_names)) return(cname)
-        sample(summary_stats_column_names[[cname]], 1)
+        if (!cname %in% ref_col_names$standard_name) return(cname)
+        ref_col_names[
+          cname,
+          sample(input_name, 1),
+          on = "standard_name"
+        ]
       }
     )
   )
@@ -263,6 +267,7 @@ dummy_rsid_summary_stats <- function(
   start           = 123,
   end             = 12345,
   columns_to_drop = c("chr", "pos"),
+  random_names    = FALSE,
   ...
 ) {
   rsids <- get_tabix_process_substitution(chr = chr, start = start, end = end) |>
@@ -270,21 +275,25 @@ dummy_rsid_summary_stats <- function(
     data.table::fread(cmd = _, select = 3, col.names = "rsid")
   while (nrow(rsids) < nrows) rsids <- rbind(rsids, rsids)
 
-  if (is.null(columns_to_drop)) {
-    return(
-      dummy_summary_stats(nrows = nrows, random_names = FALSE, ...)[
-        ,
-        .(rsid = rsids[seq_len(nrows), rsid]) |>
-          c(.SD)
-      ]
-    )
-  }
-  dummy_summary_stats(nrows = nrows, random_names = FALSE, ...)[
+  dt <- dummy_summary_stats(nrows = nrows, random_names = FALSE, ...)[
     ,
     .(rsid = rsids[seq_len(nrows), rsid]) |>
-      c(.SD),
-    .SDcols = -columns_to_drop
+      c(.SD)
   ]
+
+  if (!is.null(columns_to_drop)) {
+    dt <- dt[
+      ,
+      .SD,
+      .SDcols = -columns_to_drop
+    ]
+  }
+
+  if (random_names) {
+    set_random_names(dt)
+  }
+
+  dt
 }
 
 local_rsid_summary_stats <- function(
@@ -309,4 +318,44 @@ local_rsid_summary_stats_interface <- function(
 ) {
   local_rsid_summary_stats(filename = filename, ..., env = env)
   new_file_interface(filename)
+}
+
+# Used to test %in% conditions
+test_in_fc <- function(
+    fcall,
+    finterface,
+    expected_condition,
+    file_contents
+) {
+  awk_condition_list <- new_filter_condition(
+    fcall,
+    finterface = finterface
+  ) |>
+    eval_fcondition(finterface = finterface)
+  expect_true(
+    file.exists(awk_condition_list$additional_files)
+  )
+  expect_equal(
+    readLines(awk_condition_list$additional_files),
+    file_contents
+  )
+  filepath <- awk_condition_list$additional_files
+  random_code <- gsub("^/tmp/Rtmp[^/]+/file",
+                      "",
+                      awk_condition_list$additional_files)
+  expect_equal(
+    awk_condition_list$condition,
+    sprintf(expected_condition,
+            random_code)
+  )
+  expect_equal(
+    awk_condition_list$variable_arrays,
+    paste0(
+      "if (FILENAME == \"%s\") {\n",
+      "  var%s[$0] = 1\n",
+      "  next\n",
+      "}"
+    ) |>
+      sprintf(filepath, random_code)
+  )
 }

@@ -1,3 +1,25 @@
+test_that("RSID parsing required is correctly detected", {
+  finterface <- local_summary_stats_interface()
+  expect_false(needs_rsid_matching(finterface))
+  finterface_rn <- local_summary_stats_interface("data_rn.csv",
+                                                 random_names = TRUE)
+  expect_false(needs_rsid_matching(finterface_rn))
+
+  finterface_rsid <- local_rsid_summary_stats_interface("data_rsid.csv")
+  expect_true(needs_rsid_matching(finterface_rsid))
+  finterface_rsid_rn <- local_rsid_summary_stats_interface("data_rsid_rn.csv",
+                                                           random_names = TRUE)
+  expect_true(needs_rsid_matching(finterface_rsid_rn))
+
+  finterface_enc <- local_summary_stats_interface("data_enc.csv",
+                                                  encode_columns = TRUE)
+  expect_false(needs_rsid_matching(finterface_enc))
+  finterface_enc_rn <- local_summary_stats_interface("data_enc_rn.csv",
+                                                     random_names   = TRUE,
+                                                     encode_columns = TRUE)
+  expect_false(needs_rsid_matching(finterface_enc_rn))
+})
+
 test_that("tabix process substitution works", {
   expect_error(
     get_tabix_process_substitution(1:2, 123, 234)
