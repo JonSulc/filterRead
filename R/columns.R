@@ -3,128 +3,145 @@
 # Dictionary to standardize the column names across various sources
 summary_stats_column_names <- list(
   variant_id = c("variant_id"),
-  chr = c("chr",
-          "SNPChr",
-          "CHROM",
-          "chromosome",
-          "Chromosome",
-          "CHR",
-          "ISmet_chr",
-          "Chr",
-          "Chromsome", # Yup...
-          "chrom",
-          "WMHmet_chr",
-          "CHROMOSOME",
-          "BImet_chr"),
-
-  pos = c("pos",
-          "SNPPos",
-          "position",
-          "GENPOS",
-          "Position",
-          "POS",
-          "ISmet_position",
-          "BP",
-          "Pos",
-          "Pos_b37",
-          "MapInfo",
-          "Physical_Location",
-          "PhysPos",
-          "chromStart",
-          "WMHmet_position",
-          "POSITION",
-          "BImet_pos"),
-
-  ref = c("ref",
-          "OtherAllele",
-          "other_allele.outcome",
-          "other_allele.exposure",
-          "nea",
-          "ALLELE0",
-          "NEA",
-          "Noncoded_allele",
-          "noncoded_all",
-          "Other_allele",
-          "WMHmet_NonEffAllele",
-          "BImet_ref.noncoded"),
-
-  alt = c("alt",
-          "AssessedAllele",
-          "effect_allele.outcome",
-          "effect_allele.exposure",
-          "ea",
-          "ALLELE1",
-          "SNPEffectAllele",
-          "Effect_allele",
-          "Effect allele (EA)",
-          "EA",
-          "effallele",
-          "Coded_allele",
-          "coded_all"),
-
-  effect = c("effect",
-             "slope",
-             "beta",
-             "BETA",
-             "MetaBeta",
-             "b",
-             "Estimate_Effect",
-             "genoxt2d.b", # MVP summary statistics, T2D complications
-             "Effect",
-             "Est",
-             "Estimate_effect",
-             "Beta"),
-
-  pval = c("pval",
-           "pval_nominal",
-           "Pvalue",
-           "p",
-           "MetaP",
-           "P_value",
-           "P value",
-           "genoxt2d.p", # MVP summary statistics, T2D complications
-           "PVAL",
-           "P",
-           "P.value",
-           "ISmet_pvalue",
-           "WMHmet_P",
-           "BImet_meta.p",
-           "P-value"),
-
-  log10p = c("LOG10P"),
-
-  effect_se = c("effect_se",
-                "slope_se",
-                "se",
-                "SE",
-                "MetaSE",
-                "b_se",
-                "StdErr"),
-
-  zscore = c("Zscore",
-             "Test statistic",
-             "WMHmet_ZScore"),
-
+  chr = c(
+    "chr",
+    "SNPChr",
+    "CHROM",
+    "chromosome",
+    "Chromosome",
+    "CHR",
+    "ISmet_chr",
+    "Chr",
+    "Chromsome", # Yup...
+    "chrom",
+    "WMHmet_chr",
+    "CHROMOSOME",
+    "BImet_chr",
+    "#CHROM"
+  ),
+  pos = c(
+    "pos",
+    "SNPPos",
+    "position",
+    "GENPOS",
+    "Position",
+    "POS",
+    "ISmet_position",
+    "BP",
+    "Pos",
+    "Pos_b37",
+    "MapInfo",
+    "Physical_Location",
+    "PhysPos",
+    "chromStart",
+    "WMHmet_position",
+    "POSITION",
+    "BImet_pos"
+  ),
+  ref = c(
+    "ref",
+    "OtherAllele",
+    "other_allele.outcome",
+    "other_allele.exposure",
+    "nea",
+    "ALLELE0",
+    "NEA",
+    "Noncoded_allele",
+    "Non_coded_allele",
+    "noncoded_all",
+    "Other_allele",
+    "WMHmet_NonEffAllele",
+    "BImet_ref.noncoded",
+    "REF"
+  ),
+  alt = c(
+    "alt",
+    "AssessedAllele",
+    "effect_allele.outcome",
+    "effect_allele.exposure",
+    "ea",
+    "ALLELE1",
+    "SNPEffectAllele",
+    "Effect_allele",
+    "Effect allele (EA)",
+    "EA",
+    "effallele",
+    "Coded_allele",
+    "coded_all",
+    "ALT"
+  ),
+  effect = c(
+    "effect",
+    "slope",
+    "beta",
+    "BETA",
+    "MetaBeta",
+    "b",
+    "Estimate_Effect",
+    "genoxt2d.b", # MVP summary statistics, T2D complications
+    "Effect",
+    "Est",
+    "Estimate_effect",
+    "Beta"
+  ),
+  pval = c(
+    "pval",
+    "pval_nominal",
+    "Pvalue",
+    "p",
+    "MetaP",
+    "P_value",
+    "P value",
+    "genoxt2d.p", # MVP summary statistics, T2D complications
+    "PVAL",
+    "P",
+    "P.value",
+    "ISmet_pvalue",
+    "WMHmet_P",
+    "BImet_meta.p",
+    "P-value"
+  ),
+  log10p = c(
+    "LOG10P",
+    "LOG10_P"
+  ),
+  effect_se = c(
+    "effect_se",
+    "slope_se",
+    "se",
+    "SE",
+    "MetaSE",
+    "b_se",
+    "StdErr"
+  ),
+  zscore = c(
+    "Zscore",
+    "Test statistic",
+    "WMHmet_ZScore"
+  ),
   odds_ratio = c("OR"),
 
   # rsid = c("rsid",
   #          "id"),
 
-  allele1 = c("Allele_1",
-              "Allele 1",
-              "Allele1",
-              "a1",
-              "A1",
-              "allele1",
-              "ISmet_allele1"),
-
-  allele2 = c("Allele_2",
-              "Allele 2",
-              "Allele2",
-              "a2",
-              "A2",
-              "allele2",
-              "ISmet_allele2")
+  allele1 = c(
+    "Allele_1",
+    "Allele 1",
+    "Allele1",
+    "a1",
+    "A1",
+    "allele1",
+    "ISmet_allele1"
+  ),
+  allele2 = c(
+    "Allele_2",
+    "Allele 2",
+    "Allele2",
+    "a2",
+    "A2",
+    "allele2",
+    "ISmet_allele2"
+  )
 )
 
 # In some CHARGE files, there is no position column but it is encoded in other
@@ -133,44 +150,54 @@ summary_stats_column_names <- list(
 summary_stats_encoded_columns <- list(
   MarkerName = list(
     # e.g., sub20200527/accumbens_eur_z_ldsc_unrestricted_NG05SEP19.out
-    list(pattern = "%s:%s",
-         regex   = "^([^:]{1,2}):([0-9]+)$",
-         encoded_names = list(c("chr", "pos")),
-         delimiter = ":"),
+    list(
+      pattern = "%s:%s",
+      regex = "^([^:]{1,2}):([0-9]+)$",
+      encoded_names = list(c("chr", "pos")),
+      delimiter = ":"
+    ),
 
     # e.g., sub20180725/SVE.european.results.metal.csv
-    list(pattern = "%s-c%s:%s-123",
-         regex   = "^(b3[6-8])-c([^:]{1,2}):([0-9]+)-[0-9]+$",
-         encoded_names = list(c("build", "chr", "pos")),
-         delimiter = "-c|:|-"),
+    list(
+      pattern = "%s-c%s:%s-123",
+      regex = "^(b3[6-8])-c([^:]{1,2}):([0-9]+)-[0-9]+$",
+      encoded_names = list(c("build", "chr", "pos")),
+      delimiter = "-c|:|-"
+    ),
 
     # e.g., sub20190511/invnormFT4_overall_150611_invvar1.txt-QCfiltered_GC.rsid.txt
-    list(pattern = "%s:%s:SNP",
-         regex   = "^([^:]+):([0-9]+):[^:]+$",
-         encoded_names = list(c("chr", "pos")),
-         delimiter = ":"),
+    list(
+      pattern = "%s:%s:SNP",
+      regex = "^([^:]+):([0-9]+):[^:]+$",
+      encoded_names = list(c("chr", "pos")),
+      delimiter = ":"
+    ),
 
     # e.g., sub20201231_01/BP-ICE_EUR_SBP_transformed_15-04-2020.txt
-    list(pattern = "chr%s:%i:a:c",
-         regex   = "^(chr[^:]{1,2}):([0-9]+):[a-zA-Z]+:[a-zA-Z]+$",
-         encoded_names = list(c("chr", "pos")),
-         delimiter = ":")
+    list(
+      pattern = "chr%s:%i:a:c",
+      regex = "^(chr[^:]{1,2}):([0-9]+):[a-zA-Z]+:[a-zA-Z]+$",
+      encoded_names = list(c("chr", "pos")),
+      delimiter = ":"
+    )
   ),
-
   chr_colon_pos = list(
     # e.g., sub20180818/vv.results.metal.txt
-    list(pattern = "%s:%s",
-         regex   = "^([^:]{1,2}):([0-9]+)$",
-         encoded_names = list(c("chr", "pos")),
-         delimiter = ":")
+    list(
+      pattern = "%s:%s",
+      regex = "^([^:]{1,2}):([0-9]+)$",
+      encoded_names = list(c("chr", "pos")),
+      delimiter = ":"
+    )
   ),
-
   Chr_Pos = list(
     # e.g., sub20200523/FVIIactivity_EA_AA_trans.csv
-    list(pattern = "%s:%s",
-         regex   = "^([^:]{1,2}):([0-9]+)$",
-         encoded_names = list(c("chr", "pos")),
-         delimiter = ":")
+    list(
+      pattern = "%s:%s",
+      regex = "^([^:]{1,2}):([0-9]+)$",
+      encoded_names = list(c("chr", "pos")),
+      delimiter = ":"
+    )
   )
 )
 summary_stats_standard_names_dt <- data.table::data.table(
