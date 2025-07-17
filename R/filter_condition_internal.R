@@ -2,9 +2,8 @@
 #' @importFrom stringr str_detect
 
 lp_to_fc <- function(
-  fcall,
-  ...
-) {
+    fcall,
+    ...) {
   stopifnot(fcall[[1]] == as.symbol("("))
   fcall[[1]] <- as.symbol("lp_filter_condition")
   fcall[-1] <- lapply(fcall[-1], new_filter_condition, ...)
@@ -14,25 +13,22 @@ lp_to_fc <- function(
 }
 
 and_to_fc <- function(
-  fcall,
-  ...
-) {
+    fcall,
+    ...) {
   new_filter_condition(fcall[[2]], ...) & new_filter_condition(fcall[[3]], ...)
 }
 
 
 or_to_fc <- function(
-  fcall,
-  ...
-) {
+    fcall,
+    ...) {
   new_filter_condition(fcall[[2]], ...) | new_filter_condition(fcall[[3]], ...)
 }
 
 
 chainable_to_fc <- function(
-  fcall,
-  ...
-) {
+    fcall,
+    ...) {
   fcall[[1]] <- list(
     "<"  = as.symbol("lt_filter_condition"),
     "<=" = as.symbol("lte_filter_condition"),
@@ -44,19 +40,18 @@ chainable_to_fc <- function(
 
 
 eq_to_fc <- function(
-  fcall,
-  finterface_env,
-  env
-) {
+    fcall,
+    finterface_env,
+    env) {
   stopifnot(fcall[[1]] == as.symbol("=="))
   fcall[[1]] <- as.symbol("eq_filter_condition")
 
-  if (is_column_symbol(fcall[[2]], finterface_env$finterface)
-      & !is_column_symbol(fcall[[3]], finterface_env$finterface)) {
+  if (is_column_symbol(fcall[[2]], finterface_env$finterface) &
+    !is_column_symbol(fcall[[3]], finterface_env$finterface)) {
     fcall[[3]] <- eval(fcall[[3]], env) |>
       check_post_processing(fcall[[2]], finterface_env$finterface)
-  } else if (is_column_symbol(fcall[[3]], finterface_env$finterface)
-             & !is_column_symbol(fcall[[2]], finterface_env$finterface)) {
+  } else if (is_column_symbol(fcall[[3]], finterface_env$finterface) &
+    !is_column_symbol(fcall[[2]], finterface_env$finterface)) {
     fcall[[2]] <- eval(fcall[[2]], env) |>
       check_post_processing(fcall[[3]], finterface_env$finterface)
   }
@@ -66,10 +61,9 @@ eq_to_fc <- function(
 
 
 in_to_fc <- function(
-  fcall,
-  finterface_env,
-  env
-) {
+    fcall,
+    finterface_env,
+    env) {
   fcall[[1]] <- as.symbol("in_filter_condition")
 
   fcall[[3]] <- eval(fcall[[3]], env) |>
@@ -79,26 +73,28 @@ in_to_fc <- function(
 }
 
 is_column_symbol <- function(
-  fcall,
-  finterface
-) {
-  if (length(fcall) != 1) return(FALSE)
+    fcall,
+    finterface) {
+  if (length(fcall) != 1) {
+    return(FALSE)
+  }
   as.character(fcall) %in% finterface$column_info$name
 }
 
 check_post_processing <- function(
-  values,
-  column_symbol,
-  finterface,
-  to_write = FALSE,
-  check_quotes_function = ifelse(
-    to_write,
-    check_quotes_to_write,
-    check_quotes
-  )
-) {
+    values,
+    column_symbol,
+    finterface,
+    to_write = FALSE,
+    check_quotes_function = ifelse(
+      to_write,
+      check_quotes_to_write,
+      check_quotes
+    )) {
   column_name <- as.character(column_symbol)
-  if (!column_name %in% finterface$column_info$name) return(values)
+  if (!column_name %in% finterface$column_info$name) {
+    return(values)
+  }
 
   post_processing_to_check <- finterface$column_info[
     column_name,
@@ -112,10 +108,11 @@ check_post_processing <- function(
 }
 
 check_prefix <- function(
-  values,
-  prefix
-) {
-  if (is.na(prefix)) return(values)
+    values,
+    prefix) {
+  if (is.na(prefix)) {
+    return(values)
+  }
   data.table::fifelse(
     grepl(paste0("^", prefix), values),
     as.character(values),
@@ -124,11 +121,12 @@ check_prefix <- function(
 }
 
 check_quotes <- function(
-  values,
-  quoted
-) {
+    values,
+    quoted) {
   if (!isTRUE(quoted)) {
-    if (all(is.numeric(values))) return(values)
+    if (all(is.numeric(values))) {
+      return(values)
+    }
     return(sprintf("\"%s\"", values))
   }
   # Strip existing quotation
@@ -139,9 +137,8 @@ check_quotes <- function(
   )
 }
 check_quotes_to_write <- function(
-  values,
-  quoted
-) {
+    values,
+    quoted) {
   if (!isTRUE(quoted)) {
     return(values)
   }

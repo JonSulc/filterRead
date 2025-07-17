@@ -29,9 +29,13 @@ test_that("Encoded columns are correctly detected", {
   )
   expect_equal(
     get_awk_column_arrays(finterface_enc),
-    list(before_if = character(0),
-         after_if  = c("split($1, encoded1, \"-c|:|-\")",
-                       "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"))
+    list(
+      before_if = character(0),
+      after_if = c(
+        "split($1, encoded1, \"-c|:|-\")",
+        "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"
+      )
+    )
   )
 
 
@@ -102,9 +106,13 @@ test_that("Encoded columns are correctly detected", {
   )
   expect_equal(
     get_awk_column_arrays(finterface_enc),
-    list(before_if = character(0),
-         after_if  = c("split($1, encoded1, \"-c|:|-\")",
-                       "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"))
+    list(
+      before_if = character(0),
+      after_if = c(
+        "split($1, encoded1, \"-c|:|-\")",
+        "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"
+      )
+    )
   )
 })
 

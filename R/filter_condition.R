@@ -20,9 +20,8 @@ fc_convert <- list(
 
 
 as_filter_condition <- function(
-  fcall,
-  ...
-) {
+    fcall,
+    ...) {
   structure(
     fcall,
     class = c("filter_condition", class(fcall)) |>
@@ -33,10 +32,9 @@ as_filter_condition <- function(
 
 
 new_filter_condition <- function(
-  fcall,
-  finterface,
-  env = parent.frame()
-) {
+    fcall,
+    finterface,
+    env = parent.frame()) {
   if (is.null(fcall)) {
     fcall <- structure(list(), class = c("filter_condition"))
   } else if (!is.call(fcall)) {
@@ -52,9 +50,13 @@ new_filter_condition <- function(
     attr(fcall, "finterface_env") <- finterface
   }
 
-  if (length(fcall) == 0) return(fcall)
+  if (length(fcall) == 0) {
+    return(fcall)
+  }
 
-  if (!as.character(fcall[[1]]) %in% names(fc_convert)) return(fcall)
+  if (!as.character(fcall[[1]]) %in% names(fc_convert)) {
+    return(fcall)
+  }
 
   fcondition <- fc_convert[[as.character(fcall[[1]])]](
     fcall,
@@ -62,8 +64,8 @@ new_filter_condition <- function(
     env = env
   )
 
-  if ((get_file_interface(fcondition) |> needs_rsid_matching())
-      & is.null(attr(fcondition, "genomic_range"))) {
+  if ((get_file_interface(fcondition) |> needs_rsid_matching()) &
+    is.null(attr(fcondition, "genomic_range"))) {
     fcondition <- split_genomic_conditions(fcondition)
   }
 
@@ -71,10 +73,9 @@ new_filter_condition <- function(
 }
 
 combine_filter_condition <- function(
-  fcondition1,
-  fcondition2,
-  operation
-) {
+    fcondition1,
+    fcondition2,
+    operation) {
   list(
     variable_arrays = c(fcondition1$variable_array, fcondition2$variable_array),
     condition = paste(fcondition1$condition, operation, fcondition2$condition),
@@ -83,30 +84,31 @@ combine_filter_condition <- function(
 }
 
 get_used_columns <- function(
-  fcondition,
-  finterface
-){
+    fcondition,
+    finterface) {
   if (is.call(fcondition)) {
-    return(sapply(fcondition[-1],
-                  get_used_columns,
-                  get_file_interface(fcondition)) |>
-             unlist() |>
-             unique())
+    return(sapply(
+      fcondition[-1],
+      get_used_columns,
+      get_file_interface(fcondition)
+    ) |>
+      unlist() |>
+      unique())
   }
-  intersect(finterface$column_info$name,
-            as.character(fcondition))
+  intersect(
+    finterface$column_info$name,
+    as.character(fcondition)
+  )
 }
 
 get_file_interface <- function(
-  fcondition
-) {
+    fcondition) {
   attr(fcondition, "finterface_env")$finterface
 }
 
 #' @export
 format.filter_condition <- function(
-  fcondition
-) {
+    fcondition) {
   fcondition_operations <- c(
     lt_filter_condition  = "<",
     lte_filter_condition = "<=",
@@ -129,26 +131,37 @@ format.filter_condition <- function(
       fcondition_str <- sprintf("(%s)", format(fcondition[[2]]))
     }
     if (as.character(fcondition[[1]]) == "and_filter_condition") {
-      fcondition_str <- paste(format(fcondition[[2]]),
-                              "&", format(fcondition[[3]]))
+      fcondition_str <- paste(
+        format(fcondition[[2]]),
+        "&", format(fcondition[[3]])
+      )
     }
     if (as.character(fcondition[[1]]) == "or_filter_condition") {
-      fcondition_str <- paste(format(fcondition[[2]]),
-                              "|", format(fcondition[[3]]))
+      fcondition_str <- paste(
+        format(fcondition[[2]]),
+        "|", format(fcondition[[3]])
+      )
     }
   }
   if (!is.null(attr(fcondition, "genomic_range"))) {
     genomic_ranges <- attr(fcondition, "genomic_range")[
       ,
-      paste(" & rsid %in%",
-            sprintf("%s%s",
-                    chr,
-                    ifelse(is.na(start) & is.na(end),
-                           "",
-                           sprintf(":%s-%s",
-                                   ifelse(is.na(start), "", start),
-                                   ifelse(is.na(end), "", end)))) |>
-              paste(collapse = " "))
+      paste(
+        " & rsid %in%",
+        sprintf(
+          "%s%s",
+          chr,
+          ifelse(is.na(start) & is.na(end),
+            "",
+            sprintf(
+              ":%s-%s",
+              ifelse(is.na(start), "", start),
+              ifelse(is.na(end), "", end)
+            )
+          )
+        ) |>
+          paste(collapse = " ")
+      )
     ]
   } else {
     genomic_ranges <- ""
@@ -159,19 +172,17 @@ format.filter_condition <- function(
 
 #' @export
 print.filter_condition <- function(
-  fcondition,
-  ...,
-  quote = FALSE
-) {
+    fcondition,
+    ...,
+    quote = FALSE) {
   format(fcondition) |>
     cat()
 }
 
 #' @export
 `&.filter_condition` <- function(
-  fcondition1,
-  fcondition2
-) {
+    fcondition1,
+    fcondition2) {
   if (length(fcondition1) == 0) {
     attr(fcondition2, "genomic_range") <- combine_genomic_ranges(
       attr(fcondition1, "genomic_range"),
@@ -211,34 +222,40 @@ print.filter_condition <- function(
 }
 
 combine_genomic_ranges <- function(
-  genomic_range1,
-  genomic_range2
-) {
-  if (is.null(genomic_range2)) return(genomic_range1)
-  if (is.null(genomic_range1)) return(genomic_range2)
+    genomic_range1,
+    genomic_range2) {
+  if (is.null(genomic_range2)) {
+    return(genomic_range1)
+  }
+  if (is.null(genomic_range1)) {
+    return(genomic_range2)
+  }
   genomic_range1[
     genomic_range2,
     on = "chr",
     nomatch = NULL
   ][
     ,
-    .(start = ifelse(all(is.na(c(start, i.start))),
-                     NA_real_,
-                     max(start, i.start, na.rm = TRUE) |>
-                       suppressWarnings()),
-      end   = ifelse(all(is.na(c(end, i.end))),
-                     NA_real_,
-                     min(end, i.end, na.rm = TRUE) |>
-                       suppressWarnings())),
+    .(
+      start = ifelse(all(is.na(c(start, i.start))),
+        NA_real_,
+        max(start, i.start, na.rm = TRUE) |>
+          suppressWarnings()
+      ),
+      end = ifelse(all(is.na(c(end, i.end))),
+        NA_real_,
+        min(end, i.end, na.rm = TRUE) |>
+          suppressWarnings()
+      )
+    ),
     by = chr
   ]
 }
 
 #' @export
 `|.filter_condition` <- function(
-  fcondition1,
-  fcondition2
-) {
+    fcondition1,
+    fcondition2) {
   stopifnot(identical(
     attr(fcondition1, "finterface_env"),
     attr(fcondition2, "finterface_env")
@@ -266,84 +283,95 @@ combine_genomic_ranges <- function(
 }
 
 is_and_block <- function(
-  fcondition
-) {
-  if (!is.call(fcondition)) return(TRUE)
+    fcondition) {
+  if (!is.call(fcondition)) {
+    return(TRUE)
+  }
 
-  if (fcondition[[1]] == as.symbol("or_filter_condition")) return(FALSE)
+  if (fcondition[[1]] == as.symbol("or_filter_condition")) {
+    return(FALSE)
+  }
 
   all(sapply(fcondition[-1], is_and_block))
 }
 
 has_genomic_condition <- function(
-  fcondition
-) {
+    fcondition) {
   has_chromosome_condition(fcondition) | has_position_condition(fcondition)
 }
 
 has_chromosome_condition <- function(
-  fcondition
-) {
+    fcondition) {
   if (!is.null(attr(fcondition, "genomic_range"))) {
     if (any(!is.na(attr(fcondition, "genomic_range")$chr))) {
       return(TRUE)
     }
   }
   if (is.call(fcondition)) {
-    while (fcondition[[1]] == as.symbol("lp_filter_condition"))
+    while (fcondition[[1]] == as.symbol("lp_filter_condition")) {
       fcondition <- fcondition[[2]]
+    }
     return(any(sapply(fcondition[-1], has_chromosome_condition) |> unlist()))
   }
   fcondition == as.symbol("chr")
 }
 
 has_position_condition <- function(
-  fcondition
-) {
+    fcondition) {
   if (!is.null(attr(fcondition, "genomic_range"))) {
-    if (any(attr(fcondition, "genomic_range")[, c(!is.na(start), !is.na(end))]))
+    if (any(attr(fcondition, "genomic_range")[, c(!is.na(start), !is.na(end))])) {
       return(TRUE)
+    }
   }
   if (is.call(fcondition)) {
-    while (fcondition[[1]] == as.symbol("lp_filter_condition"))
+    while (fcondition[[1]] == as.symbol("lp_filter_condition")) {
       fcondition <- fcondition[[2]]
+    }
     return(any(sapply(fcondition[-1], has_position_condition) |> unlist()))
   }
-  if (length(fcondition) == 0) return(FALSE)
+  if (length(fcondition) == 0) {
+    return(FALSE)
+  }
   fcondition == as.symbol("pos")
 }
 
 has_non_genomic_condition <- function(
-  fcondition
-) {
-  if (length(fcondition) == 0) return(FALSE)
+    fcondition) {
+  if (length(fcondition) == 0) {
+    return(FALSE)
+  }
   if (as.character(fcondition[[1]]) %in% c("and_filter_condition", "or_filter_condition")) {
     return(any(sapply(fcondition[2:3], has_non_genomic_condition)))
   }
   if (as.character(fcondition[[1]]) == "in_filter_condition") {
     return(!is_genomic_symbol(fcondition[[2]]))
   }
-  if (as.character(fcondition[[1]]) %in% c("lt_filter_condition", "lte_filter_condition",
-                                           "gt_filter_condition", "gte_filter_condition",
-                                           "eq_filter_condition")) {
+  if (as.character(fcondition[[1]]) %in% c(
+    "lt_filter_condition", "lte_filter_condition",
+    "gt_filter_condition", "gte_filter_condition",
+    "eq_filter_condition"
+  )) {
     return(!is_genomic_symbol(fcondition[[2]]) & !is_genomic_symbol(fcondition[[3]]))
   }
-  if (fcondition[[1]] == as.symbol("lp_filter_condition"))
+  if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
     return(has_non_genomic_condition(fcondition[[2]]))
+  }
   !is_genomic_symbol(fcondition)
 }
 is_genomic_symbol <- function(
-  symbol
-) {
+    symbol) {
   symbol == as.symbol("chr") | symbol == as.symbol("pos")
 }
 
 split_genomic_conditions <- function(
-  fcondition
-) {
-  if (length(fcondition) == 0) return(fcondition)
+    fcondition) {
+  if (length(fcondition) == 0) {
+    return(fcondition)
+  }
   fcondition <- strip_parentheses(fcondition)
-  if (!has_genomic_condition(fcondition)) return(fcondition)
+  if (!has_genomic_condition(fcondition)) {
+    return(fcondition)
+  }
   if (!has_non_genomic_condition(fcondition)) {
     to_return <- list()
     attributes(to_return) <- attributes(fcondition)
@@ -353,22 +381,21 @@ split_genomic_conditions <- function(
   # Contains mix of genomic and non-genomic conditions
   if (fcondition[[1]] == as.symbol("and_filter_condition")) {
     return(
-      split_genomic_conditions(fcondition[[2]])
-      & split_genomic_conditions(fcondition[[3]])
+      split_genomic_conditions(fcondition[[2]]) &
+        split_genomic_conditions(fcondition[[3]])
     )
   }
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
     return(
-      split_genomic_conditions(fcondition[[2]])
-      | split_genomic_conditions(fcondition[[3]])
+      split_genomic_conditions(fcondition[[2]]) |
+        split_genomic_conditions(fcondition[[3]])
     )
   }
   fcondition
 }
 
 make_genomic_ranges <- function(
-  fcondition
-) {
+    fcondition) {
   stopifnot(!has_non_genomic_condition(fcondition))
   fcondition <- strip_parentheses(fcondition)
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
@@ -384,8 +411,10 @@ make_genomic_ranges <- function(
     ) |>
       cbind(pos_condition_to_genomic_region(fcondition))
   } else {
-    numeric_operators <- c("lt_filter_condition", "lte_filter_condition",
-                           "gt_filter_condition", "gte_filter_condition")
+    numeric_operators <- c(
+      "lt_filter_condition", "lte_filter_condition",
+      "gt_filter_condition", "gte_filter_condition"
+    )
     chr_condition <- get_chr_condition(fcondition)
 
     if (as.character(chr_condition[[1]]) %in% numeric_operators) {
@@ -411,13 +440,15 @@ make_genomic_ranges <- function(
     genomic_ranges <- genomic_ranges[!sapply(chr, is.na)]
   }
 
-  if (  !"end" %in% names(genomic_ranges)) genomic_ranges$end   <- NA_real_
+  if (!"end" %in% names(genomic_ranges)) genomic_ranges$end <- NA_real_
   if (!"start" %in% names(genomic_ranges)) {
     genomic_ranges <- genomic_ranges[
       ,
-      .(chr   = chr,
+      .(
+        chr = chr,
         start = NA_real_,
-        end   = end)
+        end = end
+      )
     ]
   }
 
@@ -425,8 +456,7 @@ make_genomic_ranges <- function(
 }
 
 get_chr_condition <- function(
-  fcondition
-) {
+    fcondition) {
   stopifnot(is_and_block(fcondition))
   fcondition <- strip_parentheses(fcondition)
   if (fcondition[[1]] == as.symbol("and_filter_condition")) {
@@ -440,8 +470,7 @@ get_chr_condition <- function(
   NULL
 }
 get_pos_condition <- function(
-  fcondition
-) {
+    fcondition) {
   stopifnot(is_and_block(fcondition))
   fcondition <- strip_parentheses(fcondition)
   if (fcondition[[1]] == as.symbol("and_filter_condition")) {
@@ -455,36 +484,49 @@ get_pos_condition <- function(
   NULL
 }
 pos_condition_to_genomic_region <- function(
-  fcondition
-) {
+    fcondition) {
   fcondition <- strip_parentheses(fcondition)
   if (fcondition[[2]] == as.symbol("pos")) {
-    if (fcondition[[1]] == as.symbol("lt_filter_condition"))
-      return(data.table::data.table(end = fcondition[[3]]-1))
-    if (fcondition[[1]] == as.symbol("lte_filter_condition"))
+    if (fcondition[[1]] == as.symbol("lt_filter_condition")) {
+      return(data.table::data.table(end = fcondition[[3]] - 1))
+    }
+    if (fcondition[[1]] == as.symbol("lte_filter_condition")) {
       return(data.table::data.table(end = fcondition[[3]]))
-    if (fcondition[[1]] == as.symbol("gt_filter_condition"))
-      return(data.table::data.table(start = fcondition[[3]]+1))
-    if (fcondition[[1]] == as.symbol("gte_filter_condition"))
+    }
+    if (fcondition[[1]] == as.symbol("gt_filter_condition")) {
+      return(data.table::data.table(start = fcondition[[3]] + 1))
+    }
+    if (fcondition[[1]] == as.symbol("gte_filter_condition")) {
       return(data.table::data.table(start = fcondition[[3]]))
-    if (fcondition[[1]] == as.symbol("eq_filter_condition")
-        | fcondition[[1]] == as.symbol("in_filter_condition"))
-      return(data.table::data.table(start = fcondition[[3]],
-                                    end   = fcondition[[3]]))
+    }
+    if (fcondition[[1]] == as.symbol("eq_filter_condition") |
+      fcondition[[1]] == as.symbol("in_filter_condition")) {
+      return(data.table::data.table(
+        start = fcondition[[3]],
+        end = fcondition[[3]]
+      ))
+    }
   }
   if (fcondition[[3]] == as.symbol("pos")) {
-    if (fcondition[[1]] == as.symbol("lt_filter_condition"))
-      return(data.table::data.table(start = fcondition[[2]]+1))
-    if (fcondition[[1]] == as.symbol("lte_filter_condition"))
+    if (fcondition[[1]] == as.symbol("lt_filter_condition")) {
+      return(data.table::data.table(start = fcondition[[2]] + 1))
+    }
+    if (fcondition[[1]] == as.symbol("lte_filter_condition")) {
       return(data.table::data.table(start = fcondition[[2]]))
-    if (fcondition[[1]] == as.symbol("gt_filter_condition"))
-      return(data.table::data.table(end = fcondition[[2]]-1))
-    if (fcondition[[1]] == as.symbol("gte_filter_condition"))
+    }
+    if (fcondition[[1]] == as.symbol("gt_filter_condition")) {
+      return(data.table::data.table(end = fcondition[[2]] - 1))
+    }
+    if (fcondition[[1]] == as.symbol("gte_filter_condition")) {
       return(data.table::data.table(end = fcondition[[2]]))
-    if (fcondition[[1]] == as.symbol("eq_filter_condition")
-        | fcondition[[1]] == as.symbol("in_filter_condition"))
-      return(data.table::data.table(start = fcondition[[2]],
-                                    end   = fcondition[[2]]))
+    }
+    if (fcondition[[1]] == as.symbol("eq_filter_condition") |
+      fcondition[[1]] == as.symbol("in_filter_condition")) {
+      return(data.table::data.table(
+        start = fcondition[[2]],
+        end = fcondition[[2]]
+      ))
+    }
   }
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
     return(
@@ -499,16 +541,20 @@ pos_condition_to_genomic_region <- function(
       to_return[
         ,
         .(
-          start = {if (any(!is.na(to_return$start))) {
-            max(start, na.rm = TRUE)
-          } else {
-            NA_real_
-          }},
-          end   = {if (any(!is.na(to_return$end))) {
-            min(end, na.rm = TRUE)
-          } else {
-            NA_real_
-          }}
+          start = {
+            if (any(!is.na(to_return$start))) {
+              max(start, na.rm = TRUE)
+            } else {
+              NA_real_
+            }
+          },
+          end = {
+            if (any(!is.na(to_return$end))) {
+              min(end, na.rm = TRUE)
+            } else {
+              NA_real_
+            }
+          }
         )
       ]
     )
@@ -517,19 +563,23 @@ pos_condition_to_genomic_region <- function(
 }
 
 strip_parentheses <- function(
-  fcondition,
-  recursive = TRUE
-) {
-  if (length(fcondition) == 0) return(fcondition)
-  if (fcondition[[1]] == as.symbol("lp_filter_condition"))
+    fcondition,
+    recursive = TRUE) {
+  if (length(fcondition) == 0) {
+    return(fcondition)
+  }
+  if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
     return(strip_parentheses(fcondition[[2]], recursive = recursive))
+  }
   if (recursive) {
-    if (fcondition[[1]] == as.symbol("and_filter_condition"))
-      return(strip_parentheses(fcondition[[2]], recursive = recursive)
-             & strip_parentheses(fcondition[[3]], recursive = recursive))
-    if (fcondition[[1]] == as.symbol("or_filter_condition"))
-      return(strip_parentheses(fcondition[[2]], recursive = recursive)
-             | strip_parentheses(fcondition[[3]], recursive = recursive))
+    if (fcondition[[1]] == as.symbol("and_filter_condition")) {
+      return(strip_parentheses(fcondition[[2]], recursive = recursive) &
+        strip_parentheses(fcondition[[3]], recursive = recursive))
+    }
+    if (fcondition[[1]] == as.symbol("or_filter_condition")) {
+      return(strip_parentheses(fcondition[[2]], recursive = recursive) |
+        strip_parentheses(fcondition[[3]], recursive = recursive))
+    }
   }
   fcondition
 }

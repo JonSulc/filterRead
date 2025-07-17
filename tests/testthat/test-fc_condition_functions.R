@@ -2,56 +2,68 @@ test_that("Parsing to command line works", {
   finterface <- local_file_interface()
   expect_equal(
     new_filter_condition(rlang::expr(num < 3),
-                         finterface = finterface) |>
+      finterface = finterface
+    ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 < 3")
   )
   expect_equal(
     new_filter_condition(rlang::expr(num > 3),
-                         finterface = finterface) |>
+      finterface = finterface
+    ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 > 3")
   )
   expect_equal(
     new_filter_condition(rlang::expr(num <= 3),
-                         finterface = finterface) |>
+      finterface = finterface
+    ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 <= 3")
   )
   expect_equal(
     new_filter_condition(rlang::expr(num >= 3),
-                         finterface = finterface) |>
+      finterface = finterface
+    ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 >= 3")
   )
   expect_equal(
     new_filter_condition(rlang::expr(num == 3),
-                         finterface = finterface) |>
+      finterface = finterface
+    ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 == 3")
   )
   expect_equal(
     new_filter_condition(rlang::expr(char == "a"),
-                         finterface = finterface) |>
+      finterface = finterface
+    ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$1 == \"a\"")
   )
 
   expect_equal(
     new_filter_condition(rlang::expr(char < 3 | num > 42),
-                         finterface = finterface) |>
+      finterface = finterface
+    ) |>
       eval_fcondition(finterface = finterface),
-    list(variable_arrays = NULL,
-         condition = "$1 < 3 || $2 > 42",
-         additional_files = NULL)
+    list(
+      variable_arrays = NULL,
+      condition = "$1 < 3 || $2 > 42",
+      additional_files = NULL
+    )
   )
   expect_equal(
     new_filter_condition(rlang::expr(char < 3 & num > 42),
-                         finterface = finterface) |>
+      finterface = finterface
+    ) |>
       eval_fcondition(finterface = finterface),
-    list(variable_arrays = NULL,
-         condition = "$1 < 3 && $2 > 42",
-         additional_files = NULL)
+    list(
+      variable_arrays = NULL,
+      condition = "$1 < 3 && $2 > 42",
+      additional_files = NULL
+    )
   )
 })
 
@@ -78,9 +90,10 @@ test_that("%in% parsing works", {
   )
 
   test_in_fc(rlang::expr(char %in% letters[1:5]),
-             finterface         = finterface,
-             expected_condition = "($1 in var%s)",
-             file_contents      = letters[1:5])
+    finterface         = finterface,
+    expected_condition = "($1 in var%s)",
+    file_contents      = letters[1:5]
+  )
 
   expect_true(
     grepl(
@@ -112,7 +125,8 @@ test_that("Parentheses work as expected", {
   finterface <- local_file_interface()
   expect_equal(
     new_filter_condition(rlang::expr((num < 3 & char == "a")),
-                         finterface = finterface) |>
+      finterface = finterface
+    ) |>
       eval_fcondition(finterface = finterface),
     list(
       variable_arrays  = NULL,
@@ -142,8 +156,8 @@ test_that("Parentheses work as expected", {
 
   test_in_fc(
     rlang::expr((num < 3 & char == "a") |
-                  (123 < num & num < 234 & char == "b") |
-                  (num < 12 & char %in% letters[1:3])),
+      (123 < num & num < 234 & char == "b") |
+      (num < 12 & char %in% letters[1:3])),
     finterface = finterface,
     expected_condition = paste(
       "($2 < 3 && $1 == \"a\")",
@@ -155,8 +169,8 @@ test_that("Parentheses work as expected", {
 
   test_in_fc(
     rlang::expr((num < 3 & char == "a") |
-                  (num < 12 & char %in% letters[1:3]) |
-                  (123 < num & num < 234 & char == "b")),
+      (num < 12 & char %in% letters[1:3]) |
+      (123 < num & num < 234 & char == "b")),
     finterface = finterface,
     expected_condition = paste(
       "($2 < 3 && $1 == \"a\")",

@@ -22,9 +22,11 @@ print $0"
       column_arrays_after_condition = NULL,
       print_prefix                  = NULL
     ),
-    paste0("if ($1 == 1) {\n",
-           "  print $0\n",
-           "}")
+    paste0(
+      "if ($1 == 1) {\n",
+      "  print $0\n",
+      "}"
+    )
   )
   expect_equal(
     wrap_condition_block(
@@ -111,7 +113,7 @@ test_that("Wrapping the full code block works", {
         awk_code_block  = "if (NR == FNR) {tabix stuff}",
         variable_arrays = "if (FILENAME == dont_read_42.txt) {oops}"
       ),
-      main_file_code    = "if (something) {print $0}"
+      main_file_code = "if (something) {print $0}"
     ),
     "{
   if (NR == FNR) {tabix stuff}
@@ -122,11 +124,13 @@ test_that("Wrapping the full code block works", {
   expect_equal(
     wrap_full_code_block(
       fcondition_awk_dt = data.table::data.table(
-        awk_code_block  = "if (NR == FNR) {tabix stuff}",
-        variable_arrays = list(c("if (FILENAME == dont_read_42.txt) {oops}",
-                                 "if (FILENAME == read_this.txt) {good}"))
+        awk_code_block = "if (NR == FNR) {tabix stuff}",
+        variable_arrays = list(c(
+          "if (FILENAME == dont_read_42.txt) {oops}",
+          "if (FILENAME == read_this.txt) {good}"
+        ))
       ),
-      main_file_code    = "if (something) {print $0}"
+      main_file_code = "if (something) {print $0}"
     ),
     "{
   if (NR == FNR) {tabix stuff}

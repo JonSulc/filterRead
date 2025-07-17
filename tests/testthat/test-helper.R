@@ -12,23 +12,29 @@ test_that("Non-quoted values work properly", {
   local_csv_file(filename = "data.csv")
   test <- data.table::fread("data.csv", quote = "")
   expect_false(any(stringr::str_detect(names(test), "\"")))
-  expect_equal(test,
-               dummy_dt())
+  expect_equal(
+    test,
+    dummy_dt()
+  )
 })
 
 test_that("Quoted values work", {
   local_csv_file(filename = "data.csv", quote = TRUE)
   test <- data.table::fread("data.csv", quote = "")
   expect_true(all(stringr::str_detect(names(test), "\"")))
-  expect_equal(test,
-               dummy_dt(values_are_quoted = TRUE))
+  expect_equal(
+    test,
+    dummy_dt(values_are_quoted = TRUE)
+  )
 })
 
 test_that("Prefixes work", {
   local_csv_file(filename = "data.csv", prefix = c(char = "chr"))
   test <- data.table::fread("data.csv", quote = "")
-  expect_equal(test,
-               dummy_dt(prefix = c(char = "chr")))
+  expect_equal(
+    test,
+    dummy_dt(prefix = c(char = "chr"))
+  )
 })
 
 test_that("Simulated stats initialize properly", {

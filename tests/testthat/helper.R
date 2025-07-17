@@ -1,7 +1,6 @@
 dummy_dt <- function(
-  nrows = 6,
-  ...
-) {
+    nrows = 6,
+    ...) {
   data.table::data.table(
     char = letters[seq_len(nrows)],
     num  = seq_len(nrows)
@@ -10,19 +9,17 @@ dummy_dt <- function(
 }
 
 apply_formatting <- function(
-  dt,
-  values_are_quoted = FALSE,
-  prefixes = NULL
-) {
+    dt,
+    values_are_quoted = FALSE,
+    prefixes = NULL) {
   add_prefixes_to_dt(dt, prefixes)
   add_quotes_to_dt(dt, values_are_quoted)
   invisible(dt)
 }
 
 add_prefixes_to_dt <- function(
-  dt,
-  prefixes
-) {
+    dt,
+    prefixes) {
   purrr::walk(
     names(prefixes),
     \(column_name) {
@@ -35,10 +32,11 @@ add_prefixes_to_dt <- function(
   invisible(dt)
 }
 add_quotes_to_dt <- function(
-  dt,
-  values_are_quoted
-) {
-  if (!values_are_quoted) return(dt)
+    dt,
+    values_are_quoted) {
+  if (!values_are_quoted) {
+    return(dt)
+  }
   dt[
     ,
     names(.SD) := lapply(.SD, add_quotes),
@@ -56,28 +54,29 @@ rsample <- function(
     x,
     size,
     replace = TRUE,
-    ...
-) {
-  if (length(x) == 1) return(rep(x, size))
+    ...) {
+  if (length(x) == 1) {
+    return(rep(x, size))
+  }
   sample(x, size, replace = replace, ...)
 }
 
 dummy_summary_stats <- function(
-  nrows  = 500,
-  chr    = 1:22,
-  start  = 1,
-  end    = 12345,
-  ref    = c("A", "C", "G", "T"),
-  alt    = c("A", "C", "G", "T"),
-  effect = NULL,
-  pval   = NULL,
-  ref_col_names     = summary_stats_column_names,
-  random_names      = TRUE,
-  values_are_quoted = FALSE,
-  prefixes          = NULL,
-  encode_columns    = FALSE,
-  rsids  = FALSE # Currently unimplemented
-) {
+    nrows = 500,
+    chr = 1:22,
+    start = 1,
+    end = 12345,
+    ref = c("A", "C", "G", "T"),
+    alt = c("A", "C", "G", "T"),
+    effect = NULL,
+    pval = NULL,
+    ref_col_names = summary_stats_column_names,
+    random_names = TRUE,
+    values_are_quoted = FALSE,
+    prefixes = NULL,
+    encode_columns = FALSE,
+    rsids = FALSE # Currently unimplemented
+    ) {
   if (is.null(pval)) pval <- runif(nrows)
   if (is.null(effect)) effect <- rnorm(nrows)
   dt <- data.table::data.table(
@@ -118,15 +117,16 @@ dummy_summary_stats <- function(
 }
 
 set_random_names <- function(
-  dt,
-  ref_col_names = summary_stats_standard_names_dt
-) {
+    dt,
+    ref_col_names = summary_stats_standard_names_dt) {
   data.table::setnames(
     dt,
     new = sapply(
       names(dt),
       \(cname) {
-        if (!cname %in% ref_col_names$standard_name) return(cname)
+        if (!cname %in% ref_col_names$standard_name) {
+          return(cname)
+        }
         ref_col_names[
           cname,
           sample(input_name, 1),
@@ -142,35 +142,39 @@ add_quotes <- function(something) {
 }
 
 local_csv_file <- function(
-  filename = "data.csv",
-  dt       = dummy_dt(prefix = prefix,
-                      nrows  = nrows),
-  ...,
-  prefix   = NULL,
-  nrows    = 6,
-  env      = parent.frame()
-) {
+    filename = "data.csv",
+    dt = dummy_dt(
+      prefix = prefix,
+      nrows = nrows
+    ),
+    ...,
+    prefix = NULL,
+    nrows = 6,
+    env = parent.frame()) {
   if (file.exists(filename)) stop("File ", filename, " already exists.")
   data.table::fwrite(dt, filename, ...)
   withr::defer(
-    {file.remove(filename)},
+    {
+      file.remove(filename)
+    },
     envir = env
   )
 }
 
 local_file_interface <- function(
-  filename          = "data.csv",
-  ...,
-  prefix            = NULL,
-  nrows             = 6,
-  env               = parent.frame(),
-  standard_names_dt = summary_stats_standard_names_dt
-) {
-  local_csv_file(filename = filename,
-                 ...,
-                 prefix   = prefix,
-                 nrows    = nrows,
-                 env      = env)
+    filename = "data.csv",
+    ...,
+    prefix = NULL,
+    nrows = 6,
+    env = parent.frame(),
+    standard_names_dt = summary_stats_standard_names_dt) {
+  local_csv_file(
+    filename = filename,
+    ...,
+    prefix = prefix,
+    nrows = nrows,
+    env = env
+  )
 
   if (!is.null(prefix)) {
     standard_names_dt <- standard_names_dt[
@@ -186,23 +190,22 @@ local_file_interface <- function(
 }
 
 local_summary_stats <- function(
-  filename = "data.csv",
-  nrows  = 500,
-  chr    = 1:22,
-  start  = 1,
-  end    = 12345,
-  ref    = c("A", "C", "G", "T"),
-  alt    = c("A", "C", "G", "T"),
-  effect = NULL,
-  pval   = NULL,
-  ref_col_names     = summary_stats_column_names,
-  random_names      = TRUE,
-  values_are_quoted = FALSE,
-  prefixes          = NULL,
-  encode_columns    = FALSE,
-  env    = parent.frame(),
-  rsids  = FALSE
-) {
+    filename = "data.csv",
+    nrows = 500,
+    chr = 1:22,
+    start = 1,
+    end = 12345,
+    ref = c("A", "C", "G", "T"),
+    alt = c("A", "C", "G", "T"),
+    effect = NULL,
+    pval = NULL,
+    ref_col_names = summary_stats_column_names,
+    random_names = TRUE,
+    values_are_quoted = FALSE,
+    prefixes = NULL,
+    encode_columns = FALSE,
+    env = parent.frame(),
+    rsids = FALSE) {
   dummy_summary_stats(
     nrows = nrows,
     chr = chr,
@@ -212,12 +215,12 @@ local_summary_stats <- function(
     alt = alt,
     effect = effect,
     pval = pval,
-    ref_col_names     = ref_col_names,
-    random_names      = random_names,
+    ref_col_names = ref_col_names,
+    random_names = random_names,
     values_are_quoted = FALSE,
-    prefixes          = prefixes,
-    encode_columns    = encode_columns,
-    rsids             = rsids
+    prefixes = prefixes,
+    encode_columns = encode_columns,
+    rsids = rsids
   ) |>
     local_csv_file(
       filename = filename,
@@ -228,20 +231,18 @@ local_summary_stats <- function(
 }
 
 local_summary_stats_interface <- function(
-  filename = "data.csv",
-  prefixes = NULL,
-  ...,
-  env = parent.frame()
-) {
+    filename = "data.csv",
+    prefixes = NULL,
+    ...,
+    env = parent.frame()) {
   local_summary_stats(filename = filename, prefixes = prefixes, ..., env = env)
   new_file_interface(filename)
 }
 
 encode_column <- function(
-  summary_stats,
-  pattern = summary_stats_standard_names_dt[!sapply(delimiter, is.na)][sample(.N, 1)],
-  drop_columns = pattern$encoded_names[[1]]
-) {
+    summary_stats,
+    pattern = summary_stats_standard_names_dt[!sapply(delimiter, is.na)][sample(.N, 1)],
+    drop_columns = pattern$encoded_names[[1]]) {
   if (pattern[, "build" %in% encoded_names[[1]]] & !"build" %in% names(summary_stats)) {
     summary_stats <- summary_stats[, c(.(build = "b37"), .SD)]
     drop_columns <- c(drop_columns, "build")
@@ -261,15 +262,14 @@ encode_column <- function(
 }
 
 dummy_rsid_summary_stats <- function(
-  nrows           = 500,
-  # Default arguments provide 1473 SNPs
-  chr             = 1,
-  start           = 123,
-  end             = 12345,
-  columns_to_drop = c("chr", "pos"),
-  random_names    = FALSE,
-  ...
-) {
+    nrows = 500,
+    # Default arguments provide 1473 SNPs
+    chr = 1,
+    start = 123,
+    end = 12345,
+    columns_to_drop = c("chr", "pos"),
+    random_names = FALSE,
+    ...) {
   rsids <- get_tabix_process_substitution(chr = chr, start = start, end = end) |>
     sub("^<[(](.*)[)]$", "\\1", x = _) |>
     data.table::fread(cmd = _, select = 3, col.names = "rsid")
@@ -297,25 +297,25 @@ dummy_rsid_summary_stats <- function(
 }
 
 local_rsid_summary_stats <- function(
-  filename = "data.csv",
-  values_are_quoted = FALSE,
-  ...,
-  env      = parent.frame()
-) {
+    filename = "data.csv",
+    values_are_quoted = FALSE,
+    ...,
+    env = parent.frame()) {
   dummy_rsid_summary_stats(
     ...
   ) |>
-    local_csv_file(filename = filename,
-                   dt       = _,
-                   quote    = values_are_quoted,
-                   env      = env)
+    local_csv_file(
+      filename = filename,
+      dt = _,
+      quote = values_are_quoted,
+      env = env
+    )
 }
 
 local_rsid_summary_stats_interface <- function(
-  filename = "data.csv",
-  ...,
-  env = parent.frame()
-) {
+    filename = "data.csv",
+    ...,
+    env = parent.frame()) {
   local_rsid_summary_stats(filename = filename, ..., env = env)
   new_file_interface(filename)
 }
@@ -325,8 +325,7 @@ test_in_fc <- function(
     fcall,
     finterface,
     expected_condition,
-    file_contents
-) {
+    file_contents) {
   awk_condition_list <- new_filter_condition(
     fcall,
     finterface = finterface
@@ -340,13 +339,17 @@ test_in_fc <- function(
     file_contents
   )
   filepath <- awk_condition_list$additional_files
-  random_code <- gsub("^/tmp/Rtmp[^/]+/file",
-                      "",
-                      awk_condition_list$additional_files)
+  random_code <- gsub(
+    "^/tmp/Rtmp[^/]+/file",
+    "",
+    awk_condition_list$additional_files
+  )
   expect_equal(
     awk_condition_list$condition,
-    sprintf(expected_condition,
-            random_code)
+    sprintf(
+      expected_condition,
+      random_code
+    )
   )
   expect_equal(
     awk_condition_list$variable_arrays,

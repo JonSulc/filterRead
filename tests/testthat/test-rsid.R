@@ -1,22 +1,30 @@
 test_that("RSID parsing required is correctly detected", {
   finterface <- local_summary_stats_interface()
   expect_false(needs_rsid_matching(finterface))
-  finterface_rn <- local_summary_stats_interface("data_rn.csv",
-                                                 random_names = TRUE)
+  finterface_rn <- local_summary_stats_interface(
+    "data_rn.csv",
+    random_names = TRUE
+  )
   expect_false(needs_rsid_matching(finterface_rn))
 
   finterface_rsid <- local_rsid_summary_stats_interface("data_rsid.csv")
   expect_true(needs_rsid_matching(finterface_rsid))
-  finterface_rsid_rn <- local_rsid_summary_stats_interface("data_rsid_rn.csv",
-                                                           random_names = TRUE)
+  finterface_rsid_rn <- local_rsid_summary_stats_interface(
+    "data_rsid_rn.csv",
+    random_names = TRUE
+  )
   expect_true(needs_rsid_matching(finterface_rsid_rn))
 
-  finterface_enc <- local_summary_stats_interface("data_enc.csv",
-                                                  encode_columns = TRUE)
+  finterface_enc <- local_summary_stats_interface(
+    "data_enc.csv",
+    encode_columns = TRUE
+  )
   expect_false(needs_rsid_matching(finterface_enc))
-  finterface_enc_rn <- local_summary_stats_interface("data_enc_rn.csv",
-                                                     random_names   = TRUE,
-                                                     encode_columns = TRUE)
+  finterface_enc_rn <- local_summary_stats_interface(
+    "data_enc_rn.csv",
+    random_names   = TRUE,
+    encode_columns = TRUE
+  )
   expect_false(needs_rsid_matching(finterface_enc_rn))
 })
 
@@ -50,13 +58,18 @@ test_that("File reading works", {
   expect_true(needs_rsid_matching(finterface))
   expect_no_error(head(finterface))
   expect_true(all(finterface[pval < .05]$pval < .05))
-  expect_equal(colnames(finterface[pval < .05]),
-               c("rsid", "ref", "alt", "effect", "pval"))
-  expect_equal(colnames(finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345]),
-               c("chr", "pos", "rsid", "ref", "alt", "effect", "pval"))
+  expect_equal(
+    colnames(finterface[pval < .05]),
+    c("rsid", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(
+    colnames(finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345]),
+    c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")
+  )
   expect_equal(
     finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345,
-               return_only_cmd = TRUE],
+      return_only_cmd = TRUE
+    ],
     paste0(
       "awk 'BEGIN{
   OFS = \",\"
@@ -79,79 +92,107 @@ test_that("File reading works", {
 test_that("Genomic blocks are correctly identified", {
   finterface <- local_rsid_summary_stats_interface()
   expect_true(
-    new_filter_condition(rlang::expr(pval < .05),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(pval < .05),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_true(
-    new_filter_condition(rlang::expr(chr == 1),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_true(
-    new_filter_condition(rlang::expr(chr == 1 & pval < .05),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & pval < .05),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_true(
-    new_filter_condition(rlang::expr(chr == 1 | pval < .05),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 | pval < .05),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_true(
-    new_filter_condition(rlang::expr(chr == 1 & pos < 123 | pval < .05),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & pos < 123 | pval < .05),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_true(
-    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234 | pval < .05),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & 123 < pos & pos < 234 | pval < .05),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_true(
-    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_true(
-    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234
-                                     & pval < .05 & ref == "A"),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & 123 < pos & pos < 234 &
+        pval < .05 & ref == "A"),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_true(
-    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234
-                                     | chr == 2 & 21 < pos & pos < 42),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & 123 < pos & pos < 234 |
+        chr == 2 & 21 < pos & pos < 42),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
 
   expect_false(
-    new_filter_condition(rlang::expr(chr == 1 & 123 < pos | pos < 234 & pval < .05),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & 123 < pos | pos < 234 & pval < .05),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_false(
-    new_filter_condition(rlang::expr(chr == 1 | 123 < pos & pos < 234 & pval < .05),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 | 123 < pos & pos < 234 & pval < .05),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_false(
-    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05
-                                     | chr == 2 & 21 < pos & pos < 42),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05 |
+        chr == 2 & 21 < pos & pos < 42),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_false(
-    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234
-                                     | chr == 2 & 21 < pos & pos < 42 & pval < .01),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & 123 < pos & pos < 234 |
+        chr == 2 & 21 < pos & pos < 42 & pval < .01),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
   expect_false(
-    new_filter_condition(rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05
-                                     | chr == 2 & 21 < pos & pos < 42 & pval < .01),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05 |
+        chr == 2 & 21 < pos & pos < 42 & pval < .01),
+      finterface
+    ) |>
       is_single_genomic_range_block()
   )
 })
@@ -159,9 +200,11 @@ test_that("Genomic blocks are correctly identified", {
 test_that("Multiple genomic range-other condition combinations can be handled", {
   finterface <- local_rsid_summary_stats_interface()
   expect_equal(
-    new_filter_condition(rlang::expr((chr == 1 & 123 < pos & pos < 234 & pval < .05)
-                                     | (chr == 2 & 21 < pos & pos < 42 & pval < .01)),
-                         finterface) |>
+    new_filter_condition(
+      rlang::expr((chr == 1 & 123 < pos & pos < 234 & pval < .05) |
+        (chr == 2 & 21 < pos & pos < 42 & pval < .01)),
+      finterface
+    ) |>
       fcondition_to_awk(),
     "awk 'BEGIN{
   OFS = \",\"
@@ -202,7 +245,9 @@ test_that("Genomic ranges are correctly structured", {
   expect_equal(
     new_filter_condition(rlang::expr(pos < 123), finterface) |>
       attr("genomic_range"),
-    data.table::data.table(chr = as.character(c(1:22, "X", "Y", "MT")),
-                           start = NA_real_, end = 122)
+    data.table::data.table(
+      chr = as.character(c(1:22, "X", "Y", "MT")),
+      start = NA_real_, end = 122
+    )
   )
 })
