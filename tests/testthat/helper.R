@@ -75,8 +75,8 @@ dummy_summary_stats <- function(
     values_are_quoted = FALSE,
     prefixes = NULL,
     encode_columns = FALSE,
-    rsids = FALSE # Currently unimplemented
-    ) {
+    rsids = FALSE,
+    alleles_as_a1_a2_alt = FALSE) {
   if (is.null(pval)) pval <- runif(nrows)
   if (is.null(effect)) effect <- rnorm(nrows)
   dt <- data.table::data.table(
@@ -105,6 +105,10 @@ dummy_summary_stats <- function(
     dt <- encode_column(dt)
   } else if (!isFALSE(encode_columns)) {
     dt <- encode_column(dt, pattern = encode_columns)
+  }
+
+  if (alleles_as_a1_a2_alt) {
+    dt <- switch_alt_ref_to_a1_a2(dt)
   }
 
   if (random_names) {
@@ -205,7 +209,8 @@ local_summary_stats <- function(
     prefixes = NULL,
     encode_columns = FALSE,
     env = parent.frame(),
-    rsids = FALSE) {
+    rsids = FALSE,
+    alleles_as_a1_a2_alt = FALSE) {
   dummy_summary_stats(
     nrows = nrows,
     chr = chr,
@@ -220,7 +225,8 @@ local_summary_stats <- function(
     values_are_quoted = FALSE,
     prefixes = prefixes,
     encode_columns = encode_columns,
-    rsids = rsids
+    rsids = rsids,
+    alleles_as_a1_a2_alt = alleles_as_a1_a2_alt
   ) |>
     local_csv_file(
       filename = filename,
@@ -318,6 +324,17 @@ local_rsid_summary_stats_interface <- function(
     env = parent.frame()) {
   local_rsid_summary_stats(filename = filename, ..., env = env)
   new_file_interface(filename)
+}
+
+switch_alt_ref_to_a1_a2 <- function(summary_stats) {
+  is_alt_allele1 <- sample(c(TRUE, FALSE), nrow(summary_stats), replace = TRUE)
+
+  summary_stats[, allele1 := data.table::fifelse(is_alt_allele1, alt, ref)]
+  summary_stats[, allele2 := data.table::fifelse(is_alt_allele1, ref, alt)]
+
+  summary_stats[, ref := NULL][]
+
+  summary_stats
 }
 
 # Used to test %in% conditions

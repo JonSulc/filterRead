@@ -422,11 +422,12 @@ get_awk_column_arrays <- function(
     !required_for_if,
     {
       if (.N != 0) {
-        awk_split_column(
-          bash_index = bash_index,
-          array_name = paste0("encoded", encoded_column_index),
-          delimiter = delimiter
-        )
+        split_encoding_column
+        # awk_split_column(
+        #   bash_index = bash_index,
+        #   array_name = paste0("encoded", encoded_column_index),
+        #   delimiter = delimiter
+        # )
       } else {
         character(0)
       }
@@ -438,11 +439,12 @@ get_awk_column_arrays <- function(
       !sapply(encoded_names, is.null),
       {
         if (.N != 0) {
-          awk_combine_split_for_output(
-            bash_index   = bash_index,
-            array_name   = paste0("encoded", encoded_column_index),
-            array_length = length(encoded_names[[1]])
-          )
+          recode_columns
+          # awk_combine_split_for_output(
+          #   bash_index   = bash_index,
+          #   array_name   = paste0("encoded", encoded_column_index),
+          #   array_length = length(encoded_names[[1]])
+          # )
         }
       },
       by = bash_index

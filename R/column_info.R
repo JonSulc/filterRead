@@ -18,6 +18,8 @@ get_column_info <- function(
 
   add_encoding_columns(column_info)
 
+  add_allele_matching_to_column_info(column_info)
+
   column_info <- expand_encoded_columns(column_info)
 
   column_info[
@@ -167,7 +169,7 @@ add_encoding_columns <- function(
 
 expand_encoded_columns <- function(
     column_info) {
-  # TODO Incomplete if only one of them missing
+  # TODO Incomplete if only one of them missing?
   missing_rsid_columns <- c("chr", "pos")[
     !c("chr", "pos") %in% c(column_info$standard_name, unlist(column_info$encoded_names))
   ]
@@ -175,9 +177,9 @@ expand_encoded_columns <- function(
   column_info[
     ,
     {
-      if (is.na(regex)) {
+      if (is.na(encoded_names)) {
         .SD
-      } else if (regex == "^(rs[0-9]+)$") {
+      } else if (!is.na(regex) & regex == "^(rs[0-9]+)$") {
         list(
           data.table::data.table(
             standard_name         = missing_rsid_columns,
@@ -196,22 +198,7 @@ expand_encoded_columns <- function(
       } else {
         list(
           .SD,
-          .(
-            standard_name = unlist(encoded_names),
-            regex = regex,
-            delimiter = delimiter,
-            input_index = input_index,
-            bash_index = sprintf(
-              "encoded%i[%i]",
-              encoded_column_index,
-              seq_along(encoded_names[[1]])
-            ),
-            quoted = FALSE,
-            encoding_column = input_name,
-            split_encoding_column = split_encoding_column,
-            recode_columns = recode_columns
-          ) |>
-            data.table::as.data.table()
+          expand_single_encoded_row(.SD)
         ) |>
           data.table::rbindlist(fill = TRUE, use.names = TRUE)
       }
@@ -220,6 +207,39 @@ expand_encoded_columns <- function(
   ][
     ,
     -"seq_len"
+  ]
+}
+
+expand_single_encoded_row <- function(
+    row_info) {
+  stopifnot(nrow(row_info) == 1)
+  if (is.null(row_info$encoded_names[[1]])) {
+    return(NULL)
+  }
+  row_info[
+    ,
+    .(
+      standard_name = unlist(encoded_names),
+      regex = regex,
+      delimiter = delimiter,
+      input_index = input_index,
+      bash_index = {
+        if (is.na(encoded_column_index)) {
+          stopifnot(row_info$standard_name == "alt")
+          "nea"
+        } else {
+          sprintf(
+            "encoded%i[%i]",
+            encoded_column_index,
+            seq_along(encoded_names[[1]])
+          )
+        }
+      },
+      quoted = FALSE,
+      encoding_column = input_name,
+      split_encoding_column = split_encoding_column,
+      recode_columns = recode_columns
+    )
   ]
 }
 
@@ -246,4 +266,55 @@ column_names <- function(
     sapply(encoded_names, is.null),
     data.table::fcoalesce(standard_name, input_name)
   ]
+}
+
+add_allele_matching_to_column_info <- function(
+    column_info) {
+  if (!needs_a1_a2_to_ref_matching(column_info)) {
+    return(column_info)
+  }
+
+  column_info[
+    standard_name == "alt",
+    encoded_names := .(c("ref", "alt"))
+  ][
+    standard_name == "alt",
+    split_encoding_column := match_a1_a2_to_ref(
+      a1_bash_index = column_info[standard_name == "allele1", bash_index],
+      a2_bash_index = column_info[standard_name == "allele2", bash_index],
+      alt_bash_index = column_info[standard_name == "alt", bash_index]
+    )
+  ][
+    standard_name == "alt",
+    recode_columns := sprintf(
+      "%s = nea OFS %s",
+      column_info[standard_name == "alt", bash_index],
+      column_info[standard_name == "alt", bash_index]
+    )
+  ][] |>
+    invisible()
+}
+
+needs_a1_a2_to_ref_matching <- function(
+    column_info) {
+  all(c("allele1", "allele2", "alt") %in% column_info$standard_name) &
+    !"ref" %in% column_info$standard_name
+}
+
+match_a1_a2_to_ref <- function(
+    a1_bash_index,
+    a2_bash_index,
+    alt_bash_index) {
+  sprintf(
+    "# Deduce NEA based on EA vs Allele1/Allele2
+if (%s == %s) {
+  nea = %s
+} else {
+  nea = %s
+}",
+    a1_bash_index,
+    alt_bash_index,
+    a2_bash_index,
+    a1_bash_index
+  )
 }

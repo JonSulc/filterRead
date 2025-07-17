@@ -128,3 +128,23 @@ test_that("Creating RSID-coded summary stats works", {
     c("rsid", "ref", "alt", "effect", "pval")
   )
 })
+
+test_that("switch_alt_ref_to_a1_a2 produces correct columns and values", {
+  # Create a dummy summary stats table
+  dt <- dummy_summary_stats(nrows = 100, random_names = FALSE)
+  dt_copy <- data.table::copy(dt)
+
+  # Apply the function
+  result <- switch_alt_ref_to_a1_a2(dt_copy)
+
+  # Check columns
+  expect_true(all(c("allele1", "allele2", "alt") %in% names(result)))
+  expect_false("ref" %in% names(result))
+
+  # For each row, alt should match one of the alleles
+  expect_true(all(result$alt == result$allele1 | result$alt == result$allele2))
+
+  # Check randomness: about half the time allele1 == alt
+  prop_allele1_is_alt <- mean(result$allele1 == result$alt)
+  expect_true(0.3 < prop_allele1_is_alt && prop_allele1_is_alt < 0.7)
+})

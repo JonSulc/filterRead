@@ -120,10 +120,6 @@ summary_stats_column_names <- list(
     "WMHmet_ZScore"
   ),
   odds_ratio = c("OR"),
-
-  # rsid = c("rsid",
-  #          "id"),
-
   allele1 = c(
     "Allele_1",
     "Allele 1",

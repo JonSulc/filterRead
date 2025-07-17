@@ -134,3 +134,47 @@ test_that("Encoded columns are detected", {
   expect_true(any(is.na(expand_encoded_columns(column_info)$input_name)))
   expect_true(all(c("chr", "pos") %in% expand_encoded_columns(column_info)$standard_name))
 })
+
+test_that("match_a1_a2_to_ref generates correct awk code", {
+  # Typical case
+  code <- match_a1_a2_to_ref("$4", "$5", "$6")
+  expect_true(grepl("if \\(\\$4 == \\$6\\)", code))
+  expect_true(grepl("nea = \\$5", code))
+  expect_true(grepl("nea = \\$4", code))
+})
+
+test_that("Parsing allele1, allele2, alt works", {
+  local_summary_stats(alleles_as_a1_a2_alt = TRUE)
+  finterface <- structure(
+    list(
+      filename = "data.csv",
+      gzipped = FALSE,
+      sep = ","
+    ),
+    class = c("file_interface", "list")
+  )
+  column_info <- get_base_column_info(
+    finterface,
+    standard_names_dt = summary_stats_standard_names_dt
+  )
+
+  data_to_check <- head(finterface, 500)
+  column_info <- filter_regex_matches(column_info, data_to_check)
+  add_quoted_column(column_info, finterface)
+  add_prefix_column(column_info, data_to_check)
+  add_encoding_columns(column_info)
+  column_info <- expand_encoded_columns(column_info)
+
+  expect_true(needs_a1_a2_to_ref_matching(column_info))
+  
+  finterface <- new_file_interface("data.csv")
+  expect_equal(
+    column_names(finterface),
+    c("chr", "pos", "ref", "alt", "effect", "pval", "allele1", "allele2")
+  )
+  expect_equal(
+    head(finterface) |>
+      colnames(),
+    c("chr", "pos", "ref", "alt", "effect", "pval", "allele1", "allele2")
+  )
+})

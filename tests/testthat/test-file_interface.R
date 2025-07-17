@@ -228,6 +228,13 @@ test_that("Full command line with gz detection works", {
       "  OFS = \"\\t\"\n",
       "} {\n",
       "  if ($2 == 10) {\n",
+      "    # Deduce NEA based on EA vs Allele1/Allele2\n",
+      "    if ($4 == $6) {\n",
+      "      nea = $5\n",
+      "    } else {\n",
+      "      nea = $4\n",
+      "    }\n",
+      "    $6 = nea OFS $6\n",
       "    print $0\n",
       "  }\n",
       "}' FS=\"\\t\" "
