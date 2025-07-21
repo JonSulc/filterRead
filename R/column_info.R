@@ -251,7 +251,7 @@ needs_rsid_matching <- function(
   }
 
   "rsid" %in% column_names(finterface) &
-    !all(c("chr", "pos") %in% column_names(finterface, original = TRUE))
+    !all(c("chr", "pos") %in% column_names(finterface))
 }
 
 column_names <- function(
