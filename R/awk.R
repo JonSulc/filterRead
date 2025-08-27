@@ -345,20 +345,48 @@ wrap_full_code_block <- function(
 }
 
 
+get_prefix_cmds <- function(finterface) {
+  comment_prefix <- finterface$comment_prefix
+  drop_prefix <- finterface$drop_prefix
+
+  # Build commands only if prefixes exist
+  cmds <- c()
+
+  if (!is.null(comment_prefix)) {
+    cmds <- c(cmds, sprintf("grep -v '%s'", comment_prefix))
+  }
+
+  if (!is.null(drop_prefix)) {
+    cmds <- c(cmds, sprintf("awk '{gsub(/%s/, \"\"); print}'", drop_prefix))
+  }
+
+  cmds
+}
+
+
 awk_load_file_cmd <- function(
     finterface,
     nlines = NULL,
     only_read = FALSE) {
+  prefix_cmd <- get_prefix_cmds(finterface)
   if (finterface$gzipped) {
     if (is.null(nlines)) {
-      cmd <- sprintf("zcat %s", finterface$filename)
+      cmd <- sprintf("zcat %s", finterface$filename) |>
+        c(prefix_cmd) |>
+        paste(collapse = " | ")
     } else {
       cmd <- paste(
         "bash -c",
         sprintf(
-          "head -n %i < <(zcat %s 2>/dev/null)",
+          # Read head with zcat but ignore broken pipe
+          "head -n %i < <(zcat %s 2>/dev/null %s)",
           nlines,
-          finterface$filename
+          finterface$filename,
+          if (is.null(prefix_cmd)) {
+            ""
+          } else {
+            paste("|", prefix_cmd, collapse = " ")
+          }
         ) |>
           shQuote()
       )
@@ -368,22 +396,42 @@ awk_load_file_cmd <- function(
     }
     return(cmd)
   }
+
   if (is.null(nlines)) {
     if (only_read) {
-      return(paste("cat", finterface$filename))
+      if (length(prefix_cmd) == 0) {
+        return(paste("cat", finterface$filename))
+      } else {
+        return(paste(
+          prefix_cmd[1], finterface$filename
+        ) |>
+          c(prefix_cmd[-1]) |>
+          paste(collapse = " | "))
+      }
     }
-    return("awk")
+    if (length(prefix_cmd) == 0) {
+      return("awk")
+    } else {
+      return(paste(
+        prefix_cmd[1], finterface$filename
+      ) |>
+        c(prefix_cmd[-1], "awk") |>
+        paste(collapse = " | "))
+    }
   }
-  c(
-    "head -n",
-    nlines,
-    finterface$filename,
-    ifelse(only_read,
-      "",
-      "| awk"
-    )
-  ) |>
-    paste(collapse = " ")
+  cmd <- c(
+    prefix_cmd,
+    paste("head -n", nlines),
+    if (only_read) NULL else "awk"
+  )
+  cmd <- c(
+    paste(cmd[1], finterface$filename),
+    cmd[-1]
+  )
+  paste(
+    cmd %||% "cat",
+    collapse = " | "
+  )
 }
 
 get_awk_column_arrays <- function(

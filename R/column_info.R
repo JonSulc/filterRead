@@ -250,14 +250,17 @@ needs_rsid_matching <- function(
     return(finterface$needs_rsid_matching)
   }
 
-  "rsid" %in% column_names(finterface) &
-    !all(c("chr", "pos") %in% column_names(finterface))
+  fcolumn_names <- finterface$column_info[
+    !is.na(input_name),
+    standard_name
+  ]
+  "rsid" %in% fcolumn_names &
+    !all(c("chr", "pos") %in% fcolumn_names)
 }
 
 column_names <- function(
     finterface,
-    original = FALSE,
-    rsid_parsing = TRUE) {
+    original = FALSE) {
   if (original) {
     return(finterface$column_info$input_name[!is.na(finterface$column_info$input_name)])
   }

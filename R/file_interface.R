@@ -14,6 +14,10 @@ new_file_interface <- function(
     class = c("file_interface", "character")
   )
 
+  # Detect comment and drop prefixes
+  finterface$comment_prefix <- detect_comment_prefix(finterface)
+  finterface$drop_prefix <- detect_drop_prefix(finterface, finterface$comment_prefix)
+
   finterface$sep <- get_file_separator(finterface)
   finterface$column_info <- get_column_info(
     finterface,
@@ -39,6 +43,48 @@ get_file_separator <- function(
     capture.output() |>
     stringr::str_match("sep='([^']+)'")
   dt_output[!is.na(dt_output[, 1L]), 2L][1L]
+}
+
+detect_prefix_from_first_line <- function(finterface, skip_prefix = NULL) {
+  # Get file reading command based on compression
+  if (finterface$gzipped) {
+    file_cmd <- sprintf("zcat %s", finterface$filename)
+  } else {
+    file_cmd <- sprintf("cat %s", finterface$filename)
+  }
+
+  # Build command to get the first line
+  if (!is.null(skip_prefix)) {
+    # Remove the ^ for grep pattern
+    grep_pattern <- substr(skip_prefix, 2, nchar(skip_prefix))
+    first_line_cmd <- sprintf("%s | grep -v '%s' | head -n 1", file_cmd, grep_pattern)
+  } else {
+    first_line_cmd <- paste(file_cmd, "| head -n 1")
+  }
+
+  first_line <- system(first_line_cmd, intern = TRUE)
+
+  if (length(first_line) == 0 || nchar(first_line) == 0) {
+    return(NULL)
+  }
+
+  # Extract non-alphanumeric prefix
+  prefix_match <- regexpr("^[^A-Za-z0-9\" ]+", first_line)
+  if (prefix_match > 0) {
+    prefix <- substr(first_line, 1, attr(prefix_match, "match.length"))
+    escaped_prefix <- gsub("([.*+?^${}()|\\[\\]\\\\])", "\\\\\\1", prefix)
+    return(paste0("^", escaped_prefix))
+  }
+
+  NULL
+}
+
+detect_comment_prefix <- function(finterface) {
+  detect_prefix_from_first_line(finterface)
+}
+
+detect_drop_prefix <- function(finterface, comment_prefix) {
+  detect_prefix_from_first_line(finterface, skip_prefix = comment_prefix)
 }
 
 validate_file_interface <- function(
