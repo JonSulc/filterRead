@@ -218,7 +218,7 @@ summary_stats_encoded_columns_dt <- data.table::data.table(
 ]
 
 summary_stats_rsid_dt <- data.table::data.table(
-  input_name    = c("rsid", "id", "MarkerName"),
+  input_name    = c("rsid", "id", "MarkerName", "ID"),
   standard_name = "rsid",
   pattern       = "rs%s",
   regex         = "^(rs[0-9]+)$"

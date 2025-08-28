@@ -20,77 +20,77 @@ test_that("Commented lines are correctly ignored", {
 })
 
 test_that("get_prefix_cmds works with default parameters", {
-  finterface <- list(comment_prefix = "^##", drop_prefix = "^#")
+  finterface <- list(comment_prefix = "^##", trim_prefix = "^#")
   result <- get_prefix_cmds(finterface)
   expected <- c("grep -v '^##'", "awk '{gsub(/^#/, \"\"); print}'")
   expect_equal(result, expected)
 })
 
 test_that("get_prefix_cmds works with custom comment_prefix", {
-  finterface <- list(comment_prefix = "^//", drop_prefix = "^#")
+  finterface <- list(comment_prefix = "^//", trim_prefix = "^#")
   result <- get_prefix_cmds(finterface)
   expected <- c("grep -v '^//'", "awk '{gsub(/^#/, \"\"); print}'")
   expect_equal(result, expected)
 })
 
-test_that("get_prefix_cmds works with custom drop_prefix", {
-  finterface <- list(comment_prefix = "^##", drop_prefix = "^%")
+test_that("get_prefix_cmds works with custom trim_prefix", {
+  finterface <- list(comment_prefix = "^##", trim_prefix = "^%")
   result <- get_prefix_cmds(finterface)
   expected <- c("grep -v '^##'", "awk '{gsub(/^%/, \"\"); print}'")
   expect_equal(result, expected)
 })
 
 test_that("get_prefix_cmds works with both custom parameters", {
-  finterface <- list(comment_prefix = "^//", drop_prefix = "^%")
+  finterface <- list(comment_prefix = "^//", trim_prefix = "^%")
   result <- get_prefix_cmds(finterface)
   expected <- c("grep -v '^//'", "awk '{gsub(/^%/, \"\"); print}'")
   expect_equal(result, expected)
 })
 
 test_that("get_prefix_cmds handles NULL comment_prefix", {
-  finterface <- list(comment_prefix = NULL, drop_prefix = "^#")
+  finterface <- list(comment_prefix = NULL, trim_prefix = "^#")
   result <- get_prefix_cmds(finterface)
   expected <- "awk '{gsub(/^#/, \"\"); print}'"
   expect_equal(result, expected)
 })
 
-test_that("get_prefix_cmds handles NULL drop_prefix", {
-  finterface <- list(comment_prefix = "^##", drop_prefix = NULL)
+test_that("get_prefix_cmds handles NULL trim_prefix", {
+  finterface <- list(comment_prefix = "^##", trim_prefix = NULL)
   result <- get_prefix_cmds(finterface)
   expected <- "grep -v '^##'"
   expect_equal(result, expected)
 })
 
 test_that("get_prefix_cmds handles both NULL parameters", {
-  finterface <- list(comment_prefix = NULL, drop_prefix = NULL)
+  finterface <- list(comment_prefix = NULL, trim_prefix = NULL)
   result <- get_prefix_cmds(finterface)
   expected <- NULL
   expect_equal(result, expected)
 })
 
 test_that("get_prefix_cmds handles special regex characters", {
-  finterface <- list(comment_prefix = "\\*\\*", drop_prefix = "\\*")
+  finterface <- list(comment_prefix = "\\*\\*", trim_prefix = "\\*")
   result <- get_prefix_cmds(finterface)
   expected <- c("grep -v '\\*\\*'", "awk '{gsub(/\\*/, \"\"); print}'")
   expect_equal(result, expected)
 })
 
 test_that("get_prefix_cmds handles empty strings", {
-  finterface <- list(comment_prefix = "", drop_prefix = "")
+  finterface <- list(comment_prefix = "", trim_prefix = "")
   result <- get_prefix_cmds(finterface)
   expected <- c("grep -v ''", "awk '{gsub(//, \"\"); print}'")
   expect_equal(result, expected)
 })
 
 test_that("get_prefix_cmds handles complex patterns", {
-  finterface <- list(comment_prefix = "^<!--", drop_prefix = "^\\/\\/")
+  finterface <- list(comment_prefix = "^<!--", trim_prefix = "^\\/\\/")
   result <- get_prefix_cmds(finterface)
   expected <- c("grep -v '^<!--'", "awk '{gsub(/^\\/\\//, \"\"); print}'")
   expect_equal(result, expected)
 })
 
 test_that("get_prefix_cmds handles patterns with spaces", {
-  finterface <- list(comment_prefix = "# TODO", drop_prefix = "# ")
+  finterface <- list(comment_prefix = "# TODO", trim_prefix = "# ")
   result <- get_prefix_cmds(finterface)
   expected <- c("grep -v '# TODO'", "awk '{gsub(/# /, \"\"); print}'")
   expect_equal(result, expected)
@@ -101,7 +101,7 @@ test_that("awk_load_file_cmd works with non-gzipped file, no nlines, only_read=F
     gzipped = FALSE,
     filename = "test.txt",
     comment_prefix = "^##",
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- awk_load_file_cmd(finterface)
   expected <- "grep -v '^##' test.txt | awk '{gsub(/^#/, \"\"); print}' | awk"
@@ -113,7 +113,7 @@ test_that("awk_load_file_cmd works with non-gzipped file, no nlines, only_read=T
     gzipped = FALSE,
     filename = "test.txt",
     comment_prefix = "^##",
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- awk_load_file_cmd(finterface, only_read = TRUE)
   expected <- "grep -v '^##' test.txt | awk '{gsub(/^#/, \"\"); print}'"
@@ -125,7 +125,7 @@ test_that("awk_load_file_cmd works with gzipped file, no nlines, only_read=FALSE
     gzipped = TRUE,
     filename = "test.txt.gz",
     comment_prefix = "^##",
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- awk_load_file_cmd(finterface)
   expected <- "zcat test.txt.gz | grep -v '^##' | awk '{gsub(/^#/, \"\"); print}' | awk"
@@ -137,7 +137,7 @@ test_that("awk_load_file_cmd works with gzipped file, no nlines, only_read=TRUE"
     gzipped = TRUE,
     filename = "test.txt.gz",
     comment_prefix = "^##",
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- awk_load_file_cmd(finterface, only_read = TRUE)
   expected <- "zcat test.txt.gz | grep -v '^##' | awk '{gsub(/^#/, \"\"); print}'"
@@ -149,7 +149,7 @@ test_that("awk_load_file_cmd works with non-gzipped file, with nlines, only_read
     gzipped = FALSE,
     filename = "test.txt",
     comment_prefix = "^##",
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- awk_load_file_cmd(finterface, nlines = 100)
   expected <- "grep -v '^##' test.txt | awk '{gsub(/^#/, \"\"); print}' | head -n 100 | awk"
@@ -161,7 +161,7 @@ test_that("awk_load_file_cmd works with non-gzipped file, with nlines, only_read
     gzipped = FALSE,
     filename = "test.txt",
     comment_prefix = "^##",
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- awk_load_file_cmd(finterface, nlines = 100, only_read = TRUE)
   expected <- "grep -v '^##' test.txt | awk '{gsub(/^#/, \"\"); print}' | head -n 100"
@@ -173,7 +173,7 @@ test_that("awk_load_file_cmd works with gzipped file, with nlines", {
     gzipped = TRUE,
     filename = "test.txt.gz",
     comment_prefix = "^##",
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- awk_load_file_cmd(finterface, nlines = 100)
   expected <- "bash -c \"head -n 100 < <(zcat test.txt.gz 2>/dev/null | grep -v '^##' | awk '{gsub(/^#/, \\\"\\\"); print}')\" | awk"
@@ -185,7 +185,7 @@ test_that("awk_load_file_cmd works with custom prefix parameters", {
     gzipped = FALSE,
     filename = "test.txt",
     comment_prefix = "^//",
-    drop_prefix = "^%"
+    trim_prefix = "^%"
   )
   result <- awk_load_file_cmd(finterface)
   expected <- "grep -v '^//' test.txt | awk '{gsub(/^%/, \"\"); print}' | awk"
@@ -197,19 +197,19 @@ test_that("awk_load_file_cmd handles NULL comment_prefix", {
     gzipped = FALSE,
     filename = "test.txt",
     comment_prefix = NULL,
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- awk_load_file_cmd(finterface)
   expected <- "awk '{gsub(/^#/, \"\"); print}' test.txt | awk"
   expect_equal(result, expected)
 })
 
-test_that("awk_load_file_cmd handles NULL drop_prefix", {
+test_that("awk_load_file_cmd handles NULL trim_prefix", {
   finterface <- list(
     gzipped = FALSE,
     filename = "test.txt",
     comment_prefix = "^##",
-    drop_prefix = NULL
+    trim_prefix = NULL
   )
   result <- awk_load_file_cmd(finterface)
   expected <- "grep -v '^##' test.txt | awk"
@@ -221,7 +221,7 @@ test_that("awk_load_file_cmd handles both NULL prefix parameters", {
     gzipped = FALSE,
     filename = "test.txt",
     comment_prefix = NULL,
-    drop_prefix = NULL
+    trim_prefix = NULL
   )
   result <- awk_load_file_cmd(finterface)
   expected <- "awk"
@@ -233,7 +233,7 @@ test_that("awk_load_file_cmd handles both NULL prefix parameters with only_read=
     gzipped = FALSE,
     filename = "test.txt",
     comment_prefix = NULL,
-    drop_prefix = NULL
+    trim_prefix = NULL
   )
   result <- awk_load_file_cmd(finterface, only_read = TRUE)
   expected <- "cat test.txt"
@@ -276,7 +276,7 @@ test_that("detect_prefix_from_first_line detects drop prefix", {
     },
     .package = "base",
     {
-      result <- detect_drop_prefix(finterface, comment_prefix)
+      result <- detect_trim_prefix(finterface, comment_prefix)
       expected <- "^#"
       expect_equal(result, expected)
     }
@@ -286,7 +286,7 @@ test_that("detect_prefix_from_first_line detects drop prefix", {
 test_that("get_prefix_cmds uses detected prefixes from finterface", {
   finterface <- list(
     comment_prefix = "^##",
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- get_prefix_cmds(finterface)
   expected <- c("grep -v '^##'", "awk '{gsub(/^#/, \"\"); print}'")
@@ -296,7 +296,7 @@ test_that("get_prefix_cmds uses detected prefixes from finterface", {
 test_that("get_prefix_cmds handles NULL prefixes", {
   finterface <- list(
     comment_prefix = NULL,
-    drop_prefix = NULL
+    trim_prefix = NULL
   )
   result <- get_prefix_cmds(finterface)
   expected <- NULL
@@ -306,17 +306,17 @@ test_that("get_prefix_cmds handles NULL prefixes", {
 test_that("get_prefix_cmds handles only comment_prefix", {
   finterface <- list(
     comment_prefix = "^//",
-    drop_prefix = NULL
+    trim_prefix = NULL
   )
   result <- get_prefix_cmds(finterface)
   expected <- "grep -v '^//'"
   expect_equal(result, expected)
 })
 
-test_that("get_prefix_cmds handles only drop_prefix", {
+test_that("get_prefix_cmds handles only trim_prefix", {
   finterface <- list(
     comment_prefix = NULL,
-    drop_prefix = "^#"
+    trim_prefix = "^#"
   )
   result <- get_prefix_cmds(finterface)
   expected <- "awk '{gsub(/^#/, \"\"); print}'"

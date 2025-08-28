@@ -16,7 +16,7 @@ new_file_interface <- function(
 
   # Detect comment and drop prefixes
   finterface$comment_prefix <- detect_comment_prefix(finterface)
-  finterface$drop_prefix <- detect_drop_prefix(finterface, finterface$comment_prefix)
+  finterface$trim_prefix <- detect_trim_prefix(finterface, finterface$comment_prefix)
 
   finterface$sep <- get_file_separator(finterface)
   finterface$column_info <- get_column_info(
@@ -83,7 +83,7 @@ detect_comment_prefix <- function(finterface) {
   detect_prefix_from_first_line(finterface)
 }
 
-detect_drop_prefix <- function(finterface, comment_prefix) {
+detect_trim_prefix <- function(finterface, comment_prefix) {
   detect_prefix_from_first_line(finterface, skip_prefix = comment_prefix)
 }
 

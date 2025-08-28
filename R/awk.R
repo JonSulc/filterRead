@@ -347,7 +347,7 @@ wrap_full_code_block <- function(
 
 get_prefix_cmds <- function(finterface) {
   comment_prefix <- finterface$comment_prefix
-  drop_prefix <- finterface$drop_prefix
+  trim_prefix <- finterface$trim_prefix
 
   # Build commands only if prefixes exist
   cmds <- c()
@@ -356,8 +356,8 @@ get_prefix_cmds <- function(finterface) {
     cmds <- c(cmds, sprintf("grep -v '%s'", comment_prefix))
   }
 
-  if (!is.null(drop_prefix)) {
-    cmds <- c(cmds, sprintf("awk '{gsub(/%s/, \"\"); print}'", drop_prefix))
+  if (!is.null(trim_prefix)) {
+    cmds <- c(cmds, sprintf("awk '{gsub(/%s/, \"\"); print}'", trim_prefix))
   }
 
   cmds
