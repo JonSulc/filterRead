@@ -19,7 +19,7 @@ create_ieugwas_data <- function(
   # Add trait column
   base_data[[trait_name]] <- rep(trait_data, length.out = nrows)
 
-  data.table::data.table(base_data)
+  data.table::as.data.table(base_data)
 }
 
 test_that("is_ieugwas_file correctly identifies IEUGWAS format", {
@@ -225,7 +225,10 @@ test_that("IEUGWAS parsing handles edge cases", {
   local_csv_file("ieugwas_na.csv", ieugwas_data_na, sep = "\t")
   finterface <- new_file_interface("ieugwas_na.csv", ieugwas_parsing = FALSE)
 
-  expect_error(get_ieugwas_column_parsing(finterface))
+  expect_warning(get_ieugwas_column_parsing(finterface))
+  parsing_info <- get_ieugwas_column_parsing(finterface) |>
+    suppressWarnings()
+  expect_null(parsing_info)
 
   # Test with empty FORMAT
   ieugwas_data_empty <- create_ieugwas_data(
@@ -239,7 +242,107 @@ test_that("IEUGWAS parsing handles edge cases", {
     ieugwas_parsing = FALSE
   )
 
-  parsing_info <- get_ieugwas_column_parsing(finterface)
-  expect_equal(parsing_info$regex, "^$")
-  expect_equal(length(parsing_info$encoded_names[[1]]), 0)
+  expect_warning(
+    parsing_info <- get_ieugwas_column_parsing(finterface),
+    "Unrecognized IEUGWAS FORMAT string"
+  )
+  parsing_info <- get_ieugwas_column_parsing(finterface) |>
+    suppressWarnings()
+  expect_null(parsing_info)
+})
+
+test_that("get_ieugwas_column_parsing validates input correctly", {
+  # Test with non-IEUGWAS file
+  non_ieugwas_data <- data.table::data.table(
+    chr = c(1, 2),
+    pos = c(100, 200),
+    pval = c(0.01, 0.05)
+  )
+  local_csv_file("non_ieugwas.csv", non_ieugwas_data, sep = "\t")
+  finterface <- new_file_interface("non_ieugwas.csv", ieugwas_parsing = FALSE)
+
+  expect_warning(
+    parsing_info <- get_ieugwas_column_parsing(finterface),
+    "Attempting IEUGWAS parsing on non-IEUGWAS file"
+  )
+  parsing_info <- get_ieugwas_column_parsing(finterface) |>
+    suppressWarnings()
+  expect_null(parsing_info)
+
+  # Test with invalid FORMAT strings
+  invalid_formats <- c(
+    "INVALID",           # Not a recognized format
+    "ES:INVALID:LP",     # Mixed valid/invalid
+    "ES::LP",            # Empty component
+    "ES:LP:",            # Trailing colon
+    ":ES:LP",            # Leading colon
+    "es:se:lp"           # Wrong case
+  )
+
+  for (i in seq_along(invalid_formats)) {
+    invalid_data <- create_ieugwas_data(
+      format_string = invalid_formats[i],
+      trait_name = paste0("trait-", i),
+      trait_data = "0.1:0.05:2.3",
+      nrows = 1
+    )
+    filename <- paste0("invalid_format_", i, ".csv")
+    local_csv_file(filename, invalid_data, sep = "\t")
+    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE)
+
+    expect_warning(
+      parsing_info <- get_ieugwas_column_parsing(finterface),
+      "Unrecognized IEUGWAS FORMAT string"
+    )
+    parsing_info <- get_ieugwas_column_parsing(finterface) |>
+      suppressWarnings()
+    expect_null(parsing_info)
+  }
+})
+
+test_that("IEUGWAS FORMAT validation regex works correctly", {
+  # Test valid single formats
+  valid_single_formats <- names(filterRead:::ieugwas_formats)
+
+  for (format_code in valid_single_formats) {
+    ieugwas_data <- create_ieugwas_data(
+      format_string = format_code,
+      trait_name = paste0("trait-", tolower(format_code)),
+      trait_data = "test_value",
+      nrows = 1
+    )
+    filename <- paste0("valid_single_", tolower(format_code), ".csv")
+    local_csv_file(filename, ieugwas_data, sep = "\t")
+    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE)
+
+    parsing_info <- get_ieugwas_column_parsing(finterface)
+    expect_false(is.null(parsing_info))
+    expect_equal(length(parsing_info$encoded_names[[1]]), 1)
+  }
+
+  # Test valid combination formats
+  valid_combinations <- c(
+    "ES:SE",
+    "ES:SE:LP",
+    "ES:SE:LP:AF",
+    "ID:AF:SS",
+    "EZ:SI:NC"
+  )
+
+  for (combo in valid_combinations) {
+    combo_parts <- strsplit(combo, ":")[[1]]
+    ieugwas_data <- create_ieugwas_data(
+      format_string = combo,
+      trait_name = "combo-trait",
+      trait_data = paste(rep("test", length(combo_parts)), collapse = ":"),
+      nrows = 1
+    )
+    filename <- paste0("valid_combo_", gsub(":", "_", combo), ".csv")
+    local_csv_file(filename, ieugwas_data, sep = "\t")
+    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE)
+
+    parsing_info <- get_ieugwas_column_parsing(finterface)
+    expect_false(is.null(parsing_info))
+    expect_equal(length(parsing_info$encoded_names[[1]]), length(combo_parts))
+  }
 })

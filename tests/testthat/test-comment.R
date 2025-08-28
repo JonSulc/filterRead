@@ -2,12 +2,12 @@ commented_file <- "~/rcp_storage/common//Users/sulc//data/gwas_summary_statistic
 
 test_that("Commented lines are correctly ignored", {
   expect_equal(
-    new_file_interface(commented_file) |>
+    new_file_interface(commented_file, ieugwas_parsing = FALSE) |>
       head(),
     data.table::data.table(
       chr = 1,
       pos = 10177,
-      ID = "rs1264289758",
+      rsid = "rs1264289758",
       ref = "AC",
       alt = "A",
       QUAL = ".",

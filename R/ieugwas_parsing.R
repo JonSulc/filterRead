@@ -43,6 +43,22 @@ is_ieugwas_file <- function(finterface) {
 }
 
 get_ieugwas_column_parsing <- function(finterface) {
+  if (!is_ieugwas_file(finterface)) {
+    warning("Attempting IEUGWAS parsing on non-IEUGWAS file, please report")
+    return()
+  }
+  format <- head(finterface)$FORMAT
+  if (!grepl(
+    sprintf(
+      "^(%s)(:(%s))*$",
+      paste(names(ieugwas_formats), collapse = "|"),
+      paste(names(ieugwas_formats), collapse = "|")
+    ),
+    format
+  )) {
+    warning("Unrecognized IEUGWAS FORMAT string, please report")
+    return()
+  }
   secondary_columns <- head(finterface)$FORMAT |>
     strsplit(":") |>
     unlist()
