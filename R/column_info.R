@@ -261,11 +261,12 @@ needs_rsid_matching <- function(
 column_names <- function(
     finterface,
     original = FALSE) {
+  col_info <- finterface$column_info %||% get_column_info(finterface)
   if (original) {
-    return(finterface$column_info$input_name[!is.na(finterface$column_info$input_name)])
+    return(col_info[!is.na(input_name), input_name])
   }
 
-  finterface$column_info[
+  col_info[
     sapply(encoded_names, is.null),
     data.table::fcoalesce(standard_name, input_name)
   ]

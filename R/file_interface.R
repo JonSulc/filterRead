@@ -3,9 +3,16 @@
 #' @export
 new_file_interface <- function(
     filename,
-    standard_names_dt = summary_stats_standard_names_dt) {
+    extra_column_names_dt = NULL,
+    standard_names_dt = summary_stats_standard_names_dt,
+    ieugwas_parsing = TRUE) {
   stopifnot(is.character(filename))
   stopifnot(file.exists(filename))
+  standard_names_dt <- list(
+    standard_names_dt,
+    extra_column_names_dt
+  ) |>
+    data.table::rbindlist(fill = TRUE, use.names = TRUE)
   finterface <- structure(
     list(
       filename = filename,
@@ -19,6 +26,16 @@ new_file_interface <- function(
   finterface$trim_prefix <- detect_trim_prefix(finterface, finterface$comment_prefix)
 
   finterface$sep <- get_file_separator(finterface)
+
+  # Check if IEUGWAS format and add parsing info if so
+  if (ieugwas_parsing && is_ieugwas_file(finterface)) {
+    standard_names_dt <- list(
+      standard_names_dt,
+      get_ieugwas_column_parsing(finterface)
+    ) |>
+      data.table::rbindlist(fill = TRUE, use.names = TRUE)
+  }
+
   finterface$column_info <- get_column_info(
     finterface,
     standard_names_dt = standard_names_dt
