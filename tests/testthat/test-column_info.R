@@ -166,7 +166,7 @@ test_that("Parsing allele1, allele2, alt works", {
   column_info <- expand_encoded_columns(column_info)
 
   expect_true(needs_a1_a2_to_ref_matching(column_info))
-  
+
   finterface <- new_file_interface("data.csv")
   expect_equal(
     column_names(finterface),

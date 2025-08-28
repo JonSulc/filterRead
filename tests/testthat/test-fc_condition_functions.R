@@ -98,19 +98,21 @@ test_that("%in% parsing works", {
   expect_true(
     grepl(
       paste0(
-        "^awk [']BEGIN[{]\n",
+        "^cat data\\.csv \\| awk 'BEGIN\\{\n",
+        "  FS = \",\"\n",
         "  OFS = \",\"\n",
-        "[}] [{]\n",
-        "  if [(]FILENAME == \\\"/tmp/Rtmp([^/]+)/file([a-f0-9]+)\\\"[)] [{]\n",
-        "    var\\2[[][$]0[]] = 1\n",
+        "\\}\n",
+        "\\{\n",
+        "  if \\(FILENAME == \\\"/tmp/Rtmp([^/]+)/file([a-f0-9]+)\\\"\\) \\{\n",
+        "    var\\2\\[\\$0\\] = 1\n",
         "    next\n",
-        "  [}]\n",
-        "  else [{]\n",
-        "    if [(][(][$]1 in var\\2[)][)] [{]\n",
-        "      print [$]0\n",
-        "    [}]\n",
-        "  [}]\n",
-        "[}]['] /tmp/Rtmp\\1/file\\2 FS=\",\" data[.]csv"
+        "  \\}\n",
+        "  else \\{\n",
+        "    if \\(\\(\\$1 in var\\2\\)\\) \\{\n",
+        "      print \\$0\n",
+        "    \\}\n",
+        "  \\}\n",
+        "\\}' /tmp/Rtmp\\1/file\\2 data\\.csv"
       ),
       new_filter_condition(
         rlang::expr(char %in% letters[1:5]),

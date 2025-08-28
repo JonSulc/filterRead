@@ -180,7 +180,8 @@ compile_awk_cmds <- function(
       is.null(fcondition_awk_dt$awk_code_block)
   }
 
-  load_file <- awk_load_file_cmd(finterface,
+  load_file <- awk_load_file_cmd(
+    finterface,
     nlines = nlines,
     only_read = only_read
   )
@@ -189,9 +190,11 @@ compile_awk_cmds <- function(
   }
 
   main_file_code <- wrap_main_file_code(
+    finterface                      = finterface,
     fcondition_awk_dt               = fcondition_awk_dt,
     column_arrays_before_conditions = column_arrays_before_conditions,
-    column_arrays_after_conditions  = column_arrays_after_conditions
+    column_arrays_after_conditions  = column_arrays_after_conditions,
+    nlines                          = nlines
   )
 
   full_code_block <- wrap_full_code_block(
@@ -199,15 +202,20 @@ compile_awk_cmds <- function(
     main_file_code = main_file_code
   )
 
-  begin_code_block <-
-    "BEGIN{
-  OFS = \"%s\"
-}" |>
-    sprintf(finterface$sep)
+  # Determine if we need command-line FS (multiple files with different separators)
+  has_process_substitution <- !is.null(fcondition_awk_dt$process_substitution)
+  use_command_line_fs <- has_process_substitution
+
+  begin_code_block <- build_awk_begin_block(finterface$sep, nlines, use_command_line_fs)
+
+  # Add comment prefix handling pattern
+  comment_prefix_pattern <- build_comment_filter_pattern(finterface$comment_prefix)
 
   awk_code <- sprintf(
     "'%s'",
-    paste(begin_code_block, full_code_block)
+    paste(c(begin_code_block, comment_prefix_pattern, full_code_block),
+      collapse = "\n"
+    )
   )
 
   awk_final_filename <- c(
@@ -222,13 +230,25 @@ compile_awk_cmds <- function(
       }
     },
     fcondition_awk_dt$additional_files,
-    paste(
-      sprintf("FS=\"%s\"", finterface$sep),
-      ifelse(finterface$gzipped | !is.null(nlines),
-        "",
-        finterface$filename
-      )
-    )
+    {
+      if (use_command_line_fs) {
+        paste(
+          sprintf("FS=\"%s\"", finterface$sep),
+          ifelse(finterface$gzipped | !is.null(nlines),
+            "",
+            finterface$filename
+          )
+        )
+      } else {
+        # Only omit filename if using pipeline (gzipped or has prefixes)
+        has_prefixes <- !is.null(finterface$comment_prefix) ||
+          !is.null(finterface$trim_prefix)
+        ifelse(finterface$gzipped || has_prefixes,
+          "",
+          finterface$filename
+        )
+      }
+    }
   ) |>
     paste(collapse = " ")
 
@@ -250,6 +270,7 @@ wrap_condition_block <- function(
     column_arrays_after_conditions = NULL,
     print_prefix = NULL,
     rsid_condition = NULL,
+    nlines = NULL,
     ...) {
   print_line <- sprintf(
     "print %s$0",
@@ -258,6 +279,10 @@ wrap_condition_block <- function(
       print_prefix
     )
   )
+
+  if (!is.null(nlines)) {
+    print_line <- sprintf("if (++output_lines <= max_lines) %s; else exit", print_line)
+  }
 
   if (is.null(rsid_condition)) {
     condition_block <- "%s"
@@ -297,15 +322,22 @@ increase_indent <- function(
 }
 
 wrap_main_file_code <- function(
+    finterface,
     fcondition_awk_dt,
     column_arrays_before_conditions,
-    column_arrays_after_conditions) {
+    column_arrays_after_conditions,
+    nlines = NULL) {
   if (is.null(fcondition_awk_dt)) {
     condition_block <- wrap_condition_block(
-      column_arrays_after_conditions = column_arrays_after_conditions
+      column_arrays_after_conditions = column_arrays_after_conditions,
+      nlines = nlines
     )
   } else if (nrow(fcondition_awk_dt) == 0) {
-    condition_block <- "print $0"
+    if (is.null(nlines)) {
+      condition_block <- "print $0"
+    } else {
+      condition_block <- "if (++output_lines <= max_lines) print $0; else exit"
+    }
   } else {
     condition_block <- fcondition_awk_dt[
       ,
@@ -313,7 +345,10 @@ wrap_main_file_code <- function(
         wrap_condition_block,
         c(
           .SD,
-          .(column_arrays_after_conditions = column_arrays_after_conditions)
+          .(
+            column_arrays_after_conditions = column_arrays_after_conditions,
+            nlines = nlines
+          )
         )
       ),
       by = seq_len(nrow(fcondition_awk_dt))
@@ -321,7 +356,13 @@ wrap_main_file_code <- function(
       paste(collapse = "\nelse ")
   }
 
-  full_code <- c(column_arrays_before_conditions, condition_block) |>
+  # Add trim prefix processing to the code
+  trim_prefix_code <- build_trim_prefix_code(finterface$trim_prefix)
+
+  full_code <- c(
+    trim_prefix_code, column_arrays_before_conditions,
+    condition_block
+  ) |>
     paste(collapse = "\n  ")
 
   if (!"additional_files" %in% names(fcondition_awk_dt) &
@@ -345,93 +386,148 @@ wrap_full_code_block <- function(
 }
 
 
-get_prefix_cmds <- function(finterface) {
-  comment_prefix <- finterface$comment_prefix
-  trim_prefix <- finterface$trim_prefix
 
-  # Build commands only if prefixes exist
-  cmds <- c()
+# Level 1: Primitive Builders (No Dependencies)
 
-  if (!is.null(comment_prefix)) {
-    cmds <- c(cmds, sprintf("grep -v '%s'", comment_prefix))
+# Helper function to escape special regex characters for AWK patterns
+escape_awk_regex <- function(pattern) {
+  if (is.null(pattern)) {
+    return(NULL)
+  }
+  escaped <- pattern
+  escaped <- gsub("/", "\\\\/", escaped) # / -> \/
+  escaped <- gsub("\\[", "\\\\[", escaped) # [ -> \[
+  escaped <- gsub("\\]", "\\\\]", escaped) # ] -> \]
+  escaped <- gsub("\\(", "\\\\(", escaped) # ( -> \(
+  escaped <- gsub("\\)", "\\\\)", escaped) # ) -> \)
+  escaped <- gsub("\\{", "\\\\{", escaped) # { -> \{
+  escaped <- gsub("\\}", "\\\\}", escaped) # } -> \}
+  escaped <- gsub("\\+", "\\\\+", escaped) # + -> \+
+  escaped <- gsub("\\?", "\\\\?", escaped) # ? -> \?
+  escaped <- gsub("\\|", "\\\\|", escaped) # | -> \|
+  escaped
+}
+
+build_file_read_cmd <- function(finterface) {
+  if (finterface$gzipped) {
+    sprintf("zcat %s", finterface$filename)
+  } else {
+    sprintf("cat %s", finterface$filename)
+  }
+}
+
+build_comment_filter_pattern <- function(comment_prefix) {
+  if (is.null(comment_prefix)) {
+    return(NULL)
+  }
+  escaped_prefix <- escape_awk_regex(comment_prefix)
+  sprintf("/%s/ { next }", escaped_prefix)
+}
+
+build_trim_prefix_code <- function(trim_prefix) {
+  if (is.null(trim_prefix)) {
+    return(NULL)
+  }
+  escaped_prefix <- escape_awk_regex(trim_prefix)
+  sprintf('gsub(/%s/, "", $0)', escaped_prefix)
+}
+
+build_line_limit_code <- function(nlines) {
+  if (is.null(nlines)) {
+    return(NULL)
+  }
+  sprintf("if (++output_lines <= max_lines) print $0; else exit")
+}
+
+build_awk_begin_block <- function(sep, nlines = NULL, use_command_line_fs = FALSE) {
+  # If no sep provided and no nlines needed, no BEGIN block required
+  if (is.null(sep) && is.null(nlines)) {
+    return(NULL)
   }
 
-  if (!is.null(trim_prefix)) {
-    cmds <- c(cmds, sprintf("awk '{gsub(/%s/, \"\"); print}'", trim_prefix))
+  begin_parts <- c()
+
+  # Add FS/OFS if sep is provided and not using command line FS
+  if (!is.null(sep) && !use_command_line_fs) {
+    begin_parts <- c(
+      begin_parts,
+      sprintf("FS = \"%s\"", sep),
+      sprintf("OFS = \"%s\"", sep)
+    )
+  } else if (!is.null(sep)) {
+    # Only set OFS in BEGIN, FS will be set on command line
+    begin_parts <- c(begin_parts, sprintf("OFS = \"%s\"", sep))
   }
 
-  cmds
+  # Add line counting variables if nlines is provided
+  if (!is.null(nlines)) {
+    begin_parts <- c(
+      begin_parts,
+      "output_lines = 0",
+      sprintf("max_lines = %i", nlines)
+    )
+  }
+
+  sprintf("BEGIN{\n  %s\n}", paste(begin_parts, collapse = "\n  "))
+}
+
+# Level 2: Component Assemblers
+build_read_only_awk_script <- function(finterface, nlines = NULL) {
+  parts <- c(
+    build_awk_begin_block(finterface$sep, nlines),
+    build_comment_filter_pattern(finterface$comment_prefix)
+  )
+
+  # Build main block content
+  main_block_parts <- c(
+    build_trim_prefix_code(finterface$trim_prefix),
+    build_line_limit_code(nlines) %||% "print $0"
+  )
+
+  if (length(main_block_parts) > 0) {
+    main_block <- sprintf("{\n  %s\n}", paste(main_block_parts, collapse = "\n  "))
+    parts <- c(parts, main_block)
+  }
+
+  # Combine all parts into final awk script
+  sprintf("awk '%s'", paste(parts, collapse = "\n"))
+}
+
+build_pipeline_cmd <- function(file_cmd, awk_script) {
+  paste(file_cmd, "|", awk_script)
 }
 
 
+# Level 3: High-Level Interfaces
 awk_load_file_cmd <- function(
     finterface,
     nlines = NULL,
     only_read = FALSE) {
-  prefix_cmd <- get_prefix_cmds(finterface)
-  if (finterface$gzipped) {
-    if (is.null(nlines)) {
-      cmd <- sprintf("zcat %s", finterface$filename) |>
-        c(prefix_cmd) |>
-        paste(collapse = " | ")
-    } else {
-      cmd <- paste(
-        "bash -c",
-        sprintf(
-          # Read head with zcat but ignore broken pipe
-          "head -n %i < <(zcat %s 2>/dev/null %s)",
-          nlines,
-          finterface$filename,
-          if (is.null(prefix_cmd)) {
-            ""
-          } else {
-            paste("|", prefix_cmd, collapse = " ")
-          }
-        ) |>
-          shQuote()
-      )
-    }
-    if (!only_read) {
-      cmd <- paste(cmd, "| awk")
-    }
-    return(cmd)
+  has_prefixes <- !is.null(finterface$comment_prefix) ||
+    !is.null(finterface$trim_prefix)
+  needs_processing <- has_prefixes || !is.null(nlines)
+
+  # For only_read cases with processing needed, build complete pipeline
+  if (only_read && needs_processing) {
+    file_cmd <- build_file_read_cmd(finterface)
+    awk_script <- build_read_only_awk_script(finterface, nlines)
+    return(build_pipeline_cmd(file_cmd, awk_script))
   }
 
-  if (is.null(nlines)) {
-    if (only_read) {
-      if (length(prefix_cmd) == 0) {
-        return(paste("cat", finterface$filename))
-      } else {
-        return(paste(
-          prefix_cmd[1], finterface$filename
-        ) |>
-          c(prefix_cmd[-1]) |>
-          paste(collapse = " | "))
-      }
-    }
-    if (length(prefix_cmd) == 0) {
-      return("awk")
-    } else {
-      return(paste(
-        prefix_cmd[1], finterface$filename
-      ) |>
-        c(prefix_cmd[-1], "awk") |>
-        paste(collapse = " | "))
-    }
+  # For processing cases with needs, return just "awk" (script built elsewhere)
+  if (!only_read && needs_processing) {
+    return("awk")
   }
-  cmd <- c(
-    prefix_cmd,
-    paste("head -n", nlines),
-    if (only_read) NULL else "awk"
-  )
-  cmd <- c(
-    paste(cmd[1], finterface$filename),
-    cmd[-1]
-  )
-  paste(
-    cmd %||% "cat",
-    collapse = " | "
-  )
+
+  # Simple cases: no prefixes, no nlines
+  if (only_read) {
+    return(build_file_read_cmd(finterface))
+  } else {
+    return(
+      build_file_read_cmd(finterface) |>
+        paste("| awk")
+    )
+  }
 }
 
 get_awk_column_arrays <- function(
@@ -471,11 +567,6 @@ get_awk_column_arrays <- function(
     {
       if (.N != 0) {
         split_encoding_column
-        # awk_split_column(
-        #   bash_index = bash_index,
-        #   array_name = paste0("encoded", encoded_column_index),
-        #   delimiter = delimiter
-        # )
       } else {
         character(0)
       }
@@ -488,11 +579,6 @@ get_awk_column_arrays <- function(
       {
         if (.N != 0) {
           recode_columns
-          # awk_combine_split_for_output(
-          #   bash_index   = bash_index,
-          #   array_name   = paste0("encoded", encoded_column_index),
-          #   array_length = length(encoded_names[[1]])
-          # )
         }
       },
       by = bash_index

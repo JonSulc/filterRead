@@ -23,7 +23,7 @@ new_file_interface <- function(
 
   # Detect comment and drop prefixes
   finterface$comment_prefix <- detect_comment_prefix(finterface)
-  finterface$trim_prefix <- detect_trim_prefix(finterface, finterface$comment_prefix)
+  finterface$trim_prefix <- detect_trim_prefix(finterface)
 
   finterface$sep <- get_file_separator(finterface)
 
@@ -100,8 +100,11 @@ detect_comment_prefix <- function(finterface) {
   detect_prefix_from_first_line(finterface)
 }
 
-detect_trim_prefix <- function(finterface, comment_prefix) {
-  detect_prefix_from_first_line(finterface, skip_prefix = comment_prefix)
+detect_trim_prefix <- function(finterface) {
+  detect_prefix_from_first_line(
+    finterface,
+    skip_prefix = finterface$comment_prefix
+  )
 }
 
 validate_file_interface <- function(
@@ -128,7 +131,8 @@ head.file_interface <- function(
   if (!"column_info" %in% names(finterface)) {
     return(
       data.table::fread(
-        cmd = compile_awk_cmds(finterface,
+        cmd = compile_awk_cmds(
+          finterface,
           nlines = nlines + 1
         ),
         ...

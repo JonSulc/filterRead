@@ -71,9 +71,10 @@ test_that("File reading works", {
       return_only_cmd = TRUE
     ],
     paste0(
-      "awk 'BEGIN{
+      "cat data.csv | awk 'BEGIN{
   OFS = \",\"
-} {
+}
+{
   if (NR == FNR) {
     rsid0[$3]=$1 OFS $2
   }
@@ -206,9 +207,10 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
       finterface
     ) |>
       fcondition_to_awk(),
-    "awk 'BEGIN{
+    "cat data.csv | awk 'BEGIN{
   OFS = \",\"
-} {
+}
+{
   if (NR == FNR) {
     rsid0[$3]=$1 OFS $2
   }

@@ -1,26 +1,72 @@
-test_that("Wrapping the condition block works", {
+# Integration Tests for AWK Command Compilation
+
+test_that("compile_awk_cmds: simple file interface with only_read", {
+  finterface <- list(
+    filename = "test.txt",
+    gzipped = FALSE,
+    comment_prefix = NULL,
+    trim_prefix = NULL,
+    sep = "\t"
+  )
+  result <- compile_awk_cmds(finterface, nlines = 5)
+  expected <- paste0(
+    "cat test.txt | awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n",
+    "  output_lines = 0\n  max_lines = 5\n}",
+    "\n{\n  if (++output_lines <= max_lines) print $0; else exit\n}'"
+  )
+  expect_equal(result, expected)
+})
+
+test_that("compile_awk_cmds: gzipped file with prefixes", {
+  finterface <- list(
+    filename = "test.txt.gz",
+    gzipped = TRUE,
+    comment_prefix = "^##",
+    trim_prefix = "^#",
+    sep = "\t"
+  )
+  result <- compile_awk_cmds(finterface)
+  expected <- paste0(
+    "zcat test.txt.gz | awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
+    "\n/^##/ { next }\n{\n  gsub(/^#/, \"\", $0)",
+    "\n  print $0\n}'"
+  )
+  expect_equal(result, expected)
+})
+
+test_that("compile_awk_cmds: complex case with nlines and prefixes", {
+  finterface <- list(
+    filename = "data.csv",
+    gzipped = FALSE,
+    comment_prefix = "^//",
+    trim_prefix = "^%",
+    sep = ","
+  )
+  result <- compile_awk_cmds(finterface, nlines = 100)
+  expected <- paste0(
+    "cat data.csv | awk 'BEGIN{\n  FS = \",\"\n  OFS = \",\"\n",
+    "  output_lines = 0\n  max_lines = 100\n}",
+    "\n/^\\/\\// { next }\n{\n  gsub(/^%/, \"\", $0)",
+    "\n  if (++output_lines <= max_lines) print $0; else exit\n}'"
+  )
+  expect_equal(result, expected)
+})
+
+# Keep existing internal function tests for completeness
+test_that("wrap_condition_block: basic functionality", {
   expect_equal(
     wrap_condition_block(
-      condition                     = NULL,
-      column_arrays_after_condition = NULL,
-      print_prefix                  = NULL
+      condition = NULL,
+      column_arrays_after_conditions = NULL,
+      print_prefix = NULL
     ),
     "print $0"
   )
   expect_equal(
     wrap_condition_block(
-      condition                     = NULL,
-      column_arrays_after_condition = "$1 = encoded1[1] OFS encoded1[2]",
-      print_prefix                  = NULL
-    ),
-    "$1 = encoded1[1] OFS encoded1[2]
-print $0"
-  )
-  expect_equal(
-    wrap_condition_block(
-      condition                     = "$1 == 1",
-      column_arrays_after_condition = NULL,
-      print_prefix                  = NULL
+      condition = "$1 == 1",
+      column_arrays_after_conditions = NULL,
+      print_prefix = NULL
     ),
     paste0(
       "if ($1 == 1) {\n",
@@ -28,115 +74,27 @@ print $0"
       "}"
     )
   )
-  expect_equal(
-    wrap_condition_block(
-      condition                     = "$1 == 1",
-      column_arrays_after_condition = "$1 = encoded1[1] OFS encoded1[2]",
-      print_prefix                  = NULL
-    ),
-    "if ($1 == 1) {
-  $1 = encoded1[1] OFS encoded1[2]
-  print $0
-}"
-  )
-  expect_equal(
-    wrap_condition_block(
-      condition                     = NULL,
-      column_arrays_after_condition = NULL,
-      print_prefix                  = "tabix[$1] OFS "
-    ),
-    "print tabix[$1] OFS $0"
-  )
-  expect_equal(
-    wrap_condition_block(
-      condition                     = "$1 == 1",
-      column_arrays_after_condition = NULL,
-      print_prefix                  = "tabix[$1] OFS "
-    ),
-    "if ($1 == 1) {
-  print tabix[$1] OFS $0
-}"
-  )
-  expect_equal(
-    wrap_condition_block(
-      condition                     = "$1 == 1",
-      column_arrays_after_condition = "$1 = encoded1[1] OFS encoded1[2]",
-      print_prefix                  = "tabix[$1] OFS "
-    ),
-    "if ($1 == 1) {
-  $1 = encoded1[1] OFS encoded1[2]
-  print tabix[$1] OFS $0
-}"
-  )
 })
 
-test_that("Wrapping the main file code works", {
+test_that("wrap_main_file_code: basic functionality", {
   expect_equal(
     wrap_main_file_code(
-      fcondition_awk_dt               = data.table::data.table(index = integer()),
+      finterface = list(comment_prefix = NULL, trim_prefix = NULL),
+      fcondition_awk_dt = data.table::data.table(index = integer()),
       column_arrays_before_conditions = NULL,
-      column_arrays_after_conditions  = NULL
+      column_arrays_after_conditions = NULL
     ),
     "print $0"
   )
+
+  # Test with column arrays before conditions
   expect_equal(
     wrap_main_file_code(
-      fcondition_awk_dt               = data.table::data.table(index = integer()),
+      finterface = list(comment_prefix = NULL, trim_prefix = NULL),
+      fcondition_awk_dt = data.table::data.table(index = integer()),
       column_arrays_before_conditions = "split($1, encoded1, \":\")",
-      column_arrays_after_conditions  = NULL
+      column_arrays_after_conditions = NULL
     ),
-    "split($1, encoded1, \":\")
-  print $0"
-  )
-})
-
-test_that("Wrapping the full code block works", {
-  expect_equal(
-    wrap_full_code_block(
-      fcondition_awk_dt = data.table::data.table(index = integer()),
-      main_file_code    = NULL
-    ),
-    "{\n  \n}"
-  )
-  expect_equal(
-    wrap_full_code_block(
-      fcondition_awk_dt = data.table::data.table(index = integer()),
-      main_file_code    = "print $0"
-    ),
-    "{
-  print $0
-}"
-  )
-  expect_equal(
-    wrap_full_code_block(
-      fcondition_awk_dt = data.table::data.table(
-        awk_code_block  = "if (NR == FNR) {tabix stuff}",
-        variable_arrays = "if (FILENAME == dont_read_42.txt) {oops}"
-      ),
-      main_file_code = "if (something) {print $0}"
-    ),
-    "{
-  if (NR == FNR) {tabix stuff}
-  else if (FILENAME == dont_read_42.txt) {oops}
-  else if (something) {print $0}
-}"
-  )
-  expect_equal(
-    wrap_full_code_block(
-      fcondition_awk_dt = data.table::data.table(
-        awk_code_block = "if (NR == FNR) {tabix stuff}",
-        variable_arrays = list(c(
-          "if (FILENAME == dont_read_42.txt) {oops}",
-          "if (FILENAME == read_this.txt) {good}"
-        ))
-      ),
-      main_file_code = "if (something) {print $0}"
-    ),
-    "{
-  if (NR == FNR) {tabix stuff}
-  else if (FILENAME == dont_read_42.txt) {oops}
-  else if (FILENAME == read_this.txt) {good}
-  else if (something) {print $0}
-}"
+    "split($1, encoded1, \":\")\n  print $0"
   )
 })

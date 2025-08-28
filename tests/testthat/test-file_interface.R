@@ -225,8 +225,10 @@ test_that("Full command line with gz detection works", {
     paste0(
       "zcat ~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz | ",
       "awk 'BEGIN{\n",
+      "  FS = \"\\t\"\n",
       "  OFS = \"\\t\"\n",
-      "} {\n",
+      "}\n",
+      "{\n",
       "  if ($2 == 10) {\n",
       "    # Deduce NEA based on EA vs Allele1/Allele2\n",
       "    if ($4 == $6) {\n",
@@ -237,7 +239,7 @@ test_that("Full command line with gz detection works", {
       "    $6 = nea OFS $6\n",
       "    print $0\n",
       "  }\n",
-      "}' FS=\"\\t\" "
+      "}' "
     )
   )
 })
