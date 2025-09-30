@@ -190,7 +190,7 @@ summary_stats_encoded_columns <- list(
     # e.g., sub20200523/FVIIactivity_EA_AA_trans.csv
     list(
       pattern = "%s:%s",
-      regex = "^([^:]{1,2}):([0-9]+)$",
+      regex = "^([^:]{1,2}):([0-9]+)(?::ID)?$",
       encoded_names = list(c("chr", "pos")),
       delimiter = ":"
     )
@@ -237,12 +237,15 @@ summary_stats_standard_names_dt <- list(
 # there are only rsids, currently unsupported
 
 # TODO Check specific files once the encoded column parsing is implemented
-# Check:
+# Ideally to support:
 #   sub20181231/fgf23gwas.model1.txt
+#     -> Has quoted rsids
 #   sub20181227/Plaque_meta_032218.csv
-#   sub20170706/mwmh_meta_final_SD.csv
+#     -> Yields duplicate column names and fails when filtering.
 #   sub20190101/1KG_CRP_GWAS_AJHG_2018.txt
-#   sub20170708/mSCI_meta_final_Josh_SD.csv
-#   sub20200523/FVIIactivity_EA_AA_trans.csv
-# Should fail properly:
+#     -> data.table::fread (in head) throws a warning because only 5 column
+#        names but 6 columns are returned
+# Absolute nightmare, not supported:
+#   MarkerName contains a combination of rsid, chr:pos:I/D
+#   and whatever TF 72.6021656097915 is...:
 #   sub20200329/Hispanic.QRS.GWAS.FullResults.GenomicControl.Final.csv

@@ -178,3 +178,19 @@ test_that("Parsing allele1, allele2, alt works", {
     c("chr", "pos", "ref", "alt", "effect", "pval", "allele1", "allele2")
   )
 })
+
+test_that("Handling of Chr_Pos works", {
+  column_info <- summary_stats_standard_names_dt[
+    "Chr_Pos",
+    on = "input_name"
+  ]
+  data_to_check <- data.table(
+    Chr_Pos = c(
+      "1:12345", "2:23456", "X:34567", "Y:45678", "MT:56789",
+      "1:12345:ID", "2:23456:ID", "X:34567:ID", "Y:45678:ID", "MT:56789:ID"
+    )
+  )
+  expect_false(
+    is.na(filter_regex_matches(column_info, data_to_check)$regex)
+  )
+})
