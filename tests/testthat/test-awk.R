@@ -17,19 +17,14 @@ test_that("compile_awk_cmds: simple file interface with only_read", {
   expect_equal(result, expected)
 })
 
-test_that("compile_awk_cmds: gzipped file with prefixes", {
+test_that("awk_load_file_cmd: gzipped file head", {
   finterface <- list(
     filename = "test.txt.gz",
-    gzipped = TRUE,
-    comment_prefix = "^##",
-    trim_prefix = "^#",
-    sep = "\t"
+    gzipped = TRUE
   )
-  result <- compile_awk_cmds(finterface)
+  result <- awk_load_file_cmd(finterface, nlines = 1, only_read = FALSE)
   expected <- paste0(
-    "zcat test.txt.gz | awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
-    "\n/^##/ { next }\n{\n  gsub(/^#/, \"\", $0)",
-    "\n  print $0\n}'"
+    "zcat test.txt.gz | awk"
   )
   expect_equal(result, expected)
 })

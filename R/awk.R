@@ -516,7 +516,12 @@ awk_load_file_cmd <- function(
 
   # For processing cases with needs, return just "awk" (script built elsewhere)
   if (!only_read && needs_processing) {
-    return("awk")
+    if (finterface$gzipped) {
+      return(build_file_read_cmd(finterface) |>
+        paste("| awk"))
+    } else {
+      return("awk")
+    }
   }
 
   # Simple cases: no prefixes, no nlines
