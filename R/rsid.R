@@ -1,6 +1,6 @@
 #' @import data.table
 
-dbsnp_file <- "~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz"
+dbsnp_file <- "~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz"
 
 chromosome_names <- paste("tabix -l", dbsnp_file) |>
   system(intern = TRUE)

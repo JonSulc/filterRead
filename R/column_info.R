@@ -58,7 +58,9 @@ filter_regex_matches <- function(
       if (is.na(pattern[[1]])) {
         .SD
       } else {
-        row_match <- .SD[check_single_column_regex(regex, data_to_check[[input_name]])]
+        row_match <- .SD[
+          check_single_column_regex(regex, data_to_check[[input_name]])
+        ]
         if (nrow(row_match) == 0) {
           row_match <- .SD[1]
           row_match[
@@ -117,7 +119,10 @@ add_prefix_column <- function(
     prefix := character(0)
   ][
     !is.na(possible_prefixes),
-    prefix := check_single_column_prefix(possible_prefixes, data_to_check[[input_name]]),
+    prefix := check_single_column_prefix(
+      possible_prefixes,
+      data_to_check[[input_name]]
+    ),
     by = bash_index
   ][] |>
     invisible()

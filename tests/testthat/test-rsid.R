@@ -85,7 +85,7 @@ test_that("File reading works", {
       }
     }
   }
-}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
+}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
     )
   )
 })
@@ -202,8 +202,10 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
   finterface <- local_rsid_summary_stats_interface()
   expect_equal(
     new_filter_condition(
-      rlang::expr((chr == 1 & 123 < pos & pos < 234 & pval < .05) |
-        (chr == 2 & 21 < pos & pos < 42 & pval < .01)),
+      rlang::expr(
+        (chr == 1 & 123 < pos & pos < 234 & pval < .05) |
+          (chr == 2 & 21 < pos & pos < 42 & pval < .01)
+      ),
       finterface
     ) |>
       fcondition_to_awk(),
@@ -229,7 +231,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
       }
     }
   }
-}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000001.11:124-233) <(tabix ~/rcp_storage/common/Users/abadreddine/data/dbSNP/GCF_000001405.40.gz NC_000002.12:22-41) FS=\",\" data.csv"
+}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz NC_000001.11:124-233) <(tabix ~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz NC_000002.12:22-41) FS=\",\" data.csv"
   )
 })
 
