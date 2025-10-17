@@ -1,10 +1,11 @@
 #' @import data.table
 
 setup_column_array <- function(
-    bash_index,
-    array_name,
-    delimiter = " ",
-    array_length = 1) {
+  bash_index,
+  array_name,
+  delimiter = " ",
+  array_length = 1
+) {
   sprintf(
     "%s  \n%s",
     awk_split_column(
@@ -21,9 +22,10 @@ setup_column_array <- function(
 }
 
 awk_split_column <- function(
-    bash_index,
-    array_name,
-    delimiter) {
+  bash_index,
+  array_name,
+  delimiter
+) {
   sprintf(
     "split(%s, %s, \"%s\")",
     bash_index,
@@ -32,9 +34,10 @@ awk_split_column <- function(
   )
 }
 awk_combine_split_for_output <- function(
-    bash_index,
-    array_name,
-    array_length) {
+  bash_index,
+  array_name,
+  array_length
+) {
   sprintf(
     "%s = %s",
     bash_index,
@@ -44,17 +47,19 @@ awk_combine_split_for_output <- function(
 }
 
 setup_variable_array <- function(
-    values,
-    filename,
-    variable_handle) {
+  values,
+  filename,
+  variable_handle
+) {
   writeLines(as.character(values), filename)
   sprintf("if (FILENAME == \"%s\")", filename) |>
     paste(as_block(sprintf("%s[$0] = 1\nnext", variable_handle)))
 }
 
 eval_fcondition <- function(
-    fcondition,
-    finterface) {
+  fcondition,
+  finterface
+) {
   if (length(fcondition) == 0) {
     return()
   }
@@ -76,7 +81,9 @@ eval_fcondition <- function(
 }
 
 fcondition_to_awk <- function(
-    fcondition) {
+  fcondition,
+  return_only_cmd = FALSE
+) {
   column_arrays <- get_awk_column_arrays(
     get_file_interface(fcondition),
     fcondition = fcondition
@@ -86,19 +93,21 @@ fcondition_to_awk <- function(
     compile_awk_cmds(
       finterface = get_file_interface(fcondition),
       column_arrays_before_conditions = column_arrays$before_if,
-      column_arrays_after_conditions = column_arrays$after_if
+      column_arrays_after_conditions = column_arrays$after_if,
+      return_only_cmd = return_only_cmd
     )
 }
 
 fcondition_and_rsid_to_awk <- function(
-    fcondition,
-    rsid_bash_index = get_file_interface(fcondition)$column_info[
-      "rsid",
-      bash_index,
-      on = "name"
-    ],
-    index = 0,
-    chr_names = chromosome_names) {
+  fcondition,
+  rsid_bash_index = get_file_interface(fcondition)$column_info[
+    "rsid",
+    bash_index,
+    on = "name"
+  ],
+  index = 0,
+  chr_names = chromosome_names
+) {
   if (!needs_rsid_matching(get_file_interface(fcondition)) ||
     (is.null(attr(fcondition, "genomic_range")) &&
       is_single_genomic_range_block(fcondition))) {
@@ -163,11 +172,13 @@ fcondition_and_rsid_to_awk <- function(
 }
 
 compile_awk_cmds <- function(
-    finterface,
-    fcondition_awk_dt = NULL,
-    column_arrays_before_conditions = NULL,
-    column_arrays_after_conditions = get_awk_column_arrays(finterface)$after_if,
-    nlines = NULL) {
+  finterface,
+  fcondition_awk_dt = NULL,
+  column_arrays_before_conditions = NULL,
+  column_arrays_after_conditions = get_awk_column_arrays(finterface)$after_if,
+  nlines = NULL,
+  return_only_cmd = FALSE
+) {
   if (is.null(fcondition_awk_dt) &&
     is.null(column_arrays_before_conditions) &&
     is.null(column_arrays_after_conditions)) {
@@ -202,21 +213,45 @@ compile_awk_cmds <- function(
     main_file_code = main_file_code
   )
 
-  # Determine if we need command-line FS (multiple files with different separators)
+  # Determine if we need command-line FS
+  # (multiple files with different separators)
   has_process_substitution <- !is.null(fcondition_awk_dt$process_substitution)
   use_command_line_fs <- has_process_substitution
 
-  begin_code_block <- build_awk_begin_block(finterface$sep, nlines, use_command_line_fs)
+  begin_code_block <- build_awk_begin_block(
+    finterface$sep,
+    nlines,
+    use_command_line_fs
+  )
 
   # Add comment prefix handling pattern
-  comment_prefix_pattern <- build_comment_filter_pattern(finterface$comment_prefix)
-
-  awk_code <- sprintf(
-    "'%s'",
-    paste(c(begin_code_block, comment_prefix_pattern, full_code_block),
-      collapse = "\n"
-    )
+  comment_prefix_pattern <- build_comment_filter_pattern(
+    finterface$comment_prefix
   )
+
+  awk_script <- paste(
+    c(begin_code_block, comment_prefix_pattern, full_code_block),
+    collapse = "\n"
+  )
+
+  # In the case of long awk scripts, passing it to command line can be
+  # problematic, so we write it to a temporary file by default
+  # TODO: improve cleanup of temporary files
+  if (return_only_cmd) {
+    awk_code <- sprintf("'%s'", awk_script)
+  } else {
+    temp_awk_file <- tempfile(fileext = ".awk")
+    writeLines(
+      paste0(awk_script, "\n"),
+      temp_awk_file
+    )
+
+    awk_code <- sprintf(
+      "-f %s",
+      temp_awk_file
+    )
+  }
+
 
   awk_final_filename <- c(
     {
@@ -256,7 +291,8 @@ compile_awk_cmds <- function(
 }
 
 as_block <- function(
-    code) {
+  code
+) {
   paste0(
     "{\n",
     "  %s\n",
@@ -266,12 +302,13 @@ as_block <- function(
 }
 
 wrap_condition_block <- function(
-    condition = NULL,
-    column_arrays_after_conditions = NULL,
-    print_prefix = NULL,
-    rsid_condition = NULL,
-    nlines = NULL,
-    ...) {
+  condition = NULL,
+  column_arrays_after_conditions = NULL,
+  print_prefix = NULL,
+  rsid_condition = NULL,
+  nlines = NULL,
+  ...
+) {
   print_line <- sprintf(
     "print %s$0",
     ifelse(is.null(print_prefix),
@@ -317,16 +354,18 @@ wrap_condition_block <- function(
 }
 
 increase_indent <- function(
-    code) {
+  code
+) {
   gsub("\n", "\n  ", code)
 }
 
 wrap_main_file_code <- function(
-    finterface,
-    fcondition_awk_dt,
-    column_arrays_before_conditions,
-    column_arrays_after_conditions,
-    nlines = NULL) {
+  finterface,
+  fcondition_awk_dt,
+  column_arrays_before_conditions,
+  column_arrays_after_conditions,
+  nlines = NULL
+) {
   if (is.null(fcondition_awk_dt)) {
     condition_block <- wrap_condition_block(
       column_arrays_after_conditions = column_arrays_after_conditions,
@@ -374,8 +413,9 @@ wrap_main_file_code <- function(
 }
 
 wrap_full_code_block <- function(
-    fcondition_awk_dt,
-    main_file_code) {
+  fcondition_awk_dt,
+  main_file_code
+) {
   c(
     fcondition_awk_dt$awk_code_block,
     unlist(fcondition_awk_dt$variable_arrays),
@@ -384,7 +424,6 @@ wrap_full_code_block <- function(
     paste(collapse = "\nelse ") |>
     as_block()
 }
-
 
 
 # Level 1: Primitive Builders (No Dependencies)
@@ -500,9 +539,10 @@ build_pipeline_cmd <- function(file_cmd, awk_script) {
 
 # Level 3: High-Level Interfaces
 awk_load_file_cmd <- function(
-    finterface,
-    nlines = NULL,
-    only_read = FALSE) {
+  finterface,
+  nlines = NULL,
+  only_read = FALSE
+) {
   has_prefixes <- !is.null(finterface$comment_prefix) ||
     !is.null(finterface$trim_prefix)
   needs_processing <- has_prefixes || !is.null(nlines)
@@ -536,8 +576,9 @@ awk_load_file_cmd <- function(
 }
 
 get_awk_column_arrays <- function(
-    finterface,
-    fcondition = NULL) {
+  finterface,
+  fcondition = NULL
+) {
   if (!"column_info" %in% names(finterface)) {
     return()
   }

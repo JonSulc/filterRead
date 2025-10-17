@@ -2,10 +2,11 @@
 
 #' @export
 new_file_interface <- function(
-    filename,
-    extra_column_names_dt = NULL,
-    standard_names_dt = summary_stats_standard_names_dt,
-    ieugwas_parsing = TRUE) {
+  filename,
+  extra_column_names_dt = NULL,
+  standard_names_dt = summary_stats_standard_names_dt,
+  ieugwas_parsing = TRUE
+) {
   stopifnot(is.character(filename))
   stopifnot(file.exists(filename))
   standard_names_dt <- list(
@@ -50,12 +51,14 @@ new_file_interface <- function(
 is_file_interface <- function(finterface) inherits(finterface, "file_interface")
 
 is_gzipped <- function(
-    filename) {
+  filename
+) {
   stringr::str_detect(filename, "[.]gz$")
 }
 
 get_file_separator <- function(
-    finterface) {
+  finterface
+) {
   dt_output <- head(finterface, nlines = 1L, verbose = TRUE) |>
     capture.output() |>
     stringr::str_match("sep='([^']+)'")
@@ -108,7 +111,8 @@ detect_trim_prefix <- function(finterface) {
 }
 
 validate_file_interface <- function(
-    finterface) {
+  finterface
+) {
   if (!all(c("gzipped", "values_are_quoted") %chin% attributes(finterface))) {
     stop(
       "finterface is missing attributes ",
@@ -125,9 +129,10 @@ validate_file_interface <- function(
 
 #' @export
 head.file_interface <- function(
-    finterface,
-    nlines = 1,
-    ...) {
+  finterface,
+  nlines = 1,
+  ...
+) {
   if (!"column_info" %in% names(finterface)) {
     return(
       data.table::fread(
@@ -154,15 +159,19 @@ head.file_interface <- function(
 
 #' @export
 `[.file_interface` <- function(
-    finterface,
-    conditions = NULL,
-    ...,
-    return_only_cmd = FALSE) {
+  finterface,
+  conditions = NULL,
+  ...,
+  return_only_cmd = FALSE
+) {
   fcondition <- new_filter_condition(
     rlang::enexpr(conditions),
     finterface = finterface
   )
-  command_line <- fcondition_to_awk(fcondition)
+  command_line <- fcondition_to_awk(
+    fcondition,
+    return_only_cmd = return_only_cmd
+  )
 
   if (return_only_cmd) {
     return(command_line)
@@ -184,7 +193,8 @@ head.file_interface <- function(
 
 #' @export
 print.file_interface <- function(
-    finterface) {
+  finterface
+) {
   cat(sprintf("\"%s\"\n", finterface$filename))
   cat(sprintf(
     "Columns: %s\n",

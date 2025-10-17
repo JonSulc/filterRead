@@ -208,7 +208,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
       ),
       finterface
     ) |>
-      fcondition_to_awk(),
+      fcondition_to_awk(return_only_cmd = TRUE),
     "cat data.csv | awk 'BEGIN{
   OFS = \",\"
 }
