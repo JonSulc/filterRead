@@ -5,26 +5,27 @@ Fast file filtering using `awk` for efficient data loading with
 
 ## Overview
 
-`filterRead` is an R package that provides a high-performance interface
-for loading large tab/comma-separated GWAS summary statistics files with
-filtering conditions. By translating R-style filter expressions to `awk`
-commands, the package filters data before loading it into R, dramatically
-reducing memory usage and load times for large datasets. Different and
-missing column names are automatically converted and/or completed.
+`filterRead` is an R package that provides a high-performance interface for
+loading GWAS summary statistics from file. It's main features are the
+standardized interface and fast filtering prior to loading in memory,
+powered by `awk`. This simplifies the loading of summary statistics from
+different sources, by invisibly and efficiently handling differences in column
+names, compression, field separator, and more, returning a data.table with
+standardized names for downstream analyses.
 
 ## Features
 
 - **Fast filtering**: Leverages `awk` to filter rows before loading
   into R
-- **R-style syntax**: Write filter conditions using familiar R
-  expressions
 - **Automatic file detection**: Handles CSV, TSV, and gzipped files
   automatically
 - **Column naming**: Automatically converts columns to standardized names
-- **Missing columns**: Missing columns (e.g., `chr` and `pos`) are obtained
+- **Missing columns**: Missing columns (e.g., `pos`) are inferred
   from existing columns (e.g., variant_id)
 - **Genomic data support**: Built-in support for chromosome/position
   filtering and RSID matching
+- **R-style syntax**: Write filter conditions using familiar R
+  expressions
 - **Complex conditions**: Supports logical operators (`&`, `|`),
   comparisons, and pattern matching
 - **Memory efficient**: Only loads filtered rows into memory
@@ -44,34 +45,18 @@ remotes::install_github("JonSulc/filterRead")
 library(filterRead)
 
 # Create a file interface
-finterface <- new_file_interface("data.csv")
+# This doesn't load any data, only checks the file formatting
+finterface <- new_file_interface("gwas_summary_stats.txt.gz")
 
-# Check how the processed table looks
+# Check how the processed table will look
 head(finterface)
 
-# Filter using R-style conditions
-filtered_data <- finterface[chr == 1 & pval < 0.05]
-```
-
-### Genomic Data
-
-```r
-# Load genomic data with chromosome/position filtering
-gwas_file <- new_file_interface("gwas_summary_stats.txt.gz")
-
-# Filter by chromosome and position range
-chr1_data <- gwas_file[chr == 1 & 1000000 < pos & pos < 2000000]
-
-# Filter by p-value threshold
-significant <- gwas_file[pval < 5e-8]
-```
-
-### RSID Matching
-
-```r
-# Filter by specific RSIDs (requires tabix-indexed reference)
-rsids <- c("rs12345", "rs67890", "rs11111")
-snp_data <- gwas_file[rsid %in% rsids]
+# Filter using R-style conditions and load into memory
+significant_hits <- finterface[chr == 1 & pval < 5e-8]
+genomic_regions <- finterface[
+  (chr == 2 & 12345 < pos & pos < 23456) |
+  (chr == 3 & 42 < pos & pos < 4242)
+]
 ```
 
 ## How It Works
@@ -82,42 +67,25 @@ snp_data <- gwas_file[rsid %in% rsids]
    `awk`-compatible filter conditions
 3. **Efficient filtering**: `awk` processes the file and filters rows
    before data reaches R
-4. **Data loading**: Only header and filtered rows are loaded using
+4. **Data loading**: Only filtered rows are loaded using
    `data.table::fread`
+5. **Header reconstructed**: The header names are filled in with standard
+   names
+6. **Missing data**: Where possible missing fields are reconstructed from other
+   columns (e.g., extracting `pos` from `MarkerName`)
 
-## Advanced Features
+### Standard column names
 
-### Column Encoding
-
-The package handles encoded columns that need splitting or recoding:
-
-```r
-# Automatically handles complex column formats
-# (e.g., quoted values, special separators)
-finterface <- new_file_interface("complex_format.txt")
-data <- finterface[condition == TRUE]
-```
-
-### IEU GWAS Format
-
-Built-in parsing for IEU GWAS database format files:
-
-```r
-# Automatically detects and parses IEU GWAS format
-ieugwas_file <- new_file_interface("ieugwas_data.vcf.gz")
-filtered <- ieugwas_file[pval < 1e-5]
-```
-
-### Complex Filter Conditions
-
-```r
-# Combine multiple conditions
-finterface[
-  (chr == 1 | chr == 2) &
-  pval < 0.01 &
-  (b < -0.1 | 0.1 < b)
-]
-```
+- **chr**: Chromosome
+- **pos**: Position
+- **ref**: Reference (non-effect) allele
+- **alt**: Alternate (effect) allele
+- **effect**: Estimated effect of the allele
+- **pval**: P-value
+- **effect_se**: Standard error of the effect
+- **log10p**: Negative log10 p-value
+- **zscore**: Z-score
+- **odds_ratio**: Odds ratio
 
 ## System Requirements
 
