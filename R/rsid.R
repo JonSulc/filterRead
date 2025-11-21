@@ -18,10 +18,20 @@ if ("24" %in% names(chromosome_names)) {
   names(chromosome_names)[names(chromosome_names) == "24"] <- "Y"
 }
 
-tabix_colnames <- c("chr", "pos", "rsid", "ref", "alt", "qual", "filter", "info")
+tabix_colnames <- c(
+  "chr",
+  "pos",
+  "rsid",
+  "ref",
+  "alt",
+  "qual",
+  "filter",
+  "info"
+)
 
 is_single_genomic_range_block <- function(
-    fcondition) {
+  fcondition
+) {
   # Determine whether all non-genomic conditions apply to the same genomic range
   if (!is.call(fcondition)) {
     return(TRUE)
@@ -48,11 +58,12 @@ is_single_genomic_range_block <- function(
 }
 
 get_tabix_process_substitution <- function(
-    chr,
-    start,
-    end,
-    dbsnp_filename = dbsnp_file,
-    chr_names = chromosome_names) {
+  chr,
+  start,
+  end,
+  dbsnp_filename = dbsnp_file,
+  chr_names = chromosome_names
+) {
   chr_name <- chr_names[toupper(chr)]
   stopifnot(length(start) == length(end))
   stopifnot(length(chr_name) == 1 | length(chr_name) == length(start))

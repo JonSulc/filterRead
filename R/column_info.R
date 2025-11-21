@@ -1,9 +1,10 @@
 #' @import data.table
 
 get_column_info <- function(
-    finterface,
-    standard_names_dt = summary_stats_standard_names_dt,
-    nrows_to_check = 500) {
+  finterface,
+  standard_names_dt = summary_stats_standard_names_dt,
+  nrows_to_check = 500
+) {
   column_info <- get_base_column_info(
     finterface,
     standard_names_dt = standard_names_dt
@@ -15,6 +16,8 @@ get_column_info <- function(
   add_quoted_column(column_info, finterface)
 
   add_prefix_column(column_info, data_to_check)
+
+  add_chr_prefix(column_info, data_to_check)
 
   add_encoding_columns(column_info)
 
@@ -29,8 +32,9 @@ get_column_info <- function(
 }
 
 get_base_column_info <- function(
-    finterface,
-    standard_names_dt = summary_stats_standard_names_dt) {
+  finterface,
+  standard_names_dt = summary_stats_standard_names_dt
+) {
   column_info <- data.table::data.table(
     input_name = head(finterface) |> names()
   )[
@@ -50,8 +54,9 @@ get_base_column_info <- function(
 }
 
 filter_regex_matches <- function(
-    column_info,
-    data_to_check) {
+  column_info,
+  data_to_check
+) {
   column_info[
     ,
     {
@@ -85,8 +90,9 @@ filter_regex_matches <- function(
   ]
 }
 check_single_column_regex <- function(
-    regexes,
-    column_data) {
+  regexes,
+  column_data
+) {
   sapply(regexes, \(regex) {
     grepl(regex, column_data) |>
       all()
@@ -94,8 +100,9 @@ check_single_column_regex <- function(
 }
 
 add_quoted_column <- function(
-    column_info,
-    finterface) {
+  column_info,
+  finterface
+) {
   column_info[
     ,
     quoted := are_values_quoted(finterface)[input_name]
@@ -103,7 +110,8 @@ add_quoted_column <- function(
     invisible()
 }
 are_values_quoted <- function(
-    finterface) {
+  finterface
+) {
   quoted_values <- head(finterface, nlines = 1, quote = "") |>
     sapply(stringr::str_detect, "\"")
   names(quoted_values) <- names(quoted_values) |>
@@ -112,8 +120,9 @@ are_values_quoted <- function(
 }
 
 add_prefix_column <- function(
-    column_info,
-    data_to_check) {
+  column_info,
+  data_to_check
+) {
   column_info[
     ,
     prefix := character(0)
@@ -128,8 +137,9 @@ add_prefix_column <- function(
     invisible()
 }
 check_single_column_prefix <- function(
-    prefixes,
-    column_data) {
+  prefixes,
+  column_data
+) {
   prefixes <- sapply(prefixes, \(prefix) {
     grepl(paste0("^", prefix), column_data) |>
       all()
@@ -140,8 +150,26 @@ check_single_column_prefix <- function(
   names(prefixes)[prefixes][1]
 }
 
+# This function checks whether the "chr" prefix should be added to the chr
+# column
+add_chr_prefix <- function(
+  column_info,
+  data_to_check
+) {
+  if (!"chr" %in% column_info$standard_name) {
+    return(column_info)
+  }
+  column_info[
+    standard_name == "chr" &
+      is.na(prefix),
+    add_prefix := "chr",
+    by = prefix
+  ][]
+}
+
 add_encoding_columns <- function(
-    column_info) {
+  column_info
+) {
   column_info[
     !sapply(encoded_names, is.null),
     encoded_column_index := seq_len(.N)
@@ -173,7 +201,8 @@ add_encoding_columns <- function(
 }
 
 expand_encoded_columns <- function(
-    column_info) {
+  column_info
+) {
   # TODO Incomplete if only one of them missing?
   missing_rsid_columns <- c("chr", "pos")[
     !c("chr", "pos") %in% c(column_info$standard_name, unlist(column_info$encoded_names))
@@ -216,7 +245,8 @@ expand_encoded_columns <- function(
 }
 
 expand_single_encoded_row <- function(
-    row_info) {
+  row_info
+) {
   stopifnot(nrow(row_info) == 1)
   if (is.null(row_info$encoded_names[[1]])) {
     return(NULL)
@@ -249,8 +279,9 @@ expand_single_encoded_row <- function(
 }
 
 needs_rsid_matching <- function(
-    finterface,
-    force = FALSE) {
+  finterface,
+  force = FALSE
+) {
   if (!force & "needs_rsid_matching" %in% names(finterface)) {
     return(finterface$needs_rsid_matching)
   }
@@ -264,8 +295,9 @@ needs_rsid_matching <- function(
 }
 
 column_names <- function(
-    finterface,
-    original = FALSE) {
+  finterface,
+  original = FALSE
+) {
   col_info <- finterface$column_info %||% get_column_info(finterface)
   if (original) {
     return(col_info[!is.na(input_name), input_name])
@@ -278,7 +310,8 @@ column_names <- function(
 }
 
 add_allele_matching_to_column_info <- function(
-    column_info) {
+  column_info
+) {
   if (!needs_a1_a2_to_ref_matching(column_info)) {
     return(column_info)
   }
@@ -305,15 +338,17 @@ add_allele_matching_to_column_info <- function(
 }
 
 needs_a1_a2_to_ref_matching <- function(
-    column_info) {
+  column_info
+) {
   all(c("allele1", "allele2", "alt") %in% column_info$standard_name) &
     !"ref" %in% column_info$standard_name
 }
 
 match_a1_a2_to_ref <- function(
-    a1_bash_index,
-    a2_bash_index,
-    alt_bash_index) {
+  a1_bash_index,
+  a2_bash_index,
+  alt_bash_index
+) {
   sprintf(
     "# Deduce NEA based on EA vs Allele1/Allele2
 if (%s == %s) {

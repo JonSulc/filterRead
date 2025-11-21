@@ -236,7 +236,7 @@ summary_stats_standard_names_dt <- list(
 # In other files (e.g., sub20171222/appendicularleanmass.results.metal.txt)
 # there are only rsids, currently unsupported
 
-# TODO Check specific files once the encoded column parsing is implemented
+# TODO Check specific files to expand handled formats
 # Ideally to support:
 #   sub20181231/fgf23gwas.model1.txt
 #     -> Has quoted rsids
@@ -245,7 +245,7 @@ summary_stats_standard_names_dt <- list(
 #   sub20190101/1KG_CRP_GWAS_AJHG_2018.txt
 #     -> data.table::fread (in head) throws a warning because only 5 column
 #        names but 6 columns are returned
-# Absolute nightmare, not supported:
+# Absolute nightmare, not supported, no support intended:
 #   MarkerName contains a combination of rsid, chr:pos:I/D
 #   and whatever TF 72.6021656097915 is...:
 #   sub20200329/Hispanic.QRS.GWAS.FullResults.GenomicControl.Final.csv
