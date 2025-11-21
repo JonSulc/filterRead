@@ -583,7 +583,17 @@ get_awk_column_arrays <- function(
     return()
   }
   if (all(sapply(finterface$column_info$encoded_names, is.null))) {
-    return()
+    if (all(sapply(finterface$column_info$add_prefix, is.na))) {
+      return()
+    }
+    return(
+      list(
+        after_if = finterface$column_info[
+          !is.na(add_prefix),
+          sprintf('%s = "%s"%s', bash_index, add_prefix, bash_index)
+        ]
+      )
+    )
   }
 
   required_for_if <- finterface$column_info[

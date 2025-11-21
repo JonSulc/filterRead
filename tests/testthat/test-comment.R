@@ -5,7 +5,7 @@ test_that("Commented lines are correctly ignored", {
     new_file_interface(commented_file, ieugwas_parsing = FALSE) |>
       head(),
     data.table::data.table(
-      chr = 1,
+      chr = "chr1",
       pos = 10177,
       rsid = "rs1264289758",
       ref = "AC",

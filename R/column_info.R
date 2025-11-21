@@ -156,9 +156,6 @@ add_chr_prefix <- function(
   column_info,
   data_to_check
 ) {
-  if (!"chr" %in% column_info$standard_name) {
-    return(column_info)
-  }
   column_info[
     standard_name == "chr" &
       is.na(prefix),

@@ -237,6 +237,7 @@ test_that("Full command line with gz detection works", {
       "      nea = $4\n",
       "    }\n",
       "    $6 = nea OFS $6\n",
+      "    $2 = \"chr\"$2\n",
       "    print $0\n",
       "  }\n",
       "}' "
