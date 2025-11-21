@@ -620,15 +620,21 @@ get_awk_column_arrays <- function(
     by = bash_index,
     on = "name"
   ]$V1 |>
-    c(finterface$column_info[
-      !sapply(encoded_names, is.null),
-      {
-        if (.N != 0) {
-          recode_columns
-        }
-      },
-      by = bash_index
-    ]$V1)
+    c(
+      finterface$column_info[
+        !sapply(encoded_names, is.null),
+        {
+          if (.N != 0) {
+            recode_columns
+          }
+        },
+        by = bash_index
+      ]$V1,
+      finterface$column_info[
+        !is.na(add_prefix),
+        sprintf('%s = "%s"%s', bash_index, add_prefix, bash_index)
+      ]
+    )
 
   list(
     before_if = before_if,
