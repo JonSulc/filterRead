@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     PATH = "/opt/R/4.5.1/bin:${env.PATH}"
-    R_LIBS_USER = "${WORKSPACE}/r-libs"
+    R_LIBS_USER = "~/rcp_storage/common/Users/sulc/jenkins-r-libs"
   }
 
   stages {
@@ -30,7 +30,10 @@ pipeline {
           Rscript -e "
             dir.create(Sys.getenv('R_LIBS_USER'), recursive = TRUE, showWarnings = FALSE)
             .libPaths(c(Sys.getenv('R_LIBS_USER'), .libPaths()))
-            devtools::install_deps(dependencies = TRUE, lib = Sys.getenv('R_LIBS_USER'))
+            if (!require('devtools', quietly = TRUE)) {
+              install.packages('devtools', repos = 'https://cloud.r-project.org', lib = Sys.getenv('R_LIBS_USER'))
+            }
+            devtools::install_deps(dependencies = TRUE, upgrade = 'never', lib = Sys.getenv('R_LIBS_USER'))
         "
         '''
       }
