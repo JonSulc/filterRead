@@ -2,13 +2,19 @@
 
 get_build_from_file_interface <- function(
   finterface,
-  nsnps = 1e4,
-  refsnp_db = refsnp_db22()
+  nsnps = 1e4
 ) {
   if (!is.null(finterface$build)) {
     return(finterface$build)
   }
-  return("b38")
+  if (needs_rsid_matching(finterface)) {
+    stop(
+      "Build inferrence for files that require RSID matching",
+      "is not yet implemented. Please specify a build using, e.g.,",
+      " 'build = \"b38\"'."
+    )
+  }
+  infer_build_from_file(finterface, nsnps = nsnps)
 }
 
 infer_build_from_file <- function(
@@ -17,56 +23,54 @@ infer_build_from_file <- function(
   ...
 ) {
   cat("Inferring build from file ", finterface$filename, "...\n")
-  # Need to read only chr 22
-  summary_stats <- finterface[chr == 22]
-  if (!is.null(nsnps)) {
-    summary_stats <- summary_stats[seq_len(nsnps)]
-  }
+  head(finterface, nsnps) |>
+    infer_build(...)
+}
 
-  infer_build(summary_stats, ...)
+get_tabix_query <- function(
+  summary_stats,
+  ref_filename
+) {
+  sprintf(
+    "tabix %s %s",
+    ref_filename,
+    summary_stats[
+      ,
+      sprintf("%s:%s-%s", substring(chr, 4), pos, pos) |>
+        paste(collapse = " ")
+    ]
+  )
 }
 
 infer_build <- function(
   summary_stats,
-  refsnp_db = refsnp_db22(),
   return_build_match = FALSE
 ) {
-  # Reference and alternate alleles are arbitrary
-  # Include both possibilities
-  summary_stats <- rbind(
-    summary_stats[, .(chr = chr, pos = pos, ref = ref, alt = alt)],
-    summary_stats[, .(chr = chr, pos = pos, ref = alt, alt = ref)]
-  ) |>
-    unique()
-
-  summary_stats_builds <- refsnp_db[
-    summary_stats,
-    on = c("chr", "pos", "ref", "alt")
-  ][
-    is.na(build),
-    build := "b36"
-  ][
-    ,
-    .(
-      # Because we include both ref/alt and alt/ref, half of the rows are
-      # expected to be mismatches and should not be flagged as likely b36
-      n = ifelse(
-        build == "b36",
-        .N - nrow(summary_stats) / 2,
-        as.double(.N)
-      )
-    ),
-    by = build
-  ][
-    ,
-    .(
-      build = build,
-      n = n,
-      build_match = n / (nrow(summary_stats) / 2)
+  results <- data.table::data.table(
+    build = c("b37", "b38"),
+    ref_filename = file.path(
+      get_dbsnp_path(),
+      get_dbsnp_filename(c("b37", "b38"))
     )
-  ]
+  )[
+    ,
+    n := get_tabix_matches(summary_stats, ref_filename),
+    by = build
+  ][]
+  results <- rbind(
+    data.table::data.table(
+      build = "b36",
+      ref_filename = NA_character_,
+      n = nrow(summary_stats) - sum(results$n)
+    ),
+    results
+  )[
+    ,
+    # Simplified estimate that doesn't account for b37/b38 overlap
+    build_match := n / nrow(summary_stats)
+  ][]
 
-  summary_stats_builds[
+  results[
     which.max(build_match),
     message(
       "Build inferred to be ", build,
@@ -83,15 +87,66 @@ infer_build <- function(
 
   if (return_build_match) {
     return(
-      summary_stats_builds[
+      results[
         ,
         .(build, build_match)
       ]
     )
   }
 
-  summary_stats_builds[
+  results[
     which.max(n),
     build
   ]
+}
+get_tabix_matches <- function(
+  summary_stats,
+  ref_filename
+) {
+  temp_file <- tempfile()
+
+  get_tabix_query(
+    summary_stats,
+    ref_filename
+  ) |>
+    writeLines(temp_file)
+
+  hits <- data.table::fread(
+    cmd = paste("bash", temp_file),
+    col.names = c("chr", "pos", "ref", "alt"),
+    select = c(1, 2, 4, 5),
+    colClasses = list(
+      character = c(1, 4, 5),
+      numeric = 2
+    )
+  )[
+    ,
+    chr := paste0("chr", chr)
+  ][]
+
+  filtered_hits <- data.table::rbindlist(
+    list(
+      hits[summary_stats, on = c("chr", "pos", "ref"), nomatch = NULL],
+      hits[summary_stats, on = c(chr = "chr", pos = "pos", ref = "alt"), nomatch = NULL]
+    ),
+    use.names = TRUE,
+    fill = TRUE
+  )
+  filtered_hits[
+    mapply(
+      function(ialt, iref, a) {
+        query_allele <- if (is.na(ialt)) iref else ialt
+        query_allele %in% strsplit(a, ",", fixed = TRUE)[[1]]
+      },
+      i.alt, i.ref, alt
+    ),
+    .(
+      chr = chr,
+      pos = pos,
+      ref = ref,
+      alt = data.table::fcoalesce(i.alt, i.ref)
+    )
+  ] |>
+    unique() |>
+    nrow()
 }

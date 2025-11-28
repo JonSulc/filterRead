@@ -5,7 +5,8 @@ new_file_interface <- function(
   filename,
   extra_column_names_dt = NULL,
   standard_names_dt = summary_stats_standard_names_dt,
-  ieugwas_parsing = TRUE
+  ieugwas_parsing = TRUE,
+  build = NULL
 ) {
   stopifnot(is.character(filename))
   stopifnot(file.exists(filename))
@@ -43,6 +44,12 @@ new_file_interface <- function(
   )
 
   finterface$needs_rsid_matching <- needs_rsid_matching(finterface)
+
+  if (!is.null(build)) {
+    finterface$build <- build
+  } else {
+    finterface$build <- get_build_from_file_interface(finterface)
+  }
 
   finterface
 }
