@@ -157,6 +157,8 @@ md5_matches <- function(
 #' Download a file with retry logic
 #' @param url URL to download from
 #' @param dest_file Destination file path
+#' @param md5_file Optional list containing the 'filename' and 'url' of the MD5
+#'   file to check the download
 #' @param max_tries Maximum number of retry attempts
 #' @param timeout Timeout in seconds for each attempt
 #' @keywords internal
@@ -264,15 +266,15 @@ download_with_retry <- function(
   }
 }
 
-#' Setup dbSNP reference files
+#' Download dbSNP reference files to the path defined by get_dbsnp_path()
 #' @param download Logical, download files if missing
 #' @param build Character vector of builds to download
 #'   (default: c("b37", "b38"))
 #' @param type Type of SNP reference set (common = .01 <= MAF)
 #'   ("common" or "all")
-#' @param timeout Timeout in seconds for each download (default: 3600)
 #' @param max_tries Maximum number of retry attempts per file
 #'   (default: 3)
+#' @param timeout Timeout in seconds for each download (default: 3600)
 #' @export
 setup_dbsnp <- function(
   build = c("b37", "b38"),
