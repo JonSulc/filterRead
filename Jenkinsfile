@@ -2,6 +2,7 @@ pipeline {
   agent { label 'hpc'}
 
   environment {
+    PATH = "/opt/R/4.5.1/bin:${env.PATH}"
     R_LIBS_USER = "${WORKSPACE}/r-libs"
   }
 
