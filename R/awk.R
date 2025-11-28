@@ -1,5 +1,3 @@
-#' @import data.table
-
 setup_column_array <- function(
   bash_index,
   array_name,

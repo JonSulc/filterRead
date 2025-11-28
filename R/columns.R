@@ -1,5 +1,3 @@
-#' @import data.table
-
 # Dictionary to standardize the column names across various sources
 summary_stats_column_names <- list(
   variant_id = c("variant_id"),

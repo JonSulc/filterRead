@@ -6,6 +6,9 @@
 \usage{
 get_dbsnp_path(warn = TRUE)
 }
+\arguments{
+\item{warn}{Logical, whether to throw a warning if the path does not exist}
+}
 \description{
 Get dbSNP reference file path
 }

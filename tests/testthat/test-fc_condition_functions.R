@@ -103,16 +103,16 @@ test_that("%in% parsing works", {
         "  OFS = \",\"\n",
         "\\}\n",
         "\\{\n",
-        "  if \\(FILENAME == \\\"/tmp/Rtmp([^/]+)/file([a-f0-9]+)\\\"\\) \\{\n",
-        "    var\\2\\[\\$0\\] = 1\n",
+        "  if \\(FILENAME == \\\"[^\\\"]+/file([a-f0-9]+)\\\"\\) \\{\n",
+        "    var\\1\\[\\$0\\] = 1\n",
         "    next\n",
         "  \\}\n",
         "  else \\{\n",
-        "    if \\(\\(\\$1 in var\\2\\)\\) \\{\n",
+        "    if \\(\\(\\$1 in var\\1\\)\\) \\{\n",
         "      print \\$0\n",
         "    \\}\n",
         "  \\}\n",
-        "\\}' /tmp/Rtmp\\1/file\\2 data\\.csv"
+        "\\}' [^[:space:]]+/file\\1 data\\.csv"
       ),
       new_filter_condition(
         rlang::expr(char %in% letters[1:5]),

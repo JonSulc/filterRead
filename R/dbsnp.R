@@ -1,5 +1,3 @@
-#' @importFrom purrr walk
-
 # dbSNP metadata structure
 .dbsnp_registry <- list(
   base_url = "https://ftp.ncbi.nih.gov/snp/organisms",
@@ -267,7 +265,6 @@ download_with_retry <- function(
 }
 
 #' Download dbSNP reference files to the path defined by get_dbsnp_path()
-#' @param download Logical, download files if missing
 #' @param build Character vector of builds to download
 #'   (default: c("b37", "b38"))
 #' @param type Type of SNP reference set (common = .01 <= MAF)

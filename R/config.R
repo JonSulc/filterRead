@@ -86,6 +86,7 @@ set_dbsnp_path <- function(
 }
 
 #' Get dbSNP reference file path
+#' @param warn Logical, whether to throw a warning if the path does not exist
 #' @export
 get_dbsnp_path <- function(warn = TRUE) {
   config <- .filterread_env$config

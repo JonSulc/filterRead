@@ -22,8 +22,6 @@ setup_dbsnp(
 (default: 3)}
 
 \item{timeout}{Timeout in seconds for each download (default: 3600)}
-
-\item{download}{Logical, download files if missing}
 }
 \description{
 Download dbSNP reference files to the path defined by get_dbsnp_path()

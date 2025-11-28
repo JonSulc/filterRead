@@ -1,5 +1,3 @@
-#' @import data.table
-
 get_build_from_file_interface <- function(
   finterface,
   nsnps = 1e4
@@ -8,11 +6,12 @@ get_build_from_file_interface <- function(
     return(finterface$build)
   }
   if (needs_rsid_matching(finterface)) {
-    stop(
+    warning(
       "Build inferrence for files that require RSID matching",
       "is not yet implemented. Please specify a build using, e.g.,",
       " 'build = \"b38\"'."
     )
+    return(NA_character_)
   }
   infer_build_from_file(finterface, nsnps = nsnps)
 }
@@ -46,6 +45,9 @@ infer_build <- function(
   summary_stats,
   return_build_match = FALSE
 ) {
+  if (!build_can_be_inferred(summary_stats)) {
+    return(NA_character_)
+  }
   results <- data.table::data.table(
     build = c("b37", "b38"),
     ref_filename = file.path(
@@ -99,6 +101,11 @@ infer_build <- function(
     build
   ]
 }
+build_can_be_inferred <- function(summary_stats) {
+  all(
+    c("chr", "pos", "ref", "alt") %in% colnames(summary_stats)
+  )
+}
 get_tabix_matches <- function(
   summary_stats,
   ref_filename
@@ -118,8 +125,16 @@ get_tabix_matches <- function(
     colClasses = list(
       character = c(1, 4, 5),
       numeric = 2
-    )
-  )[
+    ),
+    sep = "\t"
+  ) |>
+    suppressWarnings()
+
+  if (nrow(hits) == 0) {
+    return(0)
+  }
+
+  hits[
     ,
     chr := paste0("chr", chr)
   ][]
@@ -132,6 +147,11 @@ get_tabix_matches <- function(
     use.names = TRUE,
     fill = TRUE
   )
+
+  if (nrow(filtered_hits) == 0) {
+    return(0)
+  }
+
   filtered_hits[
     mapply(
       function(ialt, iref, a) {

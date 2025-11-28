@@ -1,5 +1,3 @@
-#' @import data.table
-
 lt_filter_condition <- function(
     var1,
     var2) {

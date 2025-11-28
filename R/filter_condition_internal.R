@@ -1,6 +1,3 @@
-#' @import data.table
-#' @importFrom stringr str_detect
-
 lp_to_fc <- function(
     fcall,
     ...) {

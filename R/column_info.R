@@ -1,5 +1,3 @@
-#' @import data.table
-
 get_column_info <- function(
   finterface,
   standard_names_dt = summary_stats_standard_names_dt,

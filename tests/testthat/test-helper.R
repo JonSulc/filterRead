@@ -118,7 +118,8 @@ test_that("Creating RSID-coded summary stats works", {
     any(duplicated(summary_stats$rsid))
   )
 
-  finterface <- local_rsid_summary_stats_interface()
+  finterface <- local_rsid_summary_stats_interface() |>
+    suppressWarnings()
   expect_equal(
     column_names(finterface),
     c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")

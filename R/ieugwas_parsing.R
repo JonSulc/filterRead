@@ -1,5 +1,3 @@
-#' @import data.table
-
 # IEUGWAS summary statistics files have the following columns:
 # "CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"
 # Followed by a single column with the ID of the GWAS

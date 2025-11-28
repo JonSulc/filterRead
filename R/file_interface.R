@@ -1,5 +1,3 @@
-#' @import data.table
-
 #' @export
 new_file_interface <- function(
   filename,
@@ -136,15 +134,15 @@ validate_file_interface <- function(
 
 #' @export
 head.file_interface <- function(
-  finterface,
+  x,
   nlines = 1,
   ...
 ) {
-  if (!"column_info" %in% names(finterface)) {
+  if (!"column_info" %in% names(x)) {
     return(
       data.table::fread(
         cmd = compile_awk_cmds(
-          finterface,
+          x,
           nlines = nlines + 1
         ),
         ...
@@ -152,12 +150,12 @@ head.file_interface <- function(
     )
   }
   data.table::fread(
-    cmd = compile_awk_cmds(finterface, nlines = nlines + 1),
+    cmd = compile_awk_cmds(x, nlines = nlines + 1),
     col.names = {
-      if (needs_rsid_matching(finterface)) {
-        column_names(finterface, original = TRUE)
+      if (needs_rsid_matching(x)) {
+        column_names(x, original = TRUE)
       } else {
-        column_names(finterface)
+        column_names(x)
       }
     },
     ...
@@ -200,21 +198,22 @@ head.file_interface <- function(
 
 #' @export
 print.file_interface <- function(
-  finterface
+  x,
+  ...
 ) {
-  cat(sprintf("\"%s\"\n", finterface$filename))
+  cat(sprintf("\"%s\"\n", x$filename))
   cat(sprintf(
     "Columns: %s\n",
-    paste(finterface$column_info$name, collapse = ", ")
+    paste(x$column_info$name, collapse = ", ")
   ))
   cat(sprintf(
     "Prefixes: %s\n",
-    ifelse(length(finterface$column_info$prefixes) == 0,
+    ifelse(length(x$column_info$prefixes) == 0,
       "none",
       sapply(
-        names(finterface$column_info$prefixes),
+        names(x$column_info$prefixes),
         \(col_name) {
-          sprintf("%s - \"%s\"", col_name, finterface$column_info$prefixes[[col_name]])
+          sprintf("%s - \"%s\"", col_name, x$column_info$prefixes[[col_name]])
         }
       ) |>
         paste(collapse = ", ")
@@ -223,11 +222,11 @@ print.file_interface <- function(
   cat(
     sprintf(
       "Gzipped: %s, Quoted: %s",
-      finterface$gzipped,
-      ifelse(any(unlist(finterface$column_info$quoted_values)),
+      x$gzipped,
+      ifelse(any(unlist(x$column_info$quoted_values)),
         paste(
-          names(finterface$column_info$quoted_values)[
-            unlist(finterface$column_info$quoted_values)
+          names(x$column_info$quoted_values)[
+            unlist(x$column_info$quoted_values)
           ],
           collapse = ", "
         ),

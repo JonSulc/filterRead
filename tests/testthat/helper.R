@@ -356,10 +356,10 @@ test_in_fc <- function(
     file_contents
   )
   filepath <- awk_condition_list$additional_files
-  random_code <- gsub(
-    "^/tmp/Rtmp[^/]+/file",
+  random_code <- sub(
+    "^file",
     "",
-    awk_condition_list$additional_files
+    basename(awk_condition_list$additional_files)
   )
   expect_equal(
     awk_condition_list$condition,

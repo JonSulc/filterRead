@@ -7,12 +7,14 @@ test_that("RSID parsing required is correctly detected", {
   )
   expect_false(needs_rsid_matching(finterface_rn))
 
-  finterface_rsid <- local_rsid_summary_stats_interface("data_rsid.csv")
+  finterface_rsid <- local_rsid_summary_stats_interface("data_rsid.csv") |>
+    suppressWarnings()
   expect_true(needs_rsid_matching(finterface_rsid))
   finterface_rsid_rn <- local_rsid_summary_stats_interface(
     "data_rsid_rn.csv",
     random_names = TRUE
-  )
+  ) |>
+    suppressWarnings()
   expect_true(needs_rsid_matching(finterface_rsid_rn))
 
   finterface_enc <- local_summary_stats_interface(
@@ -54,7 +56,8 @@ test_that("tabix process substitution works", {
 })
 
 test_that("File reading works", {
-  finterface <- local_rsid_summary_stats_interface()
+  finterface <- local_rsid_summary_stats_interface() |>
+    suppressWarnings()
   expect_true(needs_rsid_matching(finterface))
   expect_no_error(head(finterface))
   expect_true(all(finterface[pval < .05]$pval < .05))
@@ -91,7 +94,8 @@ test_that("File reading works", {
 })
 
 test_that("Genomic blocks are correctly identified", {
-  finterface <- local_rsid_summary_stats_interface()
+  finterface <- local_rsid_summary_stats_interface() |>
+    suppressWarnings()
   expect_true(
     new_filter_condition(
       rlang::expr(pval < .05),
@@ -199,7 +203,8 @@ test_that("Genomic blocks are correctly identified", {
 })
 
 test_that("Multiple genomic range-other condition combinations can be handled", {
-  finterface <- local_rsid_summary_stats_interface()
+  finterface <- local_rsid_summary_stats_interface() |>
+    suppressWarnings()
   expect_equal(
     new_filter_condition(
       rlang::expr(
@@ -236,7 +241,8 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
 })
 
 test_that("Genomic ranges are correctly identified", {
-  finterface <- local_rsid_summary_stats_interface()
+  finterface <- local_rsid_summary_stats_interface() |>
+    suppressWarnings()
   expect_equal(
     new_filter_condition(rlang::expr(chr == 1 & pos < 123), finterface) |>
       attr("genomic_range"),
@@ -245,7 +251,8 @@ test_that("Genomic ranges are correctly identified", {
 })
 
 test_that("Genomic ranges are correctly structured", {
-  finterface <- local_rsid_summary_stats_interface()
+  finterface <- local_rsid_summary_stats_interface() |>
+    suppressWarnings()
   expect_equal(
     new_filter_condition(rlang::expr(pos < 123), finterface) |>
       attr("genomic_range"),

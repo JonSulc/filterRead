@@ -11,13 +11,17 @@ Description: Creates an easy-to-use interface for loading tab/comma-separated
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
+Depends:
+    R (>= 4.1.0)
 Imports:
+    curl,
     data.table (>= 1.16.0),
     purrr,
     rlang,
     stringr
 Suggests:
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
 Collate:
@@ -28,6 +32,7 @@ Collate:
     'dbsnp.R'
     'fc_condition_functions.R'
     'file_interface.R'
+    'filterRead-package.R'
     'filter_condition_internal.R'
     'filter_condition.R'
     'ieugwas_parsing.R'
