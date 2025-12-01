@@ -85,7 +85,7 @@ pipeline {
           Rscript -e "
             .libPaths(c(Sys.getenv('R_LIBS_USER'), .libPaths()))
             library(testthat)
-            options(testthat.output_file = 'test-results.xml)
+            options(testthat.output_file = 'test-results.xml')
             devtools::test(reporter = JunitReporter)
           "
         '''
