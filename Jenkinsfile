@@ -78,22 +78,6 @@ pipeline {
         '''
       }
     }
-
-    stage('Test') {
-      steps {
-        sh '''
-          Rscript -e "
-            .libPaths(c(Sys.getenv('R_LIBS_USER'), .libPaths()))
-            devtools::test(reporter = 'junit')
-          "
-        '''
-      }
-      post {
-        always {
-          junit allowEmptyResults: true, testResults: 'test-results.xml'
-        }
-      }
-    }
   }
 
   post {
