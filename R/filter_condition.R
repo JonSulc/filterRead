@@ -324,6 +324,9 @@ has_chromosome_condition <- function(
     }
     return(any(sapply(fcondition[-1], has_chromosome_condition) |> unlist()))
   }
+  if (length(fcondition) == 0) {
+    return(FALSE)
+  }
   fcondition == as.symbol("chr")
 }
 

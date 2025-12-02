@@ -191,6 +191,14 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_chromosome_condition(
       new_filter_condition(
+        rlang::expr(NULL),
+        finterface
+      )
+    )
+  )
+  expect_false(
+    has_chromosome_condition(
+      new_filter_condition(
         rlang::expr(ref == "A"),
         finterface
       )

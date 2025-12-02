@@ -1,3 +1,34 @@
+#' Create a new file interface object
+#'
+#' Creates a file interface for efficient reading and filtering of
+#' tab/comma-separated files. The interface detects file format,
+#' separators, column names, and encoding automatically.
+#'
+#' @param filename Character string. Path to the file to read. File
+#'   must exist and can be gzipped.
+#' @param extra_column_names_dt Data.table with additional column name
+#'   mappings to recognize. Should have columns matching the structure
+#'   of standard_names_dt. Default is NULL.
+#' @param standard_names_dt Data.table with standard column name
+#'   mappings. Default is summary_stats_standard_names_dt.
+#' @param ieugwas_parsing Logical. Whether to detect and parse
+#'   IEUGWAS-formatted files with special column encodings.
+#'   Default is TRUE.
+#' @param build Character string specifying genome build (e.g., "b37",
+#'   "b38") for genomic data. If NULL (default), attempts to detect
+#'   from file.
+#'
+#' @return A file_interface object (list with class "file_interface")
+#'   containing file metadata including filename, separator, column
+#'   information, and compression status.
+#'
+#' @examples
+#' \dontrun{
+#' finterface <- new_file_interface("data.txt.gz")
+#' head(finterface)
+#' finterface[chr == 1 & pval < 5e-8]
+#' }
+#'
 #' @export
 new_file_interface <- function(
   filename,
@@ -52,8 +83,19 @@ new_file_interface <- function(
   finterface
 }
 
+#' Check if object is a file interface
+#'
+#' Tests whether an object inherits from the "file_interface" class.
+#'
+#' @param finterface Object to test.
+#'
+#' @return Logical. TRUE if object is a file_interface, FALSE
+#'   otherwise.
+#'
 #' @export
-is_file_interface <- function(finterface) inherits(finterface, "file_interface")
+is_file_interface <- function(finterface) {
+  inherits(finterface, "file_interface")
+}
 
 is_gzipped <- function(
   filename
@@ -132,6 +174,24 @@ validate_file_interface <- function(
   stopifnot(file.exists(finterface))
 }
 
+#' Return first rows of a file interface
+#'
+#' S3 method for head() that reads the first n rows from a file (in addition to
+#' the header) using the file interface. Column names are converted to standard
+#' column names and transformed if necessary.
+#'
+#' @param x A file_interface object.
+#' @param nlines Integer. Number of rows to read. Default is 1.
+#' @param ... Additional arguments passed to data.table::fread().
+#'
+#' @return A data.table containing the first nrows of the file.
+#'
+#' @examples
+#' \dontrun{
+#' finterface <- new_file_interface("data.txt.gz")
+#' head(finterface, nlines = 10)
+#' }
+#'
 #' @export
 head.file_interface <- function(
   x,
@@ -162,6 +222,41 @@ head.file_interface <- function(
   )
 }
 
+#' Subset a file interface with filtering conditions
+#'
+#' S3 method for `[` that reads and filters data from a file using
+#' R-style conditions. Conditions are translated to awk commands for
+#' efficient filtering. Supports logical expressions with standardized column
+#' names and operators, including parentheses.
+#'
+#' @param finterface A file_interface object.
+#' @param conditions R expression specifying filter conditions. Can
+#'   use column names, comparison operators (&lt;, &gt;, ==, !=, etc.),
+#'   and logical operators (&, |). Examples: \code{pval < 5e-8},
+#'   \code{chr == 1 & pos > 1000000}. If NULL, returns all rows.
+#' @param ... Additional arguments passed to data.table::fread().
+#' @param return_only_cmd Logical. If TRUE, returns the awk command
+#'   string instead of executing it. Useful for debugging or piping
+#'   to other commands. Default is FALSE.
+#'
+#' @return If return_only_cmd is FALSE (default), returns a data.table
+#'   with filtered rows. If return_only_cmd is TRUE, returns a
+#'   character string containing the awk command.
+#'
+#' @examples
+#' \dontrun{
+#' finterface <- new_file_interface("gwas_data.txt.gz")
+#'
+#' # Filter by p-value
+#' results <- finterface[pval < 5e-8]
+#'
+#' # Multiple conditions
+#' results <- finterface[chr == 1 & pval < 0.001]
+#'
+#' # Get command without executing
+#' cmd <- finterface[chr == 1, return_only_cmd = TRUE]
+#' }
+#'
 #' @export
 `[.file_interface` <- function(
   finterface,
@@ -196,6 +291,17 @@ head.file_interface <- function(
   )
 }
 
+#' Print a file interface object
+#'
+#' S3 method for print() that displays a summary of the file
+#' interface including filename, columns, prefixes, compression,
+#' and quoting information.
+#'
+#' @param x A file_interface object.
+#' @param ... Additional arguments (unused).
+#'
+#' @return Invisibly returns x. Called for side effect of printing.
+#'
 #' @export
 print.file_interface <- function(
   x,
@@ -203,8 +309,8 @@ print.file_interface <- function(
 ) {
   cat(sprintf("\"%s\"\n", x$filename))
   cat(sprintf(
-    "Columns: %s\n",
-    paste(x$column_info$name, collapse = ", ")
+    "Standardized columns: %s\n",
+    paste(na.omit(x$column_info$standard_name), collapse = ", ")
   ))
   cat(sprintf(
     "Prefixes: %s\n",
@@ -221,7 +327,7 @@ print.file_interface <- function(
   ))
   cat(
     sprintf(
-      "Gzipped: %s, Quoted: %s",
+      "Gzipped: %s, Quoted: %s\n",
       x$gzipped,
       ifelse(any(unlist(x$column_info$quoted_values)),
         paste(
@@ -232,7 +338,37 @@ print.file_interface <- function(
         ),
         FALSE
       )
-    ),
+    )
+  )
+  cat(
+    "Requires RSID matching:",
+    x$needs_rsid_matching,
     "\n"
+  )
+  cat(
+    "Genome build:",
+    x$build,
+    "\n"
+  )
+  cat(
+    sprintf(
+      "Commented line prefix: %s, header prefix: %s\n",
+      ifelse(
+        is.null(x$comment_prefix),
+        "none",
+        sprintf("'%s'", x$comment_prefix)
+      ),
+      ifelse(
+        is.null(x$trim_prefix),
+        "none",
+        sprintf("'%s'", x$trim_prefix)
+      )
+    )
+  )
+  cat(
+    sprintf(
+      "Value separator: '%s'\n",
+      x$sep
+    )
   )
 }
