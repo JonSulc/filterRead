@@ -53,13 +53,28 @@ pipeline {
     stage('Commit Documentation') {
       steps {
         script {
-          def changes = sh(script: 'git status --porcelain man/ NAMESPACE DESCRIPTION', returnStdout:true).trim()
+          def changes = sh(
+            script: '''git status --porcelain man/ \
+NAMESPACE DESCRIPTION''',
+            returnStdout: true
+          ).trim()
           if (changes) {
-            sh '''
-              git add man/ NAMESPACE DESCRIPTION
-              git commit -m "docs: update documentation [ci skip]"
-              git push origin HEAD:${GIT_BRANCH}
-            '''
+            withCredentials([
+              usernamePassword(
+                credentialsId: 'github---pat',
+                usernameVariable: 'GIT_USERNAME',
+                passwordVariable: 'GIT_PASSWORD'
+              )
+            ]) {
+              sh '''
+                git add man/ NAMESPACE DESCRIPTION
+                git commit -m \
+"docs: update documentation [ci skip]"
+                # Use PAT for authenticated push
+                git push https://${GIT_USERNAME}:${GIT_PASSWORD}\
+@github.com/${GIT_URL#*github.com/} HEAD:${GIT_BRANCH}
+              '''
+            }
             echo 'Documentation updated and pushed.'
           } else {
             echo 'No documentation changes to commit.'
