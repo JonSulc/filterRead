@@ -70,9 +70,11 @@ NAMESPACE DESCRIPTION''',
                 git add man/ NAMESPACE DESCRIPTION
                 git commit -m \
 "docs: update documentation [ci skip]"
+                # Strip origin/ prefix from branch name if present
+                BRANCH=${GIT_BRANCH#origin/}
                 # Use PAT for authenticated push
                 git push https://${GIT_USERNAME}:${GIT_PASSWORD}\
-@github.com/${GIT_URL#*github.com/} HEAD:${GIT_BRANCH}
+@github.com/${GIT_URL#*github.com/} HEAD:${BRANCH}
               '''
             }
             echo 'Documentation updated and pushed.'
