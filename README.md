@@ -89,13 +89,13 @@ genomic_regions <- finterface[
 
 ## System Requirements
 
-- R (>= 4.0.0)
+- R (>= 4.1.0)
 - `awk` (available on most Unix-like systems)
 - `tabix` (for RSID matching functionality)
-- A SNP reference file for RSID indexing
 
 ### R Package Dependencies
 
+- curl
 - data.table (>= 1.16.0)
 - purrr
 - rlang

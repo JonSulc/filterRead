@@ -21,7 +21,7 @@ infer_build_from_file <- function(
   nsnps = 1e4,
   ...
 ) {
-  cat("Inferring build from file ", finterface$filename, "...\n")
+  cat("Inferring build from file", finterface$filename, "...\n")
   head(finterface, nsnps) |>
     infer_build(...)
 }
