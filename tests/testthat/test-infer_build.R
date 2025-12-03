@@ -262,3 +262,39 @@ test_that("get_tabix_matches counts matches correctly", {
   expect_true(result >= 0)
   expect_true(result <= nrow(dt))
 })
+
+test_that("infer_build correctly matches all reference variants", {
+  skip_if_not(
+    dir.exists(get_dbsnp_path(warn = FALSE)),
+    "dbSNP path not configured"
+  )
+
+  ref_filenames <- file.path(
+    get_dbsnp_path(warn = FALSE),
+    get_dbsnp_filename(c("b37", "b38"), "common")
+  ) |>
+    setNames(c("b37", "b38"))
+  ref_filenames <- ref_filenames[
+    file.exists(ref_filenames)
+  ]
+
+  skip_if_not(length(ref_filenames) != 0, "dbSNP reference file not found")
+
+  for (build in names(ref_filenames)) {
+    summary_stats <- new_file_interface(
+      ref_filenames[build],
+      build = NA_character_
+    ) |>
+      head(1000)
+    expect_message(
+      inferred_build <- infer_build(
+        summary_stats
+      ),
+      sprintf("Build inferred to be %s with a 100.0%% match rate", build)
+    )
+    expect_equal(
+      inferred_build,
+      build
+    )
+  }
+})

@@ -21,7 +21,7 @@ infer_build_from_file <- function(
   nsnps = 1e4,
   ...
 ) {
-  cat("Inferring build from file", finterface$filename, "...\n")
+  cat("Inferring build from file ", finterface$filename, "...\n", sep = "")
   head(finterface, nsnps) |>
     infer_build(...)
 }
@@ -33,7 +33,7 @@ get_tabix_query <- function(
   sprintf(
     "tabix %s %s",
     ref_filename,
-    summary_stats[
+    unique(summary_stats[, .(chr, pos)])[
       ,
       sprintf("%s:%s-%s", substring(chr, 4), pos, pos) |>
         paste(collapse = " ")
@@ -48,6 +48,12 @@ infer_build <- function(
   if (!build_can_be_inferred(summary_stats)) {
     return(NA_character_)
   }
+
+  # Duplicate SNPs pose problems when determining the percentage of matches
+  summary_stats <- summary_stats[
+    !duplicated(summary_stats[, .(chr, pos, ref, alt)])
+  ]
+
   results <- data.table::data.table(
     build = c("b37", "b38"),
     ref_filename = file.path(
@@ -69,7 +75,7 @@ infer_build <- function(
   )[
     ,
     # Simplified estimate that doesn't account for b37/b38 overlap
-    build_match := n / nrow(summary_stats)
+    build_match := n / nrow(unique(summary_stats[, .(chr, pos, ref, alt)]))
   ][]
 
   results[
@@ -128,7 +134,10 @@ get_tabix_matches <- function(
     ),
     sep = "\t"
   ) |>
-    suppressWarnings()
+    suppressWarnings() |>
+    # tabix sometimes has multiple positions for SNPs so may return the same one
+    # multiple times
+    unique()
 
   if (nrow(hits) == 0) {
     return(0)
@@ -156,7 +165,9 @@ get_tabix_matches <- function(
     mapply(
       function(ialt, iref, a) {
         query_allele <- if (is.na(ialt)) iref else ialt
-        query_allele %in% strsplit(a, ",", fixed = TRUE)[[1]]
+        query_allele %in% strsplit(a, ",", fixed = TRUE)[[1]] |
+          query_allele == a |
+          a %in% strsplit(query_allele, ",", fixed = TRUE)[[1]]
       },
       i.alt, i.ref, alt
     ),
