@@ -225,8 +225,8 @@ test_that("Full command line with gz detection works", {
     paste0(
       "zcat ~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz | ",
       "awk 'BEGIN{\n",
-      "  FS = \"\\t\"\n",
-      "  OFS = \"\\t\"\n",
+      "  FS = \"\t\"\n",
+      "  OFS = \"\t\"\n",
       "}\n",
       "{\n",
       "  if ($2 == 10) {\n",
@@ -279,4 +279,19 @@ test_that("Prefixes are handled correctly", {
       finterface[chr == "chr1"]
     )
   }
+})
+
+test_that("sep is correctly detected in complicated files", {
+  finterface <- list(
+    filename = "/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz",
+    gzipped = TRUE,
+    comment_prefix = "^##",
+    trim_prefix = "^#"
+  ) |>
+    structure(class = c("file_interface", "list"))
+  
+  expect_equal(
+    get_file_separator(finterface),
+    "\t"
+  )
 })

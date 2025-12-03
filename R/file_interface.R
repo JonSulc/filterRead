@@ -106,10 +106,29 @@ is_gzipped <- function(
 get_file_separator <- function(
   finterface
 ) {
-  dt_output <- head(finterface, nlines = 1L, verbose = TRUE) |>
-    capture.output() |>
-    stringr::str_match("sep='([^']+)'")
-  dt_output[!is.na(dt_output[, 1L]), 2L][1L]
+  dt_output <- head(finterface, nlines = 100L, verbose = TRUE) |>
+    capture.output()
+
+  seps <- stringr::str_match(dt_output, "sep=([^ ]+)[ ]+with ([0-9]+) lines")
+  seps <- seps[!is.na(seps[, 1L]), -1L, drop = FALSE]
+  best_sep <- seps[
+    which.max(as.numeric(seps[, 2L])),
+    1L
+  ]
+  # '\t' is reported in hex ('0x9')
+  if (grepl("^0x", best_sep)) {
+    return(
+      as.raw(best_sep) |>
+        rawToChar()
+    )
+  }
+  if (!grepl("^'.+'$", best_sep)) {
+    stop(
+      "Unsupported field separator: ", best_sep, ". ",
+      "If you think this is an error, please report this."
+    )
+  }
+  substr(best_sep, 2, nchar(best_sep) - 1)
 }
 
 detect_prefix_from_first_line <- function(finterface, skip_prefix = NULL) {
