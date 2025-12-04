@@ -201,6 +201,9 @@ validate_file_interface <- function(
 #'
 #' @param x A file_interface object.
 #' @param nlines Integer. Number of rows to read. Default is 1.
+#' @param return_only_cmd Logical. If TRUE, returns the awk command
+#'   string instead of executing it. Useful for debugging or piping
+#'   to other commands. Default is FALSE.
 #' @param ... Additional arguments passed to data.table::fread().
 #'
 #' @return A data.table containing the first nrows of the file.
@@ -215,21 +218,25 @@ validate_file_interface <- function(
 head.file_interface <- function(
   x,
   nlines = 1,
+  return_only_cmd = FALSE,
   ...
 ) {
+  cmd <- compile_awk_cmds(x, nlines = nlines + 1)
+
+  if (return_only_cmd) {
+    return(cmd)
+  }
+
   if (!"column_info" %in% names(x)) {
     return(
       data.table::fread(
-        cmd = compile_awk_cmds(
-          x,
-          nlines = nlines + 1
-        ),
+        cmd = cmd,
         ...
       )
     )
   }
   data.table::fread(
-    cmd = compile_awk_cmds(x, nlines = nlines + 1),
+    cmd = cmd,
     col.names = {
       if (needs_rsid_matching(x)) {
         column_names(x, original = TRUE)

@@ -4,12 +4,16 @@
 \alias{head.file_interface}
 \title{Return first rows of a file interface}
 \usage{
-\method{head}{file_interface}(x, nlines = 1, ...)
+\method{head}{file_interface}(x, nlines = 1, return_only_cmd = FALSE, ...)
 }
 \arguments{
 \item{x}{A file_interface object.}
 
 \item{nlines}{Integer. Number of rows to read. Default is 1.}
+
+\item{return_only_cmd}{Logical. If TRUE, returns the awk command
+string instead of executing it. Useful for debugging or piping
+to other commands. Default is FALSE.}
 
 \item{...}{Additional arguments passed to data.table::fread().}
 }
