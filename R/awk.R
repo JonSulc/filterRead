@@ -213,8 +213,7 @@ compile_awk_cmds <- function(
 
   # Determine if we need command-line FS
   # (multiple files with different separators)
-  has_process_substitution <- !is.null(fcondition_awk_dt$process_substitution)
-  use_command_line_fs <- has_process_substitution
+  use_command_line_fs <- !is.null(fcondition_awk_dt$process_substitution)
 
   begin_code_block <- build_awk_begin_block(
     finterface$sep,
@@ -534,7 +533,6 @@ build_pipeline_cmd <- function(file_cmd, awk_script) {
   paste(file_cmd, "|", awk_script)
 }
 
-
 # Level 3: High-Level Interfaces
 awk_load_file_cmd <- function(
   finterface,
@@ -545,32 +543,21 @@ awk_load_file_cmd <- function(
     !is.null(finterface$trim_prefix)
   needs_processing <- has_prefixes || !is.null(nlines)
 
-  # For only_read cases with processing needed, build complete pipeline
-  if (only_read && needs_processing) {
-    file_cmd <- build_file_read_cmd(finterface)
-    awk_script <- build_read_only_awk_script(finterface, nlines)
-    return(build_pipeline_cmd(file_cmd, awk_script))
-  }
-
-  # For processing cases with needs, return just "awk" (script built elsewhere)
-  if (!only_read && needs_processing) {
-    if (finterface$gzipped) {
-      return(build_file_read_cmd(finterface) |>
-        paste("| awk"))
-    } else {
-      return("awk")
-    }
-  }
-
-  # Simple cases: no prefixes, no nlines
   if (only_read) {
+    # For only_read cases with processing needed, build complete pipeline
+    if (needs_processing) {
+      file_cmd <- build_file_read_cmd(finterface)
+      awk_script <- build_read_only_awk_script(finterface, nlines)
+      # return()
+      return(build_pipeline_cmd(file_cmd, awk_script))
+    }
     return(build_file_read_cmd(finterface))
-  } else {
-    return(
-      build_file_read_cmd(finterface) |>
-        paste("| awk")
-    )
   }
+  if (needs_processing && !finterface$gzipped) {
+    return("awk")
+  }
+  build_file_read_cmd(finterface) |>
+    paste("| awk")
 }
 
 get_awk_column_arrays <- function(
