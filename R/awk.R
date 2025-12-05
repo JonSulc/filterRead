@@ -189,13 +189,14 @@ compile_awk_cmds <- function(
       is.null(fcondition_awk_dt$awk_code_block)
   }
 
-  load_file <- awk_load_file_cmd(
-    finterface,
-    nlines = nlines,
-    only_read = only_read
-  )
   if (only_read) {
-    return(load_file)
+    return(
+      awk_load_file_cmd(
+        finterface,
+        nlines = nlines,
+        only_read = only_read
+      )
+    )
   }
 
   main_file_code <- wrap_main_file_code(
@@ -250,7 +251,7 @@ compile_awk_cmds <- function(
   }
 
 
-  awk_final_filename <- c(
+  awk_final_filenames <- c(
     {
       if (is.null(fcondition_awk_dt$process_substitution)) {
         NULL
@@ -264,27 +265,14 @@ compile_awk_cmds <- function(
     fcondition_awk_dt$additional_files,
     {
       if (use_command_line_fs) {
-        paste(
-          sprintf("FS=\"%s\"", finterface$sep),
-          ifelse(finterface$gzipped | !is.null(nlines),
-            "",
-            finterface$filename
-          )
-        )
-      } else {
-        # Only omit filename if using pipeline (gzipped or has prefixes)
-        has_prefixes <- !is.null(finterface$comment_prefix) ||
-          !is.null(finterface$trim_prefix)
-        ifelse(finterface$gzipped || has_prefixes,
-          "",
-          finterface$filename
-        )
+        sprintf("FS=\"%s\"", finterface$sep)
       }
-    }
+    },
+    wrap_filename(finterface)
   ) |>
     paste(collapse = " ")
 
-  paste(load_file, awk_code, awk_final_filename)
+  paste("awk", awk_code, awk_final_filenames)
 }
 
 as_block <- function(
@@ -526,11 +514,22 @@ build_read_only_awk_script <- function(finterface, nlines = NULL) {
   }
 
   # Combine all parts into final awk script
-  sprintf("awk '%s'", paste(parts, collapse = "\n"))
+  sprintf(
+    "awk '%s' %s",
+    paste(parts, collapse = "\n"),
+    wrap_filename(finterface)
+  )
 }
 
 build_pipeline_cmd <- function(file_cmd, awk_script) {
   paste(file_cmd, "|", awk_script)
+}
+
+wrap_filename <- function(finterface) {
+  if (!finterface$gzipped) {
+    return(finterface$filename)
+  }
+  sprintf("<(zcat %s)", finterface$filename)
 }
 
 # Level 3: High-Level Interfaces
@@ -546,18 +545,11 @@ awk_load_file_cmd <- function(
   if (only_read) {
     # For only_read cases with processing needed, build complete pipeline
     if (needs_processing) {
-      file_cmd <- build_file_read_cmd(finterface)
-      awk_script <- build_read_only_awk_script(finterface, nlines)
-      # return()
-      return(build_pipeline_cmd(file_cmd, awk_script))
+      return(build_read_only_awk_script(finterface, nlines))
     }
     return(build_file_read_cmd(finterface))
   }
-  if (needs_processing && !finterface$gzipped) {
-    return("awk")
-  }
-  build_file_read_cmd(finterface) |>
-    paste("| awk")
+  "awk"
 }
 
 get_awk_column_arrays <- function(

@@ -230,13 +230,13 @@ head.file_interface <- function(
   if (!"column_info" %in% names(x)) {
     return(
       data.table::fread(
-        cmd = cmd,
+        cmd = paste("bash -c", shQuote(cmd)),
         ...
       )
     )
   }
   data.table::fread(
-    cmd = cmd,
+    cmd = paste("bash -c", shQuote(cmd)),
     col.names = {
       if (needs_rsid_matching(x)) {
         column_names(x, original = TRUE)

@@ -74,7 +74,7 @@ test_that("File reading works", {
       return_only_cmd = TRUE
     ],
     paste0(
-      "cat data.csv | awk 'BEGIN{
+      "awk 'BEGIN{
   OFS = \",\"
 }
 {
@@ -88,7 +88,8 @@ test_that("File reading works", {
       }
     }
   }
-}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\" data.csv"
+}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\"",
+" data.csv"
     )
   )
 })
@@ -214,7 +215,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
       finterface
     ) |>
       fcondition_to_awk(return_only_cmd = TRUE),
-    "cat data.csv | awk 'BEGIN{
+    "awk 'BEGIN{
   OFS = \",\"
 }
 {

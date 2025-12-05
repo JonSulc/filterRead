@@ -223,7 +223,6 @@ test_that("Full command line with gz detection works", {
       gz_filename
     )[chr == 10, return_only_cmd = TRUE],
     paste0(
-      "zcat ~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz | ",
       "awk 'BEGIN{\n",
       "  FS = \"\t\"\n",
       "  OFS = \"\t\"\n",
@@ -240,7 +239,8 @@ test_that("Full command line with gz detection works", {
       "    $2 = \"chr\"$2\n",
       "    print $0\n",
       "  }\n",
-      "}' "
+      "}' ",
+      "<(zcat ~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz)"
     )
   )
 })

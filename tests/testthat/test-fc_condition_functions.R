@@ -98,7 +98,7 @@ test_that("%in% parsing works", {
   expect_true(
     grepl(
       paste0(
-        "^cat data\\.csv \\| awk 'BEGIN\\{\n",
+        "^awk 'BEGIN\\{\n",
         "  FS = \",\"\n",
         "  OFS = \",\"\n",
         "\\}\n",

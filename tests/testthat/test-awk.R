@@ -10,9 +10,10 @@ test_that("compile_awk_cmds: simple file interface with only_read", {
   )
   result <- compile_awk_cmds(finterface, nlines = 5)
   expected <- paste0(
-    "cat test.txt | awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n",
+    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n",
     "  output_lines = 0\n  max_lines = 5\n}",
-    "\n{\n  if (++output_lines <= max_lines) print $0; else exit\n}'"
+    "\n{\n  if (++output_lines <= max_lines) print $0; else exit\n}'",
+    " test.txt"
   )
   expect_equal(result, expected)
 })
@@ -24,7 +25,7 @@ test_that("awk_load_file_cmd: gzipped file head", {
   )
   result <- awk_load_file_cmd(finterface, nlines = 1, only_read = FALSE)
   expected <- paste0(
-    "zcat test.txt.gz | awk"
+    "awk"
   )
   expect_equal(result, expected)
 })
@@ -39,10 +40,11 @@ test_that("compile_awk_cmds: complex case with nlines and prefixes", {
   )
   result <- compile_awk_cmds(finterface, nlines = 100)
   expected <- paste0(
-    "cat data.csv | awk 'BEGIN{\n  FS = \",\"\n  OFS = \",\"\n",
+    "awk 'BEGIN{\n  FS = \",\"\n  OFS = \",\"\n",
     "  output_lines = 0\n  max_lines = 100\n}",
     "\n/^\\/\\// { next }\n{\n  gsub(/^%/, \"\", $0)",
-    "\n  if (++output_lines <= max_lines) print $0; else exit\n}'"
+    "\n  if (++output_lines <= max_lines) print $0; else exit\n}'",
+    " data.csv"
   )
   expect_equal(result, expected)
 })
