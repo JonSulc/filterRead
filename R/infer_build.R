@@ -72,10 +72,7 @@ infer_build <- function(
 
   results <- data.table::data.table(
     build = c("b37", "b38"),
-    ref_filename = file.path(
-      get_dbsnp_path(),
-      get_dbsnp_filename(c("b37", "b38"))
-    )
+    ref_filename = get_dbsnp_filename(c("b37", "b38"), full_path = TRUE)
   )[
     ,
     n := get_tabix_matches(summary_stats, ref_filename),

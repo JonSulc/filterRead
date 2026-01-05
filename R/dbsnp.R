@@ -59,17 +59,23 @@ get_dbsnp_url <- function(
 #' @keywords internal
 get_dbsnp_filename <- function(
   build = c("b37", "b38"),
-  type = c("common", "all")
+  type = c("common", "all"),
+  full_path = FALSE
 ) {
   build <- match.arg(build, several.ok = TRUE)
   type <- match.arg(type)
   if (1 < length(build)) {
-    return(sapply(build, get_dbsnp_filename, type = type))
+    return(
+      sapply(build, get_dbsnp_filename, type = type, full_path = full_path)
+    )
   }
   build_info <- .dbsnp_registry$builds[[build]]
   file_info <- build_info$files[[type]]
 
-  file_info$local
+  if (!full_path) {
+    return(file_info$local)
+  }
+  file.path(get_dbsnp_path(), file_info$local)
 }
 
 #' Get all dbSNP files to download
