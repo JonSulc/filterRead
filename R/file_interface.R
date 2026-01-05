@@ -35,10 +35,12 @@ new_file_interface <- function(
   extra_column_names_dt = NULL,
   standard_names_dt = summary_stats_standard_names_dt,
   ieugwas_parsing = TRUE,
-  build = NULL
+  build = c("auto", "b36", "b37", "b38", "none")
 ) {
   stopifnot(is.character(filename))
   stopifnot(file.exists(filename))
+  build <- match.arg(build)
+
   standard_names_dt <- list(
     standard_names_dt,
     extra_column_names_dt
@@ -74,10 +76,26 @@ new_file_interface <- function(
 
   finterface$needs_rsid_matching <- needs_rsid_matching(finterface)
 
-  if (!is.null(build)) {
+  if (build %in% c("b36", "b37", "b38")) {
+    if (build == "b36" && needs_rsid_matching(finterface)) {
+      warning("File ", filename, " uses RSID-based indexing")
+    }
     finterface$build <- build
-  } else {
+  } else if (build == "infer" ||
+    (build == "auto" && !needs_rsid_matching(finterface))) {
+    # Only infer the build if file doesn't require RSID-matching or specified
+    # (build inferrence on RSID-indexed files is slow)
     finterface$build <- get_build_from_file_interface(finterface)
+  } else {
+    if (needs_rsid_matching(finterface) && build == "auto") {
+      # Skip build inferrence with message
+      message(
+        "File has RSID-based indexing, no inherent build.",
+        " To enable position-based sorting, specifying a build using the",
+        " `build` parameter or set one using set_build()."
+      )
+    }
+    finterface$build <- NA_character_
   }
 
   finterface

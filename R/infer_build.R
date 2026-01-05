@@ -41,6 +41,22 @@ get_tabix_query <- function(
   )
 }
 
+infer_build_rsid <- function(
+  summary_stats
+) {
+  results <- data.table::data.table(
+    build = c("b37", "b38"),
+    ref_filename = file.path(
+      get_dbsnp_path(),
+      get_dbsnp_filename(c("b37", "b38"))
+    )
+  )[
+    ,
+    n := get_rsid_matches(summary_stats, ref_filename, build = build),
+    by = build
+  ]
+}
+
 infer_build <- function(
   summary_stats,
   return_build_match = FALSE
@@ -127,9 +143,9 @@ get_tabix_matches <- function(
   hits <- data.table::fread(
     cmd = paste("bash", temp_file),
     col.names = c("chr", "pos", "ref", "alt"),
-    select = c(1, 2, 4, 5),
+    select = 1:5,
     colClasses = list(
-      character = c(1, 4, 5),
+      character = c(1, 3, 4, 5),
       numeric = 2
     ),
     sep = "\t"
@@ -180,4 +196,15 @@ get_tabix_matches <- function(
   ] |>
     unique() |>
     nrow()
+}
+
+get_rsid_matches <- function(
+  summary_stats,
+  ref_filename,
+  build = "auto"
+) {
+  stop("This only makes sense if there is more information than just RSID")
+  test <- new_file_interface(ref_filename, build = build)[
+    rsid %in% summary_stats$rsid
+  ]
 }

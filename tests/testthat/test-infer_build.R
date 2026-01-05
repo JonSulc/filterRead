@@ -283,7 +283,7 @@ test_that("infer_build correctly matches all reference variants", {
   for (build in names(ref_filenames)) {
     summary_stats <- new_file_interface(
       ref_filenames[build],
-      build = NA_character_
+      build = "none"
     ) |>
       head(1000)
     expect_message(
