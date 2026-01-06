@@ -1,5 +1,7 @@
 test_that("Basic filter_condition initialization works", {
-  finterface <- local_file_interface()
+  finterface <- local_file_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_no_error(new_filter_condition(rlang::expr(x < 3),
     finterface = finterface
   ))
@@ -75,7 +77,9 @@ test_that("Basic filter_condition initialization works", {
 })
 
 test_that("Passing variables or complex objects works", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   my_chr <- 3
   expect_equal(
     new_filter_condition(rlang::expr(chr == my_chr),
@@ -96,7 +100,9 @@ test_that("Passing variables or complex objects works", {
 })
 
 test_that("Quoted values are handled correctly", {
-  finterface <- local_file_interface(quote = TRUE)
+  finterface <- local_file_interface(quote = TRUE) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(rlang::expr(char == "a"),
       finterface = finterface
@@ -128,7 +134,9 @@ test_that("Quoted values are handled correctly", {
 })
 
 test_that("Prefixes are handled properly", {
-  finterface <- local_file_interface(prefix = list(char = "test"))
+  finterface <- local_file_interface(prefix = list(char = "test")) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
       rlang::expr(char == 1),
@@ -167,7 +175,9 @@ test_that("Prefixes are handled properly", {
 })
 
 test_that("And-block detection works", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_true(is_and_block(1))
   expect_true(is_and_block("1"))
   expect_true(is_and_block(new_filter_condition(rlang::expr(chr == 1), finterface)))
@@ -186,7 +196,9 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(is_genomic_symbol(rlang::expr(ref)))
   expect_false(is_genomic_symbol(1))
 
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_false(
     has_chromosome_condition(
@@ -360,7 +372,9 @@ test_that("Genomic position conditions are correctly detected", {
 })
 
 test_that("Parenthesis stripping works", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_equal(
     new_filter_condition(
@@ -445,7 +459,9 @@ test_that("Parenthesis stripping works", {
 })
 
 test_that("Getting genomic regions works", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
       rlang::expr(chr == 1 & 123 <= pos & pos <= 234),

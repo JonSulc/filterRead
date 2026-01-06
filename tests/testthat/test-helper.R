@@ -79,7 +79,9 @@ test_that("Column encdoding works", {
       on = c("input_name", "delimiter")
     ],
     random_names = FALSE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   raw_data <- data.table::fread("encoded.csv")
   expect_equal(
     names(raw_data),
@@ -119,7 +121,8 @@ test_that("Creating RSID-coded summary stats works", {
   )
 
   finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings()
+    suppressWarnings() |>
+    suppressMessages()
   expect_equal(
     column_names(finterface),
     c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")

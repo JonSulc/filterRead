@@ -92,10 +92,11 @@ new_file_interface <- function(
       message(
         "File has RSID-based indexing, no inherent build.",
         " To enable position-based sorting, specifying a build using the",
-        " `build` parameter or set one using set_build()."
+        " `build` parameter or set one using set_build().\n",
+        "Using default build b38."
       )
     }
-    finterface$build <- NA_character_
+    finterface$build <- "b38"
   }
 
   finterface

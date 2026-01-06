@@ -1,21 +1,3 @@
-dbsnp_file <- "~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz"
-
-chromosome_names <- paste("tabix -l", dbsnp_file) |>
-  system(intern = TRUE)
-chromosome_names <- chromosome_names[grepl("^NC_", chromosome_names)]
-chromosome_names <- chromosome_names |>
-  setNames(sub(
-    "^NC_[0-9]+[.][0-9]+$", "MT",
-    sub("^NC_0+([1-2]?[0-9])[.][0-9]+$", "\\1", chromosome_names)
-  ))
-
-if ("23" %in% names(chromosome_names)) {
-  names(chromosome_names)[names(chromosome_names) == "23"] <- "X"
-}
-if ("24" %in% names(chromosome_names)) {
-  names(chromosome_names)[names(chromosome_names) == "24"] <- "Y"
-}
-
 tabix_colnames <- c(
   "chr",
   "pos",
@@ -40,7 +22,7 @@ is_single_genomic_range_block <- function(
   if (!has_non_genomic_condition(fcondition)) {
     return(TRUE)
   }
-  if (!has_chromosome_condition(fcondition) &
+  if (!has_chromosome_condition(fcondition) &&
     !has_position_condition(fcondition)) {
     return(TRUE)
   }
@@ -59,16 +41,14 @@ get_tabix_process_substitution <- function(
   chr,
   start,
   end,
-  dbsnp_filename = dbsnp_file,
-  chr_names = chromosome_names
+  dbsnp_filename
 ) {
-  chr_name <- chr_names[toupper(chr)]
   stopifnot(length(start) == length(end))
-  stopifnot(length(chr_name) == 1 | length(chr_name) == length(start))
+  stopifnot(length(chr) == 1 | length(chr) == length(start))
   regions <- sprintf(
     sprintf(
       "%s%s",
-      chr_name,
+      chr,
       ifelse(is.na(start) & is.na(end),
         "",
         sprintf(

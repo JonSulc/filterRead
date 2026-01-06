@@ -2,7 +2,9 @@ gz_filename <- "~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.Nat
 
 test_that("Initialization works", {
   expect_no_error(
-    new_file_interface(gz_filename)
+    new_file_interface(gz_filename) |>
+      suppressMessages() |>
+      withr::with_output_sink(new = "/dev/null")
   )
   expect_error(
     new_file_interface("test")
@@ -10,7 +12,9 @@ test_that("Initialization works", {
   expect_error(
     new_file_interface(123)
   )
-  finterface <- new_file_interface(gz_filename)
+  finterface <- new_file_interface(gz_filename) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     class(finterface),
     c("file_interface", "character")
@@ -19,7 +23,9 @@ test_that("Initialization works", {
 
 test_that("Non-quoted values work properly", {
   local_csv_file(filename = "data.csv")
-  finterface <- new_file_interface("data.csv")
+  finterface <- new_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     finterface$column_info$quoted,
     rep(FALSE, 2)
@@ -29,7 +35,9 @@ test_that("Non-quoted values work properly", {
 
 test_that("Quoted values work", {
   local_csv_file(filename = "data.csv", quote = TRUE)
-  finterface <- new_file_interface("data.csv")
+  finterface <- new_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     finterface$column_info$quoted,
     c(TRUE, FALSE)
@@ -39,7 +47,9 @@ test_that("Quoted values work", {
 
 test_that("Gzipped files are handled", {
   local_csv_file("data.csv.gz")
-  finterface <- new_file_interface("data.csv.gz")
+  finterface <- new_file_interface("data.csv.gz") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     finterface$column_info$quote,
     rep(FALSE, 2)
@@ -49,7 +59,9 @@ test_that("Gzipped files are handled", {
 
 test_that("Head works", {
   local_csv_file("data.csv")
-  finterface <- new_file_interface("data.csv")
+  finterface <- new_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     head(finterface, 1),
     head(dummy_dt(), 1)
@@ -60,7 +72,9 @@ test_that("Head works", {
   )
 
   local_csv_file("data.csv.gz")
-  finterface <- new_file_interface("data.csv.gz")
+  finterface <- new_file_interface("data.csv.gz") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     head(finterface, 1),
     head(dummy_dt(), 1)
@@ -72,7 +86,9 @@ test_that("Head works", {
 
   local_csv_file("data_quoted.csv", quote = TRUE)
   finterface <- new_file_interface("data_quoted.csv") |>
-    suppressWarnings()
+    suppressWarnings() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     head(finterface, 1),
     head(dummy_dt(), 1)
@@ -83,7 +99,9 @@ test_that("Head works", {
   )
 
   local_csv_file("data.tsv", sep = "\t")
-  finterface <- new_file_interface("data.tsv")
+  finterface <- new_file_interface("data.tsv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     head(finterface, 1),
     head(dummy_dt(), 1)
@@ -95,7 +113,9 @@ test_that("Head works", {
 })
 
 test_that("Math conditions work", {
-  finterface <- local_file_interface("data.csv")
+  finterface <- local_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     finterface[num < 3],
     dummy_dt()[num < 3]
@@ -121,7 +141,9 @@ test_that("Math conditions work", {
     dummy_dt()[num == 3]
   )
 
-  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE)
+  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     fquoted[num < 3],
     dummy_dt()[num < 3]
@@ -149,7 +171,9 @@ test_that("Math conditions work", {
 })
 
 test_that("Set belonging works", {
-  finterface <- local_file_interface("data.csv")
+  finterface <- local_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     finterface[char %in% "a"],
     dummy_dt()[char %in% "a"]
@@ -177,7 +201,9 @@ test_that("Set belonging works", {
 })
 
 test_that("Combining conditions works", {
-  finterface <- local_file_interface("data.csv")
+  finterface <- local_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     finterface[3 <= num & num <= 5],
     dummy_dt()[3 <= num & num <= 5]
@@ -196,7 +222,9 @@ test_that("Combining conditions works", {
     dummy_dt()[1 < num & num < 3 | 5 < num]
   )
 
-  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE)
+  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     fquoted[3 <= num & num <= 5],
     dummy_dt()[3 <= num & num <= 5]
@@ -221,7 +249,9 @@ test_that("Full command line with gz detection works", {
   expect_equal(
     new_file_interface(
       gz_filename
-    )[chr == 10, return_only_cmd = TRUE],
+    )[chr == 10, return_only_cmd = TRUE] |>
+      suppressMessages() |>
+      withr::with_output_sink(new = "/dev/null"),
     paste0(
       "awk 'BEGIN{\n",
       "  FS = \"\t\"\n",
@@ -250,18 +280,24 @@ test_that("Prefixes are handled correctly", {
     "data.csv",
     chr    = 1,
     prefix = list(chr = "chr")
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   finterface_q <- local_summary_stats_interface(
     "data_q.csv",
     chr = 1,
     prefix = list(chr = "chr"),
     values_are_quoted = TRUE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   finterface_gz <- local_summary_stats_interface(
     "data.csv.gz",
     chr    = 1,
     prefix = list(chr = "chr")
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   for (finterface in list(finterface_b, finterface_q, finterface_gz)) {
     data_to_check <- head(finterface, 500)
@@ -289,7 +325,7 @@ test_that("sep is correctly detected in complicated files", {
     trim_prefix = "^#"
   ) |>
     structure(class = c("file_interface", "list"))
-  
+
   expect_equal(
     get_file_separator(finterface),
     "\t"

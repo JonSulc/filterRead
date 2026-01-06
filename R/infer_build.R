@@ -139,7 +139,7 @@ get_tabix_matches <- function(
 
   hits <- data.table::fread(
     cmd = paste("bash", temp_file),
-    col.names = c("chr", "pos", "ref", "alt"),
+    col.names = c("chr", "pos", "rsid", "ref", "alt"),
     select = 1:5,
     colClasses = list(
       character = c(1, 3, 4, 5),

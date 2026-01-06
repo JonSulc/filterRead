@@ -1,9 +1,10 @@
 # Helper function to create IEUGWAS test data
 create_ieugwas_data <- function(
-    format_string = "ES:SE:LP",
-    trait_name = "trait-1",
-    trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8", "-0.1:0.04:3.2"),
-    nrows = 3) {
+  format_string = "ES:SE:LP",
+  trait_name = "trait-1",
+  trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8", "-0.1:0.04:3.2"),
+  nrows = 3
+) {
   base_data <- list(
     CHROM = seq_len(nrows),
     POS = seq(100, by = 100, length.out = nrows),
@@ -26,7 +27,9 @@ test_that("is_ieugwas_file correctly identifies IEUGWAS format", {
   # Test valid IEUGWAS file
   ieugwas_data <- create_ieugwas_data()
   local_csv_file("ieugwas_valid.csv", ieugwas_data, sep = "\t")
-  finterface <- new_file_interface("ieugwas_valid.csv", ieugwas_parsing = FALSE)
+  finterface <- new_file_interface("ieugwas_valid.csv", ieugwas_parsing = FALSE) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_true(is_ieugwas_file(finterface))
 })
@@ -42,7 +45,9 @@ test_that("is_ieugwas_file rejects non-IEUGWAS format", {
   local_csv_file("not_ieugwas_cols.csv", wrong_cols_data, sep = "\t")
   finterface <- new_file_interface("not_ieugwas_cols.csv",
     ieugwas_parsing = FALSE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_false(is_ieugwas_file(finterface))
 
@@ -62,7 +67,9 @@ test_that("is_ieugwas_file rejects non-IEUGWAS format", {
   local_csv_file("not_ieugwas_names.csv", wrong_names_data, sep = "\t")
   finterface <- new_file_interface("not_ieugwas_names.csv",
     ieugwas_parsing = FALSE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_false(is_ieugwas_file(finterface))
 
@@ -82,7 +89,9 @@ test_that("is_ieugwas_file rejects non-IEUGWAS format", {
   local_csv_file("invalid_trait.csv", invalid_trait_data, sep = "\t")
   finterface <- new_file_interface("invalid_trait.csv",
     ieugwas_parsing = FALSE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_false(is_ieugwas_file(finterface))
 })
@@ -95,7 +104,9 @@ test_that("get_ieugwas_column_parsing handles various FORMAT combinations", {
     trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8")
   )
   local_csv_file("ieugwas_esl.csv", ieugwas_data_esl, sep = "\t")
-  finterface <- new_file_interface("ieugwas_esl.csv", ieugwas_parsing = FALSE)
+  finterface <- new_file_interface("ieugwas_esl.csv", ieugwas_parsing = FALSE) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   parsing_info <- get_ieugwas_column_parsing(finterface)
 
@@ -114,7 +125,9 @@ test_that("get_ieugwas_column_parsing handles various FORMAT combinations", {
     trait_data = c("0.1:0.05:0.3", "0.2:0.06:0.4")
   )
   local_csv_file("ieugwas_esa.csv", ieugwas_data_esa, sep = "\t")
-  finterface <- new_file_interface("ieugwas_esa.csv", ieugwas_parsing = FALSE)
+  finterface <- new_file_interface("ieugwas_esa.csv", ieugwas_parsing = FALSE) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   parsing_info <- get_ieugwas_column_parsing(finterface)
 
@@ -133,7 +146,9 @@ test_that("get_ieugwas_column_parsing handles complex FORMAT strings", {
     nrows = 1
   )
   local_csv_file("ieugwas_all.csv", ieugwas_data_all, sep = "\t")
-  finterface <- new_file_interface("ieugwas_all.csv", ieugwas_parsing = FALSE)
+  finterface <- new_file_interface("ieugwas_all.csv", ieugwas_parsing = FALSE) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   parsing_info <- get_ieugwas_column_parsing(finterface)
 
@@ -164,7 +179,9 @@ test_that("get_ieugwas_column_parsing handles complex FORMAT strings", {
   local_csv_file("ieugwas_single.csv", ieugwas_data_single, sep = "\t")
   finterface <- new_file_interface("ieugwas_single.csv",
     ieugwas_parsing = FALSE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   parsing_info <- get_ieugwas_column_parsing(finterface)
 
@@ -186,7 +203,9 @@ test_that("IEUGWAS integration with file_interface works correctly", {
   finterface_with_parsing <- new_file_interface(
     "ieugwas_integration.csv",
     ieugwas_parsing = TRUE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   column_info <- finterface_with_parsing$column_info
   encoded_columns <- column_info[!sapply(encoded_names, is.null)]
@@ -204,7 +223,9 @@ test_that("IEUGWAS integration with file_interface works correctly", {
   finterface_no_parsing <- new_file_interface(
     "ieugwas_integration.csv",
     ieugwas_parsing = FALSE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   column_info_no_parsing <- finterface_no_parsing$column_info
   encoded_columns_no_parsing <- column_info_no_parsing[
@@ -223,7 +244,9 @@ test_that("IEUGWAS parsing handles edge cases", {
     nrows = 1
   )
   local_csv_file("ieugwas_na.csv", ieugwas_data_na, sep = "\t")
-  finterface <- new_file_interface("ieugwas_na.csv", ieugwas_parsing = FALSE)
+  finterface <- new_file_interface("ieugwas_na.csv", ieugwas_parsing = FALSE) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_warning(get_ieugwas_column_parsing(finterface))
   parsing_info <- get_ieugwas_column_parsing(finterface) |>
@@ -240,7 +263,9 @@ test_that("IEUGWAS parsing handles edge cases", {
   local_csv_file("ieugwas_empty.csv", ieugwas_data_empty, sep = "\t")
   finterface <- new_file_interface("ieugwas_empty.csv",
     ieugwas_parsing = FALSE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_warning(
     parsing_info <- get_ieugwas_column_parsing(finterface),
@@ -259,7 +284,9 @@ test_that("get_ieugwas_column_parsing validates input correctly", {
     pval = c(0.01, 0.05)
   )
   local_csv_file("non_ieugwas.csv", non_ieugwas_data, sep = "\t")
-  finterface <- new_file_interface("non_ieugwas.csv", ieugwas_parsing = FALSE)
+  finterface <- new_file_interface("non_ieugwas.csv", ieugwas_parsing = FALSE) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_warning(
     parsing_info <- get_ieugwas_column_parsing(finterface),
@@ -271,12 +298,12 @@ test_that("get_ieugwas_column_parsing validates input correctly", {
 
   # Test with invalid FORMAT strings
   invalid_formats <- c(
-    "INVALID",           # Not a recognized format
-    "ES:INVALID:LP",     # Mixed valid/invalid
-    "ES::LP",            # Empty component
-    "ES:LP:",            # Trailing colon
-    ":ES:LP",            # Leading colon
-    "es:se:lp"           # Wrong case
+    "INVALID", # Not a recognized format
+    "ES:INVALID:LP", # Mixed valid/invalid
+    "ES::LP", # Empty component
+    "ES:LP:", # Trailing colon
+    ":ES:LP", # Leading colon
+    "es:se:lp" # Wrong case
   )
 
   for (i in seq_along(invalid_formats)) {
@@ -288,7 +315,9 @@ test_that("get_ieugwas_column_parsing validates input correctly", {
     )
     filename <- paste0("invalid_format_", i, ".csv")
     local_csv_file(filename, invalid_data, sep = "\t")
-    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE)
+    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE) |>
+      suppressMessages() |>
+      withr::with_output_sink(new = "/dev/null")
 
     expect_warning(
       parsing_info <- get_ieugwas_column_parsing(finterface),
@@ -313,7 +342,9 @@ test_that("IEUGWAS FORMAT validation regex works correctly", {
     )
     filename <- paste0("valid_single_", tolower(format_code), ".csv")
     local_csv_file(filename, ieugwas_data, sep = "\t")
-    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE)
+    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE) |>
+      suppressMessages() |>
+      withr::with_output_sink(new = "/dev/null")
 
     parsing_info <- get_ieugwas_column_parsing(finterface)
     expect_false(is.null(parsing_info))
@@ -339,7 +370,9 @@ test_that("IEUGWAS FORMAT validation regex works correctly", {
     )
     filename <- paste0("valid_combo_", gsub(":", "_", combo), ".csv")
     local_csv_file(filename, ieugwas_data, sep = "\t")
-    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE)
+    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE) |>
+      suppressMessages() |>
+      withr::with_output_sink(new = "/dev/null")
 
     parsing_info <- get_ieugwas_column_parsing(finterface)
     expect_false(is.null(parsing_info))

@@ -103,8 +103,7 @@ fcondition_and_rsid_to_awk <- function(
     bash_index,
     on = "name"
   ],
-  index = 0,
-  chr_names = chromosome_names
+  index = 0
 ) {
   if (!needs_rsid_matching(get_file_interface(fcondition)) ||
     (is.null(attr(fcondition, "genomic_range")) &&
@@ -117,17 +116,17 @@ fcondition_and_rsid_to_awk <- function(
   }
   if (!is_single_genomic_range_block(fcondition)) {
     stopifnot(fcondition[[1]] == as.symbol("or_filter_condition"))
-    to_return <- fcondition_and_rsid_to_awk(fcondition[[2]],
+    to_return <- fcondition_and_rsid_to_awk(
+      fcondition[[2]],
       rsid_bash_index,
-      index     = index,
-      chr_names = chr_names
+      index     = index
     )
     return(rbind(
       to_return,
-      fcondition_and_rsid_to_awk(fcondition[[3]],
+      fcondition_and_rsid_to_awk(
+        fcondition[[3]],
         rsid_bash_index,
-        index     = index + 1,
-        chr_names = chr_names
+        index     = index + 1
       )
     ))
   }
@@ -156,7 +155,10 @@ fcondition_and_rsid_to_awk <- function(
         chr = chr,
         start = start,
         end = end,
-        chr_names = chr_names
+        dbsnp_filename = get_dbsnp_filename(
+          build = get_file_interface(fcondition)$build,
+          full_path = TRUE
+        )
       ),
       rsid_condition = sprintf("%s in rsid%i", rsid_bash_index, index)
     )

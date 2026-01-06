@@ -1,5 +1,7 @@
 test_that("Parsing to command line works", {
-  finterface <- local_file_interface()
+  finterface <- local_file_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(rlang::expr(num < 3),
       finterface = finterface
@@ -68,7 +70,9 @@ test_that("Parsing to command line works", {
 })
 
 test_that("%in% parsing works", {
-  finterface <- local_file_interface()
+  finterface <- local_file_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
       rlang::expr(x %in% letters[1:5]),
@@ -124,7 +128,9 @@ test_that("%in% parsing works", {
 })
 
 test_that("Parentheses work as expected", {
-  finterface <- local_file_interface()
+  finterface <- local_file_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(rlang::expr((num < 3 & char == "a")),
       finterface = finterface

@@ -90,7 +90,9 @@ test_that(
   "chr prefix is correctly added in full file_interface workflow",
   {
     local_summary_stats(prefix = NULL, random_names = FALSE)
-    finterface <- new_file_interface("data.csv")
+    finterface <- new_file_interface("data.csv") |>
+      suppressMessages() |>
+      withr::with_output_sink(new = "/dev/null")
 
     # Check that add_prefix is set in column_info
     expect_equal(
@@ -109,7 +111,9 @@ test_that("chr prefix not added when already present in file", {
     prefix = list(chr = "chr"),
     random_names = FALSE
   )
-  finterface <- new_file_interface("data.csv")
+  finterface <- new_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   # Check that add_prefix is NOT set when prefix already exists
   expect_true(is.na(finterface$column_info[name == "chr", add_prefix]))
@@ -122,7 +126,9 @@ test_that("chr prefix not added when already present in file", {
 
 test_that("chr prefix works with filtering conditions", {
   local_summary_stats(prefix = NULL, random_names = FALSE)
-  finterface <- new_file_interface("data.csv")
+  finterface <- new_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   # Apply a filter and check that chr prefix is still added
   result <- finterface[pval < 0.05]

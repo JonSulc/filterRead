@@ -1,63 +1,77 @@
 test_that("RSID parsing required is correctly detected", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_false(needs_rsid_matching(finterface))
   finterface_rn <- local_summary_stats_interface(
     "data_rn.csv",
     random_names = TRUE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_false(needs_rsid_matching(finterface_rn))
 
   finterface_rsid <- local_rsid_summary_stats_interface("data_rsid.csv") |>
-    suppressWarnings()
+    suppressWarnings() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_true(needs_rsid_matching(finterface_rsid))
   finterface_rsid_rn <- local_rsid_summary_stats_interface(
     "data_rsid_rn.csv",
     random_names = TRUE
   ) |>
-    suppressWarnings()
+    suppressWarnings() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_true(needs_rsid_matching(finterface_rsid_rn))
 
   finterface_enc <- local_summary_stats_interface(
     "data_enc.csv",
     encode_columns = TRUE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_false(needs_rsid_matching(finterface_enc))
   finterface_enc_rn <- local_summary_stats_interface(
     "data_enc_rn.csv",
     random_names   = TRUE,
     encode_columns = TRUE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_false(needs_rsid_matching(finterface_enc_rn))
 })
 
 test_that("tabix process substitution works", {
   expect_error(
-    get_tabix_process_substitution(1:2, 123, 234)
+    get_tabix_process_substitution(1:2, 123, 234, "dbsnp_file.vcf.gz")
   )
   expect_error(
-    get_tabix_process_substitution(1, 123:124, 234)
+    get_tabix_process_substitution(1, 123:124, 234, "dbsnp_file.vcf.gz")
   )
   expect_error(
-    get_tabix_process_substitution(1, 123, 234:235)
+    get_tabix_process_substitution(1, 123, 234:235, "dbsnp_file.vcf.gz")
   )
 
   expect_equal(
-    get_tabix_process_substitution(1, 123, 234),
-    sprintf("<(tabix %s NC_000001.11:123-234)", dbsnp_file)
+    get_tabix_process_substitution(1, 123, 234, "dbsnp_file.vcf.gz"),
+    "<(tabix dbsnp_file.vcf.gz 1:123-234)"
   )
   expect_equal(
-    get_tabix_process_substitution(1, c(123, 456), c(234, 567)),
-    sprintf("<(tabix %s NC_000001.11:123-234 NC_000001.11:456-567)", dbsnp_file)
+    get_tabix_process_substitution(1, c(123, 456), c(234, 567), "dbsnp_file.vcf.gz"),
+    "<(tabix dbsnp_file.vcf.gz 1:123-234 1:456-567)"
   )
   expect_equal(
-    get_tabix_process_substitution(1:2, c(123, 456), c(234, 567)),
-    sprintf("<(tabix %s NC_000001.11:123-234 NC_000002.12:456-567)", dbsnp_file)
+    get_tabix_process_substitution(1:2, c(123, 456), c(234, 567), "dbsnp_file.vcf.gz"),
+    "<(tabix dbsnp_file.vcf.gz 1:123-234 2:456-567)"
   )
 })
 
 test_that("File reading works", {
   finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings()
+    suppressWarnings() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_true(needs_rsid_matching(finterface))
   expect_no_error(head(finterface))
   expect_true(all(finterface[pval < .05]$pval < .05))
@@ -66,7 +80,7 @@ test_that("File reading works", {
     c("rsid", "ref", "alt", "effect", "pval")
   )
   expect_equal(
-    colnames(finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345]),
+    colnames(finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 123456]),
     c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")
   )
   expect_equal(
@@ -88,7 +102,7 @@ test_that("File reading works", {
       }
     }
   }
-}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz NC_000001.11:123-12345) FS=\",\"",
+}' FS=\"\\t\" <(tabix /home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz 1:123-12345) FS=\",\"",
 " data.csv"
     )
   )
@@ -96,7 +110,9 @@ test_that("File reading works", {
 
 test_that("Genomic blocks are correctly identified", {
   finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings()
+    suppressWarnings() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_true(
     new_filter_condition(
       rlang::expr(pval < .05),
@@ -205,7 +221,9 @@ test_that("Genomic blocks are correctly identified", {
 
 test_that("Multiple genomic range-other condition combinations can be handled", {
   finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings()
+    suppressWarnings() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
       rlang::expr(
@@ -237,13 +255,15 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
       }
     }
   }
-}' FS=\"\\t\" <(tabix ~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz NC_000001.11:124-233) <(tabix ~/rcp_storage/common/Users/sulc/data/dbsnp/GCF_000001405.40.gz NC_000002.12:22-41) FS=\",\" data.csv"
+}' FS=\"\\t\" <(tabix /home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz 1:124-233) <(tabix /home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz 2:22-41) FS=\",\" data.csv"
   )
 })
 
 test_that("Genomic ranges are correctly identified", {
   finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings()
+    suppressWarnings() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(rlang::expr(chr == 1 & pos < 123), finterface) |>
       attr("genomic_range"),
@@ -253,7 +273,9 @@ test_that("Genomic ranges are correctly identified", {
 
 test_that("Genomic ranges are correctly structured", {
   finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings()
+    suppressWarnings() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(rlang::expr(pos < 123), finterface) |>
       attr("genomic_range"),

@@ -167,7 +167,9 @@ test_that("Parsing allele1, allele2, alt works", {
 
   expect_true(needs_a1_a2_to_ref_matching(column_info))
 
-  finterface <- new_file_interface("data.csv")
+  finterface <- new_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   expect_equal(
     column_names(finterface),
     c("chr", "pos", "ref", "alt", "effect", "pval", "allele1", "allele2")

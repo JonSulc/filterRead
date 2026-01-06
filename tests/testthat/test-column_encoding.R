@@ -1,12 +1,16 @@
 test_that("Encoded columns are correctly detected", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
   finterface_enc <- local_summary_stats_interface(
     "encoded.csv",
     encode_columns = summary_stats_standard_names_dt[
       list(input_name = "MarkerName", delimiter = "-c|:|-"),
       on = c("input_name", "delimiter")
     ]
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   expect_true(all(is.na(finterface$column_info$regex)))
   expect_true(all(sapply(finterface$column_info$encoded_names, \(x) length(x) == 0)))
@@ -124,7 +128,9 @@ test_that("Encoded columns are correctly parsed and loaded", {
       on = c("input_name", "delimiter")
     ],
     random_names = FALSE
-  )
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
   data_raw <- data.table::fread("encoded.csv")
   expect_equal(
