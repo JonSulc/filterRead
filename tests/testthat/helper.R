@@ -354,6 +354,27 @@ local_rsid_summary_stats_interface <- function(
   new_file_interface(filename)
 }
 
+local_file_with_comments <- function(
+  filename,
+  comment_lines = c("##comment1", "##comment2"),
+  header_prefix = "#",
+  content_dt = dummy_dt(),
+  sep = "\t",
+  env = parent.frame()
+) {
+  header <- paste0(header_prefix, paste(names(content_dt), collapse = sep))
+  data_lines <- apply(content_dt, 1, paste, collapse = sep)
+
+  uncompressed <- sub("[.]gz$", "", filename)
+  writeLines(c(comment_lines, header, data_lines), uncompressed)
+
+  if (grepl("[.]gz$", filename)) {
+    R.utils::gzip(uncompressed, overwrite = TRUE)
+  }
+
+  withr::defer(file.remove(filename), envir = env)
+}
+
 switch_alt_ref_to_a1_a2 <- function(summary_stats) {
   is_alt_allele1 <- sample(c(TRUE, FALSE), nrow(summary_stats), replace = TRUE)
 

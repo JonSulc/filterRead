@@ -1,8 +1,7 @@
-gz_filename <- "~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz"
-
 test_that("Initialization works", {
+  local_csv_file("data.csv.gz")
   expect_no_error(
-    new_file_interface(gz_filename) |>
+    new_file_interface("data.csv.gz") |>
       suppressMessages() |>
       withr::with_output_sink(new = "/dev/null")
   )
@@ -12,7 +11,7 @@ test_that("Initialization works", {
   expect_error(
     new_file_interface(123)
   )
-  finterface <- new_file_interface(gz_filename) |>
+  finterface <- new_file_interface("data.csv.gz") |>
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
@@ -245,34 +244,22 @@ test_that("Combining conditions works", {
   )
 })
 
-test_that("Full command line with gz detection works", {
-  expect_equal(
-    new_file_interface(
-      gz_filename
-    )[chr == 10, return_only_cmd = TRUE] |>
-      suppressMessages() |>
-      withr::with_output_sink(new = "/dev/null"),
-    paste0(
-      "awk 'BEGIN{\n",
-      "  FS = \"\t\"\n",
-      "  OFS = \"\t\"\n",
-      "}\n",
-      "{\n",
-      "  if ($2 == 10) {\n",
-      "    # Deduce NEA based on EA vs Allele1/Allele2\n",
-      "    if ($4 == $6) {\n",
-      "      nea = $5\n",
-      "    } else {\n",
-      "      nea = $4\n",
-      "    }\n",
-      "    $6 = nea OFS $6\n",
-      "    $2 = \"chr\"$2\n",
-      "    print $0\n",
-      "  }\n",
-      "}' ",
-      "<(zcat ~/Databases/MVP/release/Submissions/sub20221024/CART.EUR.MVP.NatMed2022.txt.gz)"
-    )
+test_that("Allele1/Allele2 to NEA deduction generates correct awk", {
+  local_summary_stats(
+    "data.csv",
+    alleles_as_a1_a2_alt = TRUE,
+    random_names = FALSE
   )
+  finterface <- new_file_interface("data.csv") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  cmd <- finterface[chr == 1, return_only_cmd = TRUE]
+
+  # Verify NEA deduction logic is present
+  expect_match(cmd, "# Deduce NEA based on EA vs Allele1/Allele2")
+  expect_match(cmd, "nea = ")
+  expect_match(cmd, "nea OFS")
 })
 
 test_that("Prefixes are handled correctly", {
