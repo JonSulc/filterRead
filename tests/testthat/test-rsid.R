@@ -103,7 +103,7 @@ test_that("File reading works", {
     }
   }
 }' FS=\"\\t\" <(tabix /home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz 1:123-12345) FS=\",\"",
-" data.csv"
+      " data.csv"
     )
   )
 })
@@ -283,5 +283,95 @@ test_that("Genomic ranges are correctly structured", {
       chr = as.character(c(1:22, "X", "Y", "MT")),
       start = NA_real_, end = 122
     )
+  )
+})
+
+test_that("RSID-based position filtering uses the correct build reference", {
+  rsidt <- data.table::data.table(
+    rsid = c("rs429358", "rs7412", "rs12913832"),
+    ref = c("T", "C", "A"),
+    alt = c("C", "T", "G")
+  )
+  local_csv_file("data.csv", rsidt)
+
+  rsid37 <- new_file_interface("data.csv", build = "b37")
+  rsid38 <- new_file_interface("data.csv", build = "b38")
+
+  # Filtering based on b37 coordinates
+  expect_equal(
+    rsid37[chr == 19 & 45e6 < pos],
+    data.table::data.table(
+      chr = 19,
+      pos = c(45411941, 45412079),
+      rsid = c("rs429358", "rs7412"),
+      ref = c("T", "C"),
+      alt = c("C", "T")
+    )
+  )
+  expect_warning(
+    rsid38_results <- rsid38[chr == 19 & 45e6 < pos],
+    "File .* has size 0[.]"
+  )
+  expect_equal(
+    rsid38_results,
+    data.table::data.table()
+  )
+
+  expect_equal(
+    rsid37[chr == 15 & pos == 28365618],
+    data.table::data.table(
+      chr = 15,
+      pos = 28365618,
+      rsid = "rs12913832",
+      ref = "A",
+      alt = "G"
+    )
+  )
+  expect_warning(
+    rsid38_results <- rsid38[chr == 15 & pos == 28365618],
+    "File .* has size 0[.]"
+  )
+  expect_equal(
+    rsid38_results,
+    data.table::data.table()
+  )
+
+  # Filtering based on b38 coordinates
+  expect_equal(
+    rsid38[chr == 19 & pos < 45e6],
+    data.table::data.table(
+      chr = 19,
+      pos = c(44908684, 44908822),
+      rsid = c("rs429358", "rs7412"),
+      ref = c("T", "C"),
+      alt = c("C", "T")
+    )
+  )
+  expect_warning(
+    rsid37_results <- rsid37[chr == 19 & pos < 45e6],
+    "File .* has size 0[.]"
+  )
+  expect_equal(
+    rsid37_results,
+    data.table::data.table()
+  )
+
+  expect_equal(
+    rsid38[chr == 15 & pos == 28120472],
+    data.table::data.table(
+      chr = 15,
+      pos = 28120472,
+      rsid = "rs12913832",
+      ref = "A",
+      alt = "G"
+    )
+  )
+  expect_warning(
+    rsid37_results <- rsid37[chr == 15 & pos == 28120472],
+    "File .* has size 0[.]"
+  )
+  expect_equal(
+    rsid37_results,
+    data.table::data.table()
   )
 })
