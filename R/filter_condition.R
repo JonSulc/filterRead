@@ -32,7 +32,8 @@ as_filter_condition <- function(
 new_filter_condition <- function(
   fcall,
   finterface,
-  env = parent.frame()
+  env = parent.frame(),
+  build = attr(fcall, "build") %||% finterface$build
 ) {
   if (is.null(fcall)) {
     fcall <- structure(list(), class = c("filter_condition"))
@@ -60,13 +61,16 @@ new_filter_condition <- function(
   fcondition <- fc_convert[[as.character(fcall[[1]])]](
     fcall,
     finterface = attr(fcall, "finterface_env"),
-    env = env
+    env = env,
+    build = build
   )
 
-  if ((get_file_interface(fcondition) |> needs_rsid_matching()) &
+  if ((needs_rsid_matching(get_file_interface(fcondition))) &&
     is.null(attr(fcondition, "genomic_range"))) {
     fcondition <- split_genomic_conditions(fcondition)
   }
+
+  attr(fcondition, "build") <- build
 
   fcondition
 }
@@ -106,6 +110,12 @@ get_file_interface <- function(
   fcondition
 ) {
   attr(fcondition, "finterface_env")$finterface
+}
+
+get_build <- function(
+  fcondition
+) {
+  attr(fcondition, "build")
 }
 
 #' @export
@@ -224,6 +234,15 @@ print.filter_condition <- function(
     attr(fcondition1, "genomic_range"),
     attr(fcondition2, "genomic_range")
   )
+
+  if (get_build(fcondition1) != get_build(fcondition2)) {
+    warning(
+      "filter_conditions being combine do not have the same build, ",
+      " using ", get_build(fcondition1)
+    )
+  }
+  attr(fcondition, "build") <- get_build(fcondition1)
+  
   fcondition
 }
 
@@ -286,6 +305,14 @@ combine_genomic_ranges <- function(
   } else {
     attr(fcondition, "genomic_range") <- NULL
   }
+
+  if (get_build(fcondition1) != get_build(fcondition2)) {
+    warning(
+      "filter_conditions being combine do not have the same build, ",
+      " using ", get_build(fcondition1)
+    )
+  }
+  attr(fcondition, "build") <- get_build(fcondition1)
 
   fcondition
 }
@@ -596,12 +623,16 @@ strip_parentheses <- function(
   }
   if (recursive) {
     if (fcondition[[1]] == as.symbol("and_filter_condition")) {
-      return(strip_parentheses(fcondition[[2]], recursive = recursive) &
-        strip_parentheses(fcondition[[3]], recursive = recursive))
+      return(
+        strip_parentheses(fcondition[[2]], recursive = recursive) &
+          strip_parentheses(fcondition[[3]], recursive = recursive)
+      )
     }
     if (fcondition[[1]] == as.symbol("or_filter_condition")) {
-      return(strip_parentheses(fcondition[[2]], recursive = recursive) |
-        strip_parentheses(fcondition[[3]], recursive = recursive))
+      return(
+        strip_parentheses(fcondition[[2]], recursive = recursive) |
+          strip_parentheses(fcondition[[3]], recursive = recursive)
+      )
     }
   }
   fcondition

@@ -89,7 +89,8 @@ test_that("%in% parsing works", {
         env <- new.env(parent = emptyenv())
         env$finterface <- finterface
         env
-      }
+      },
+      build = "b38"
     )
   )
 

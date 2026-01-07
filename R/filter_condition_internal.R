@@ -1,31 +1,41 @@
 lp_to_fc <- function(
-    fcall,
-    ...) {
+  fcall,
+  ...
+) {
   stopifnot(fcall[[1]] == as.symbol("("))
   fcall[[1]] <- as.symbol("lp_filter_condition")
-  fcall[-1] <- lapply(fcall[-1], new_filter_condition, ...)
+  fcall[-1] <- lapply(
+    fcall[-1],
+    new_filter_condition,
+    ...
+  )
   attributes(fcall) <- attributes(fcall[[2]])
   fcall |>
     as_filter_condition()
 }
 
 and_to_fc <- function(
-    fcall,
-    ...) {
-  new_filter_condition(fcall[[2]], ...) & new_filter_condition(fcall[[3]], ...)
+  fcall,
+  ...
+) {
+  new_filter_condition(fcall[[2]], ...) &
+    new_filter_condition(fcall[[3]], ...)
 }
 
 
 or_to_fc <- function(
-    fcall,
-    ...) {
-  new_filter_condition(fcall[[2]], ...) | new_filter_condition(fcall[[3]], ...)
+  fcall,
+  ...
+) {
+  new_filter_condition(fcall[[2]], ...) |
+    new_filter_condition(fcall[[3]], ...)
 }
 
 
 chainable_to_fc <- function(
-    fcall,
-    ...) {
+  fcall,
+  ...
+) {
   fcall[[1]] <- list(
     "<"  = as.symbol("lt_filter_condition"),
     "<=" = as.symbol("lte_filter_condition"),
@@ -37,9 +47,11 @@ chainable_to_fc <- function(
 
 
 eq_to_fc <- function(
-    fcall,
-    finterface_env,
-    env) {
+  fcall,
+  finterface_env,
+  env,
+  ...
+) {
   stopifnot(fcall[[1]] == as.symbol("=="))
   fcall[[1]] <- as.symbol("eq_filter_condition")
 
@@ -58,9 +70,11 @@ eq_to_fc <- function(
 
 
 in_to_fc <- function(
-    fcall,
-    finterface_env,
-    env) {
+  fcall,
+  finterface_env,
+  env,
+  ...
+) {
   fcall[[1]] <- as.symbol("in_filter_condition")
 
   fcall[[3]] <- eval(fcall[[3]], env) |>
@@ -70,8 +84,9 @@ in_to_fc <- function(
 }
 
 is_column_symbol <- function(
-    fcall,
-    finterface) {
+  fcall,
+  finterface
+) {
   if (length(fcall) != 1) {
     return(FALSE)
   }
@@ -79,15 +94,16 @@ is_column_symbol <- function(
 }
 
 check_post_processing <- function(
-    values,
-    column_symbol,
-    finterface,
-    to_write = FALSE,
-    check_quotes_function = ifelse(
-      to_write,
-      check_quotes_to_write,
-      check_quotes
-    )) {
+  values,
+  column_symbol,
+  finterface,
+  to_write = FALSE,
+  check_quotes_function = ifelse(
+    to_write,
+    check_quotes_to_write,
+    check_quotes
+  )
+) {
   column_name <- as.character(column_symbol)
   if (!column_name %in% finterface$column_info$name) {
     return(values)
@@ -105,8 +121,9 @@ check_post_processing <- function(
 }
 
 check_prefix <- function(
-    values,
-    prefix) {
+  values,
+  prefix
+) {
   if (is.na(prefix)) {
     return(values)
   }
@@ -118,8 +135,9 @@ check_prefix <- function(
 }
 
 check_quotes <- function(
-    values,
-    quoted) {
+  values,
+  quoted
+) {
   if (!isTRUE(quoted)) {
     if (all(is.numeric(values))) {
       return(values)
@@ -134,8 +152,9 @@ check_quotes <- function(
   )
 }
 check_quotes_to_write <- function(
-    values,
-    quoted) {
+  values,
+  quoted
+) {
   if (!isTRUE(quoted)) {
     return(values)
   }

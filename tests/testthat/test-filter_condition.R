@@ -31,7 +31,8 @@ test_that("Basic filter_condition initialization works", {
     structure(
       rlang::expr(lt_filter_condition(x, 3)),
       class = c("filter_condition", "call"),
-      finterface_env = finterface_env
+      finterface_env = finterface_env,
+      build = "b38"
     )
   )
   expect_equal(
@@ -41,7 +42,8 @@ test_that("Basic filter_condition initialization works", {
     structure(
       rlang::expr(gt_filter_condition(x, 3)),
       class = c("filter_condition", "call"),
-      finterface_env = finterface_env
+      finterface_env = finterface_env,
+      build = "b38"
     )
   )
   expect_equal(
@@ -51,7 +53,8 @@ test_that("Basic filter_condition initialization works", {
     structure(
       rlang::expr(lte_filter_condition(x, 3)),
       class = c("filter_condition", "call"),
-      finterface_env = finterface_env
+      finterface_env = finterface_env,
+      build = "b38"
     )
   )
   expect_equal(
@@ -61,7 +64,8 @@ test_that("Basic filter_condition initialization works", {
     structure(
       rlang::expr(gte_filter_condition(x, 3)),
       class = c("filter_condition", "call"),
-      finterface_env = finterface_env
+      finterface_env = finterface_env,
+      build = "b38"
     )
   )
   expect_equal(
@@ -71,7 +75,8 @@ test_that("Basic filter_condition initialization works", {
     structure(
       rlang::expr(eq_filter_condition(x, 3)),
       class = c("filter_condition", "call"),
-      finterface_env = finterface_env
+      finterface_env = finterface_env,
+      build = "b38"
     )
   )
 })

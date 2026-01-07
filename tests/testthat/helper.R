@@ -179,7 +179,8 @@ local_file_interface <- function(
   prefix = NULL,
   nrows = 6,
   env = parent.frame(),
-  standard_names_dt = summary_stats_standard_names_dt
+  standard_names_dt = summary_stats_standard_names_dt,
+  build = "b38"
 ) {
   local_csv_file(
     filename = filename,
@@ -199,7 +200,11 @@ local_file_interface <- function(
       on = c("input_name", "standard_name", "possible_prefixes")
     ]
   }
-  new_file_interface(filename, standard_names_dt = standard_names_dt)
+  new_file_interface(
+    filename,
+    standard_names_dt = standard_names_dt,
+    build = build
+  )
 }
 
 local_summary_stats <- function(
