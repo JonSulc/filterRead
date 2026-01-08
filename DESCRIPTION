@@ -1,7 +1,7 @@
 Package: filterRead
 Type: Package
 Title: Pre-filters files using awk for faster fread
-Version: 2.5.0
+Version: 2.5.1
 Author: Jonathan Sulc
 Maintainer: Jonathan Sulc <jonsulc@gmail.com>
 Description: Creates an easy-to-use interface for loading tab/comma-separated
@@ -37,4 +37,5 @@ Collate:
     'filter_condition.R'
     'ieugwas_parsing.R'
     'infer_build.R'
+    'liftover.R'
     'rsid.R'
