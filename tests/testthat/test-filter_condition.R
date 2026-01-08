@@ -546,35 +546,35 @@ test_that("Getting genomic regions works", {
 
 test_that("Combining genomic ranges works", {
   expect_equal(
-    combine_genomic_ranges(
+    intersect_genomic_ranges(
       data.table::data.table(chr = 1, start = 123, end = 234),
       data.table::data.table(chr = 1, start = 42, end = 221)
     ),
     data.table::data.table(chr = 1, start = 123, end = 221)
   )
   expect_equal(
-    combine_genomic_ranges(
+    intersect_genomic_ranges(
       data.table::data.table(chr = 1, start = 123, end = 234),
       data.table::data.table(chr = 2, start = 42, end = 221)
     ),
     data.table::data.table(chr = numeric(), start = numeric(), end = numeric())
   )
   expect_equal(
-    combine_genomic_ranges(
+    intersect_genomic_ranges(
       NULL,
       data.table::data.table(chr = 2, start = 42, end = 221)
     ),
     data.table::data.table(chr = 2, start = 42, end = 221)
   )
   expect_equal(
-    combine_genomic_ranges(
+    intersect_genomic_ranges(
       data.table::data.table(chr = 1, start = 123, end = 234),
       NULL
     ),
     data.table::data.table(chr = 1, start = 123, end = 234)
   )
   expect_equal(
-    combine_genomic_ranges(
+    intersect_genomic_ranges(
       data.table::data.table(chr = "1", start = NA_real_, end = NA_real_),
       data.table::data.table(chr = as.character(c(1:22, "X", "Y", "MT")), start = NA_real_, end = 122)
     ),

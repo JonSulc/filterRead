@@ -200,14 +200,14 @@ print.filter_condition <- function(
   fcondition2
 ) {
   if (length(fcondition1) == 0) {
-    attr(fcondition2, "genomic_range") <- combine_genomic_ranges(
+    attr(fcondition2, "genomic_range") <- intersect_genomic_ranges(
       attr(fcondition1, "genomic_range"),
       attr(fcondition2, "genomic_range")
     )
     return(fcondition2)
   }
   if (length(fcondition2) == 0) {
-    attr(fcondition1, "genomic_range") <- combine_genomic_ranges(
+    attr(fcondition1, "genomic_range") <- intersect_genomic_ranges(
       attr(fcondition1, "genomic_range"),
       attr(fcondition2, "genomic_range")
     )
@@ -230,7 +230,7 @@ print.filter_condition <- function(
     as_filter_condition()
   fcondition[2:3] <- list(fcondition1, fcondition2)
   attr(fcondition, "finterface_env") <- attr(fcondition1, "finterface_env")
-  attr(fcondition, "genomic_range") <- combine_genomic_ranges(
+  attr(fcondition, "genomic_range") <- intersect_genomic_ranges(
     attr(fcondition1, "genomic_range"),
     attr(fcondition2, "genomic_range")
   )
@@ -246,7 +246,7 @@ print.filter_condition <- function(
   fcondition
 }
 
-combine_genomic_ranges <- function(
+intersect_genomic_ranges <- function(
   genomic_range1,
   genomic_range2
 ) {
@@ -497,6 +497,10 @@ make_genomic_ranges <- function(
       )
     ]
   }
+
+  # if (get_build(fcondition) %in% c("b36", "b37", "b38")) {
+    
+  # }
 
   genomic_ranges
 }
