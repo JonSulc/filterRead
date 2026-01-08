@@ -9,7 +9,7 @@ new_file_interface(
   extra_column_names_dt = NULL,
   standard_names_dt = summary_stats_standard_names_dt,
   ieugwas_parsing = TRUE,
-  build = NULL
+  build = c("auto", "b36", "b37", "b38", "none")
 )
 }
 \arguments{

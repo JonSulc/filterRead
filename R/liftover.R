@@ -1,22 +1,6 @@
 #' @import data.table
 #' @importFrom rtracklayer import.chain
 
-convert_to_build <- function(
-  genomic_ranges,
-  from,
-  to,
-  chain_dt = get_chain_dt(from, to)
-) {
-  if (to == from) {
-    return(genomic_ranges)
-  }
-
-  liftover_genomic_ranges(
-    genomic_ranges,
-    chain_dt
-  )
-}
-
 get_chain_dt <- function(
   from,
   to
@@ -68,79 +52,9 @@ get_full_chain_dt <- function(chain) {
   chain_dt
 }
 
-
-liftover_genomic_ranges <- function(
-  genomic_ranges,
-  chain_dt
+liftover <- function(
+  x,
+  ...
 ) {
-  if (nrow(genomic_ranges) == 0 || all(genomic_ranges[, is.na(chr)])) {
-    return(genomic_ranges)
-  }
-
-  if (!is.character(genomic_ranges$chr)) {
-    genomic_ranges[
-      ,
-      chr := as.character(chr)
-    ][]
-  }
-  genomic_ranges[
-    !grepl("^chr", chr),
-    chr := paste0("chr", chr)
-  ][]
-
-  genomic_ranges[
-    ,
-    data.table::foverlaps(
-      .SD,
-      chain_dt
-    )[
-      ,
-      .(
-        chr = new_chr,
-        start = data.table::fifelse(
-          rev,
-          end - offset - (i.start - start),
-          i.start - offset
-        ),
-        end = data.table::fifelse(
-          rev,
-          end - offset - (i.end - start),
-          i.end - offset
-        )
-      )
-    ]
-  ]
-  genomic_ranges[
-    ,
-    data.table::foverlaps(
-      .SD,
-      chain_dt
-    )
-  ][
-    ,
-    .(
-      chr = new_chr,
-      start = start,
-      end = end,
-      offset = offset,
-      rev = rev,
-      i.start = pmax(start, i.start),
-      i.end = pmin(end, i.end)
-    )
-  ][
-    ,
-    .(
-      chr = chr,
-      start = data.table::fifelse(
-        rev,
-        end - offset - (i.end - start),
-        i.start - offset
-      ),
-      end = data.table::fifelse(
-        rev,
-        end - offset - (i.start - start),
-        i.end - offset
-      )
-    )
-  ]
+  UseMethod("liftover")
 }

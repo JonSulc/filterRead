@@ -35,6 +35,7 @@ Collate:
     'filterRead-package.R'
     'filter_condition_internal.R'
     'filter_condition.R'
+    'genomic_regions.R'
     'ieugwas_parsing.R'
     'infer_build.R'
     'liftover.R'

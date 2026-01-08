@@ -4,7 +4,11 @@
 \alias{get_dbsnp_filename}
 \title{Get dbSNP local filename}
 \usage{
-get_dbsnp_filename(build = c("b37", "b38"), type = c("common", "all"))
+get_dbsnp_filename(
+  build = c("b37", "b38"),
+  type = c("common", "all"),
+  full_path = FALSE
+)
 }
 \arguments{
 \item{build}{Build version ("b37" or "b38")}
