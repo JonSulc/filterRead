@@ -29,8 +29,16 @@ new_genomic_regions <- function(
     if (length(end) == 0) end <- NA_integer_
   }
 
+  end_before_start <- end < start
+  any_end_before_start <- end_before_start |>
+    na.omit() |>
+    any()
+  if (any_end_before_start) {
+    stop("start must be less than end.")
+  }
+
   genomic_regions_dt <- data.table::data.table(
-    chr = chr,
+    chr = format_chr(chr),
     start = start,
     end = end
   ) |>
@@ -64,6 +72,17 @@ is_genomic_regions <- function(
   x
 ) {
   inherits(x, "genomic_regions")
+}
+
+format_chr <- function(
+  chr
+) {
+  chr <- as.character(chr)
+  data.table::fifelse(
+    grepl("^chr", chr) | is.na(chr),
+    chr,
+    paste0("chr", chr)
+  )
 }
 
 
@@ -113,24 +132,53 @@ liftover.genomic_regions <- function(
       to = target
     )
   }
-  if (nrow(x) == 0 || all(x[, is.na(chr)])) {
+  if (nrow(x) == 0) {
     return(x)
   }
 
-  if (!is.character(x$chr)) {
-    x[
+  expanded_x <- data.table::copy(x)
+
+  if (!is.character(expanded_x$chr)) {
+    expanded_x[
       ,
       chr := as.character(chr)
     ][]
   }
-  x[
+
+  expanded_x <- expanded_x[
+    ,
+    c(
+      .SD,
+      list(chr_is_na = is.na(chr))
+    )
+  ][
+    ,
+    {
+      if (all(is.na(chr))) {
+        expanded_x[
+          is.na(chr),
+          c(
+            .(
+              chr = unique(chain_dt$chr)
+            ),
+            .SD
+          ),
+          .SD = -"chr"
+        ]
+      } else {
+        .SD
+      }
+    },
+    by = chr_is_na
+  ][, -"chr_is_na"]
+  expanded_x[
     !grepl("^chr", chr),
     chr := paste0("chr", chr)
   ][]
 
   data.table::foverlaps(
     replace_na_with_sentinel(
-      x,
+      expanded_x,
       start_sentinel = 1L
     ),
     chain_dt

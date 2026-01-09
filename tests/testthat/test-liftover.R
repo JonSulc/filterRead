@@ -16,17 +16,20 @@ test_that("liftover matches known coordinates across builds", {
   genomic_regions_b36 <- new_genomic_regions(
     chr = "chr19",
     start = 50103781, # rs429358, b36
-    end = 50103919 # rs7412, b36
+    end = 50103919, # rs7412, b36
+    build = "b36"
   )
   genomic_regions_b37 <- new_genomic_regions(
     chr = "chr19",
     start = 45411941, # rs429358, b37
-    end = 45412079 # rs7412, b37
+    end = 45412079, # rs7412, b37
+    build = "b37"
   )
   genomic_regions_b38 <- new_genomic_regions(
     chr = "chr19",
     start = 44908684, # rs429358, b38
-    end = 44908822 # rs7412, b38
+    end = 44908822, # rs7412, b38
+    build = "b38"
   )
 
   expect_equal(
@@ -98,17 +101,20 @@ test_that("split regions return additional rows", {
   genomic_regions_b37 <- new_genomic_regions(
     chr = "chr19",
     start = 7304000,
-    end = 7304100
+    end = 7304100,
+    build = "b37"
   )
   genomic_regions_b37_split <- new_genomic_regions(
     chr = "chr19",
     start = c(7304000, 7304090),
-    end = c(7304089, 7304100)
+    end = c(7304089, 7304100),
+    build = "b37"
   )
   expected_regions_b38 <- new_genomic_regions(
     chr = c("chr19", "chr7"),
     start = c(7303989, 101687284),
-    end = c(7304078, 101687294)
+    end = c(7304078, 101687294),
+    build = "b38"
   )
   chain_dt <- get_chain_dt(from = "b37", to = "b38")
 
@@ -148,6 +154,29 @@ test_that("full chromosome liftover works", {
       gregions,
       target = "b38"
     ),
+    expected
+  )
+})
+
+test_that("chromosome-free liftover works", {
+  gregions <- new_genomic_regions(
+    end = 1e7,
+    build = "b37"
+  )
+  chain_dt <- get_chain_dt(
+    from = "b37",
+    to = "b38"
+  )
+  expected <- new_genomic_regions(
+    chr = unique(chain_dt$chr),
+    start = 1,
+    end = 1e7,
+    build = "b37"
+  ) |>
+    liftover("b38")
+  expect_equal(
+    gregions |>
+      liftover("b38"),
     expected
   )
 })

@@ -512,3 +512,55 @@ test_that("intersection handles multi-row genomic_regions", {
     )
   )
 })
+
+test_that("chr formatting works", {
+  expect_equal(
+    new_genomic_regions(chr = 1),
+    new_genomic_regions(chr = "chr1")
+  )
+})
+
+test_that("start cannot be after end", {
+  expect_error(
+    new_genomic_regions(
+      start = 42,
+      end = 21
+    )
+  )
+  expect_no_error(
+    new_genomic_regions(
+      start = 1:10,
+      end = 2:11
+    )
+  )
+  expect_no_error(
+    new_genomic_regions(
+      start = 1:10,
+      end = 1:10
+    )
+  )
+  expect_error(
+    new_genomic_regions(
+      start = 1:10,
+      end = 18:9
+    )
+  )
+  expect_error(
+    new_genomic_regions(
+      start = 1:10,
+      end = 9
+    )
+  )
+  expect_no_error(
+    new_genomic_regions(
+      start = 1:10,
+      end = 10
+    )
+  )
+  expect_no_error(
+    new_genomic_regions(
+      start = 1:10,
+      end = NA
+    )
+  )
+})
