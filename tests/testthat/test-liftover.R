@@ -180,3 +180,16 @@ test_that("chromosome-free liftover works", {
     expected
   )
 })
+
+test_that("regions with no mapping are dropped", {
+  expect_equal(
+    new_genomic_regions(
+      chr = "chr1",
+      end = 1000,
+      build = "b37"
+    ) |>
+      liftover("b38") |>
+      nrow(),
+    0
+  )
+})

@@ -181,7 +181,8 @@ liftover.genomic_regions <- function(
       expanded_x,
       start_sentinel = 1L
     ),
-    chain_dt
+    chain_dt,
+    nomatch = 0
   )[
     ,
     .(
