@@ -456,7 +456,7 @@ test_that("intersection with empty regions returns empty", {
   result <- gregions1 & g_empty
   expect_equal(
     gregions1 & g_empty,
-    gregions1
+    g_empty
   )
 })
 
@@ -475,4 +475,40 @@ test_that("addition merges overlapping regions", {
   expect_equal(nrow(result), 1)
   expect_equal(result$start, 100)
   expect_equal(result$end, 400)
+})
+
+test_that("intersection handles multi-row genomic_regions", {
+  gregions1 <- new_genomic_regions(
+    chr = c("chr1", "chr2"),
+    start = c(123, 345),
+    end = c(234, 456)
+  )
+  expect_equal(
+    gregions1 & gregions1,
+    gregions1
+  )
+  expect_equal(
+    gregions1 & new_genomic_regions(
+      chr = "chr1",
+      start = 42,
+      end = 421
+    ),
+    new_genomic_regions(
+      chr = "chr1",
+      start = 123,
+      end = 234
+    )
+  )
+  expect_equal(
+    gregions1 & new_genomic_regions(
+      chr = c("chr1", "chr2"),
+      start = c(142, 342),
+      end = c(242, 442)
+    ),
+    new_genomic_regions(
+      chr = c("chr1", "chr2"),
+      start = c(142, 345),
+      end = c(234, 442)
+    )
+  )
 })

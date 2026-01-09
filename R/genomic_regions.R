@@ -185,6 +185,18 @@ rbind.genomic_regions <- function(
   ...
 ) {
   dots <- list(...)
+  # Check if all inputs have the required columns
+  # (waldo may pass modified objects without these columns)
+  required_cols <- c("chr", "start", "end")
+  has_required_cols <- vapply(
+    dots,
+    function(x) all(required_cols %in% names(x)),
+    logical(1)
+  )
+  if (!all(has_required_cols)) {
+    # Fall back to simple rbindlist for waldo (testthat) comparison
+    return(data.table::rbindlist(dots))
+  }
   dots |>
     data.table::rbindlist() |>
     as_genomic_regions(
@@ -193,37 +205,80 @@ rbind.genomic_regions <- function(
 }
 
 # If considered as conditions, each row represents a possible region of interest
+# OR should combine them to contain all genomic regions
 #' @export
 `|.genomic_regions` <- `+.genomic_regions`
 
+# AND should find the intersections of all the regions
 #' @export
 `&.genomic_regions` <- function(
   e1,
   e2
 ) {
-  max_start <- max(e1$start, e2$start, na.rm = TRUE) |>
-    suppressWarnings()
-  min_end <- min(e1$end, e2$end, na.rm = TRUE) |>
-    suppressWarnings()
-  if (1 < length(unique(c(e1$chr, e2$chr))) || min_end < max_start) {
-    return(e1[0])
-  }
-  rbind(e1, e2)[
-    ,
-    .(
-      chr = chr[1],
-      start = ifelse(all(is.na(start)),
-        NA_real_,
-        max(start, na.rm = TRUE) |>
-          suppressWarnings()
-      ),
-      end = ifelse(all(is.na(end)),
-        NA_integer_,
-        min(end, na.rm = TRUE) |>
-          suppressWarnings()
-      )
+  if (!identical(get_build(e1), get_build(e2))) {
+    warning(
+      "The genomic_regions do not have the same build, ",
+      "currently not supported."
     )
-  ]
+  }
+  # Intersection with empty set = empty set
+  if (nrow(e1) == 0 || nrow(e2) == 0) {
+    return(new_genomic_regions(build = get_build(e1)))
+  }
+  e1_safe <- replace_na_with_sentinel(e1)
+  e2_safe <- replace_na_with_sentinel(e2)
+  data.table::foverlaps(e1_safe, e2_safe, nomatch = 0)[
+    ,
+    c(
+      .SD,
+      list(
+        start = pmax(start, i.start, na.rm = TRUE),
+        end = pmin(end, i.end, na.rm = TRUE)
+      )
+    ),
+    .SDcols = -c("start", "end", "i.start", "i.end")
+  ] |>
+    replace_sentinel_with_na() |>
+    as_genomic_regions(build = get_build(e1_safe))
+}
+
+replace_na_with_sentinel <- function(
+  genomic_regions,
+  chr_sentinel = "",
+  start_sentinel = 0L,
+  # Need to subtract 1 because foverlaps adds 1
+  end_sentinel = .Machine$integer.max - 1L
+) {
+  data.table::copy(genomic_regions)[
+    is.na(chr),
+    chr := chr_sentinel
+  ][
+    is.na(start),
+    start := start_sentinel
+  ][
+    is.na(end),
+    end := end_sentinel
+  ][] |>
+    data.table::setkey("chr", "start", "end")
+}
+replace_sentinel_with_na <- function(
+  genomic_regions,
+  chr_sentinel = "",
+  start_sentinel = 0L,
+  # Need to subtract 1 because foverlaps adds 1
+  end_sentinel = .Machine$integer.max - 1L
+) {
+  data.table::copy(genomic_regions)[
+    chr == chr_sentinel,
+    chr := NA_character_
+  ][
+    start == start_sentinel,
+    start := NA_integer_
+  ][
+    end == end_sentinel,
+    end := NA_integer_
+  ][] |>
+    data.table::setkey("chr", "start", "end")
 }
 
 merge_contiguous_regions <- function(
@@ -232,8 +287,9 @@ merge_contiguous_regions <- function(
   if (nrow(gregions) == 0) {
     return(gregions)
   }
+  gregions <- data.table::copy(gregions)
   data.table::setkey(gregions, chr, start, end)
-  gregions[
+  gregions <- gregions[
     ,
     c(
       .SD,
@@ -259,4 +315,5 @@ merge_contiguous_regions <- function(
     .SDcols = -"group"
   ] |>
     data.table::setkey(chr, start, end)
+  gregions
 }
