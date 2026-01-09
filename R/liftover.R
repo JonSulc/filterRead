@@ -17,7 +17,8 @@ get_chain_dt <- function(
       stringr::str_to_title()
   ) |>
     make_chain_from_file() |>
-    get_full_chain_dt()
+    get_full_chain_dt() |>
+    data.table::setattr("build", to)
 }
 
 
@@ -63,5 +64,8 @@ liftover <- function(
 get_build <- function(
   x
 ) {
+  if (is.character(x)) {
+    return(x)
+  }
   attr(x, "build")
 }

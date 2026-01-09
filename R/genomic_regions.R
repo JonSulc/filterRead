@@ -129,7 +129,10 @@ liftover.genomic_regions <- function(
   ][]
 
   data.table::foverlaps(
-    x,
+    replace_na_with_sentinel(
+      x,
+      start_sentinel = 1L
+    ),
     chain_dt
   )[
     ,
@@ -158,7 +161,7 @@ liftover.genomic_regions <- function(
       )
     )
   ] |>
-    data.table::setkey(chr, start, end)
+    as_genomic_regions(build = get_build(target))
 }
 
 #' @export
@@ -225,6 +228,8 @@ rbind.genomic_regions <- function(
   if (nrow(e1) == 0 || nrow(e2) == 0) {
     return(new_genomic_regions(build = get_build(e1)))
   }
+  # NAs are not handled by foverlaps, need to replace with sentinel values and
+  # restore the NAs after foverlaps
   e1_safe <- replace_na_with_sentinel(e1)
   e2_safe <- replace_na_with_sentinel(e2)
   data.table::foverlaps(e1_safe, e2_safe, nomatch = 0)[

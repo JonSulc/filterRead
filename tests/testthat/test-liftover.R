@@ -127,3 +127,27 @@ test_that("split regions return additional rows", {
     expected_regions_b38
   )
 })
+
+test_that("full chromosome liftover works", {
+  gregions <- new_genomic_regions(
+    chr = "chr1",
+    build = "b37"
+  )
+  chain_dt <- get_chain_dt(
+    from = "b37",
+    to = "b38"
+  )
+  expected <- chain_dt[
+    "chr1",
+    .(chr, start, end)
+  ] |>
+    as_genomic_regions() |>
+    liftover(chain_dt)
+  expect_equal(
+    liftover(
+      gregions,
+      target = "b38"
+    ),
+    expected
+  )
+})
