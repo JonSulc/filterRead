@@ -58,3 +58,10 @@ liftover <- function(
 ) {
   UseMethod("liftover")
 }
+
+# Used by filter_condition and genomic_regions
+get_build <- function(
+  x
+) {
+  attr(x, "build")
+}

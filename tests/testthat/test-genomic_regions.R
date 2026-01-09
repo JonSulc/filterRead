@@ -5,7 +5,7 @@ test_that("empty initialization works", {
     0
   )
   expect_true(
-    is.genomic_regions(genomic_regions)
+    is_genomic_regions(genomic_regions)
   )
   expect_equal(
     colnames(genomic_regions),
@@ -24,7 +24,7 @@ test_that("empty initialization works", {
     0
   )
   expect_true(
-    is.genomic_regions(genomic_regions_b38)
+    is_genomic_regions(genomic_regions_b38)
   )
   expect_equal(
     colnames(genomic_regions_b38),
@@ -97,8 +97,10 @@ test_that("initialization works", {
       names = c("chr", "start", "end"),
       row.names = 1,
       class = c("genomic_regions", "data.table", "data.frame"),
-      pos_only = FALSE
-    )
+      pos_only = FALSE,
+      sorted = c("chr", "start", "end")
+    ),
+    list_as_map = TRUE # Ignore order
   )
 
   genomic_regions <- new_genomic_regions(
@@ -122,7 +124,87 @@ test_that("initialization works", {
       names = c("chr", "start", "end"),
       row.names = 1,
       class = c("genomic_regions", "data.table", "data.frame"),
-      pos_only = TRUE
+      pos_only = TRUE,
+      sorted = c("chr", "start", "end")
+    ),
+    list_as_map = TRUE # Ignore order
+  )
+})
+
+test_that("merging overlapping regions works", {
+  gregions <- new_genomic_regions(
+    chr = "chr1",
+    start = c(123, 123),
+    end = c(234, 456)
+  )
+  expect_equal(
+    new_genomic_regions(
+      chr = "chr1",
+      start = c(123, 345),
+      end = c(234, 456)
+    ) |>
+      merge_overlapping_regions(),
+    new_genomic_regions(
+      chr = "chr1",
+      start = c(123, 345),
+      end = c(234, 456)
+    )
+  )
+  expect_equal(
+    new_genomic_regions(
+      chr = c("chr1", "chr2"),
+      start = c(123, 123),
+      end = c(234, 456)
+    ) |>
+      merge_overlapping_regions(),
+    new_genomic_regions(
+      chr = c("chr1", "chr2"),
+      start = c(123, 123),
+      end = c(234, 456)
+    )
+  )
+
+  expect_equal(
+    new_genomic_regions(
+      chr = "chr1",
+      start = c(123, 123),
+      end = c(234, 456)
+    ),
+    new_genomic_regions(
+      chr = "chr1",
+      start = 123,
+      end = 456
+    )
+  )
+  expect_equal(
+    new_genomic_regions(
+      chr = "chr1",
+      start = c(123, 123),
+      end = c(234, 456),
+      merge_contiguous = FALSE
+    ) |>
+      nrow(),
+    2
+  )
+})
+
+test_that("addition works", {
+  gregions1 <- new_genomic_regions(
+    chr = "chr1",
+    start = 123,
+    end = 234
+  )
+  gregions2 <- new_genomic_regions(
+    chr = "chr1",
+    start = 345,
+    end = 456
+  )
+  expect_equal(
+    gregions1 + gregions2,
+    new_genomic_regions(
+      chr = "chr1",
+      start = c(123, 345),
+      end = c(234, 456)
     )
   )
 })

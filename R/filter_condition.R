@@ -112,13 +112,6 @@ get_file_interface <- function(
   attr(fcondition, "finterface_env")$finterface
 }
 
-# Used by filter_condition and genomic_regions
-get_build <- function(
-  x
-) {
-  attr(x, "build")
-}
-
 #' @export
 format.filter_condition <- function(
   x,
