@@ -4,7 +4,6 @@ new_genomic_regions <- function(
   chr = character(),
   start = integer(),
   end = integer(),
-  pos = NULL,
   build = NULL,
   merge_contiguous = TRUE
 ) {
@@ -13,18 +12,6 @@ new_genomic_regions <- function(
       as_genomic_regions(chr, build = build)
     )
   }
-  pos_only <- FALSE
-  if (!is.null(pos)) {
-    if (all(is.na(start)) && all(is.na(end))) {
-      start <- end <- pos
-      pos_only <- TRUE
-    } else {
-      warning(
-        "`pos` argument is superseded by `start` and/or",
-        "`end` arguments, ignoring `pos`"
-      )
-    }
-  }
 
   argument_lengths <- list(chr, start, end) |>
     sapply(length)
@@ -32,7 +19,7 @@ new_genomic_regions <- function(
 
   if (!all(argument_lengths %in% c(0, 1, nrows))) {
     stop(
-      "Invalid argument lengths. `chr`, `start`, `end`, and `pos`, ",
+      "Invalid argument lengths. `chr`, `start`, and `end`, ",
       "if provided, must have length 1 or the same length as the longest."
     )
   }
@@ -47,23 +34,21 @@ new_genomic_regions <- function(
     start = start,
     end = end
   ) |>
-    as_genomic_regions(pos_only = pos_only, build = build)
+    as_genomic_regions(build = build)
   if (!merge_contiguous) {
     return(genomic_regions_dt)
   }
-  merge_overlapping_regions(genomic_regions_dt)
+  merge_contiguous_regions(genomic_regions_dt)
 }
 
 as_genomic_regions <- function(
   genomic_regions_dt,
-  pos_only = NULL,
   build = attr(genomic_regions_dt, "build")
 ) {
   stopifnot(is.data.frame(genomic_regions_dt))
   genomic_regions <- data.table::as.data.table(genomic_regions_dt) |>
     data.table::copy()
   validate_genomic_regions_dt(genomic_regions)
-  set_positions_to_start_end(genomic_regions, pos_only)
   data.table::setattr(genomic_regions, "build", build)
   data.table::setattr(
     genomic_regions,
@@ -86,17 +71,7 @@ is_genomic_regions <- function(
 print.genomic_regions <- function(
   x
 ) {
-  if (is.null(attr(x, "pos_only"))) {
-    NextMethod()
-  } else if (!attr(x, "pos_only")) {
-    NextMethod()
-  } else {
-    x[
-      ,
-      .(chr = chr, pos = start)
-    ] |>
-      print()
-  }
+  NextMethod()
   if (!is.null(get_build(x))) {
     cat("Build:", get_build(x))
   }
@@ -112,50 +87,6 @@ validate_genomic_regions_dt <- function(
     )
   }
   invisible(genomic_regions_dt)
-}
-
-set_positions_to_start_end <- function(
-  genomic_regions_dt,
-  pos_only = NULL
-) {
-  if (!"chr" %in% colnames(genomic_regions_dt)) {
-    genomic_regions_dt[
-      ,
-      chr := rep(NA_character_, .N)
-    ][]
-  }
-  if (all(c("start", "end") %in% colnames(genomic_regions_dt))) {
-    data.table::setattr(genomic_regions_dt, "pos_only", pos_only %||% FALSE)
-    return(genomic_regions_dt)
-  }
-  if ("pos" %in% colnames(genomic_regions_dt)) {
-    pos_only <- pos_only %||% TRUE
-    genomic_regions_dt[
-      ,
-      start := ifelse(
-        is.null(start),
-        pos,
-        data.table::fcoalesce(start, pos)
-      )
-    ][
-      ,
-      end := ifelse(
-        is.null(end),
-        pos,
-        data.table::fcoalesce(end, pos)
-      )
-    ][]
-  } else {
-    pos_only <- pos_only %||% FALSE
-    genomic_regions_dt[
-      ,
-      start := genomic_regions_dt$start %||% rep(NA_integer_, .N)
-    ][
-      ,
-      end := genomic_regions_dt$end %||% rep(NA_integer_, .N)
-    ][]
-  }
-  data.table::setattr(genomic_regions_dt, "pos_only", pos_only)
 }
 
 #' @export
@@ -237,7 +168,6 @@ liftover.genomic_regions <- function(
 ) {
   gr_attributes <- attributes(gregions)
   NextMethod() |>
-    data.table::setattr("pos_only", gr_attributes$pos_only) |>
     data.table::setattr("build", gr_attributes$build)
 }
 
@@ -247,7 +177,7 @@ liftover.genomic_regions <- function(
   e2
 ) {
   rbind(e1, e2) |>
-    merge_overlapping_regions()
+    merge_contiguous_regions()
 }
 
 #' @export
@@ -255,19 +185,9 @@ rbind.genomic_regions <- function(
   ...
 ) {
   dots <- list(...)
-  # Check that attributes are the same
-  all_pos_only <- dots |>
-    lapply(\(gregion) attr(gregion, "pos_only"))
-  if (length(unique(all_pos_only)) != 1) {
-    warning(
-      "genomic_regions have different `pos_only` attributes, ",
-      "using first."
-    )
-  }
   dots |>
     data.table::rbindlist() |>
     as_genomic_regions(
-      pos_only = all_pos_only[[1]],
       build = get_build(dots[[1]])
     )
 }
@@ -281,8 +201,11 @@ rbind.genomic_regions <- function(
   e1,
   e2
 ) {
-  if (1 < length(unique(c(e1$chr, e2$chr))) ||
-    min(e1$end, e2$end) < max(e1$start, e2$start)) {
+  max_start <- max(e1$start, e2$start, na.rm = TRUE) |>
+    suppressWarnings()
+  min_end <- min(e1$end, e2$end, na.rm = TRUE) |>
+    suppressWarnings()
+  if (1 < length(unique(c(e1$chr, e2$chr))) || min_end < max_start) {
     return(e1[0])
   }
   rbind(e1, e2)[
@@ -303,7 +226,7 @@ rbind.genomic_regions <- function(
   ]
 }
 
-merge_overlapping_regions <- function(
+merge_contiguous_regions <- function(
   gregions
 ) {
   if (nrow(gregions) == 0) {
