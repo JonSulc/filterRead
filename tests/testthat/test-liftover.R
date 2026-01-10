@@ -193,3 +193,59 @@ test_that("regions with no mapping are dropped", {
     0
   )
 })
+
+test_that("empty genomic_regions returns empty", {
+  empty_regions <- new_genomic_regions(build = "b37")
+  result <- liftover(empty_regions, "b38")
+  expect_equal(nrow(result), 0)
+  expect_true(is_genomic_regions(result))
+})
+
+test_that("reverse strand liftover coordinates are correct", {
+  chain_dt <- get_chain_dt(from = "b37", to = "b38")
+  # Find a region with reverse strand mapping
+  rev_chain <- chain_dt[rev == TRUE]
+  skip_if(nrow(rev_chain) == 0, "No reverse strand regions in chain")
+
+  # Use the first reverse strand region
+  test_region <- rev_chain[1]
+  input_region <- new_genomic_regions(
+    chr = test_region$chr,
+    start = test_region$start,
+    end = test_region$end,
+    build = "b37"
+  )
+  result <- liftover(input_region, chain_dt)
+
+  # Verify result exists and has expected chromosome
+  expect_equal(nrow(result), 1)
+  expect_equal(result$chr[1], test_region$new_chr)
+})
+
+test_that("multiple regions with partial mapping", {
+  # Mix of mappable and unmappable regions
+  # chr1:1-1000 has no mapping in the chain file
+  unmappable <- new_genomic_regions(
+    chr = "chr1",
+    start = 1,
+    end = 1000,
+    build = "b37"
+  )
+  # APOE region is known to map successfully
+  mappable <- new_genomic_regions(
+    chr = "chr19",
+    start = 45411941,
+    end = 45412079,
+    build = "b37"
+  )
+
+  mixed_regions <- rbind(unmappable, mappable)
+
+  # Only the mappable region should appear in result
+  expect_equal(
+    mixed_regions |>
+      liftover("b38"),
+    mappable |>
+      liftover("b38")
+  )
+})

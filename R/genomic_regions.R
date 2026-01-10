@@ -270,17 +270,41 @@ rbind.genomic_regions <- function(
   if (!identical(get_build(e1), get_build(e2))) {
     warning(
       "The genomic_regions do not have the same build, ",
-      "currently not supported."
+      "converting the second."
     )
+    e2 <- liftover(e2, get_build(e1))
   }
   # Intersection with empty set = empty set
   if (nrow(e1) == 0 || nrow(e2) == 0) {
     return(new_genomic_regions(build = get_build(e1)))
   }
+
+  # genomic_regions where is.na(chr) are to be combined with some
+  # where !is.na(chr) have to be expanded to match everything instead
+  if (chr_has_mixed_na(e1)) {
+    return(
+      (e1[is.na(chr)] & e2) + (e1[!is.na(chr)] & e2)
+    )
+  }
+  if (chr_has_mixed_na(e2)) {
+    return(
+      (e1 & e2[is.na(chr)]) + (e1 & e2[!is.na(chr)])
+    )
+  }
+
+  e1_safe <- data.table::copy(e1)
+  e2_safe <- data.table::copy(e2)
+  if (is.na(e1_safe$chr[1]) != is.na(e2_safe$chr[1])) {
+    if (is.na(e1_safe$chr[1])) {
+      e1_safe <- expand_na_chr(e1_safe, e2_safe)
+    } else {
+      e2_safe <- expand_na_chr(e2_safe, e1_safe)
+    }
+  }
   # NAs are not handled by foverlaps, need to replace with sentinel values and
   # restore the NAs after foverlaps
-  e1_safe <- replace_na_with_sentinel(e1)
-  e2_safe <- replace_na_with_sentinel(e2)
+  e1_safe <- replace_na_with_sentinel(e1_safe)
+  e2_safe <- replace_na_with_sentinel(e2_safe)
   data.table::foverlaps(e1_safe, e2_safe, nomatch = 0)[
     ,
     c(
@@ -294,6 +318,30 @@ rbind.genomic_regions <- function(
   ] |>
     replace_sentinel_with_na() |>
     as_genomic_regions(build = get_build(e1_safe))
+}
+
+chr_has_mixed_na <- function(
+  gregions
+) {
+  length(unique(is.na(gregions$chr))) == 2
+}
+
+expand_na_chr <- function(
+  gregions1,
+  gregions2
+) {
+  stopifnot(get_build(gregions1) == get_build(gregions2))
+  stopifnot(all(is.na(gregions1$chr)))
+  gregions1[
+    ,
+    .(
+      chr = unique(gregions2$chr)
+    ) |>
+      c(.SD),
+    .SDcols = -"chr",
+    by = .N
+  ] |>
+    as_genomic_regions(build = get_build(gregions1))
 }
 
 replace_na_with_sentinel <- function(
@@ -349,9 +397,9 @@ merge_contiguous_regions <- function(
       .SD,
       # Groups of overlapping regions are obtained by counting (cumsum)
       # regions where the start is less than the end of the previous
-      # region (shift(end))
+      # region + 1 (shift(end + 1))
       .(group = cumsum(
-        cummax(shift(end, fill = 0)) < start
+        cummax(data.table::shift(end + 1, fill = 0)) < start
       ))
     ),
     by = chr

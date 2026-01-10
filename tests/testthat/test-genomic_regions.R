@@ -564,3 +564,108 @@ test_that("start cannot be after end", {
     )
   )
 })
+
+test_that("adjacent regions merge", {
+  # Regions with a gap should remain separate
+  expect_equal(
+    new_genomic_regions(
+      chr = "chr1",
+      start = c(100, 202),
+      end = c(200, 300)
+    ) |>
+      nrow(),
+    2
+  )
+  # Regions that are adjacent should be merged
+  expect_equal(
+    new_genomic_regions(
+      chr = "chr1",
+      start = c(100, 201),
+      end = c(200, 300)
+    ),
+    new_genomic_regions(
+      chr = "chr1",
+      start = 100,
+      end = 300
+    )
+  )
+})
+
+test_that("intersection with different builds warns", {
+  # TODO This now does a liftover of the second, need to test this
+  gregions_b37 <- new_genomic_regions(
+    chr = "chr1",
+    start = 100,
+    end = 200,
+    build = "b37"
+  )
+  gregions_b38 <- new_genomic_regions(
+    chr = "chr1",
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+  expect_warning(
+    gregions_b37 & gregions_b38,
+    "same build"
+  )
+})
+
+test_that("intersection with NA chr matches any chromosome", {
+  gregions_any <- new_genomic_regions(
+    chr = NA_character_,
+    start = 100,
+    end = 200
+  )
+  gregions_chr1 <- new_genomic_regions(
+    chr = "chr1",
+    start = 100,
+    end = 200
+  )
+  expect_equal(
+    gregions_any & gregions_chr1,
+    gregions_chr1
+  )
+
+  gregions1 <- new_genomic_regions(
+    chr = c(NA_character_, "chr1"),
+    start = c(1, 1001),
+    end = c(100, 1100)
+  )
+  gregions2 <- new_genomic_regions(
+    chr = c(NA_character_, "chr2", NA_character_),
+    start = c(1042, 42, 21),
+    end = c(1142, 142, 42)
+  )
+  expect_equal(
+    gregions1 & gregions2,
+    new_genomic_regions(
+      chr = c(NA_character_, "chr1", "chr2"),
+      start = c(21, 1042, 42),
+      end = c(42, 1100, 100)
+    )
+  )
+})
+
+test_that("empty subsetting preserves class and build", {
+  gregions <- new_genomic_regions(
+    chr = "chr1",
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+
+  # Subset with 0 should return empty but preserve attributes
+
+  empty_subset <- gregions[0]
+  expect_equal(nrow(empty_subset), 0)
+  expect_true(is_genomic_regions(empty_subset))
+  expect_equal(attr(empty_subset, "build"), "b38")
+
+  # Subset with FALSE should also preserve attributes
+
+  empty_logical <- gregions[FALSE]
+  expect_equal(nrow(empty_logical), 0)
+  expect_true(is_genomic_regions(empty_logical))
+  expect_equal(attr(empty_logical, "build"), "b38")
+})
