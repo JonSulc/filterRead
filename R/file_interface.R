@@ -417,3 +417,11 @@ print.file_interface <- function(
     )
   )
 }
+
+#' @export
+dimnames.file_interface <- function(x) {
+  list(
+    NULL,
+    x$column_info$name[!is.na(x$column_info$name)]
+  )
+}
