@@ -75,22 +75,23 @@ test_that("%in% parsing works", {
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
-      rlang::expr(x %in% letters[1:5]),
+      rlang::expr(char %in% letters[1:5]),
       finterface = finterface
     ),
     structure(
       {
-        fcall <- rlang::expr(in_filter_condition(x))
+        fcall <- rlang::expr(in_filter_condition(char))
         fcall[[3]] <- c("a", "b", "c", "d", "e")
         fcall
       },
-      class = c("filter_condition", "call"),
+      class = c("in_filter_condition", "filter_condition", "call"),
       finterface_env = {
         env <- new.env(parent = emptyenv())
         env$finterface <- finterface
         env
       },
-      build = "b38"
+      build = "b38",
+      genomic_regions = full_genomic_regions(build = "b38")
     )
   )
 
@@ -133,7 +134,8 @@ test_that("Parentheses work as expected", {
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
-    new_filter_condition(rlang::expr((num < 3 & char == "a")),
+    new_filter_condition(
+      rlang::expr((num < 3 & char == "a")),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),

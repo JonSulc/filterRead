@@ -54,28 +54,125 @@ setup_variable_array <- function(
     paste(as_block(sprintf("%s[$0] = 1\nnext", variable_handle)))
 }
 
-eval_fcondition <- function(
-  fcondition,
+get_column_indices <- function(
   finterface
 ) {
-  if (length(fcondition) == 0) {
-    return()
-  }
-  environment <- get_file_interface(fcondition)$column_info[
+  column_indices <- finterface$column_info[
     !sapply(name, is.na),
     setNames(bash_index, name)
   ] |>
     as.list()
   if (needs_rsid_matching(finterface)) {
-    environment <- c(
-      environment,
+    column_indices <- c(
+      column_indices,
       list(or_filter_condition = or_filter_condition_rsid)
     )
   }
-  with(
-    environment,
-    eval(fcondition)
+  column_indices
+}
+
+eval_fcondition_w_gregions <- function(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  column_indices = get_column_indices(finterface),
+  env = parent.frame()
+) {
+  if (!is_and_block(fcondition)) {
+    return(
+      do.call(
+        get(fcondition[[1]]),
+        lapply(
+          fcondition[-1],
+          eval_fcondition_w_gregions,
+          column_indices = column_indices,
+          env = env
+        )
+      )
+    )
+  }
+  awk_conditions <- eval_fcondition(
+    fcondition,
+    column_indices = column_indices,
+    env = env
   )
+  awk_conditions$condition <- c(
+    awk_conditions$condition,
+    eval_genomic_regions_as_fc(
+      genomic_regions(fcondition) |>
+        post_process(finterface = finterface),
+      finterface = finterface,
+      column_indices = column_indices
+    )
+  )
+  if (!is.null(awk_conditions$condition)) {
+    awk_conditions$condition <- awk_conditions$condition |>
+      paste(collapse = " && ")
+  }
+  awk_conditions
+}
+
+eval_fcondition <- function(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  column_indices = get_column_indices(finterface),
+  env = parent.frame()
+) {
+  if (length(fcondition) == 0) {
+    return()
+  }
+  with(
+    column_indices,
+    post_process(fcondition, env = env) |>
+      eval()
+  )
+}
+
+eval_genomic_regions_as_fc <- function(
+  gregions,
+  finterface,
+  column_indices
+) {
+  if (is.null(gregions) || needs_rsid_matching(finterface)) {
+    return()
+  }
+  gregions_fcs <- gregions[
+    ,
+    single_genomic_region_to_fc(
+      .(chr = chr, start = start, end = end),
+      column_indices
+    ),
+    by = .I # Could be improved if vectorized
+  ][, -"I"] |>
+    unlist()
+  if (!is.null(gregions_fcs)) {
+    gregions_fcs <- gregions_fcs |>
+      paste(collapse = " || ")
+  }
+  if (1 < nrow(gregions)) {
+    sprintf("(%s)", gregions_fcs)
+  } else {
+    gregions_fcs
+  }
+}
+single_genomic_region_to_fc <- function(
+  gregion_row,
+  column_indices
+) {
+  all_fc <- c(
+    if (!is.na(gregion_row$chr)) {
+      eq_filter_condition(column_indices$chr, gregion_row$chr)
+    },
+    if (!is.na(gregion_row$start)) {
+      lte_filter_condition(gregion_row$start, column_indices$pos)
+    },
+    if (!is.na(gregion_row$end)) {
+      lte_filter_condition(column_indices$pos, gregion_row$end)
+    }
+  )
+  if (is.null(all_fc)) {
+    return()
+  }
+  paste(all_fc, collapse = " && ")
 }
 
 fcondition_to_awk <- function(
@@ -87,13 +184,13 @@ fcondition_to_awk <- function(
     fcondition = fcondition
   )
 
-  fcondition_and_rsid_to_awk(fcondition) |>
-    compile_awk_cmds(
-      finterface = get_file_interface(fcondition),
-      column_arrays_before_conditions = column_arrays$before_if,
-      column_arrays_after_conditions = column_arrays$after_if,
-      return_only_cmd = return_only_cmd
-    )
+  compile_awk_cmds(
+    finterface = get_file_interface(fcondition),
+    fcondition_awk_dt = fcondition_and_rsid_to_awk(fcondition),
+    column_arrays_before_conditions = column_arrays$before_if,
+    column_arrays_after_conditions = column_arrays$after_if,
+    return_only_cmd = return_only_cmd
+  )
 }
 
 fcondition_and_rsid_to_awk <- function(
@@ -105,32 +202,36 @@ fcondition_and_rsid_to_awk <- function(
   ],
   index = 0
 ) {
-  if (!needs_rsid_matching(get_file_interface(fcondition)) ||
-    (is.null(attr(fcondition, "genomic_range")) &&
-      is_single_genomic_range_block(fcondition))) {
-    return(eval_fcondition(
+  # RSID-based indexing should only be applied if required, i.e.,
+  # if the file is RSID-indexed and there is a genomic condition applied
+  rsid_indexed <- needs_rsid_matching(get_file_interface(fcondition))
+  full_genome_condition <- is_full_genome(
+    genomic_regions(fcondition, recursive = TRUE)
+  )
+  no_genome_condition <- has_no_gregions(fcondition)
+  if (!rsid_indexed || full_genome_condition || no_genome_condition) {
+    return(eval_fcondition_w_gregions(
       fcondition,
-      get_file_interface(fcondition)
+      finterface = get_file_interface(fcondition)
     ) |>
       data.table::as.data.table())
   }
-  if (!is_single_genomic_range_block(fcondition)) {
+  if (!is_single_genomic_block(fcondition)) {
     stopifnot(fcondition[[1]] == as.symbol("or_filter_condition"))
-    to_return <- fcondition_and_rsid_to_awk(
-      fcondition[[2]],
-      rsid_bash_index,
-      index     = index
-    )
     return(rbind(
-      to_return,
+      fcondition_and_rsid_to_awk(
+        fcondition[[2]],
+        rsid_bash_index,
+        index = index
+      ),
       fcondition_and_rsid_to_awk(
         fcondition[[3]],
         rsid_bash_index,
-        index     = index + 1
+        index = index + 1
       )
     ))
   }
-  attr(fcondition, "genomic_range")[
+  genomic_regions(fcondition)[
     ,
     .(
       index = index,
@@ -164,9 +265,9 @@ fcondition_and_rsid_to_awk <- function(
     )
   ] |>
     cbind(data.table::as.data.table(
-      eval_fcondition(
+      eval_fcondition_w_gregions(
         fcondition,
-        get_file_interface(fcondition)
+        finterface = get_file_interface(fcondition)
       )
     ))
 }
@@ -353,7 +454,7 @@ wrap_main_file_code <- function(
   column_arrays_after_conditions,
   nlines = NULL
 ) {
-  if (is.null(fcondition_awk_dt)) {
+  if (is.null(fcondition_awk_dt) || nrow(fcondition_awk_dt) == 0) {
     condition_block <- wrap_condition_block(
       column_arrays_after_conditions = column_arrays_after_conditions,
       nlines = nlines

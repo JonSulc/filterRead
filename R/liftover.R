@@ -67,5 +67,8 @@ get_build <- function(
   if (is.character(x)) {
     return(x)
   }
+  if ("build" %in% names(x)) {
+    return(x$build)
+  }
   attr(x, "build")
 }

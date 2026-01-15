@@ -118,49 +118,49 @@ test_that("Genomic blocks are correctly identified", {
       rlang::expr(pval < .05),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
   expect_true(
     new_filter_condition(
       rlang::expr(chr == 1),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
   expect_true(
     new_filter_condition(
       rlang::expr(chr == 1 & pval < .05),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
-  expect_true(
+  expect_false(
     new_filter_condition(
       rlang::expr(chr == 1 | pval < .05),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
-  expect_true(
+  expect_false(
     new_filter_condition(
       rlang::expr(chr == 1 & pos < 123 | pval < .05),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
-  expect_true(
+  expect_false(
     new_filter_condition(
       rlang::expr(chr == 1 & 123 < pos & pos < 234 | pval < .05),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
   expect_true(
     new_filter_condition(
       rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
   expect_true(
     new_filter_condition(
@@ -168,7 +168,7 @@ test_that("Genomic blocks are correctly identified", {
         pval < .05 & ref == "A"),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
   expect_true(
     new_filter_condition(
@@ -176,7 +176,7 @@ test_that("Genomic blocks are correctly identified", {
         chr == 2 & 21 < pos & pos < 42),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
 
   expect_false(
@@ -184,14 +184,14 @@ test_that("Genomic blocks are correctly identified", {
       rlang::expr(chr == 1 & 123 < pos | pos < 234 & pval < .05),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
   expect_false(
     new_filter_condition(
       rlang::expr(chr == 1 | 123 < pos & pos < 234 & pval < .05),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
   expect_false(
     new_filter_condition(
@@ -199,7 +199,7 @@ test_that("Genomic blocks are correctly identified", {
         chr == 2 & 21 < pos & pos < 42),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
   expect_false(
     new_filter_condition(
@@ -207,7 +207,7 @@ test_that("Genomic blocks are correctly identified", {
         chr == 2 & 21 < pos & pos < 42 & pval < .01),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
   expect_false(
     new_filter_condition(
@@ -215,7 +215,7 @@ test_that("Genomic blocks are correctly identified", {
         chr == 2 & 21 < pos & pos < 42 & pval < .01),
       finterface
     ) |>
-      is_single_genomic_range_block()
+      is_single_genomic_block()
   )
 })
 
@@ -245,12 +245,12 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
   }
   else {
     if ($1 in rsid0) {
-      if ($5 < 0.05) {
+      if (($5 < 0.05)) {
         print rsid0[$1] OFS $0
       }
     }
     else if ($1 in rsid1) {
-      if ($5 < 0.01) {
+      if (($5 < 0.01)) {
         print rsid1[$1] OFS $0
       }
     }
@@ -266,8 +266,8 @@ test_that("Genomic ranges are correctly identified", {
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(rlang::expr(chr == 1 & pos < 123), finterface) |>
-      attr("genomic_range"),
-    data.table::data.table(chr = "1", start = NA_real_, end = 122)
+      genomic_regions(),
+    new_genomic_regions(chr = "1", start = NA_real_, end = 122, build = "b38")
   )
 })
 
@@ -278,10 +278,10 @@ test_that("Genomic ranges are correctly structured", {
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(rlang::expr(pos < 123), finterface) |>
-      attr("genomic_range"),
-    data.table::data.table(
-      chr = as.character(c(1:22, "X", "Y", "MT")),
-      start = NA_real_, end = 122
+      genomic_regions(),
+    new_genomic_regions(
+      end = 122,
+      build = "b38"
     )
   )
 })

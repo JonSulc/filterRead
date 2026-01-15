@@ -1,32 +1,38 @@
 lt_filter_condition <- function(
-    var1,
-    var2) {
+  var1,
+  var2
+) {
   list(condition = sprintf("%s < %s", var1, var2))
 }
 lte_filter_condition <- function(
-    var1,
-    var2) {
+  var1,
+  var2
+) {
   list(condition = sprintf("%s <= %s", var1, var2))
 }
 gt_filter_condition <- function(
-    var1,
-    var2) {
+  var1,
+  var2
+) {
   list(condition = sprintf("%s > %s", var1, var2))
 }
 gte_filter_condition <- function(
-    var1,
-    var2) {
+  var1,
+  var2
+) {
   list(condition = sprintf("%s >= %s", var1, var2))
 }
 eq_filter_condition <- function(
-    var1,
-    var2) {
+  var1,
+  var2
+) {
   list(condition = sprintf("%s == %s", var1, var2))
 }
 in_filter_condition <- function(
-    column_name,
-    values,
-    filename = tempfile()) {
+  column_name,
+  values,
+  filename = tempfile()
+) {
   filename_handle <- basename(filename)
   # "var" is pasted instead of subbed to avoid issues if the filename does not
   # contain "file"
@@ -43,24 +49,40 @@ in_filter_condition <- function(
 }
 
 and_filter_condition <- function(
-    fcondition1,
-    fcondition2) {
+  fcondition1,
+  fcondition2
+) {
   combine_filter_condition(fcondition1, fcondition2, "&&")
 }
 
 or_filter_condition <- function(
-    fcondition1,
-    fcondition2) {
+  fcondition1,
+  fcondition2
+) {
   combine_filter_condition(fcondition1, fcondition2, "||")
 }
 or_filter_condition_rsid <- function(
-    fcondition1,
-    fcondition2) {
+  fcondition1,
+  fcondition2
+) {
   list(condition = unname(c(fcondition1, fcondition2)))
 }
 
 lp_filter_condition <- function(
-    fcondition) {
+  fcondition
+) {
   fcondition$condition <- sprintf("(%s)", fcondition$condition)
   fcondition
+}
+
+combine_filter_condition <- function(
+  fcondition1,
+  fcondition2,
+  operation
+) {
+  list(
+    variable_arrays = c(fcondition1$variable_array, fcondition2$variable_array),
+    condition = paste(fcondition1$condition, operation, fcondition2$condition),
+    additional_files = c(fcondition1$additional_files, fcondition2$additional_files)
+  )
 }

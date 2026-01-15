@@ -4,14 +4,22 @@ lp_to_fc <- function(
 ) {
   stopifnot(fcall[[1]] == as.symbol("("))
   fcall[[1]] <- as.symbol("lp_filter_condition")
-  fcall[-1] <- lapply(
-    fcall[-1],
-    new_filter_condition,
-    ...
-  )
-  attributes(fcall) <- attributes(fcall[[2]])
-  fcall |>
-    as_filter_condition()
+  fcall[[2]] <- new_filter_condition(fcall[[2]], ...)
+  class(fcall) <- c("lp_filter_condition", class(fcall)) |>
+    unique()
+  fcall
+}
+lp_wrap_fcondition <- function(
+  fcall
+) {
+  fcondition <- rlang::expr(lp_filter_condition())
+  fcondition[[2]] <- fcall
+  fcondition <- as_filter_condition(fcondition)
+  class(fcondition) <- c("lp_filter_condition", class(fcondition)) |>
+    unique()
+  attr(fcondition, "build") <- attr(fcall, "build")
+  genomic_regions(fcondition) <- genomic_regions(fcall)
+  fcondition
 }
 
 and_to_fc <- function(
@@ -42,6 +50,10 @@ chainable_to_fc <- function(
     ">"  = as.symbol("gt_filter_condition"),
     ">=" = as.symbol("gte_filter_condition")
   )[[as.character(fcall[[1]])]]
+  class(fcall) <- c(
+    as.character(fcall[[1]]),
+    class(fcall)
+  ) |> unique()
   fcall
 }
 
@@ -55,15 +67,19 @@ eq_to_fc <- function(
   stopifnot(fcall[[1]] == as.symbol("=="))
   fcall[[1]] <- as.symbol("eq_filter_condition")
 
-  if (is_column_symbol(fcall[[2]], finterface_env$finterface) &
+  # To work with genomic_regions, post-processing will have to be done later
+  if (is_column_symbol(fcall[[2]], finterface_env$finterface) &&
     !is_column_symbol(fcall[[3]], finterface_env$finterface)) {
     fcall[[3]] <- eval(fcall[[3]], env) |>
       check_post_processing(fcall[[2]], finterface_env$finterface)
-  } else if (is_column_symbol(fcall[[3]], finterface_env$finterface) &
+  } else if (is_column_symbol(fcall[[3]], finterface_env$finterface) &&
     !is_column_symbol(fcall[[2]], finterface_env$finterface)) {
     fcall[[2]] <- eval(fcall[[2]], env) |>
       check_post_processing(fcall[[3]], finterface_env$finterface)
   }
+
+  class(fcall) <- c("eq_filter_condition", class(fcall)) |>
+    unique()
 
   fcall
 }
@@ -79,6 +95,9 @@ in_to_fc <- function(
 
   fcall[[3]] <- eval(fcall[[3]], env) |>
     check_post_processing(fcall[[2]], finterface_env$finterface, to_write = TRUE)
+
+  class(fcall) <- c("in_filter_condition", class(fcall)) |>
+    unique()
 
   fcall
 }
@@ -163,4 +182,19 @@ check_quotes_to_write <- function(
     as.character(values),
     sprintf("\"%s\"", values)
   )
+}
+
+evaluate_non_column_variables <- function(
+  fcondition,
+  finterface,
+  env
+) {
+  fcondition[-1] <- lapply(
+    fcondition[-1],
+    \(x) {
+      if (is_column_symbol(x, finterface)) return(x)
+      eval(x, env)
+    }
+  )
+  fcondition
 }

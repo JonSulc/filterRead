@@ -9,7 +9,7 @@ tabix_colnames <- c(
   "info"
 )
 
-is_single_genomic_range_block <- function(
+is_single_genomic_block <- function(
   fcondition
 ) {
   # Determine whether all non-genomic conditions apply to the same genomic range
@@ -28,10 +28,12 @@ is_single_genomic_range_block <- function(
   }
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
     return(
-      (is_single_genomic_range_block(fcondition[[2]]) &
-        !has_genomic_condition(fcondition[[3]])) |
-        (is_single_genomic_range_block(fcondition[[3]]) &
-          !has_genomic_condition(fcondition[[2]]))
+      is_single_genomic_block(fcondition[[2]]) &&
+        is_single_genomic_block(fcondition[[3]]) &&
+        identical(
+          genomic_regions(fcondition[[2]]),
+          genomic_regions(fcondition[[3]])
+        )
     )
   }
   FALSE
@@ -48,7 +50,7 @@ get_tabix_process_substitution <- function(
   regions <- sprintf(
     sprintf(
       "%s%s",
-      chr,
+      drop_chr_prefix(chr),
       ifelse(is.na(start) & is.na(end),
         "",
         sprintf(

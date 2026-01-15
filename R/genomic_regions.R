@@ -5,6 +5,7 @@ new_genomic_regions <- function(
   start = integer(),
   end = integer(),
   build = NULL,
+  chr_prefix = "chr",
   merge_contiguous = TRUE
 ) {
   if (data.table::is.data.table(chr)) {
@@ -38,7 +39,7 @@ new_genomic_regions <- function(
   }
 
   genomic_regions_dt <- data.table::data.table(
-    chr = format_chr(chr),
+    chr = format_chr(chr, prefix = chr_prefix),
     start = start,
     end = end
   ) |>
@@ -49,12 +50,36 @@ new_genomic_regions <- function(
   merge_contiguous_regions(genomic_regions_dt)
 }
 
-as_genomic_regions <- function(
-  genomic_regions_dt,
-  build = attr(genomic_regions_dt, "build")
+empty_genomic_regions <- function(
+  build = NULL
 ) {
-  stopifnot(is.data.frame(genomic_regions_dt))
-  genomic_regions <- data.table::as.data.table(genomic_regions_dt) |>
+  new_genomic_regions(build = build)
+}
+
+full_genomic_regions <- function(
+  build = NULL
+) {
+  new_genomic_regions(
+    chr = NA_character_,
+    build = build
+  )
+}
+
+#' @export
+as_genomic_regions <- function(
+  x,
+  ...
+) {
+  UseMethod("as_genomic_regions")
+}
+#' @export
+as_genomic_regions.default <- function(
+  x,
+  build = get_build(x),
+  ...
+) {
+  stopifnot(is.data.frame(x))
+  genomic_regions <- data.table::as.data.table(x) |>
     data.table::copy()
   validate_genomic_regions_dt(genomic_regions)
   data.table::setattr(genomic_regions, "build", build)
@@ -67,6 +92,285 @@ as_genomic_regions <- function(
   data.table::setkey(genomic_regions, chr, start, end)
   genomic_regions
 }
+#' @export
+as_genomic_regions.filter_condition <- function(
+  x,
+  build = get_build(x),
+  ...
+) {
+  genomic_regions(x)
+}
+#' @export
+as_genomic_regions.and_filter_condition <- function(
+  x,
+  build = get_build(x),
+  ...
+) {
+  as_genomic_regions(x[[2]], build = build, ...) & as_genomic_regions(x[[3]], build = build, ...)
+}
+#' @export
+as_genomic_regions.or_filter_condition <- function(
+  x,
+  build = get_build(x),
+  ...
+) {
+  as_genomic_regions(x[[2]], build = build, ...) | as_genomic_regions(x[[3]], build = build, ...)
+}
+#' @export
+as_genomic_regions.lp_filter_condition <- function(
+  x,
+  build = get_build(x),
+  ...
+) {
+  as_genomic_regions(x[[2]], build = build, ...)
+}
+#' @export
+as_genomic_regions.eq_filter_condition <- function(
+  x,
+  build = get_build(x),
+  ...
+) {
+  if (length(x) == 0) {
+    NextMethod()
+  }
+  if (x[[2]] == as.symbol("chr")) {
+    return(
+      new_genomic_regions(chr = x[[3]], build = build)
+    )
+  }
+  if (x[[3]] == as.symbol("chr")) {
+    return(
+      new_genomic_regions(chr = x[[2]], build = build)
+    )
+  }
+  if (x[[2]] == as.symbol("pos")) {
+    return(new_genomic_regions(
+      start = x[[3]],
+      end = x[[3]],
+      build = build
+    ))
+  }
+  if (x[[3]] == as.symbol("pos")) {
+    return(new_genomic_regions(
+      start = x[[2]],
+      end = x[[2]],
+      build = build
+    ))
+  }
+  new_genomic_regions(chr = NA_character_, build = build)
+}
+#' @export
+as_genomic_regions.lt_filter_condition <- function(
+  x,
+  build = get_build(x),
+  ordered_chr = 1:22,
+  ...
+) {
+  if (length(x) == 0) {
+    NextMethod()
+  }
+  if (x[[2]] == as.symbol("pos")) {
+    return(
+      new_genomic_regions(
+        end = x[[3]] - 1,
+        build = build
+      )
+    )
+  }
+  if (x[[3]] == as.symbol("pos")) {
+    return(
+      new_genomic_regions(
+        start = x[[2]] + 1,
+        build = build
+      )
+    )
+  }
+  if (x[[2]] == as.symbol("chr")) {
+    # chr < x[[3]]
+    if (x[[3]] %in% ordered_chr) {
+      return(
+        new_genomic_regions(
+          chr = ordered_chr[
+            ordered_chr < x[[3]]
+          ],
+          build = build
+        )
+      )
+    }
+  } else if (x[[3]] == as.symbol("chr")) {
+    # x[[2]] < chr
+    if (x[[2]] %in% ordered_chr) {
+      return(
+        new_genomic_regions(
+          chr = ordered_chr[
+            x[[2]] < ordered_chr
+          ],
+          build = build
+        )
+      )
+    }
+  }
+  new_genomic_regions(chr = NA_character_, build = build)
+}
+#' @export
+as_genomic_regions.lte_filter_condition <- function(
+  x,
+  build = get_build(x),
+  ordered_chr = 1:22,
+  ...
+) {
+  if (length(x) == 0) {
+    NextMethod()
+  }
+  if (x[[2]] == as.symbol("pos")) {
+    return(
+      new_genomic_regions(
+        end = x[[3]],
+        build = build
+      )
+    )
+  }
+  if (x[[3]] == as.symbol("pos")) {
+    return(
+      new_genomic_regions(
+        start = x[[2]],
+        build = build
+      )
+    )
+  }
+  if (x[[2]] == as.symbol("chr")) {
+    # chr <= x[[3]]
+    if (x[[3]] %in% ordered_chr) {
+      return(
+        new_genomic_regions(
+          chr = ordered_chr[
+            ordered_chr <= x[[3]]
+          ],
+          build = build
+        )
+      )
+    }
+  } else if (x[[3]] == as.symbol("chr")) {
+    # x[[2]] <= chr
+    if (x[[2]] %in% ordered_chr) {
+      return(
+        new_genomic_regions(
+          chr = ordered_chr[
+            x[[2]] <= ordered_chr
+          ],
+          build = build
+        )
+      )
+    }
+  }
+  new_genomic_regions(chr = NA_character_, build = build)
+}
+#' @export
+as_genomic_regions.gt_filter_condition <- function(
+  x,
+  build = get_build(x),
+  ordered_chr = 1:22,
+  ...
+) {
+  if (length(x) == 0) {
+    NextMethod()
+  }
+  if (x[[2]] == as.symbol("pos")) {
+    return(
+      new_genomic_regions(
+        start = x[[3]] + 1,
+        build = build
+      )
+    )
+  }
+  if (x[[3]] == as.symbol("pos")) {
+    return(
+      new_genomic_regions(
+        end = x[[2]] - 1,
+        build = build
+      )
+    )
+  }
+  if (x[[2]] == as.symbol("chr")) {
+    # chr > x[[3]]
+    if (x[[3]] %in% ordered_chr) {
+      return(
+        new_genomic_regions(
+          chr = ordered_chr[
+            ordered_chr > x[[3]]
+          ],
+          build = build
+        )
+      )
+    }
+  } else if (x[[3]] == as.symbol("chr")) {
+    # x[[2]] > chr
+    if (x[[2]] %in% ordered_chr) {
+      return(
+        new_genomic_regions(
+          chr = ordered_chr[
+            x[[2]] > ordered_chr
+          ],
+          build = build
+        )
+      )
+    }
+  }
+  new_genomic_regions(chr = NA_character_, build = build)
+}
+#' @export
+as_genomic_regions.gte_filter_condition <- function(
+  x,
+  build = get_build(x),
+  ordered_chr = 1:22,
+  ...
+) {
+  if (length(x) == 0) {
+    NextMethod()
+  }
+  if (x[[2]] == as.symbol("pos")) {
+    return(
+      new_genomic_regions(
+        start = x[[3]],
+        build = build
+      )
+    )
+  }
+  if (x[[3]] == as.symbol("pos")) {
+    return(
+      new_genomic_regions(
+        end = x[[2]],
+        build = build
+      )
+    )
+  }
+  if (x[[2]] == as.symbol("chr")) {
+    # chr >= x[[3]]
+    if (x[[3]] %in% ordered_chr) {
+      return(
+        new_genomic_regions(
+          chr = ordered_chr[
+            ordered_chr >= x[[3]]
+          ],
+          build = build
+        )
+      )
+    }
+  } else if (x[[3]] == as.symbol("chr")) {
+    # x[[2]] >= chr
+    if (x[[2]] %in% ordered_chr) {
+      return(
+        new_genomic_regions(
+          chr = ordered_chr[
+            x[[2]] >= ordered_chr
+          ],
+          build = build
+        )
+      )
+    }
+  }
+  new_genomic_regions(chr = NA_character_, build = build)
+}
 
 is_genomic_regions <- function(
   x
@@ -75,14 +379,28 @@ is_genomic_regions <- function(
 }
 
 format_chr <- function(
-  chr
+  chr,
+  prefix
 ) {
   chr <- as.character(chr)
   data.table::fifelse(
-    grepl("^chr", chr) | is.na(chr),
+    grepl(paste0("^", prefix), chr) | is.na(chr),
     chr,
-    paste0("chr", chr)
+    paste0(prefix, chr)
   )
+}
+
+copy_genomic_regions <- function(gregions) {
+  data.table::copy(gregions) |>
+    as_genomic_regions()
+}
+
+drop_chr_prefix <- function(chr) {
+  gsub("^chr", "", chr)
+}
+
+is_full_genome <- function(gregions) {
+  all(is.na(gregions))
 }
 
 
@@ -121,6 +439,12 @@ liftover.genomic_regions <- function(
       warning(
         "No build configured for genomic_regions, ",
         "returning original object"
+      )
+      return(x)
+    }
+    if (is.null(target)) {
+      warning(
+        "No build target specified, returning original object"
       )
       return(x)
     }
@@ -275,6 +599,9 @@ rbind.genomic_regions <- function(
     e2 <- liftover(e2, get_build(e1))
   }
   # Intersection with empty set = empty set
+  if (is.null(e1) || is.null(e2)) {
+    return(new_genomic_regions(build = get_build(e1)))
+  }
   if (nrow(e1) == 0 || nrow(e2) == 0) {
     return(new_genomic_regions(build = get_build(e1)))
   }
