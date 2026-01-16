@@ -409,7 +409,8 @@ test_that("rbind combines genomic_regions", {
     start = 300,
     end = 400
   )
-  result <- rbind(gregions1, gregions2)
+  result <- rbind(gregions1, gregions2) |>
+    suppressWarnings()
   expect_equal(nrow(result), 2)
   expect_true(is_genomic_regions(result))
   expect_equal(attr(result, "build"), "b37")

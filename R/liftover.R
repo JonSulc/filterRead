@@ -1,4 +1,3 @@
-#' @import data.table
 #' @importFrom rtracklayer import.chain
 
 get_chain_dt <- function(
@@ -18,7 +17,9 @@ get_chain_dt <- function(
   ) |>
     make_chain_from_file() |>
     get_full_chain_dt() |>
-    data.table::setattr("build", to)
+    data.table::setattr("from", from) |>
+    data.table::setattr("build", to) |>
+    data.table::setattr("to", to)
 }
 
 

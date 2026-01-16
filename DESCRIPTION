@@ -12,10 +12,10 @@ License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Depends:
-    R (>= 4.1.0)
+    R (>= 4.1.0),
+    data.table (>= 1.16.0)
 Imports:
     curl,
-    data.table (>= 1.16.0),
     purrr,
     rlang,
     stringr

@@ -1,5 +1,3 @@
-#' @import data.table
-
 new_genomic_positions <- function(
   chr = character(),
   pos = integer(),
