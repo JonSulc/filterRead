@@ -233,7 +233,7 @@ test_that("as_genomic_regions converts data.table", {
 test_that("as_genomic_regions errors on invalid input", {
   expect_error(
     as_genomic_regions(list(chr = "chr1", start = 100, end = 200)),
-    "data.frame"
+    "no applicable"
   )
 })
 

@@ -1,4 +1,70 @@
 # =============================================================================
+# R Expression to Filter Condition Conversion
+# =============================================================================
+# These functions convert R expressions to filter_condition objects to then
+# generate awk condition code. Includes both high-level conversion
+# and low-level atomic condition builders (*_filter_condition).
+
+# =============================================================================
+# Filter Condition Internal (R Expression -> Filter Condition Conversion)
+# =============================================================================
+# These functions convert R expressions (like `pval < 5e-8`) into
+# filter_condition objects that can later be evaluated to awk code.
+#
+# The conversion process:
+# 1. R expression is parsed
+# 2. Operators are replaced with filter_condition function calls:
+#    - `(` -> lp_filter_condition (left paren)
+#    - `&` -> and_filter_condition
+#    - `|` -> or_filter_condition
+#    - `<`, `<=`, `>`, `>=` -> chainable operators
+#    - `==` -> eq_filter_condition
+#    - `%in%` -> in_filter_condition
+# 3. Values are processed (quotes added, prefixes applied)
+# 4. Result is a call object with filter_condition class
+
+#' Wrap filter condition in parentheses
+#'
+#' Creates a new lp_filter_condition wrapping an existing filter_condition.
+#' Preserves build and genomic_regions attributes.
+#'
+#' @param fcall An existing filter_condition object
+#'
+#' @return New filter_condition wrapped in lp_filter_condition
+#' @keywords internal
+lp_wrap_fcondition <- function(
+  fcall
+) {
+  fcondition <- rlang::expr(lp_filter_condition())
+  fcondition[[2]] <- fcall
+  fcondition <- as_filter_condition(fcondition)
+  class(fcondition) <- c("lp_filter_condition", class(fcondition)) |>
+    unique()
+  attr(fcondition, "build") <- attr(fcall, "build")
+  genomic_regions(fcondition) <- genomic_regions(fcall)
+  fcondition
+}
+
+#' Check if expression is a column name
+#'
+#' Tests if a call/symbol represents a recognized column name in the file.
+#'
+#' @param fcall Expression to test
+#' @param finterface File interface with column_info
+#'
+#' @return TRUE if fcall is a single symbol matching a column name
+#' @keywords internal
+is_column_symbol <- function(
+  fcall,
+  finterface
+) {
+  if (length(fcall) != 1) {
+    return(FALSE)
+  }
+  as.character(fcall) %in% finterface$column_info$name
+}
+
+# =============================================================================
 # Filter Condition Functions (Awk Condition Builders)
 # =============================================================================
 # These functions are the atomic building blocks for constructing awk
@@ -147,33 +213,6 @@ or_filter_condition <- function(
 #' @param fcondition2 Second condition (or condition list)
 #' @return List with `condition` as unnamed vector of conditions
 #' @keywords internal
-or_filter_condition_rsid <- function(
-  fcondition1,
-  fcondition2
-) {
-  list(condition = unname(c(fcondition1, fcondition2)))
-}
-
-#' Wrap condition in parentheses
-#'
-#' Adds parentheses around a condition for correct operator precedence.
-#'
-#' @param fcondition Condition list with `condition` element
-#' @return Same list with condition wrapped in parentheses
-#' @keywords internal
-lp_filter_condition <- function(
-  fcondition
-) {
-  fcondition$condition <- sprintf("(%s)", fcondition$condition)
-  fcondition
-}
-
-#' Generic condition combiner
-#'
-#' Combines two condition lists with a specified operator, merging their
-#' variable_arrays and additional_files.
-#'
-#' @param fcondition1 First condition list
 #' @param fcondition2 Second condition list
 #' @param operation Awk operator string ("&&" or "||")
 #'
@@ -189,8 +228,8 @@ combine_filter_condition <- function(
 ) {
   list(
     variable_arrays = c(
-      fcondition1$variable_array,
-      fcondition2$variable_array
+      fcondition1$variable_arrays,
+      fcondition2$variable_arrays
     ),
     condition = paste(
       fcondition1$condition,

@@ -46,13 +46,6 @@ test_that("awk_combine_split_for_output combines array elements", {
   )
 })
 
-test_that("build_pipeline_cmd joins commands with pipe", {
-  expect_equal(
-    build_pipeline_cmd("cat file.txt", "awk '{print}'"),
-    "cat file.txt | awk '{print}'"
-  )
-})
-
 test_that("wrap_filename returns filename for non-gzipped", {
   fi <- list(filename = "test.txt", gzipped = FALSE)
   expect_equal(wrap_filename(fi), "test.txt")

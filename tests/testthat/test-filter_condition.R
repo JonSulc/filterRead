@@ -592,6 +592,26 @@ test_that("Parenthesis stripping works", {
   )
 })
 
+test_that("AND code block handling works", {
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+  expect_no_error(
+    new_filter_condition(
+      rlang::expr(chr == 1 | chr == 2),
+      finterface
+    ) |>
+      eval_fcondition_w_gregions()
+  )
+  expect_no_error(
+    new_filter_condition(
+      rlang::expr(pval < .05 & (chr == 1 | chr == 2)),
+      finterface
+    ) |>
+      eval_fcondition_w_gregions()
+  )
+})
+
 test_that("Getting genomic regions works", {
   finterface <- local_summary_stats_interface() |>
     suppressMessages() |>

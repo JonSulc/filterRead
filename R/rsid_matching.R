@@ -1,3 +1,37 @@
+# =============================================================================
+# RSID Matching and dbSNP Integration
+# =============================================================================
+# This file consolidates all RSID-related functionality for files that use
+# RSID-based indexing instead of chromosome/position coordinates. These
+# functions handle dbSNP lookup, tabix queries, and awk code generation for
+# RSID matching.
+
+#' Check if file requires RSID-based matching
+#'
+#' Determines if file has RSID column but lacks chr/pos columns,
+#' requiring dbSNP lookup for genomic region filtering.
+#'
+#' @param finterface File interface object
+#' @param force If TRUE, recalculate even if cached
+#'
+#' @return TRUE if file needs RSID matching for genomic queries
+#' @keywords internal
+needs_rsid_matching <- function(
+  finterface,
+  force = FALSE
+) {
+  # Return cached value if available
+  if (!force & "needs_rsid_matching" %in% names(finterface)) {
+    return(finterface$needs_rsid_matching)
+  }
+  fcolumn_names <- finterface$column_info[
+    !is.na(input_name),
+    standard_name
+  ]
+  # Need RSID matching if: has RSID but missing chr AND/OR pos
+  "rsid" %in% fcolumn_names &
+    !all(c("chr", "pos") %in% fcolumn_names)
+}
 # dbSNP metadata structure
 .dbsnp_registry <- list(
   base_url = "https://ftp.ncbi.nih.gov/snp/organisms",
@@ -30,6 +64,7 @@
     )
   )
 )
+
 
 #' Get dbSNP file URL
 #' @param build Build version ("b37" or "b38")
@@ -387,4 +422,181 @@ setup_dbsnp <- function(
   }
 
   invisible(path)
+}
+tabix_colnames <- c(
+  "chr",
+  "pos",
+  "rsid",
+  "ref",
+  "alt",
+  "qual",
+  "filter",
+  "info"
+)
+
+
+get_tabix_process_substitution <- function(
+  chr,
+  start,
+  end,
+  dbsnp_filename
+) {
+  stopifnot(length(start) == length(end))
+  stopifnot(length(chr) == 1 | length(chr) == length(start))
+  regions <- sprintf(
+    sprintf(
+      "%s%s",
+      drop_chr_prefix(chr),
+      ifelse(is.na(start) & is.na(end),
+        "",
+        sprintf(
+          ":%s-%s",
+          ifelse(is.na(start) | is.infinite(start), "", start),
+          ifelse(is.na(end) | is.infinite(end), "", end)
+        )
+      )
+    )
+  )
+  sprintf(
+    "<(tabix %s %s)",
+    dbsnp_filename,
+    paste(regions, collapse = " ")
+  )
+}
+or_filter_condition_rsid <- function(
+  fcondition1,
+  fcondition2
+) {
+  list(condition = unname(c(fcondition1, fcondition2)))
+}
+
+#' Wrap condition in parentheses
+#'
+#' Adds parentheses around a condition for correct operator precedence.
+#'
+#' @param fcondition Condition list with `condition` element
+#' @return Same list with condition wrapped in parentheses
+#' @keywords internal
+lp_filter_condition <- function(
+  fcondition
+) {
+  fcondition$condition <- sprintf("(%s)", fcondition$condition)
+  fcondition
+}
+
+#' Generic condition combiner
+#'
+#' Combines two condition lists with a specified operator, merging their
+#' variable_arrays and additional_files.
+#'
+#' Convert filter condition with RSID matching to awk data.table
+#'
+#' Handles files that use RSID-based indexing (files without chr/pos columns
+#' that require dbSNP lookup). For RSID files with genomic conditions, uses
+#' tabix to query dbSNP and creates awk code to match RSIDs.
+#'
+#' @param fcondition A filter_condition object
+#' @param rsid_bash_index Awk column ref for RSID column (e.g., "$3")
+#' @param index Counter for multiple genomic blocks (for unique array names)
+#'
+#' @return data.table with columns:
+#'   - index: block index for unique naming
+#'   - awk_code_block: awk code to load RSID array from dbSNP
+#'   - print_prefix: awk code to prepend chr/pos to output
+#'   - process_substitution: tabix query command
+#'   - rsid_condition: awk condition to check RSID membership
+#'   - condition: additional non-genomic conditions
+#'   - variable_arrays, additional_files: from eval_fcondition_w_gregions
+#' @keywords internal
+fcondition_and_rsid_to_awk <- function(
+  fcondition,
+  rsid_bash_index = get_file_interface(fcondition)$column_info[
+    "rsid",
+    bash_index,
+    on = "name"
+  ],
+  index = 0
+) {
+  # RSID-based indexing should only be applied if required, i.e.,
+  # if the file is RSID-indexed and there is a genomic condition applied
+  rsid_indexed <- needs_rsid_matching(get_file_interface(fcondition))
+  full_genome_condition <- is_full_genome(
+    genomic_regions(fcondition, recursive = TRUE)
+  )
+  no_genome_condition <- has_no_gregions(fcondition)
+
+  # Standard path: no RSID matching needed
+  if (!rsid_indexed || full_genome_condition || no_genome_condition) {
+    return(eval_fcondition_w_gregions(
+      fcondition,
+      finterface = get_file_interface(fcondition)
+    ) |>
+      data.table::as.data.table())
+  }
+
+  # Recursive case: handle OR of multiple genomic blocks
+  if (!is_single_genomic_block(fcondition)) {
+    stopifnot(fcondition[[1]] == as.symbol("or_filter_condition"))
+    return(rbind(
+      fcondition_and_rsid_to_awk(
+        fcondition[[2]],
+        rsid_bash_index,
+        index = index
+      ),
+      fcondition_and_rsid_to_awk(
+        fcondition[[3]],
+        rsid_bash_index,
+        index = index + 1
+      )
+    ))
+  }
+
+  # Single genomic block with RSID matching:
+  # 1. Query dbSNP via tabix for RSIDs in the region
+  # 2. Generate awk code to load RSIDs into array
+  # 3. Generate condition to filter by RSID membership
+  genomic_regions(fcondition)[
+    ,
+    .(
+      index = index,
+      # awk code block loads RSID -> chr:pos mapping from dbSNP tabix output
+      # NR == FNR detects when reading the first file (dbSNP output)
+      awk_code_block = paste0(
+        "if (NR == FNR%s) {\n",
+        "  rsid%i[$3]=$1 OFS $2\n",  # rsid array: RSID -> "chr\tpos"
+        "}"
+      ) |>
+        sprintf(
+          ifelse(index == 0,
+            "",
+            paste0(" + ", index)
+          ),
+          index
+        ),
+      # Prefix to prepend chr/pos to output lines
+      print_prefix = sprintf(
+        "rsid%i[%s] OFS ",
+        index,
+        rsid_bash_index
+      ),
+      # Tabix query as bash process substitution
+      process_substitution = get_tabix_process_substitution(
+        chr = chr,
+        start = start,
+        end = end,
+        dbsnp_filename = get_dbsnp_filename(
+          build = get_file_interface(fcondition)$build,
+          full_path = TRUE
+        )
+      ),
+      # Condition: only print if RSID exists in loaded array
+      rsid_condition = sprintf("%s in rsid%i", rsid_bash_index, index)
+    )
+  ] |>
+    cbind(data.table::as.data.table(
+      eval_fcondition_w_gregions(
+        fcondition,
+        finterface = get_file_interface(fcondition)
+      )
+    ))
 }

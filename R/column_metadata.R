@@ -436,34 +436,6 @@ expand_single_encoded_row <- function(
 # Utility Functions
 # =============================================================================
 
-#' Check if file requires RSID-based matching
-#'
-#' Determines if file has RSID column but lacks chr/pos columns,
-#' requiring dbSNP lookup for genomic region filtering.
-#'
-#' @param finterface File interface object
-#' @param force If TRUE, recalculate even if cached
-#'
-#' @return TRUE if file needs RSID matching for genomic queries
-#' @keywords internal
-needs_rsid_matching <- function(
-  finterface,
-  force = FALSE
-) {
-  # Return cached value if available
-  if (!force & "needs_rsid_matching" %in% names(finterface)) {
-    return(finterface$needs_rsid_matching)
-  }
-
-  fcolumn_names <- finterface$column_info[
-    !is.na(input_name),
-    standard_name
-  ]
-  # Need RSID matching if: has RSID but missing chr AND/OR pos
-  "rsid" %in% fcolumn_names &
-    !all(c("chr", "pos") %in% fcolumn_names)
-}
-
 #' Get column names from file interface
 #'
 #' @param finterface File interface object
@@ -501,74 +473,3 @@ column_names <- function(
 #'
 #' @return column_info (modified by reference)
 #' @keywords internal
-add_allele_matching_to_column_info <- function(
-  column_info
-) {
-  if (!needs_a1_a2_to_ref_matching(column_info)) {
-    return(column_info)
-  }
-
-  # Set up ref/alt derivation from allele1/allele2
-  column_info[
-    standard_name == "alt",
-    encoded_names := .(c("ref", "alt"))
-  ][
-    standard_name == "alt",
-    split_encoding_column := match_a1_a2_to_ref(
-      a1_bash_index = column_info[standard_name == "allele1", bash_index],
-      a2_bash_index = column_info[standard_name == "allele2", bash_index],
-      alt_bash_index = column_info[standard_name == "alt", bash_index]
-    )
-  ][
-    standard_name == "alt",
-    recode_columns := sprintf(
-      "%s = nea OFS %s",
-      column_info[standard_name == "alt", bash_index],
-      column_info[standard_name == "alt", bash_index]
-    )
-  ][] |>
-    invisible()
-}
-
-#' Check if allele matching is needed
-#'
-#' @param column_info data.table with column metadata
-#'
-#' @return TRUE if file has allele1, allele2, alt but no ref
-#' @keywords internal
-needs_a1_a2_to_ref_matching <- function(
-  column_info
-) {
-  all(c("allele1", "allele2", "alt") %in% column_info$standard_name) &
-    !"ref" %in% column_info$standard_name
-}
-
-#' Generate awk code for allele matching
-#'
-#' Creates awk if/else block that determines the non-effect allele (nea)
-#' by comparing effect allele (alt) to allele1/allele2.
-#'
-#' @param a1_bash_index Awk column ref for allele1
-#' @param a2_bash_index Awk column ref for allele2
-#' @param alt_bash_index Awk column ref for alt (effect allele)
-#'
-#' @return Awk code string for allele matching
-#' @keywords internal
-match_a1_a2_to_ref <- function(
-  a1_bash_index,
-  a2_bash_index,
-  alt_bash_index
-) {
-  sprintf(
-    "# Deduce NEA based on EA vs Allele1/Allele2
-if (%s == %s) {
-  nea = %s
-} else {
-  nea = %s
-}",
-    a1_bash_index,
-    alt_bash_index,
-    a2_bash_index,
-    a1_bash_index
-  )
-}

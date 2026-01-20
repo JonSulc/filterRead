@@ -18,6 +18,7 @@ Imports:
     curl,
     purrr,
     rlang,
+    rtracklayer,
     stringr
 Suggests:
     testthat (>= 3.0.0),
@@ -25,19 +26,25 @@ Suggests:
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
 Collate:
-    'awk.R'
-    'column_info.R'
-    'columns.R'
+    'allele_matching.R'
+    'awk_arrays.R'
+    'awk_codegen.R'
+    'awk_filter_eval.R'
+    'column_metadata.R'
+    'column_names.R'
     'config.R'
-    'dbsnp.R'
-    'fc_condition_functions.R'
     'file_interface.R'
     'filterRead-package.R'
-    'filter_condition_internal.R'
-    'filter_condition.R'
+    'filter_condition_conversion.R'
+    'filter_condition_class.R'
+    'filter_condition_ops.R'
+    'filter_condition_utils.R'
     'genomic_positions.R'
-    'genomic_regions.R'
+    'genomic_regions_class.R'
+    'genomic_regions_convert.R'
+    'genomic_regions_ops.R'
     'ieugwas_parsing.R'
     'infer_build.R'
     'liftover.R'
-    'rsid.R'
+    'rsid_matching.R'
+    'value_formatting.R'
