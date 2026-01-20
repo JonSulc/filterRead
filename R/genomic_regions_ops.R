@@ -39,9 +39,9 @@ liftover.genomic_regions <- function(
   )
   if (nrow(x) == 0) {
     if (is.character(target)) {
-      attr(x, "build") <- target
+      build(x) <- target
     } else {
-      attr(x, "build") <- attr(target, "to")
+      build(x) <- attr(target, "to")
     }
     return(x)
   }
@@ -49,7 +49,7 @@ liftover.genomic_regions <- function(
     chain_dt <- target
     target <- attr(chain_dt, "to")
   } else {
-    if (is.null(get_build(x))) {
+    if (is.null(build(x))) {
       if (is.null(target)) return(x)
       warning(
         "No build configured for genomic_regions, ",
@@ -63,11 +63,11 @@ liftover.genomic_regions <- function(
       )
       return(x)
     }
-    if (get_build(x) == target) {
+    if (build(x) == target) {
       return(x)
     }
     chain_dt <- get_chain_dt(
-      from = get_build(x),
+      from = build(x),
       to = target
     )
   }
@@ -149,7 +149,7 @@ liftover.genomic_regions <- function(
       )
     )
   ] |>
-    as_genomic_regions(build = get_build(target))
+    as_genomic_regions(build = build(target))
 }
 
 #' @export
@@ -209,11 +209,11 @@ rbind.genomic_regions <- function(
   dots |>
     lapply(
       liftover,
-      target = get_build(dots[[1]])
+      target = build(dots[[1]])
     ) |>
-    data.table::rbindlist() |>
+    data.table::rbindlist(use.names = TRUE, fill = TRUE) |>
     as_genomic_regions(
-      build = get_build(dots[[1]])
+      build = build(dots[[1]])
     )
 }
 
@@ -244,36 +244,50 @@ rbind.genomic_regions <- function(
   e1,
   e2
 ) {
-  if (!identical(get_build(e1), get_build(e2))) {
+  # Ensure same build
+  if (!identical(build(e1), build(e2))) {
     warning(
       "The genomic_regions do not have the same build, ",
       "converting the second."
     )
-    e2 <- liftover(e2, get_build(e1))
-  }
-  # Intersection with empty set = empty set
-  if (is.null(e1) || is.null(e2)) {
-    return(new_genomic_regions(build = get_build(e1)))
-  }
-  if (nrow(e1) == 0 || nrow(e2) == 0) {
-    return(new_genomic_regions(build = get_build(e1)))
+    e2 <- liftover(e2, build(e1))
   }
 
-  # genomic_regions where is.na(chr) are to be combined with some
-  # where !is.na(chr) have to be expanded to match everything instead
+  # Intersection with empty set = empty set
+  if (is.null(e1) || is.null(e2) || nrow(e1) == 0 || nrow(e2) == 0) {
+    return(new_genomic_regions(build = build(e1)))
+  }
+
+  # Handle mixed NA chromosomes by splitting and recursing
   if (chr_has_mixed_na(e1)) {
-    return(
-      (e1[is.na(chr)] & e2) + (e1[!is.na(chr)] & e2)
-    )
+    return((e1[is.na(chr)] & e2) + (e1[!is.na(chr)] & e2))
   }
   if (chr_has_mixed_na(e2)) {
-    return(
-      (e1 & e2[is.na(chr)]) + (e1 & e2[!is.na(chr)])
-    )
+    return((e1 & e2[is.na(chr)]) + (e1 & e2[!is.na(chr)]))
   }
 
+  # Prepare inputs and compute intersection
+  prepared <- prepare_for_intersection(e1, e2)
+  compute_intersection(prepared$e1, prepared$e2, build = build(e1))
+}
+
+# =============================================================================
+# Helper Functions for Intersection
+# =============================================================================
+
+#' Prepare genomic_regions pair for intersection
+#'
+#' Copies inputs, expands NA chromosomes if needed, and replaces NAs with
+#' sentinel values for foverlaps compatibility.
+#'
+#' @param e1,e2 genomic_regions objects (same build, no mixed NA)
+#' @return List with prepared e1 and e2
+#' @keywords internal
+prepare_for_intersection <- function(e1, e2) {
   e1_safe <- copy_genomic_regions(e1)
   e2_safe <- copy_genomic_regions(e2)
+
+  # Expand NA chr to match specific chromosomes from other set
   if (is.na(e1_safe$chr[1]) != is.na(e2_safe$chr[1])) {
     if (is.na(e1_safe$chr[1])) {
       e1_safe <- expand_na_chr(e1_safe, e2_safe)
@@ -281,11 +295,22 @@ rbind.genomic_regions <- function(
       e2_safe <- expand_na_chr(e2_safe, e1_safe)
     }
   }
-  # NAs are not handled by foverlaps, need to replace with sentinel values and
-  # restore the NAs after foverlaps
-  e1_safe <- replace_na_with_sentinel(e1_safe)
-  e2_safe <- replace_na_with_sentinel(e2_safe)
-  data.table::foverlaps(e1_safe, e2_safe, nomatch = 0)[
+
+  # Replace NAs with sentinels (foverlaps doesn't handle NAs)
+  list(
+    e1 = replace_na_with_sentinel(e1_safe),
+    e2 = replace_na_with_sentinel(e2_safe)
+  )
+}
+
+#' Compute intersection using foverlaps
+#'
+#' @param e1,e2 Prepared genomic_regions (sentinel values, keyed)
+#' @param build Build to assign to result
+#' @return genomic_regions with overlapping portions
+#' @keywords internal
+compute_intersection <- function(e1, e2, build) {
+  data.table::foverlaps(e1, e2, nomatch = 0)[
     ,
     c(
       .SD,
@@ -297,12 +322,8 @@ rbind.genomic_regions <- function(
     .SDcols = -c("start", "end", "i.start", "i.end")
   ] |>
     replace_sentinel_with_na() |>
-    as_genomic_regions(build = get_build(e1_safe))
+    as_genomic_regions(build = build)
 }
-
-# =============================================================================
-# Helper Functions for Intersection
-# =============================================================================
 
 #' Check if genomic_regions has both NA and non-NA chromosomes
 #'
@@ -329,7 +350,7 @@ expand_na_chr <- function(
   gregions1,
   gregions2
 ) {
-  stopifnot(get_build(gregions1) == get_build(gregions2))
+  stopifnot(build(gregions1) == build(gregions2))
   stopifnot(all(is.na(gregions1$chr)))
   # Cross join: each row of gregions1 x each unique chr from gregions2
   gregions1[
@@ -341,7 +362,7 @@ expand_na_chr <- function(
     .SDcols = -"chr",
     by = .I
   ][, -"I"] |>
-    as_genomic_regions(build = get_build(gregions1))
+    as_genomic_regions(build = build(gregions1))
 }
 
 # =============================================================================

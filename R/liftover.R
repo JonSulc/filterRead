@@ -61,15 +61,70 @@ liftover <- function(
   UseMethod("liftover")
 }
 
-# Used by filter_condition and genomic_regions
-get_build <- function(
-  x
-) {
-  if (is.character(x)) {
-    return(x)
-  }
-  if ("build" %in% names(x)) {
-    return(x$build)
-  }
+# =============================================================================
+# Build Attribute Accessors
+# =============================================================================
+
+#' Get genome build from an object
+#'
+#' S3 generic for extracting the genome build (e.g., "b37", "b38") from
+#' various object types used in filterRead.
+#'
+#' @param x Object to get build from
+#' @return Build string or NULL if not set
+#' @export
+build <- function(x) {
+  UseMethod("build")
+}
+
+#' @export
+build.default <- function(x) {
   attr(x, "build")
 }
+
+#' @export
+build.character <- function(x) {
+  x
+}
+
+#' @export
+build.list <- function(x) {
+  x$build
+}
+
+#' @export
+build.file_interface <- build.list
+
+#' Set genome build on an object
+#'
+#' Replacement function for setting the genome build attribute.
+#' Uses data.table::setattr for data.tables (modifies by reference).
+#'
+#' @param x Object to modify
+#' @param value Build string to set (e.g., "b37", "b38")
+#' @return Modified object
+#' @export
+`build<-` <- function(x, value) {
+  UseMethod("build<-")
+}
+
+#' @export
+`build<-.default` <- function(x, value) {
+  attr(x, "build") <- value
+  x
+}
+
+#' @export
+`build<-.data.table` <- function(x, value) {
+  data.table::setattr(x, "build", value)
+  x
+}
+
+#' @export
+`build<-.list` <- function(x, value) {
+  x$build <- value
+  x
+}
+
+#' @export
+`build<-.file_interface` <- `build<-.list`

@@ -89,7 +89,7 @@ new_filter_condition <- function(
   x,
   finterface,
   env = parent.frame(),
-  build = get_build(x) %||% get_build(finterface)
+  build = NULL
 ) {
   UseMethod("new_filter_condition")
 }
@@ -98,7 +98,7 @@ new_filter_condition.default <- function(
   x,
   finterface,
   env = parent.frame(),
-  build = get_build(x) %||% get_build(finterface)
+  build = NULL
 ) {
   x
 }
@@ -107,8 +107,11 @@ new_filter_condition.call <- function(
   x,
   finterface,
   env = parent.frame(),
-  build = get_build(x) %||% get_build(finterface)
+  build = "auto"
 ) {
+  if (!is.null(build) && build == "auto") {
+    build <- build(x) %||% build(finterface)
+  }
   if (is_file_interface(finterface)) {
     finterface_env <- new.env(parent = emptyenv())
     finterface_env$finterface <- finterface
@@ -155,7 +158,7 @@ new_filter_condition.call <- function(
 
   attr(fcondition, "finterface_env") <- finterface_env
 
-  attr(fcondition, "build") <- build
+  build(fcondition) <- build
 
   fcondition
 }

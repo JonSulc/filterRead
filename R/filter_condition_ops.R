@@ -32,15 +32,15 @@
   attr(fcondition, "finterface_env") <- attr(fcondition1, "finterface_env")
   genomic_regions(fcondition) <- genomic_regions(fcondition1) & genomic_regions(fcondition2)
 
-  if (!identical(get_build(fcondition1), get_build(fcondition2))) {
+  if (!identical(build(fcondition1), build(fcondition2))) {
     warning(
       "filter_conditions being combine do not have the same build, ",
-      " using ", get_build(fcondition1)
+      " using ", build(fcondition1)
     )
   }
 
 
-  attr(fcondition, "build") <- get_build(fcondition1) %||% get_build(fcondition2)
+  build(fcondition) <- build(fcondition1) %||% build(fcondition2)
   class(fcondition) <- c("and_filter_condition", class(fcondition)) |>
     unique()
 
@@ -73,18 +73,18 @@
     )
   } else {
     genomic_regions(fcondition) <- full_genomic_regions(
-      build = get_build(fcondition1)
+      build = build(fcondition1)
     )
   }
 
-  if (!identical(get_build(fcondition1), get_build(fcondition2))) {
+  if (!identical(build(fcondition1), build(fcondition2))) {
     warning(
       "filter_conditions being combine do not have the same build, ",
-      " using ", get_build(fcondition1)
+      " using ", build(fcondition1)
     )
   }
 
-  attr(fcondition, "build") <- get_build(fcondition1) %||% get_build(fcondition2)
+  build(fcondition) <- build(fcondition1) %||% build(fcondition2)
   class(fcondition) <- c("or_filter_condition", class(fcondition)) |>
     unique()
 

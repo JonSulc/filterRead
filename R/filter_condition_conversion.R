@@ -40,7 +40,7 @@ lp_wrap_fcondition <- function(
   fcondition <- as_filter_condition(fcondition)
   class(fcondition) <- c("lp_filter_condition", class(fcondition)) |>
     unique()
-  attr(fcondition, "build") <- attr(fcall, "build")
+  build(fcondition) <- build(fcall)
   genomic_regions(fcondition) <- genomic_regions(fcall)
   fcondition
 }

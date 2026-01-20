@@ -10,7 +10,7 @@
 #' @keywords internal
 as_genomic_regions <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ...
 ) {
   UseMethod("as_genomic_regions")
@@ -20,13 +20,14 @@ as_genomic_regions <- function(
 #' @rdname as_genomic_regions
 as_genomic_regions.data.frame <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ...
 ) {
+  build <- build %||% build(x)
   genomic_regions <- data.table::as.data.table(x) |>
     data.table::copy()
   validate_genomic_regions_dt(genomic_regions)
-  data.table::setattr(genomic_regions, "build", build)
+  build(genomic_regions) <- build
   data.table::setattr(
     genomic_regions,
     "class",
@@ -39,7 +40,7 @@ as_genomic_regions.data.frame <- function(
 #' @export
 as_genomic_regions.filter_condition <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ...
 ) {
   genomic_regions(x)
@@ -47,33 +48,39 @@ as_genomic_regions.filter_condition <- function(
 #' @export
 as_genomic_regions.and_filter_condition <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ...
 ) {
-  as_genomic_regions(x[[2]], build = build, ...) & as_genomic_regions(x[[3]], build = build, ...)
+  build <- build %||% build(x)
+  as_genomic_regions(x[[2]], build = build, ...) &
+    as_genomic_regions(x[[3]], build = build, ...)
 }
 #' @export
 as_genomic_regions.or_filter_condition <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ...
 ) {
-  as_genomic_regions(x[[2]], build = build, ...) | as_genomic_regions(x[[3]], build = build, ...)
+  build <- build %||% build(x)
+  as_genomic_regions(x[[2]], build = build, ...) |
+    as_genomic_regions(x[[3]], build = build, ...)
 }
 #' @export
 as_genomic_regions.lp_filter_condition <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ...
 ) {
+  build <- build %||% build(x)
   as_genomic_regions(x[[2]], build = build, ...)
 }
 #' @export
 as_genomic_regions.eq_filter_condition <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ...
 ) {
+  build <- build %||% build(x)
   if (length(x) == 0) {
     NextMethod()
   }
@@ -106,10 +113,11 @@ as_genomic_regions.eq_filter_condition <- function(
 #' @export
 as_genomic_regions.lt_filter_condition <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ordered_chr = 1:22,
   ...
 ) {
+  build <- build %||% build(x)
   if (length(x) == 0) {
     NextMethod()
   }
@@ -159,10 +167,11 @@ as_genomic_regions.lt_filter_condition <- function(
 #' @export
 as_genomic_regions.lte_filter_condition <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ordered_chr = 1:22,
   ...
 ) {
+  build <- build %||% build(x)
   if (length(x) == 0) {
     NextMethod()
   }
@@ -212,10 +221,11 @@ as_genomic_regions.lte_filter_condition <- function(
 #' @export
 as_genomic_regions.gt_filter_condition <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ordered_chr = 1:22,
   ...
 ) {
+  build <- build %||% build(x)
   if (length(x) == 0) {
     NextMethod()
   }
@@ -265,10 +275,11 @@ as_genomic_regions.gt_filter_condition <- function(
 #' @export
 as_genomic_regions.gte_filter_condition <- function(
   x,
-  build = get_build(x),
+  build = NULL,
   ordered_chr = 1:22,
   ...
 ) {
+  build <- build %||% build(x)
   if (length(x) == 0) {
     NextMethod()
   }

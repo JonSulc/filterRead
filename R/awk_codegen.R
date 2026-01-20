@@ -4,6 +4,64 @@
 # These functions assemble the final awk command from components: BEGIN block,
 # condition blocks, file handling, etc.
 
+#' Check if this is a simple read with no filtering/processing
+#'
+#' @param fcondition_awk_dt data.table from fcondition_and_rsid_to_awk
+#' @param column_arrays_before_conditions Awk code for pre-condition splits
+#' @param column_arrays_after_conditions Awk code for post-condition processing
+#' @return TRUE if no filtering needed, FALSE otherwise
+#' @keywords internal
+is_simple_read <- function(
+  fcondition_awk_dt,
+  column_arrays_before_conditions,
+  column_arrays_after_conditions
+) {
+  if (is.null(fcondition_awk_dt) &&
+    is.null(column_arrays_before_conditions) &&
+    is.null(column_arrays_after_conditions)) {
+    return(TRUE)
+  }
+  is.null(fcondition_awk_dt$condition) &&
+    is.null(fcondition_awk_dt$variable_arrays) &&
+    is.null(column_arrays_before_conditions) &&
+    is.null(column_arrays_after_conditions) &&
+    is.null(fcondition_awk_dt$awk_code_block)
+}
+
+#' Build awk file arguments string
+#'
+#' Assembles file arguments: process substitutions (tabix), additional files
+#' (%in% arrays), and main data file with appropriate separators.
+#'
+#' @param finterface File interface
+#' @param fcondition_awk_dt data.table with process_substitution, additional_files
+#' @param use_command_line_fs Whether to set FS on command line
+#' @return File arguments string for awk command
+#' @keywords internal
+build_awk_file_args <- function(
+  finterface,
+  fcondition_awk_dt,
+  use_command_line_fs
+) {
+  c(
+    # Process substitutions (tabix queries) with tab separator
+    if (!is.null(fcondition_awk_dt$process_substitution)) {
+      paste(
+        "FS=\"\\t\"",
+        paste(fcondition_awk_dt$process_substitution, collapse = " ")
+      )
+    },
+    # Additional temp files (%in% value arrays)
+    fcondition_awk_dt$additional_files,
+    # Reset FS to file's separator before reading main file
+    if (use_command_line_fs) {
+      sprintf("FS=\"%s\"", finterface$sep)
+    },
+    wrap_filename(finterface)
+  ) |>
+    paste(collapse = " ")
+}
+
 #' Compile complete awk command from components
 #'
 #' Assembles all awk components (BEGIN block, conditions, column processing)
@@ -30,28 +88,13 @@ compile_awk_cmds <- function(
   nlines = NULL,
   return_only_cmd = FALSE
 ) {
-  # Check if this is a simple read (no filtering/processing)
-  if (is.null(fcondition_awk_dt) &&
-    is.null(column_arrays_before_conditions) &&
-    is.null(column_arrays_after_conditions)) {
-    only_read <- TRUE
-  } else {
-    only_read <- is.null(fcondition_awk_dt$condition) &&
-      is.null(fcondition_awk_dt$variable_arrays) &&
-      is.null(column_arrays_before_conditions) &&
-      is.null(column_arrays_after_conditions) &&
-      is.null(fcondition_awk_dt$awk_code_block)
-  }
-
   # Simple read: just cat/zcat the file (with optional prefix handling)
-  if (only_read) {
-    return(
-      awk_load_file_cmd(
-        finterface,
-        nlines = nlines,
-        only_read = only_read
-      )
-    )
+  if (is_simple_read(
+    fcondition_awk_dt,
+    column_arrays_before_conditions,
+    column_arrays_after_conditions
+  )) {
+    return(awk_load_file_cmd(finterface, nlines = nlines, only_read = TRUE))
   }
 
   # Build main processing code (conditions, column transforms, output)
@@ -73,64 +116,32 @@ compile_awk_cmds <- function(
   # (when reading multiple files with different separators, e.g., tabix + tsv)
   use_command_line_fs <- !is.null(fcondition_awk_dt$process_substitution)
 
-  # Build BEGIN block (FS, OFS, line counting vars)
-  begin_code_block <- build_awk_begin_block(
-    finterface$sep,
-    nlines,
-    use_command_line_fs
-  )
-
-  # Add comment prefix handling pattern (skip lines starting with #, etc.)
-  comment_prefix_pattern <- build_comment_filter_pattern(
-    finterface$comment_prefix
-  )
-
-  # Assemble complete awk script
+  # Build BEGIN block and assemble complete awk script
   awk_script <- paste(
-    c(begin_code_block, comment_prefix_pattern, full_code_block),
+    c(
+      build_awk_begin_block(finterface$sep, nlines, use_command_line_fs),
+      build_comment_filter_pattern(finterface$comment_prefix),
+      full_code_block
+    ),
     collapse = "\n"
   )
 
-  # Long scripts have issues with line limits, run from temp file to avoid this
+  # Write to temp file for long scripts, or use inline
   if (return_only_cmd) {
     awk_code <- sprintf("'%s'", awk_script)
   } else {
     temp_awk_file <- tempfile(fileext = ".awk")
-    writeLines(
-      paste0(awk_script, "\n"),
-      temp_awk_file
-    )
+    writeLines(paste0(awk_script, "\n"), temp_awk_file)
     awk_code <- sprintf("-f %s", temp_awk_file)
   }
 
-  # Build file arguments list:
-  # 1. Process substitutions (tabix queries) with tab separator
-  # 2. Additional temp files (%in% value arrays)
-  # 3. Main data file (with appropriate separator)
-  awk_final_filenames <- c(
-    {
-      if (is.null(fcondition_awk_dt$process_substitution)) {
-        NULL
-      } else {
-        # Tabix output is always tab-separated
-        paste(
-          "FS=\"\\t\"",
-          paste(fcondition_awk_dt$process_substitution, collapse = " ")
-        )
-      }
-    },
-    fcondition_awk_dt$additional_files,
-    {
-      # Reset FS to file's separator before reading main file
-      if (use_command_line_fs) {
-        sprintf("FS=\"%s\"", finterface$sep)
-      }
-    },
-    wrap_filename(finterface)
-  ) |>
-    paste(collapse = " ")
-
-  paste("awk", awk_code, awk_final_filenames)
+  # Build file arguments and assemble final command
+  awk_file_args <- build_awk_file_args(
+    finterface,
+    fcondition_awk_dt,
+    use_command_line_fs
+  )
+  paste("awk", awk_code, awk_file_args)
 }
 
 # =============================================================================

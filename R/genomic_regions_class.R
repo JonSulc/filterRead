@@ -203,8 +203,8 @@ print.genomic_regions <- function(
   x
 ) {
   NextMethod()
-  if (!is.null(get_build(x))) {
-    cat("Build:", get_build(x))
+  if (!is.null(build(x))) {
+    cat("Build:", build(x))
   }
 }
 

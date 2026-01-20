@@ -2,8 +2,8 @@ get_build_from_file_interface <- function(
   finterface,
   nsnps = 1e4
 ) {
-  if (!is.null(finterface$build)) {
-    return(finterface$build)
+  if (!is.null(build(finterface))) {
+    return(build(finterface))
   }
   if (needs_rsid_matching(finterface)) {
     warning(

@@ -80,23 +80,23 @@ new_file_interface <- function(
     if (build == "b36" && needs_rsid_matching(finterface)) {
       warning("File ", filename, " uses RSID-based indexing")
     }
-    finterface$build <- build
+    build(finterface) <- build
   } else if (build == "infer" ||
     (build == "auto" && !needs_rsid_matching(finterface))) {
     # Only infer the build if file doesn't require RSID-matching or specified
     # (build inferrence on RSID-indexed files is slow)
-    finterface$build <- get_build_from_file_interface(finterface)
+    build(finterface) <- get_build_from_file_interface(finterface)
   } else {
     if (needs_rsid_matching(finterface) && build == "auto") {
       # Skip build inferrence with message
       message(
         "File has RSID-based indexing, no inherent build.",
         " To enable position-based sorting, specifying a build using the",
-        " `build` parameter or set one using set_build().\n",
+        " `build` parameter or set one using build<-().\n",
         "Using default build b38."
       )
     }
-    finterface$build <- "b38"
+    build(finterface) <- "b38"
   }
 
   finterface
@@ -392,7 +392,7 @@ print.file_interface <- function(
   )
   cat(
     "Genome build:",
-    x$build,
+    build(x),
     "\n"
   )
   cat(

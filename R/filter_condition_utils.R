@@ -165,8 +165,9 @@ is_genomic_symbol <- function(
 
 split_genomic_conditions <- function(
   fcondition,
-  build = get_build(fcondition)
+  build = NULL
 ) {
+  build <- build %||% build(fcondition)
   if (length(fcondition) == 0) {
     return(fcondition)
   }

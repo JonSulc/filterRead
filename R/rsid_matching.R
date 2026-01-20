@@ -585,7 +585,7 @@ fcondition_and_rsid_to_awk <- function(
         start = start,
         end = end,
         dbsnp_filename = get_dbsnp_filename(
-          build = get_file_interface(fcondition)$build,
+          build = build(get_file_interface(fcondition)),
           full_path = TRUE
         )
       ),
