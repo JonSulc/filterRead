@@ -77,70 +77,49 @@ is_column_symbol <- function(
 # These functions are called during filter_condition evaluation when
 # R expressions are translated to awk syntax.
 
+# Factory for comparison filter conditions
+# Creates a function that builds an awk comparison condition with the given
+# operator
+make_comparison_filter <- function(operator) {
+  function(var1, var2) {
+    list(condition = sprintf("%s %s %s", var1, operator, var2))
+  }
+}
+
 #' Build awk less-than condition
-#'
 #' @param var1 Left operand (column ref or value)
 #' @param var2 Right operand (column ref or value)
 #' @return List with `condition` element: "var1 < var2"
 #' @keywords internal
-lt_filter_condition <- function(
-  var1,
-  var2
-) {
-  list(condition = sprintf("%s < %s", var1, var2))
-}
+lt_filter_condition <- make_comparison_filter("<")
 
 #' Build awk less-than-or-equal condition
-#'
 #' @param var1 Left operand (column ref or value)
 #' @param var2 Right operand (column ref or value)
 #' @return List with `condition` element: "var1 <= var2"
 #' @keywords internal
-lte_filter_condition <- function(
-  var1,
-  var2
-) {
-  list(condition = sprintf("%s <= %s", var1, var2))
-}
+lte_filter_condition <- make_comparison_filter("<=")
 
 #' Build awk greater-than condition
-#'
 #' @param var1 Left operand (column ref or value)
 #' @param var2 Right operand (column ref or value)
 #' @return List with `condition` element: "var1 > var2"
 #' @keywords internal
-gt_filter_condition <- function(
-  var1,
-  var2
-) {
-  list(condition = sprintf("%s > %s", var1, var2))
-}
+gt_filter_condition <- make_comparison_filter(">")
 
 #' Build awk greater-than-or-equal condition
-#'
 #' @param var1 Left operand (column ref or value)
 #' @param var2 Right operand (column ref or value)
 #' @return List with `condition` element: "var1 >= var2"
 #' @keywords internal
-gte_filter_condition <- function(
-  var1,
-  var2
-) {
-  list(condition = sprintf("%s >= %s", var1, var2))
-}
+gte_filter_condition <- make_comparison_filter(">=")
 
 #' Build awk equality condition
-#'
 #' @param var1 Left operand (column ref or value)
 #' @param var2 Right operand (column ref or value)
 #' @return List with `condition` element: "var1 == var2"
 #' @keywords internal
-eq_filter_condition <- function(
-  var1,
-  var2
-) {
-  list(condition = sprintf("%s == %s", var1, var2))
-}
+eq_filter_condition <- make_comparison_filter("==")
 
 #' Build awk membership condition (for R %in% operator)
 #'

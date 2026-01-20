@@ -72,7 +72,7 @@ liftover.genomic_regions <- function(
     )
   }
 
-  expanded_x <- data.table::copy(x)
+  expanded_x <- copy_genomic_regions(x)
 
   if (!is.character(expanded_x$chr)) {
     expanded_x[
@@ -272,8 +272,8 @@ rbind.genomic_regions <- function(
     )
   }
 
-  e1_safe <- data.table::copy(e1)
-  e2_safe <- data.table::copy(e2)
+  e1_safe <- copy_genomic_regions(e1)
+  e2_safe <- copy_genomic_regions(e2)
   if (is.na(e1_safe$chr[1]) != is.na(e2_safe$chr[1])) {
     if (is.na(e1_safe$chr[1])) {
       e1_safe <- expand_na_chr(e1_safe, e2_safe)
@@ -404,7 +404,7 @@ replace_sentinel_with_na <- function(
   start_sentinel = START_SENTINEL,
   end_sentinel = END_SENTINEL
 ) {
-  data.table::copy(genomic_regions)[
+  copy_genomic_regions(genomic_regions)[
     chr == chr_sentinel,
     chr := NA_character_
   ][

@@ -362,19 +362,12 @@ escape_awk_regex <- function(pattern) {
   if (is.null(pattern)) {
     return(NULL)
   }
-  escaped <- pattern
-  # Escape each special regex character
-  escaped <- gsub("/", "\\\\/", escaped)   # / -> \/
-  escaped <- gsub("\\[", "\\\\[", escaped) # [ -> \[
-  escaped <- gsub("\\]", "\\\\]", escaped) # ] -> \]
-  escaped <- gsub("\\(", "\\\\(", escaped) # ( -> \(
-  escaped <- gsub("\\)", "\\\\)", escaped) # ) -> \)
-  escaped <- gsub("\\{", "\\\\{", escaped) # { -> \{
-  escaped <- gsub("\\}", "\\\\}", escaped) # } -> \}
-  escaped <- gsub("\\+", "\\\\+", escaped) # + -> \+
-  escaped <- gsub("\\?", "\\\\?", escaped) # ? -> \?
-  escaped <- gsub("\\|", "\\\\|", escaped) # | -> \|
-  escaped
+  # Characters that need escaping for awk regex: / [ ] ( ) { } + ? |
+  chars_to_escape <- c("/", "[", "]", "(", ")", "{", "}", "+", "?", "|")
+  for (char in chars_to_escape) {
+    pattern <- gsub(char, paste0("\\", char), pattern, fixed = TRUE)
+  }
+  pattern
 }
 
 #' Build shell command to read file (cat or zcat)

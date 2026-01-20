@@ -290,6 +290,20 @@ add_chr_prefix <- function(
 add_encoding_columns <- function(
   column_info
 ) {
+  # This function creates the following columns in column_info:
+  # - encoding_column: base awk code for encoding
+  # - split_encoding_column: awk code to split delimited values
+  # - recode_columns: awk code to recode split values
+  # - encoded_column_index: unique index for encoded columns
+  #
+  # These columns are consumed by:
+  # - awk_codegen.R: get_awk_column_arrays() uses encoding_column,
+  #   split_encoding_column, recode_columns, add_prefix, bash_index,
+  #   encoded_names
+  # - awk_arrays.R: uses bash_index for column array setup
+  #
+  # If renaming these columns, update the consuming functions!
+
   # Assign unique indices to encoded columns
   column_info[
     !sapply(encoded_names, is.null),

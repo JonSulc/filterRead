@@ -233,52 +233,62 @@ get_pos_condition <- function(
   }
   NULL
 }
+# Operator mappings for position condition conversion
+# When pos is on left (pos OP val): list(field, adjustment)
+# When pos is on right (val OP pos): the comparison is effectively flipped
+POS_OP_LEFT_MAP <- list(
+  lt_filter_condition = list(field = "end", adj = -1L),
+  lte_filter_condition = list(field = "end", adj = 0L),
+  gt_filter_condition = list(field = "start", adj = 1L),
+  gte_filter_condition = list(field = "start", adj = 0L)
+)
+POS_OP_RIGHT_MAP <- list(
+  lt_filter_condition = list(field = "start", adj = 1L),
+  lte_filter_condition = list(field = "start", adj = 0L),
+  gt_filter_condition = list(field = "end", adj = -1L),
+  gte_filter_condition = list(field = "end", adj = 0L)
+)
+
+# Helper to create genomic region data.table from field name and value
+make_pos_region <- function(field, value) {
+  if (field == "start") {
+    data.table::data.table(start = value)
+  } else {
+    data.table::data.table(end = value)
+  }
+}
+
 pos_condition_to_genomic_region <- function(
   fcondition
 ) {
   fcondition <- strip_parentheses(fcondition)
+  op_name <- as.character(fcondition[[1]])
+
+  # Handle pos on left side (pos OP val)
   if (fcondition[[2]] == as.symbol("pos")) {
-    if (fcondition[[1]] == as.symbol("lt_filter_condition")) {
-      return(data.table::data.table(end = fcondition[[3]] - 1))
+    val <- fcondition[[3]]
+    if (op_name %in% names(POS_OP_LEFT_MAP)) {
+      m <- POS_OP_LEFT_MAP[[op_name]]
+      return(make_pos_region(m$field, val + m$adj))
     }
-    if (fcondition[[1]] == as.symbol("lte_filter_condition")) {
-      return(data.table::data.table(end = fcondition[[3]]))
-    }
-    if (fcondition[[1]] == as.symbol("gt_filter_condition")) {
-      return(data.table::data.table(start = fcondition[[3]] + 1))
-    }
-    if (fcondition[[1]] == as.symbol("gte_filter_condition")) {
-      return(data.table::data.table(start = fcondition[[3]]))
-    }
-    if (fcondition[[1]] == as.symbol("eq_filter_condition") |
-      fcondition[[1]] == as.symbol("in_filter_condition")) {
-      return(data.table::data.table(
-        start = fcondition[[3]],
-        end = fcondition[[3]]
-      ))
+    if (op_name %in% c("eq_filter_condition", "in_filter_condition")) {
+      return(data.table::data.table(start = val, end = val))
     }
   }
+
+  # Handle pos on right side (val OP pos)
   if (fcondition[[3]] == as.symbol("pos")) {
-    if (fcondition[[1]] == as.symbol("lt_filter_condition")) {
-      return(data.table::data.table(start = fcondition[[2]] + 1))
+    val <- fcondition[[2]]
+    if (op_name %in% names(POS_OP_RIGHT_MAP)) {
+      m <- POS_OP_RIGHT_MAP[[op_name]]
+      return(make_pos_region(m$field, val + m$adj))
     }
-    if (fcondition[[1]] == as.symbol("lte_filter_condition")) {
-      return(data.table::data.table(start = fcondition[[2]]))
-    }
-    if (fcondition[[1]] == as.symbol("gt_filter_condition")) {
-      return(data.table::data.table(end = fcondition[[2]] - 1))
-    }
-    if (fcondition[[1]] == as.symbol("gte_filter_condition")) {
-      return(data.table::data.table(end = fcondition[[2]]))
-    }
-    if (fcondition[[1]] == as.symbol("eq_filter_condition") |
-      fcondition[[1]] == as.symbol("in_filter_condition")) {
-      return(data.table::data.table(
-        start = fcondition[[2]],
-        end = fcondition[[2]]
-      ))
+    if (op_name %in% c("eq_filter_condition", "in_filter_condition")) {
+      return(data.table::data.table(start = val, end = val))
     }
   }
+
+  # Handle composite conditions
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
     return(
       lapply(fcondition[-1], pos_condition_to_genomic_region) |>

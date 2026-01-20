@@ -309,38 +309,17 @@ post_process.and_filter_condition <- function(
 }
 #' @export
 post_process.or_filter_condition <- post_process.and_filter_condition
+
+# Comparison operators don't need post-processing - just return unchanged
 #' @export
-post_process.lt_filter_condition <- function(
-  x,
-  finterface,
-  env
-) {
-  x
-}
+post_process.lt_filter_condition <- function(x, finterface, env) x
 #' @export
-post_process.lte_filter_condition <- function(
-  x,
-  finterface,
-  env
-) {
-  x
-}
+post_process.lte_filter_condition <- post_process.lt_filter_condition
 #' @export
-post_process.gt_filter_condition <- function(
-  x,
-  finterface,
-  env
-) {
-  x
-}
+post_process.gt_filter_condition <- post_process.lt_filter_condition
 #' @export
-post_process.gte_filter_condition <- function(
-  x,
-  finterface,
-  env
-) {
-  x
-}
+post_process.gte_filter_condition <- post_process.lt_filter_condition
+
 #' @export
 post_process.eq_filter_condition <- function(
   x,
