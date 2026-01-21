@@ -670,3 +670,235 @@ test_that("empty subsetting preserves class and build", {
   expect_true(is_genomic_regions(empty_logical))
   expect_equal(attr(empty_logical, "build"), "b38")
 })
+
+# Tests for as_genomic_regions S3 methods
+test_that("as_genomic_regions.data.frame preserves build", {
+  df <- data.frame(chr = "1", start = 100, end = 200)
+  attr(df, "build") <- "b38"
+
+  result <- as_genomic_regions(df)
+  expect_true(is_genomic_regions(result))
+  expect_equal(build(result), "b38")
+  expect_equal(nrow(result), 1)
+})
+
+test_that("as_genomic_regions with explicit build parameter", {
+  df <- data.frame(chr = "1", start = 100, end = 200)
+
+  result <- as_genomic_regions(df, build = "b37")
+  expect_equal(build(result), "b37")
+
+  # Explicit build should override object's build
+  attr(df, "build") <- "b38"
+  result2 <- as_genomic_regions(df, build = "b36")
+  expect_equal(build(result2), "b36")
+})
+
+test_that("as_genomic_regions.eq_filter_condition handles chr equality", {
+  fc <- structure(
+    quote(eq_filter_condition(chr, "1")),
+    class = c("eq_filter_condition", "filter_condition", "call")
+  )
+  attr(fc, "build") <- "b38"
+
+  result <- as_genomic_regions(fc)
+  expect_true(is_genomic_regions(result))
+  # Chromosomes may have "chr" prefix added
+  expect_true(grepl("1$", result$chr))
+  expect_equal(build(result), "b38")
+})
+
+test_that("as_genomic_regions.eq_filter_condition handles pos equality", {
+  fc <- structure(
+    quote(eq_filter_condition(pos, 12345)),
+    class = c("eq_filter_condition", "filter_condition", "call")
+  )
+  attr(fc, "build") <- "b38"
+
+  result <- as_genomic_regions(fc)
+  expect_true(is_genomic_regions(result))
+  expect_equal(result$start, 12345)
+  expect_equal(result$end, 12345)
+})
+
+test_that("as_genomic_regions.lt_filter_condition handles pos < value", {
+  fc <- structure(
+    quote(lt_filter_condition(pos, 1000)),
+    class = c("lt_filter_condition", "filter_condition", "call")
+  )
+  attr(fc, "build") <- "b38"
+
+  result <- as_genomic_regions(fc)
+  expect_true(is_genomic_regions(result))
+  expect_true(all(result$end < 1000))
+})
+
+test_that("as_genomic_regions.gt_filter_condition handles pos > value", {
+  fc <- structure(
+    quote(gt_filter_condition(pos, 1000)),
+    class = c("gt_filter_condition", "filter_condition", "call")
+  )
+  attr(fc, "build") <- "b38"
+
+  result <- as_genomic_regions(fc)
+  expect_true(is_genomic_regions(result))
+  expect_true(all(result$start > 1000))
+})
+
+# Tests for internal helper functions
+test_that("empty_genomic_regions creates valid empty regions", {
+  empty <- empty_genomic_regions(build = "b38")
+  expect_true(is_genomic_regions(empty))
+  expect_equal(nrow(empty), 0)
+  expect_equal(build(empty), "b38")
+  expect_equal(names(empty), c("chr", "start", "end"))
+})
+
+test_that("full_genomic_regions creates valid full genome regions", {
+  full <- full_genomic_regions(build = "b38")
+  expect_true(is_genomic_regions(full))
+  expect_equal(nrow(full), 1)
+  expect_equal(build(full), "b38")
+  expect_true(is.na(full$chr))
+})
+
+test_that("copy_genomic_regions preserves class and attributes", {
+  gr <- new_genomic_regions(chr = "1", start = 100, end = 200, build = "b38")
+  copied <- copy_genomic_regions(gr)
+
+  expect_true(is_genomic_regions(copied))
+  expect_equal(build(copied), "b38")
+  expect_equal(copied$chr, "1")
+
+  # Verify it's a copy (modifying original doesn't affect copy)
+  gr[, chr := "2"]
+  expect_equal(copied$chr, "1")
+})
+
+# Edge case tests for NULL/NA handling
+test_that("genomic_regions handles NULL build correctly", {
+  gr <- new_genomic_regions(chr = "1", start = 100, end = 200, build = NULL)
+  expect_null(build(gr))
+  expect_true(is_genomic_regions(gr))
+})
+
+test_that("genomic_regions operations work with NA chromosomes", {
+  gr1 <- new_genomic_regions(
+    chr = c("1", NA),
+    start = c(100, 200),
+    end = c(150, 250),
+    build = "b38"
+  )
+  expect_equal(nrow(gr1), 2)
+  expect_true(is.na(gr1$chr[2]))
+})
+
+# Edge case tests for empty inputs
+test_that("empty genomic_regions union produces empty result", {
+  empty1 <- empty_genomic_regions(build = "b38")
+  empty2 <- empty_genomic_regions(build = "b38")
+
+  result <- empty1 | empty2
+  expect_equal(nrow(result), 0)
+  expect_true(is_genomic_regions(result))
+  expect_equal(build(result), "b38")
+})
+
+test_that("empty genomic_regions intersection produces empty result", {
+  empty1 <- empty_genomic_regions(build = "b38")
+  empty2 <- empty_genomic_regions(build = "b38")
+
+  result <- empty1 & empty2
+  expect_equal(nrow(result), 0)
+  expect_true(is_genomic_regions(result))
+})
+
+test_that("intersection with empty returns empty", {
+  gr <- new_genomic_regions(chr = "1", start = 100, end = 200, build = "b38")
+  empty <- empty_genomic_regions(build = "b38")
+
+  result <- gr & empty
+  expect_equal(nrow(result), 0)
+
+  result2 <- empty & gr
+  expect_equal(nrow(result2), 0)
+})
+
+# Boundary condition tests
+test_that("single-position regions work in intersection", {
+  gr1 <- new_genomic_regions(
+    chr = "1",
+    start = 100,
+    end = 100,
+    build = "b38"
+  )
+  gr2 <- new_genomic_regions(
+    chr = "1",
+    start = 50,
+    end = 150,
+    build = "b38"
+  )
+
+  result <- gr1 & gr2
+  expect_equal(nrow(result), 1)
+  expect_equal(result$start, 100)
+  expect_equal(result$end, 100)
+})
+
+test_that("adjacent non-overlapping regions have empty intersection", {
+  gr1 <- new_genomic_regions(
+    chr = "1",
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+  gr2 <- new_genomic_regions(
+    chr = "1",
+    start = 201,
+    end = 300,
+    build = "b38"
+  )
+
+  result <- gr1 & gr2
+  expect_equal(nrow(result), 0)
+})
+
+test_that("exact boundary overlap produces single-position result", {
+  gr1 <- new_genomic_regions(
+    chr = "1",
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+  gr2 <- new_genomic_regions(
+    chr = "1",
+    start = 200,
+    end = 300,
+    build = "b38"
+  )
+
+  result <- gr1 & gr2
+  expect_equal(nrow(result), 1)
+  expect_equal(result$start, 200)
+  expect_equal(result$end, 200)
+})
+
+test_that("complete containment intersection returns inner region", {
+  outer <- new_genomic_regions(
+    chr = "1",
+    start = 100,
+    end = 500,
+    build = "b38"
+  )
+  inner <- new_genomic_regions(
+    chr = "1",
+    start = 200,
+    end = 300,
+    build = "b38"
+  )
+
+  result <- outer & inner
+  expect_equal(nrow(result), 1)
+  expect_equal(result$start, 200)
+  expect_equal(result$end, 300)
+})

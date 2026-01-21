@@ -249,3 +249,85 @@ test_that("multiple regions with partial mapping", {
       liftover("b38")
   )
 })
+
+# Tests for build() accessor S3 methods
+test_that("build() accessor works for different object types", {
+  # Test build.default (data.table with attr)
+  dt <- data.table::data.table(x = 1)
+  attr(dt, "build") <- "b38"
+  expect_equal(build(dt), "b38")
+
+  # Test build.character (pass-through)
+  expect_equal(build("b37"), "b37")
+
+  # Test build.list
+  lst <- list(build = "b38", data = 1:10)
+  expect_equal(build(lst), "b38")
+
+  # Test NULL build
+  dt_no_build <- data.table::data.table(x = 1)
+  expect_null(build(dt_no_build))
+
+  # Test build.file_interface (uses list method)
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+  expect_equal(build(finterface), "b36")
+
+  # Test build on genomic_regions
+  gr <- new_genomic_regions(chr = "1", start = 100, end = 200, build = "b38")
+  expect_equal(build(gr), "b38")
+})
+
+test_that("build<-() setter works for different object types", {
+  # Test build<-.default
+  df <- data.frame(x = 1)
+  build(df) <- "b38"
+  expect_equal(attr(df, "build"), "b38")
+
+  # Test build<-.data.table (uses setattr for efficiency)
+  dt <- data.table::data.table(x = 1)
+  build(dt) <- "b37"
+  expect_equal(attr(dt, "build"), "b37")
+
+  # Test build<-.list
+  lst <- list(data = 1:10)
+  build(lst) <- "b38"
+  expect_equal(lst$build, "b38")
+
+  # Test setting NULL build
+  dt2 <- data.table::data.table(x = 1)
+  build(dt2) <- "b38"
+  expect_equal(build(dt2), "b38")
+  build(dt2) <- NULL
+  expect_null(build(dt2))
+
+  # Test setting build on genomic_regions
+  gr <- new_genomic_regions(chr = "1", start = 100, end = 200)
+  expect_null(build(gr))
+  build(gr) <- "b38"
+  expect_equal(build(gr), "b38")
+})
+
+test_that("build() and build<-() work correctly together", {
+  # Round-trip test
+  dt <- data.table::data.table(chr = "1", start = 100, end = 200)
+  expect_null(build(dt))
+
+  build(dt) <- "b37"
+  expect_equal(build(dt), "b37")
+
+  build(dt) <- "b38"
+  expect_equal(build(dt), "b38")
+
+  # Test with genomic_regions through operations
+  gr1 <- new_genomic_regions(chr = "1", start = 100, end = 200, build = "b38")
+  gr2 <- new_genomic_regions(chr = "1", start = 150, end = 250, build = "b38")
+
+  # Build should be preserved through operations
+  result <- gr1 & gr2
+  expect_equal(build(result), "b38")
+
+  result2 <- gr1 | gr2
+  expect_equal(build(result2), "b38")
+})
