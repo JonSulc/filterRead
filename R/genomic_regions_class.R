@@ -208,9 +208,24 @@ print.genomic_regions <- function(
   }
 }
 
-# TODO: Implement other checks
-#' Validate genomic_regions data.table structure
-#'
-#' @param genomic_regions_dt data.table to validate
-#' @return Invisible input (for chaining)
-#' @keywords internal
+#' @export
+str.genomic_regions <- function(
+  x
+) {
+  sprintf(
+    "{%s}",
+    x[
+      ,
+      .(region_str = sprintf(
+        "%s:%i-%s",
+        ifelse(is.na(chr), "*", chr),
+        ifelse(is.na(start), 1, start),
+        ifelse(is.na(end), "", end)
+      )),
+      by = .I
+    ][
+      ,
+      paste(region_str, collapse = ", ")
+    ]
+  )
+}

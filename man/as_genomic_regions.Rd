@@ -5,9 +5,9 @@
 \alias{as_genomic_regions.data.frame}
 \title{Convert objects to genomic_regions}
 \usage{
-as_genomic_regions(x, build = get_build(x), ...)
+as_genomic_regions(x, build = NULL, ...)
 
-\method{as_genomic_regions}{data.frame}(x, build = get_build(x), ...)
+\method{as_genomic_regions}{data.frame}(x, build = NULL, ...)
 }
 \arguments{
 \item{x}{Object to convert}

@@ -257,30 +257,15 @@ format.filter_condition <- function(
       )
     }
   }
-  genomic_regions <- ""
-  if (all(is.na(genomic_regions))) {
-    genomic_regions <- genomic_regions(x)[
-      ,
-      paste(
-        " & rsid %in%",
-        sprintf(
-          "%s%s",
-          chr,
-          ifelse(is.na(start) & is.na(end),
-            "",
-            sprintf(
-              ":%s-%s",
-              ifelse(is.na(start), "", start),
-              ifelse(is.na(end), "", end)
-            )
-          )
-        ) |>
-          paste(collapse = " ")
-      )
-    ]
-  }
 
-  paste0(fcondition_str, genomic_regions)
+  paste(
+    fcondition_str,
+    ifelse(
+      is_full_genome(genomic_regions(x)),
+      "",
+      str(genomic_regions(x))
+    )
+  )
 }
 
 #' @export

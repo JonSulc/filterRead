@@ -38,14 +38,6 @@ as_genomic_regions.data.frame <- function(
   genomic_regions
 }
 #' @export
-as_genomic_regions.filter_condition <- function(
-  x,
-  build = NULL,
-  ...
-) {
-  genomic_regions(x)
-}
-#' @export
 as_genomic_regions.and_filter_condition <- function(
   x,
   build = NULL,
