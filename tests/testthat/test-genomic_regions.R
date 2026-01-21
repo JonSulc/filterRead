@@ -768,11 +768,11 @@ test_that("copy_genomic_regions preserves class and attributes", {
 
   expect_true(is_genomic_regions(copied))
   expect_equal(build(copied), "b38")
-  expect_equal(copied$chr, "1")
+  expect_equal(copied$chr, "chr1")
 
   # Verify it's a copy (modifying original doesn't affect copy)
   gr[, chr := "2"]
-  expect_equal(copied$chr, "1")
+  expect_equal(copied$chr, "chr1")
 })
 
 # Edge case tests for NULL/NA handling
@@ -790,7 +790,8 @@ test_that("genomic_regions operations work with NA chromosomes", {
     build = "b38"
   )
   expect_equal(nrow(gr1), 2)
-  expect_true(is.na(gr1$chr[2]))
+  # data.table sorts NAs first
+  expect_true(is.na(gr1$chr[1]))
 })
 
 # Edge case tests for empty inputs

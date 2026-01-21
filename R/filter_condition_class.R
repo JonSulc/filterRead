@@ -103,6 +103,40 @@ new_filter_condition.default <- function(
   x
 }
 #' @export
+new_filter_condition.name <- function(
+  x,
+  finterface,
+  env = parent.frame(),
+  build = NULL
+) {
+  new_filter_condition(
+    eval(x),
+    finterface = finterface,
+    env = env,
+    build = build
+  )
+}
+#' @export
+new_filter_condition.genomic_regions <- function(
+  x,
+  finterface,
+  env = parent.frame(),
+  build = NULL
+) {
+  if (is_file_interface(finterface)) {
+    finterface_env <- new.env(parent = emptyenv())
+    finterface_env$finterface <- finterface
+  } else {
+    finterface_env <- finterface
+  }
+  empty_filter_condition(
+    build = build,
+    genomic_regions = x |>
+      liftover(build),
+    finterface_env = finterface_env
+  )
+}
+#' @export
 new_filter_condition.call <- function(
   x,
   finterface,
