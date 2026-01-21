@@ -109,8 +109,12 @@ new_filter_condition.name <- function(
   env = parent.frame(),
   build = NULL
 ) {
+  x <- eval(x, envir = env)
+  if (missing(build) || is.null(build)) {
+    build <- build(finterface) %||% build(x)
+  }
   new_filter_condition(
-    eval(x),
+    x,
     finterface = finterface,
     env = env,
     build = build
@@ -123,6 +127,9 @@ new_filter_condition.genomic_regions <- function(
   env = parent.frame(),
   build = NULL
 ) {
+  if (missing(build) || is.null(build)) {
+    build <- build(finterface) %||% build(x)
+  }
   if (is_file_interface(finterface)) {
     finterface_env <- new.env(parent = emptyenv())
     finterface_env$finterface <- finterface
@@ -131,8 +138,7 @@ new_filter_condition.genomic_regions <- function(
   }
   empty_filter_condition(
     build = build,
-    genomic_regions = x |>
-      liftover(build),
+    genomic_regions = liftover(x, build),
     finterface_env = finterface_env
   )
 }

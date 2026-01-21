@@ -947,3 +947,94 @@ test_that("Parentheses work as expected", {
     file_contents = c("a", 1)
   )
 })
+
+# Tests for new_filter_condition.genomic_regions constructor
+test_that("new_filter_condition.genomic_regions creates filter from regions", {
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  gr <- new_genomic_regions(
+    chr = "1",
+    start = 100,
+    end = 200,
+    build = "b36"
+  )
+
+  fc <- new_filter_condition(gr, finterface)
+
+  expect_true(is.filter_condition(fc))
+  expect_equal(build(fc), "b36")
+  expect_equal(genomic_regions(fc), gr)
+})
+
+test_that("new_filter_condition.genomic_regions handles build parameter", {
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  gr <- new_genomic_regions(
+    chr = "1",
+    start = 100,
+    end = 200,
+    build = "b37"
+  )
+
+  # With explicit build = NULL, should use finterface build
+  fc <- new_filter_condition(gr, finterface, build = NULL)
+  expect_equal(build(fc), "b36")
+
+  # With explicit build, should liftover the regions
+  fc_lifted <- new_filter_condition(gr, finterface, build = "b38")
+  expect_equal(build(fc_lifted), "b38")
+})
+
+test_that("new_filter_condition.genomic_regions works with multiple regions", {
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  gr <- new_genomic_regions(
+    chr = c("1", "2"),
+    start = c(100, 500),
+    end = c(200, 600),
+    build = "b36"
+  )
+
+  fc <- new_filter_condition(gr, finterface)
+
+  expect_true(is.filter_condition(fc))
+  expect_equal(nrow(genomic_regions(fc)), 2)
+})
+
+test_that("new_filter_condition.genomic_regions handles empty regions", {
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  empty_gr <- empty_genomic_regions(build = "b36")
+
+  fc <- new_filter_condition(empty_gr, finterface)
+
+  expect_true(is.filter_condition(fc))
+  expect_equal(nrow(genomic_regions(fc)), 0)
+})
+
+# Tests for new_filter_condition.name constructor
+test_that("new_filter_condition.name evaluates name to get value", {
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  gr <- new_genomic_regions(
+    chr = "1",
+    start = 100,
+    end = 200,
+    build = "b36"
+  )
+
+  fc <- new_filter_condition(rlang::expr(gr), finterface)
+
+  expect_true(is.filter_condition(fc))
+  expect_equal(genomic_regions(fc), gr)
+})
