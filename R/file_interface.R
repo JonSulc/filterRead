@@ -39,7 +39,9 @@ new_file_interface <- function(
 ) {
   stopifnot(is.character(filename))
   stopifnot(file.exists(filename))
-  build <- match.arg(build)
+  if (!is.null(build)) {
+    build <- match.arg(build)
+  }
 
   standard_names_dt <- list(
     standard_names_dt,
