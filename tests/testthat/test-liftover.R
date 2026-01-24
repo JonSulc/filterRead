@@ -331,3 +331,101 @@ test_that("build() and build<-() work correctly together", {
   result2 <- gr1 | gr2
   expect_equal(build(result2), "b38")
 })
+
+# Tests for normalize_build() and build synonyms
+test_that("normalize_build() converts canonical names correctly", {
+  expect_equal(normalize_build("b36"), "b36")
+  expect_equal(normalize_build("b37"), "b37")
+  expect_equal(normalize_build("b38"), "b38")
+})
+
+test_that("normalize_build() converts UCSC/hg names correctly", {
+  expect_equal(normalize_build("hg18"), "b36")
+  expect_equal(normalize_build("hg19"), "b37")
+  expect_equal(normalize_build("hg38"), "b38")
+})
+
+test_that("normalize_build() converts GRCh names correctly", {
+  expect_equal(normalize_build("GRCh36"), "b36")
+  expect_equal(normalize_build("GRCh37"), "b37")
+  expect_equal(normalize_build("GRCh38"), "b38")
+
+  expect_equal(normalize_build("grch36"), "b36")
+  expect_equal(normalize_build("grch37"), "b37")
+  expect_equal(normalize_build("grch38"), "b38")
+})
+
+test_that("normalize_build() handles NULL correctly", {
+  expect_null(normalize_build(NULL))
+  expect_null(normalize_build(NULL, allow_null = TRUE))
+
+  expect_error(
+    normalize_build(NULL, allow_null = FALSE),
+    "Build cannot be NULL"
+  )
+})
+
+test_that("normalize_build() errors on invalid build names", {
+  expect_error(normalize_build("invalid"), "Unknown build")
+  expect_error(normalize_build("hg17"), "Unknown build")
+  expect_error(normalize_build("b39"), "Unknown build")
+  expect_error(normalize_build(""), "Unknown build")
+})
+
+test_that("get_chain_filename() accepts build synonyms", {
+  # All these should produce the same filename
+  expect_equal(
+    get_chain_filename("b37", "b38"),
+    get_chain_filename("hg19", "hg38")
+  )
+  expect_equal(
+    get_chain_filename("b37", "b38"),
+    get_chain_filename("GRCh37", "GRCh38")
+  )
+  expect_equal(
+    get_chain_filename("b37", "b38"),
+    get_chain_filename("grch37", "grch38")
+  )
+
+  # Verify actual filename format
+  expect_equal(
+    get_chain_filename("hg19", "hg38"),
+    "hg19ToHg38.over.chain"
+  )
+})
+
+test_that("get_chain_downloads() accepts build synonyms", {
+  downloads_canonical <- get_chain_downloads("b37", "b38")
+  downloads_ucsc <- get_chain_downloads("hg19", "hg38")
+  downloads_grch <- get_chain_downloads("GRCh37", "GRCh38")
+
+  expect_equal(downloads_canonical, downloads_ucsc)
+  expect_equal(downloads_canonical, downloads_grch)
+
+  # Verify structure
+  expect_equal(downloads_canonical$uncompressed, "hg19ToHg38.over.chain")
+  expect_equal(downloads_canonical$filename, "hg19ToHg38.over.chain.gz")
+  expect_true(grepl("hgdownload.soe.ucsc.edu", downloads_canonical$url))
+})
+
+test_that("liftover() accepts build synonyms as target", {
+  gr_b37 <- new_genomic_regions(
+    chr = "chr19",
+    start = 45411941,
+    end = 45412079,
+    build = "b37"
+  )
+
+  # These should all produce the same result
+  result_b38 <- liftover(gr_b37, "b38")
+  result_hg38 <- liftover(gr_b37, "hg38")
+  result_grch38 <- liftover(gr_b37, "GRCh38")
+
+  expect_equal(result_b38, result_hg38)
+  expect_equal(result_b38, result_grch38)
+
+  # Verify build attribute is always canonical
+  expect_equal(build(result_b38), "b38")
+  expect_equal(build(result_hg38), "b38")
+  expect_equal(build(result_grch38), "b38")
+})

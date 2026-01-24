@@ -37,6 +37,10 @@ liftover.genomic_regions <- function(
       data.table::is.data.table(target) ||
       is.null(target)
   )
+  # Normalize build name if target is a character string
+  if (is.character(target)) {
+    target <- normalize_build(target, allow_null = FALSE)
+  }
   if (nrow(x) == 0) {
     if (is.character(target)) {
       build(x) <- target
