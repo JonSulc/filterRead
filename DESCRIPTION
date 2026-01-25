@@ -1,7 +1,7 @@
 Package: filterRead
 Type: Package
 Title: Pre-filters files using awk for faster fread
-Version: 2.7.2
+Version: 2.8.0
 Author: Jonathan Sulc
 Maintainer: Jonathan Sulc <jonsulc@gmail.com>
 Description: Creates an easy-to-use interface for loading tab/comma-separated
@@ -19,7 +19,6 @@ Imports:
     purrr,
     R.utils,
     rlang,
-    rtracklayer,
     stringr
 Suggests:
     testthat (>= 3.0.0),

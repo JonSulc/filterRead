@@ -169,44 +169,134 @@ get_chain_dt <- function(
     }
   }
   chain_file |>
-    make_chain_from_file() |>
-    get_full_chain_dt() |>
+    parse_chain_file() |>
     data.table::setattr("from", from) |>
     data.table::setattr("build", to) |>
     data.table::setattr("to", to)
 }
 
 
-#' @importFrom rtracklayer import.chain
-#' @keywords internal
-make_chain_from_file <- function(
-  path
+make_single_chain_dt <- function(
+  chain_header,
+  blocks
 ) {
-  rtracklayer::import.chain(path)
+  if (length(blocks) == 1) {
+    chain_dt <- data.table::data.table(
+      width = as.integer(blocks[[1]]),
+      dt = NA_integer_,
+      dq = NA_integer_
+    )
+  } else {
+    chain_dt <- rbindlist(
+      blocks |>
+        sapply(as.integer) |>
+        lapply(as.list),
+      fill = TRUE,
+      use.names = FALSE
+    ) |>
+      setNames(c("width", "dt", "dq"))
+  }
+
+  chain_dt[
+    ,
+    start := as.integer(chain_header$tStart) +
+      cumsum(shift(dt, n = 1L, type = "lag", fill = 0)) +
+      cumsum(shift(width, n = 1L, type = "lag", fill = 0)) +
+      1
+  ][
+    ,
+    end := as.integer(chain_header$tStart) +
+      cumsum(width) +
+      cumsum(shift(dt, n = 1L, type = "lag", fill = 0))
+  ][
+    ,
+    chr := chain_header$tName
+  ][
+    ,
+    new_chr := chain_header$qName
+  ][
+    ,
+    rev := chain_header$qStrand == "-"
+  ][
+    ,
+    offset := if (!rev[[1]]) {
+      as.integer(chain_header$tStart) -
+        as.integer(chain_header$qStart) +
+        cumsum(shift(dt, n = 1L, type = "lag", fill = 0)) -
+        cumsum(shift(dq, n = 1L, type = "lag", fill = 0))
+    } else {
+      as.integer(chain_header$tStart) -
+        (as.integer(chain_header$qSize) - as.integer(chain_header$qStart)) +
+        cumsum(width) +
+        cumsum(shift(width, n = 1L, type = "lag", fill = 0)) +
+        cumsum(shift(dt, n = 1L, type = "lag", fill = 0)) +
+        cumsum(shift(dq, n = 1L, type = "lag", fill = 0))
+    }
+  ][
+    ,
+    .(
+      start, end, width,
+      chr, offset, new_chr, rev
+    )
+  ]
 }
 
-get_chr_chain_dt <- function(chain, chr) {
-  data.table::as.data.table(chain[[chr]]@ranges) |>
-    cbind(data.table::data.table(
-      chr = chr,
-      offset = chain[[chr]]@offset,
-      new_chr = rep(
-        chain[[chr]]@space,
-        chain[[chr]]@length
-      ),
-      rev = rep(
-        chain[[chr]]@reversed,
-        chain[[chr]]@length
+
+#' Parse a UCSC chain file into a data.table
+#'
+#' Parses chain files following the UCSC format specification.
+#' See https://genome.ucsc.edu/goldenPath/help/chain.html
+#'
+#' Chain files map FROM query TO target. For hg19ToHg38.over.chain:
+#' - query = hg19 (source, what we lift FROM)
+#' - target = hg38 (destination, what we lift TO)
+#'
+#' Output structure matches what the liftover function expects:
+#' - chr: source chromosome (qName)
+#' - start/end: ranges in source coordinates
+#' - new_chr: target chromosome (tName)
+#' - offset: source_pos - target_pos (so target = source - offset)
+#' - rev: TRUE if query strand is reversed
+#'
+#' @param path Path to the chain file
+#' @return data.table with columns: chr, start, end, width, new_chr, offset, rev
+#' @keywords internal
+parse_chain_file <- function(path) {
+  lines <- readLines(path)
+
+  # Find chain header lines
+  header_idx <- grep("^chain\\s", lines)
+  if (length(header_idx) == 0) {
+    stop("No chain headers found in file: ", path)
+  }
+
+  # Determine end index for each chain (next header - 1, or end of file)
+  end_idx <- c(header_idx[-1] - 2L, length(lines))
+
+  header_names <- c(
+    "chain", "score",
+    "tName", "tSize", "tStrand", "tStart", "tEnd",
+    "qName", "qSize", "qStrand", "qStart", "qEnd",
+    "id"
+  )
+
+  chain_dt <- lapply(
+    seq_along(header_idx),
+    \(idx) {
+      chain_header <- strsplit(lines[header_idx[idx]], "\\s+")[[1]] |>
+        as.list() |>
+        setNames(header_names)
+      blocks <- lines[(header_idx[idx] + 1L):end_idx[idx]] |>
+        strsplit("\\s+")
+      make_single_chain_dt(
+        chain_header,
+        blocks
       )
-    )) |>
-    data.table::setkey(chr, start, end) |>
-    data.table::setcolorder()
-}
-
-get_full_chain_dt <- function(chain) {
-  chain_dt <- lapply(names(chain), get_chr_chain_dt, chain = chain) |>
-    data.table::rbindlist() |>
-    data.table::setkey(chr, start, end)
+    }
+  ) |>
+    data.table::rbindlist()
+  data.table::setkey(chain_dt, chr, start, end)
+  data.table::setcolorder(chain_dt)
   chain_dt
 }
 
