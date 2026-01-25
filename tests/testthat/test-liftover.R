@@ -134,6 +134,27 @@ test_that("split regions return additional rows", {
   )
 })
 
+test_that("Flipped regions work", {
+  gregions <- new_genomic_regions(
+    chr = 1,
+    start = c(317721, 421000),
+    end = c(317742, 421421),
+    build = "b37"
+  )
+  expect_equal(
+    liftover(
+      gregions,
+      "b38"
+    ),
+    new_genomic_regions(
+      chr = 1,
+      start = c(397916, 501595),
+      end = c(398337, 501616),
+      build = "b38"
+    )
+  )
+})
+
 test_that("full chromosome liftover works", {
   gregions <- new_genomic_regions(
     chr = "chr1",
