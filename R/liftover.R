@@ -15,6 +15,18 @@ get_chain_filename <- function(from, to) {
   )
 }
 
+#' Get RDS cache filename for a chain file
+#'
+#' @param from Source build (b36, b37, b38, or synonyms like hg38)
+#' @param to Target build (b36, b37, b38, or synonyms like hg38)
+#' @return RDS cache filename using internal build names
+#' @keywords internal
+get_chain_rds_filename <- function(from, to) {
+  from <- normalize_build(from, allow_null = FALSE)
+  to <- normalize_build(to, allow_null = FALSE)
+  sprintf("%s_to_%s.chain_dt.rds", from, to)
+}
+
 #' Get chain file download URLs and filenames
 #'
 #' @param from Source build (b36, b37, b38, or synonyms like hg38)
@@ -107,6 +119,18 @@ setup_chain_files <- function(
         # Decompress
         message("  Decompressing...")
         R.utils::gunzip(gz_file, destname = dest_file, remove = TRUE)
+
+        # Parse and cache as RDS
+        message("  Caching parsed chain file...")
+        from_build <- normalize_build(pair$from)
+        to_build <- normalize_build(pair$to)
+        chain_dt <- parse_chain_file(dest_file) |>
+          data.table::setattr("from", from_build) |>
+          data.table::setattr("build", to_build) |>
+          data.table::setattr("to", to_build)
+        rds_file <- file.path(path, get_chain_rds_filename(from_build, to_build))
+        saveRDS(chain_dt, rds_file)
+
         message("  Complete")
         TRUE
       },
@@ -141,15 +165,61 @@ setup_chain_files <- function(
   invisible(path)
 }
 
+#' Clear cached chain file RDS files
+#'
+#' Removes all cached RDS files for chain data, forcing re-parsing
+#' on next use. Useful after package updates that change the chain
+#' file parsing format.
+#'
+#' @param path Directory containing chain files.
+#'   Defaults to get_chain_path().
+#' @return Invisibly returns paths of removed files.
+#' @export
+clear_chain_cache <- function(path = get_chain_path(warn = FALSE)) {
+  rds_files <- list.files(path, "\\.chain_dt\\.rds$", full.names = TRUE)
+  if (length(rds_files) > 0) {
+    file.remove(rds_files)
+    message("Removed ", length(rds_files), " cached chain files")
+  } else {
+    message("No cached chain files found")
+  }
+  invisible(rds_files)
+}
+
+#' Get chain data.table for liftover
+#'
+#' Loads or creates a chain data.table for coordinate conversion between
+#' genome builds. Checks for cached RDS first, falls back to parsing the
+#' raw chain file, and auto-downloads if needed.
+#'
+#' @param from Source build (b36, b37, b38, or synonyms like hg38)
+#' @param to Target build (b36, b37, b38, or synonyms like hg38)
+#' @param auto_download Logical, whether to automatically download chain
+#'   files if not found. Default TRUE.
+#' @return data.table with chain alignment data, keyed by (chr, start, end).
+#'   Has attributes: from, to, build (same as to).
+#' @keywords internal
 get_chain_dt <- function(
   from,
   to,
   auto_download = TRUE
 ) {
-  chain_file <- file.path(
-    get_chain_path(warn = FALSE),
-    get_chain_filename(from, to)
-  )
+  chain_path <- get_chain_path(warn = FALSE)
+  chain_file <- file.path(chain_path, get_chain_filename(from, to))
+  rds_file <- file.path(chain_path, get_chain_rds_filename(from, to))
+
+  # Fast path: load from RDS cache
+  if (file.exists(rds_file)) {
+    chain_dt <- readRDS(rds_file)
+    if (data.table::is.data.table(chain_dt) &&
+        all(c("chr", "start", "end") %in% names(chain_dt))) {
+      return(chain_dt)
+    }
+    warning("Invalid chain cache, regenerating: ", rds_file)
+    file.remove(rds_file)
+  }
+
+  # Check for raw chain file
   if (!file.exists(chain_file)) {
     if (auto_download) {
       message(sprintf(
@@ -158,8 +228,12 @@ get_chain_dt <- function(
       ))
       setup_chain_files(
         builds = sprintf("%s_to_%s", from, to),
-        path = get_chain_path(warn = FALSE)
+        path = chain_path
       )
+      # setup_chain_files now creates RDS, so reload from cache
+      if (file.exists(rds_file)) {
+        return(readRDS(rds_file))
+      }
     } else {
       stop(
         sprintf("Chain file not found: %s\n", chain_file),
@@ -168,14 +242,37 @@ get_chain_dt <- function(
       )
     }
   }
-  chain_file |>
+
+  # Parse chain file and cache as RDS
+  chain_dt <- chain_file |>
     parse_chain_file() |>
     data.table::setattr("from", from) |>
     data.table::setattr("build", to) |>
     data.table::setattr("to", to)
+
+  tryCatch(
+    saveRDS(chain_dt, rds_file),
+    error = function(e) {
+      warning("Failed to cache chain file as RDS: ", e$message)
+    }
+  )
+
+  chain_dt
 }
 
 
+#' Convert a single chain block to data.table format
+#'
+#' Parses alignment blocks from a UCSC chain file and computes coordinate
+#' mappings. Handles both forward and reverse strand alignments.
+#'
+#' @param chain_header Named list with chain header fields (tName, tStart,
+#'   tEnd, qName, qStart, qEnd, qStrand, qSize, etc.)
+#' @param blocks List of character vectors, each containing alignment block
+#'   data (width, dt, dq triplets)
+#' @return data.table with columns: start, end, width, chr, offset, new_chr,
+#'   rev
+#' @keywords internal
 make_single_chain_dt <- function(
   chain_header,
   blocks
@@ -300,6 +397,15 @@ parse_chain_file <- function(path) {
   chain_dt
 }
 
+#' Convert genomic coordinates between genome builds
+#'
+#' S3 generic for lifting over genomic coordinates from one genome build
+#' to another using UCSC chain files.
+#'
+#' @param x Object containing genomic coordinates (e.g., genomic_regions)
+#' @param ... Additional arguments passed to methods
+#' @return Object with coordinates converted to the target build
+#' @export
 liftover <- function(
   x,
   ...
