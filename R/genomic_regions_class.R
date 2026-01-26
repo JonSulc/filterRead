@@ -79,6 +79,13 @@ new_genomic_regions <- function(
   merge_contiguous_regions(genomic_regions_dt)
 }
 
+#' Validate a genomic_regions data.table
+#'
+#' Checks that the object is a data.table.
+#'
+#' @param genomic_regions_dt Object to validate
+#' @return The input invisibly; stops with error if invalid
+#' @keywords internal
 validate_genomic_regions_dt <- function(
   genomic_regions_dt
 ) {
@@ -210,7 +217,8 @@ print.genomic_regions <- function(
 
 #' @export
 str.genomic_regions <- function(
-  x
+  x,
+  ...
 ) {
   sprintf(
     "{%s}",

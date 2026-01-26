@@ -78,7 +78,7 @@ new_file_interface <- function(
 
   finterface$needs_rsid_matching <- needs_rsid_matching(finterface)
 
-  if (build %in% c("b36", "b37", "b38")) {
+  if (is.null(build)) {} else if (build %in% c("b36", "b37", "b38")) {
     if (build == "b36" && needs_rsid_matching(finterface)) {
       warning("File ", filename, " uses RSID-based indexing")
     }
@@ -118,12 +118,25 @@ is_file_interface <- function(finterface) {
   inherits(finterface, "file_interface")
 }
 
+#' Check if a file is gzip-compressed
+#'
+#' @param filename Path to the file
+#' @return Logical indicating whether the file has a .gz extension
+#' @keywords internal
 is_gzipped <- function(
   filename
 ) {
   stringr::str_detect(filename, "[.]gz$")
 }
 
+#' Detect the field separator of a file
+#'
+#' Uses data.table's fread to detect the most likely field separator
+#' by analyzing the first 100 lines of the file.
+#'
+#' @param finterface A file_interface object
+#' @return Character string containing the detected separator
+#' @keywords internal
 get_file_separator <- function(
   finterface
 ) {
@@ -152,6 +165,17 @@ get_file_separator <- function(
   substr(best_sep, 2, nchar(best_sep) - 1)
 }
 
+#' Detect non-alphanumeric prefix from the first line of a file
+#'
+#' Extracts any non-alphanumeric characters at the start of the first line,
+#' which may indicate comment markers or other prefixes to skip.
+#'
+#' @param finterface A file_interface object
+#' @param skip_prefix Optional regex pattern for lines to skip when finding
+#'   the first line
+#' @return Character string with escaped regex pattern for the prefix, or NULL
+#'   if no prefix detected
+#' @keywords internal
 detect_prefix_from_first_line <- function(finterface, skip_prefix = NULL) {
   # Get file reading command based on compression
   if (finterface$gzipped) {
@@ -163,8 +187,16 @@ detect_prefix_from_first_line <- function(finterface, skip_prefix = NULL) {
   # Build command to get the first line
   if (!is.null(skip_prefix)) {
     # Remove the ^ for grep pattern
-    grep_pattern <- substr(skip_prefix, 2, nchar(skip_prefix))
-    first_line_cmd <- sprintf("%s | grep -v '%s' | head -n 1", file_cmd, grep_pattern)
+    grep_pattern <- ifelse(
+      grepl("^\\^", skip_prefix),
+      substr(skip_prefix, 2, nchar(skip_prefix)),
+      skip_prefix
+    )
+    first_line_cmd <- sprintf(
+      "%s | grep -v '%s' | head -n 1",
+      file_cmd,
+      grep_pattern
+    )
   } else {
     first_line_cmd <- paste(file_cmd, "| head -n 1")
   }
@@ -186,10 +218,27 @@ detect_prefix_from_first_line <- function(finterface, skip_prefix = NULL) {
   NULL
 }
 
+#' Detect comment prefix from a file
+#' 
+#' Identifies the prefix of commented lines at the beginning of a file to drop
+#' them when parsing the file.
+#'
+#' @param finterface A file_interface object
+#' @return Character string with the comment prefix pattern, or NULL
+#' @keywords internal
 detect_comment_prefix <- function(finterface) {
-  detect_prefix_from_first_line(finterface)
+  detect_prefix_from_first_line(finterface, skip_prefix = NULL)
 }
 
+#' Detect prefix to trim from data lines
+#'
+#' Detects prefixes on data lines (excluding comment lines) that should be
+#' trimmed before parsing. Purpose is to trim prefixes on the header line,
+#' e.g., '#CHROM' -> 'CHROM'.
+#'
+#' @param finterface A file_interface object
+#' @return Character string with the trim prefix pattern, or NULL
+#' @keywords internal
 detect_trim_prefix <- function(finterface) {
   detect_prefix_from_first_line(
     finterface,
@@ -197,6 +246,14 @@ detect_trim_prefix <- function(finterface) {
   )
 }
 
+#' Validate a file_interface object
+#'
+#' Checks that a file_interface has all required attributes and that the
+#' referenced file exists.
+#'
+#' @param finterface A file_interface object to validate
+#' @return NULL invisibly; stops with an error if validation fails
+#' @keywords internal
 validate_file_interface <- function(
   finterface
 ) {

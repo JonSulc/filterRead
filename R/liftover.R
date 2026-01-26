@@ -128,7 +128,10 @@ setup_chain_files <- function(
           data.table::setattr("from", from_build) |>
           data.table::setattr("build", to_build) |>
           data.table::setattr("to", to_build)
-        rds_file <- file.path(path, get_chain_rds_filename(from_build, to_build))
+        rds_file <- file.path(
+          path,
+          get_chain_rds_filename(from_build, to_build)
+        )
         saveRDS(chain_dt, rds_file)
 
         message("  Complete")
@@ -212,7 +215,7 @@ get_chain_dt <- function(
   if (file.exists(rds_file)) {
     chain_dt <- readRDS(rds_file)
     if (data.table::is.data.table(chain_dt) &&
-        all(c("chr", "start", "end") %in% names(chain_dt))) {
+      all(c("chr", "start", "end") %in% names(chain_dt))) {
       return(chain_dt)
     }
     warning("Invalid chain cache, regenerating: ", rds_file)
@@ -429,21 +432,25 @@ build <- function(x) {
   UseMethod("build")
 }
 
+#' @rdname build
 #' @export
 build.default <- function(x) {
   attr(x, "build")
 }
 
+#' @rdname build
 #' @export
 build.character <- function(x) {
   x
 }
 
+#' @rdname build
 #' @export
 build.list <- function(x) {
   x$build
 }
 
+#' @rdname build
 #' @export
 build.file_interface <- build.list
 
@@ -455,28 +462,33 @@ build.file_interface <- build.list
 #' @param x Object to modify
 #' @param value Build string to set (e.g., "b37", "b38")
 #' @return Modified object
+#' @rdname build-set
 #' @export
 `build<-` <- function(x, value) {
   UseMethod("build<-")
 }
 
+#' @rdname build-set
 #' @export
 `build<-.default` <- function(x, value) {
   attr(x, "build") <- value
   x
 }
 
+#' @rdname build-set
 #' @export
 `build<-.data.table` <- function(x, value) {
   data.table::setattr(x, "build", value)
   x
 }
 
+#' @rdname build-set
 #' @export
 `build<-.list` <- function(x, value) {
   x$build <- value
   x
 }
 
+#' @rdname build-set
 #' @export
 `build<-.file_interface` <- `build<-.list`

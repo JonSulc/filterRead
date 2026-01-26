@@ -1,3 +1,11 @@
+#' Get or infer genome build from a file interface
+#'
+#' Returns the build if already set, otherwise infers it from the file data.
+#'
+#' @param finterface A file_interface object
+#' @param nsnps Number of SNPs to use for build inference
+#' @return The genome build string (b36, b37, b38) or NA_character_
+#' @keywords internal
 get_build_from_file_interface <- function(
   finterface,
   nsnps = 1e4
@@ -11,11 +19,21 @@ get_build_from_file_interface <- function(
       "is not yet implemented. Please specify a build using, e.g.,",
       " 'build = \"b38\"'."
     )
+    # TODO: Check handling of NA builds in other functions
     return(NA_character_)
   }
   infer_build_from_file(finterface, nsnps = nsnps)
 }
 
+#' Infer genome build from a file
+#'
+#' Reads the first nsnps rows from a file and infers the genome build.
+#'
+#' @param finterface A file_interface object
+#' @param nsnps Number of SNPs to read for inference
+#' @param ... Additional arguments passed to infer_build
+#' @return The inferred genome build
+#' @keywords internal
 infer_build_from_file <- function(
   finterface,
   nsnps = 1e4,
@@ -26,6 +44,12 @@ infer_build_from_file <- function(
     infer_build(...)
 }
 
+#' Build a tabix query command for summary statistics
+#'
+#' @param summary_stats data.table with chr and pos columns
+#' @param ref_filename Path to the tabix-indexed reference file
+#' @return Character string containing the tabix command
+#' @keywords internal
 get_tabix_query <- function(
   summary_stats,
   ref_filename
@@ -41,22 +65,15 @@ get_tabix_query <- function(
   )
 }
 
-infer_build_rsid <- function(
-  summary_stats
-) {
-  results <- data.table::data.table(
-    build = c("b37", "b38"),
-    ref_filename = file.path(
-      get_dbsnp_path(),
-      get_dbsnp_filename(c("b37", "b38"))
-    )
-  )[
-    ,
-    n := get_rsid_matches(summary_stats, ref_filename, build = build),
-    by = build
-  ]
-}
-
+#' Infer genome build from summary statistics
+#'
+#' Compares variant positions against dbSNP reference files to determine
+#' the most likely genome build.
+#'
+#' @param summary_stats data.table with chr, pos, ref, alt columns
+#' @param return_build_match Logical, whether to return match percentages
+#' @return The inferred build, or a data.table with match info if requested
+#' @keywords internal
 infer_build <- function(
   summary_stats,
   return_build_match = FALSE
@@ -120,11 +137,23 @@ infer_build <- function(
     build
   ]
 }
+#' Check if build can be inferred from summary statistics
+#'
+#' @param summary_stats data.table to check
+#' @return Logical indicating whether required columns exist
+#' @keywords internal
 build_can_be_inferred <- function(summary_stats) {
   all(
     c("chr", "pos", "ref", "alt") %in% colnames(summary_stats)
   )
 }
+
+#' Count matching positions in a reference file using tabix
+#'
+#' @param summary_stats data.table with chr, pos, ref, alt columns
+#' @param ref_filename Path to tabix-indexed reference file
+#' @return Integer count of matching variants
+#' @keywords internal
 get_tabix_matches <- function(
   summary_stats,
   ref_filename
@@ -193,15 +222,4 @@ get_tabix_matches <- function(
   ] |>
     unique() |>
     nrow()
-}
-
-get_rsid_matches <- function(
-  summary_stats,
-  ref_filename,
-  build = "auto"
-) {
-  stop("This only makes sense if there is more information than just RSID")
-  test <- new_file_interface(ref_filename, build = build)[
-    rsid %in% summary_stats$rsid
-  ]
 }

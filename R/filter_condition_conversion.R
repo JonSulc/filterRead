@@ -77,9 +77,14 @@ is_column_symbol <- function(
 # These functions are called during filter_condition evaluation when
 # R expressions are translated to awk syntax.
 
-# Factory for comparison filter conditions
-# Creates a function that builds an awk comparison condition with the given
-# operator
+#' Create a comparison filter function factory
+#'
+#' Creates a function that builds an awk comparison condition with the
+#' given operator.
+#'
+#' @param operator The comparison operator string (e.g., "<", "==")
+#' @return A function that takes var1, var2 and returns a list with condition
+#' @keywords internal
 make_comparison_filter <- function(operator) {
   function(var1, var2) {
     list(condition = sprintf("%s %s %s", var1, operator, var2))

@@ -28,6 +28,13 @@ ieugwas_regexes <- c(
   ID = "(rs[0-9]+)"
 )
 
+#' Check if a file interface points to an IEUGWAS file
+#'
+#' IEUGWAS files have 10 columns with specific names and format.
+#'
+#' @param finterface A file_interface object
+#' @return Logical indicating whether the file is IEUGWAS format
+#' @keywords internal
 is_ieugwas_file <- function(finterface) {
   fcolumn_names <- column_names(
     finterface,
@@ -40,6 +47,14 @@ is_ieugwas_file <- function(finterface) {
     grepl("^[a-z0-9-]+$", fcolumn_names[10])
 }
 
+#' Get column parsing specification for IEUGWAS files
+#'
+#' Parses the FORMAT field to determine how to extract values from the
+#' encoded GWAS column.
+#'
+#' @param finterface A file_interface object
+#' @return Column parsing specification, or NULL if parsing fails
+#' @keywords internal
 get_ieugwas_column_parsing <- function(finterface) {
   if (!is_ieugwas_file(finterface)) {
     warning("Attempting IEUGWAS parsing on non-IEUGWAS file, please report")

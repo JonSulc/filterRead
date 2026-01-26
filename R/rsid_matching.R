@@ -435,6 +435,16 @@ tabix_colnames <- c(
 )
 
 
+#' Build a tabix process substitution command
+#'
+#' Creates a bash process substitution that queries tabix for genomic regions.
+#'
+#' @param chr Chromosome(s)
+#' @param start Start position(s)
+#' @param end End position(s)
+#' @param dbsnp_filename Path to tabix-indexed dbSNP file
+#' @return Character string with process substitution command
+#' @keywords internal
 get_tabix_process_substitution <- function(
   chr,
   start,
@@ -463,6 +473,12 @@ get_tabix_process_substitution <- function(
     paste(regions, collapse = " ")
   )
 }
+#' Combine RSID filter conditions with OR
+#'
+#' @param fcondition1 First filter condition
+#' @param fcondition2 Second filter condition
+#' @return Combined condition list
+#' @keywords internal
 or_filter_condition_rsid <- function(
   fcondition1,
   fcondition2

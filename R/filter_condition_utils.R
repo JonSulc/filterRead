@@ -1,3 +1,11 @@
+#' Check if a filter condition is an AND block
+#'
+#' An AND block contains only AND operations (no OR at any level, including
+#' genomic_regions).
+#'
+#' @param fcondition A filter_condition object
+#' @return Logical indicating whether the condition is an AND block
+#' @keywords internal
 is_and_block <- function(
   fcondition
 ) {
@@ -22,6 +30,14 @@ is_and_block <- function(
   all(sapply(fcondition[-1], is_and_block))
 }
 
+#' Check if non-genomic parts of a condition form an AND block
+#'
+#' Similar to is_and_block but ignores genomic regions, only checking
+#' the structure of non-genomic conditions.
+#'
+#' @param fcondition A filter_condition object
+#' @return Logical indicating whether non-genomic conditions are an AND block
+#' @keywords internal
 non_genomic_is_and_block <- function(
   fcondition
 ) {
@@ -40,6 +56,16 @@ non_genomic_is_and_block <- function(
   all(sapply(fcondition[-1], non_genomic_is_and_block))
 }
 
+#' Get genomic regions from a filter condition
+#'
+#' Extracts the genomic_regions attribute from a filter condition. When
+#' recursive is TRUE, combines regions from nested conditions using
+#' appropriate set operations.
+#'
+#' @param fcondition A filter_condition object
+#' @param recursive Logical, whether to recursively combine nested regions
+#' @return A genomic_regions object, or NULL if not set
+#' @keywords internal
 genomic_regions <- function(
   fcondition,
   recursive = FALSE
@@ -79,6 +105,12 @@ has_no_gregions <- function(
   is.null(gregions) || is_full_genome(gregions)
 }
 
+#' Set genomic regions on a filter condition
+#'
+#' @param fcondition A filter_condition object
+#' @param value A genomic_regions object to set
+#' @return The modified filter_condition
+#' @keywords internal
 `genomic_regions<-` <- function(
   fcondition,
   value
@@ -87,12 +119,22 @@ has_no_gregions <- function(
   fcondition
 }
 
+#' Check if a filter condition contains genomic constraints
+#'
+#' @param fcondition A filter_condition object
+#' @return Logical indicating whether chromosome or position conditions exist
+#' @keywords internal
 has_genomic_condition <- function(
   fcondition
 ) {
   has_chromosome_condition(fcondition) | has_position_condition(fcondition)
 }
 
+#' Check if a filter condition contains chromosome constraints
+#'
+#' @param fcondition A filter_condition object
+#' @return Logical indicating whether chromosome conditions exist
+#' @keywords internal
 has_chromosome_condition <- function(
   fcondition
 ) {
@@ -113,6 +155,11 @@ has_chromosome_condition <- function(
   fcondition == as.symbol("chr")
 }
 
+#' Check if a filter condition contains position constraints
+#'
+#' @param fcondition A filter_condition object
+#' @return Logical indicating whether position conditions exist
+#' @keywords internal
 has_position_condition <- function(
   fcondition
 ) {
@@ -133,6 +180,13 @@ has_position_condition <- function(
   fcondition == as.symbol("pos")
 }
 
+#' Check if a filter condition contains non-genomic constraints
+#'
+#' Non-genomic conditions are those that don't involve chr or pos.
+#'
+#' @param fcondition A filter_condition object
+#' @return Logical indicating whether non-genomic conditions exist
+#' @keywords internal
 has_non_genomic_condition <- function(
   fcondition
 ) {
@@ -157,12 +211,27 @@ has_non_genomic_condition <- function(
   }
   !is_genomic_symbol(fcondition)
 }
+
+#' Check if a symbol is a genomic column reference
+#'
+#' @param symbol A symbol to check
+#' @return Logical indicating whether the symbol is chr or pos
+#' @keywords internal
 is_genomic_symbol <- function(
   symbol
 ) {
   symbol == as.symbol("chr") | symbol == as.symbol("pos")
 }
 
+#' Split genomic conditions from a filter condition
+#'
+#' Separates genomic (chr, pos) conditions into the genomic_regions attribute
+#' while keeping non-genomic conditions in the filter expression.
+#'
+#' @param fcondition A filter_condition object
+#' @param build Optional genome build
+#' @return Modified filter_condition with genomic conditions extracted
+#' @keywords internal
 split_genomic_conditions <- function(
   fcondition,
   build = NULL
@@ -204,6 +273,11 @@ split_genomic_conditions <- function(
   fcondition
 }
 
+#' Extract chromosome conditions from a filter condition
+#'
+#' @param fcondition A filter_condition object (must be an AND block)
+#' @return The chromosome condition, or NULL if none exists
+#' @keywords internal
 get_chr_condition <- function(
   fcondition
 ) {
@@ -214,11 +288,18 @@ get_chr_condition <- function(
       get_chr_condition(fcondition[[2]]) & get_chr_condition(fcondition[[3]])
     )
   }
-  if (fcondition[[2]] == as.symbol("chr") | fcondition[[3]] == as.symbol("chr")) {
+  if (fcondition[[2]] == as.symbol("chr") ||
+    fcondition[[3]] == as.symbol("chr")) {
     return(fcondition)
   }
   NULL
 }
+
+#' Extract position conditions from a filter condition
+#'
+#' @param fcondition A filter_condition object (must be an AND block)
+#' @return The position condition, or NULL if none exists
+#' @keywords internal
 get_pos_condition <- function(
   fcondition
 ) {
@@ -250,7 +331,12 @@ POS_OP_RIGHT_MAP <- list(
   gte_filter_condition = list(field = "end", adj = 0L)
 )
 
-# Helper to create genomic region data.table from field name and value
+#' Create a genomic region data.table from a position boundary
+#'
+#' @param field Either "start" or "end"
+#' @param value The position value
+#' @return A data.table with the specified boundary
+#' @keywords internal
 make_pos_region <- function(field, value) {
   if (field == "start") {
     data.table::data.table(start = value)
@@ -259,6 +345,14 @@ make_pos_region <- function(field, value) {
   }
 }
 
+#' Convert a position condition to a genomic region
+#'
+#' Translates position comparison operators (pos < x, pos >= y, etc.) into
+#' genomic region boundaries (start, end).
+#'
+#' @param fcondition A position filter_condition
+#' @return A data.table with start and/or end columns
+#' @keywords internal
 pos_condition_to_genomic_region <- function(
   fcondition
 ) {
@@ -297,33 +391,25 @@ pos_condition_to_genomic_region <- function(
     )
   }
   if (fcondition[[1]] == as.symbol("and_filter_condition")) {
-    to_return <- lapply(fcondition[-1], pos_condition_to_genomic_region) |>
-      data.table::rbindlist(fill = TRUE, use.names = TRUE)
     return(
-      to_return[
-        ,
-        .(
-          start = {
-            if (any(!is.na(to_return$start))) {
-              max(start, na.rm = TRUE)
-            } else {
-              NA_real_
-            }
-          },
-          end = {
-            if (any(!is.na(to_return$end))) {
-              min(end, na.rm = TRUE)
-            } else {
-              NA_real_
-            }
-          }
-        )
-      ]
+      pos_condition_to_genomic_region(fcondition[[2]]) &
+        pos_condition_to_genomic_region(fcondition[[3]])
     )
   }
   NULL
 }
 
+#' Remove parenthesis wrappers from a filter condition
+#'
+#' Unwraps lp_filter_condition (parenthesis) nodes from a filter condition.
+#' This always removes all parentheses at the highest level.
+#' If recursive = TRUE, parentheses within the filter_condition are removed as
+#' well.
+#'
+#' @param fcondition A filter_condition object
+#' @param recursive Logical, whether to recursively strip from nested conditions
+#' @return Filter condition with parentheses removed
+#' @keywords internal
 strip_parentheses <- function(
   fcondition,
   recursive = TRUE
@@ -351,6 +437,14 @@ strip_parentheses <- function(
   fcondition
 }
 
+#' Check if a filter condition has a single genomic block
+#'
+#' Determines whether all non-genomic conditions apply to the same
+#' genomic range, allowing for efficient query optimization.
+#'
+#' @param fcondition A filter_condition object
+#' @return Logical indicating whether it's a single genomic block
+#' @keywords internal
 is_single_genomic_block <- function(
   fcondition
 ) {
@@ -368,6 +462,7 @@ is_single_genomic_block <- function(
     !has_position_condition(fcondition)) {
     return(TRUE)
   }
+  # TODO: Handle when genomic_regions(fcondition) exists
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
     return(
       is_single_genomic_block(fcondition[[2]]) &&

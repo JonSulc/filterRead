@@ -1,5 +1,10 @@
 #' @include filter_condition_conversion.R
 
+#' @title Test if an object is a filter_condition
+#'
+#' @param x Object to test
+#' @return Logical indicating whether x inherits from filter_condition
+#' @keywords internal
 is.filter_condition <- function(x) inherits(x, "filter_condition")
 
 atomic_fc_operators <- list(
@@ -16,6 +21,16 @@ composite_fc_operators <- list(
   "(" = "lp_filter_condition"
 )
 
+#' Create an empty filter condition
+#'
+#' Creates a filter_condition with no conditions (no filtering, matches all
+#' rows).
+#'
+#' @param build Optional genome build (b36, b37, b38)
+#' @param genomic_regions Genomic regions to associate with the condition
+#' @param finterface_env Environment containing the file_interface
+#' @return An empty filter_condition object
+#' @keywords internal
 empty_filter_condition <- function(
   build = NULL,
   genomic_regions = full_genomic_regions(build = build),
@@ -31,6 +46,15 @@ empty_filter_condition <- function(
 }
 
 
+#' Coerce an object to a filter_condition
+#'
+#' Adds the filter_condition class to an object while preserving existing
+#' classes.
+#'
+#' @param x Object to coerce
+#' @param ... Additional attributes to set
+#' @return Object with filter_condition class added
+#' @keywords internal
 as_filter_condition <- function(
   x,
   ...
@@ -43,6 +67,15 @@ as_filter_condition <- function(
   )
 }
 
+#' Check if a filter condition is atomic
+#'
+#' Atomic conditions are simple comparisons (==, <, <=, >, >=, %in%).
+#'
+#' @param fcondition A filter_condition object
+#' @param finterface file_interface for column name resolution
+#' @param atomic_operators Character vector of atomic operator names
+#' @return Logical indicating whether the condition is atomic
+#' @keywords internal
 is_atomic_filter_condition <- function(
   fcondition,
   finterface = get_file_interface(fcondition),
@@ -53,6 +86,16 @@ is_atomic_filter_condition <- function(
   as.character(fcondition[[1]]) %in% atomic_operators &&
     has_finterface_column_names(fcondition, finterface)
 }
+
+#' Check if a filter condition is composite
+#'
+#' Composite conditions combine other conditions with &, |, or parentheses.
+#'
+#' @param fcondition A filter_condition object
+#' @param finterface file_interface for column name resolution
+#' @param composite_operators Character vector of composite operator names
+#' @return Logical indicating whether the condition is composite
+#' @keywords internal
 is_composite_filter_condition <- function(
   fcondition,
   finterface = get_file_interface(fcondition),
@@ -66,6 +109,16 @@ is_composite_filter_condition <- function(
   as.character(fcondition[[1]]) %in% composite_operators &&
     has_finterface_column_names(fcondition, finterface)
 }
+
+#' Check if a filter condition references file interface columns
+#'
+#' Recursively checks whether a filter condition contains references to
+#' columns defined in finterface.
+#'
+#' @param fcondition A filter_condition object
+#' @param finterface file_interface for column name resolution
+#' @return Logical indicating whether any column names are referenced
+#' @keywords internal
 has_finterface_column_names <- function(
   fcondition,
   finterface
@@ -205,6 +258,15 @@ new_filter_condition.call <- function(
 #' @export
 `new_filter_condition.(` <- new_filter_condition.call
 
+#' Get column names used in a filter_condition
+#'
+#' Recursively extracts all column names referenced in a filter_condition,
+#' including those implied by genomic_regions constraints.
+#'
+#' @param fcondition A filter_condition object
+#' @param finterface file_interface for column name resolution
+#' @return Character vector of column names used in the condition
+#' @keywords internal
 get_used_columns <- function(
   fcondition,
   finterface = get_file_interface(fcondition)
@@ -245,6 +307,14 @@ get_used_columns <- function(
     unique()
 }
 
+#' Get the file interface from a filter condition
+#'
+#' Extracts the file interface object stored in the filter condition's
+#' finterface_env attribute.
+#'
+#' @param fcondition A filter_condition object
+#' @return The file_interface object, or NULL if not set
+#' @keywords internal
 get_file_interface <- function(
   fcondition
 ) {

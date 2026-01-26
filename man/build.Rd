@@ -2,9 +2,21 @@
 % Please edit documentation in R/liftover.R
 \name{build}
 \alias{build}
+\alias{build.default}
+\alias{build.character}
+\alias{build.list}
+\alias{build.file_interface}
 \title{Get genome build from an object}
 \usage{
 build(x)
+
+\method{build}{default}(x)
+
+\method{build}{character}(x)
+
+\method{build}{list}(x)
+
+\method{build}{file_interface}(x)
 }
 \arguments{
 \item{x}{Object to get build from}

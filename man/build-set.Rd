@@ -2,9 +2,21 @@
 % Please edit documentation in R/liftover.R
 \name{build<-}
 \alias{build<-}
+\alias{build<-.default}
+\alias{build<-.data.table}
+\alias{build<-.list}
+\alias{build<-.file_interface}
 \title{Set genome build on an object}
 \usage{
 build(x) <- value
+
+\method{build}{default}(x) <- value
+
+\method{build}{data.table}(x) <- value
+
+\method{build}{list}(x) <- value
+
+\method{build}{file_interface}(x) <- value
 }
 \arguments{
 \item{x}{Object to modify}
