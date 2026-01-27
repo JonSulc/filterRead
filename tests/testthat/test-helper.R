@@ -79,9 +79,7 @@ test_that("Column encdoding works", {
       on = c("input_name", "delimiter")
     ],
     random_names = FALSE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
   raw_data <- data.table::fread("encoded.csv")
   expect_equal(
     names(raw_data),

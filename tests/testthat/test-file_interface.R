@@ -112,9 +112,7 @@ test_that("Head works", {
 })
 
 test_that("Math conditions work", {
-  finterface <- local_file_interface("data.csv") |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface("data.csv")
   expect_equal(
     finterface[num < 3],
     dummy_dt()[num < 3]
@@ -140,9 +138,7 @@ test_that("Math conditions work", {
     dummy_dt()[num == 3]
   )
 
-  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE)
   expect_equal(
     fquoted[num < 3],
     dummy_dt()[num < 3]
@@ -170,9 +166,7 @@ test_that("Math conditions work", {
 })
 
 test_that("Set belonging works", {
-  finterface <- local_file_interface("data.csv") |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface("data.csv")
   expect_equal(
     finterface[char %in% "a"],
     dummy_dt()[char %in% "a"]
@@ -200,9 +194,7 @@ test_that("Set belonging works", {
 })
 
 test_that("Combining conditions works", {
-  finterface <- local_file_interface("data.csv") |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface("data.csv")
   expect_equal(
     finterface[3 <= num & num <= 5],
     dummy_dt()[3 <= num & num <= 5]
@@ -221,9 +213,7 @@ test_that("Combining conditions works", {
     dummy_dt()[1 < num & num < 3 | 5 < num]
   )
 
-  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE)
   expect_equal(
     fquoted[3 <= num & num <= 5],
     dummy_dt()[3 <= num & num <= 5]
@@ -267,24 +257,18 @@ test_that("Prefixes are handled correctly", {
     "data.csv",
     chr    = 1,
     prefix = list(chr = "chr")
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
   finterface_q <- local_summary_stats_interface(
     "data_q.csv",
     chr = 1,
     prefix = list(chr = "chr"),
     values_are_quoted = TRUE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
   finterface_gz <- local_summary_stats_interface(
     "data.csv.gz",
     chr    = 1,
     prefix = list(chr = "chr")
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
 
   for (finterface in list(finterface_b, finterface_q, finterface_gz)) {
     data_to_check <- head(finterface, 500)
@@ -356,18 +340,14 @@ test_that("Commented lines are correctly ignored", {
 
 # Tests consolidated from test-column_encoding.R
 test_that("Encoded columns are correctly detected", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   finterface_enc <- local_summary_stats_interface(
     "encoded.csv",
     encode_columns = summary_stats_standard_names_dt[
       list(input_name = "MarkerName", delimiter = "-c|:|-"),
       on = c("input_name", "delimiter")
     ]
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
 
   expect_true(all(is.na(finterface$column_info$regex)))
   expect_true(all(sapply(
@@ -497,9 +477,7 @@ test_that("Encoded columns are correctly parsed and loaded", {
       on = c("input_name", "delimiter")
     ],
     random_names = FALSE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
 
   data_raw <- data.table::fread("encoded.csv")
   expect_equal(

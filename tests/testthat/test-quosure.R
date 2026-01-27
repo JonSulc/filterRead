@@ -1,9 +1,7 @@
 test_that("variable resolution works within functions", {
   # Initial implementation using exprs failed to correctly resolve variables
   # when passed through functions
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
 
   get_each_chromosome <- function(
     finterface,

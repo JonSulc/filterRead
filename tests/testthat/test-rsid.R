@@ -1,44 +1,30 @@
 test_that("RSID parsing required is correctly detected", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   expect_false(needs_rsid_matching(finterface))
   finterface_rn <- local_summary_stats_interface(
     "data_rn.csv",
     random_names = TRUE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
   expect_false(needs_rsid_matching(finterface_rn))
 
-  finterface_rsid <- local_rsid_summary_stats_interface("data_rsid.csv") |>
-    suppressWarnings() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface_rsid <- local_rsid_summary_stats_interface("data_rsid.csv")
   expect_true(needs_rsid_matching(finterface_rsid))
   finterface_rsid_rn <- local_rsid_summary_stats_interface(
     "data_rsid_rn.csv",
     random_names = TRUE
-  ) |>
-    suppressWarnings() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
   expect_true(needs_rsid_matching(finterface_rsid_rn))
 
   finterface_enc <- local_summary_stats_interface(
     "data_enc.csv",
     encode_columns = TRUE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
   expect_false(needs_rsid_matching(finterface_enc))
   finterface_enc_rn <- local_summary_stats_interface(
     "data_enc_rn.csv",
     random_names   = TRUE,
     encode_columns = TRUE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  )
   expect_false(needs_rsid_matching(finterface_enc_rn))
 })
 
@@ -68,10 +54,7 @@ test_that("tabix process substitution works", {
 })
 
 test_that("File reading works", {
-  finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_true(needs_rsid_matching(finterface))
   expect_no_error(head(finterface))
   expect_true(all(finterface[pval < .05]$pval < .05))
@@ -109,10 +92,7 @@ test_that("File reading works", {
 })
 
 test_that("Genomic blocks are correctly identified", {
-  finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_rsid_summary_stats_interface()
   expect_true(
     new_filter_condition(
       rlang::quo(pval < .05),
@@ -220,10 +200,7 @@ test_that("Genomic blocks are correctly identified", {
 })
 
 test_that("Multiple genomic range-other condition combinations can be handled", {
-  finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_equal(
     new_filter_condition(
       rlang::quo(
@@ -260,10 +237,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
 })
 
 test_that("Genomic ranges are correctly identified", {
-  finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_equal(
     new_filter_condition(rlang::quo(chr == 1 & pos < 123), finterface) |>
       genomic_regions(),
@@ -272,10 +246,7 @@ test_that("Genomic ranges are correctly identified", {
 })
 
 test_that("Genomic ranges are correctly structured", {
-  finterface <- local_rsid_summary_stats_interface() |>
-    suppressWarnings() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_equal(
     new_filter_condition(rlang::quo(pos < 123), finterface) |>
       genomic_regions(),

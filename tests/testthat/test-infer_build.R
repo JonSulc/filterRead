@@ -167,19 +167,11 @@ test_that(
 test_that(
   "get_build_from_file_interface warns for RSID matching files",
   {
-    finterface <- local_rsid_summary_stats_interface() |>
-      suppressWarnings() |>
-      suppressMessages() |>
-      withr::with_output_sink(new = "/dev/null")
+    finterface <- local_rsid_summary_stats_interface()
 
-    # Non-existent RSID build is set to b38 by default
-    expect_equal(
-      finterface$build,
-      "b38"
+    expect_null(
+      finterface$build
     )
-
-    # Reset build to force inference
-    finterface$build <- NULL
 
     expect_warning(
       result <- get_build_from_file_interface(finterface),
@@ -203,13 +195,11 @@ test_that(
       start = 1000,
       end = 10000,
       random_names = FALSE
-    ) |>
-      suppressWarnings() |>
-      suppressMessages() |>
-      withr::with_output_sink(new = "/dev/null")
+    )
 
     result <- get_build_from_file_interface(finterface, nsnps = 50) |>
-      suppressMessages()
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
 
     expect_type(result, "character")
     expect_true(result %in% c("b36", "b37", "b38"))

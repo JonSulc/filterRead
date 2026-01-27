@@ -144,7 +144,7 @@ has_chromosome_condition <- function(
       return(TRUE)
     }
   }
-  if (is.call(fcondition)) {
+  if (rlang::is_quosure(fcondition)) {
     while (fcondition[[1]] == as.symbol("lp_filter_condition")) {
       fcondition <- fcondition[[2]]
     }
@@ -169,7 +169,7 @@ has_position_condition <- function(
       return(TRUE)
     }
   }
-  if (is.call(fcondition)) {
+  if (rlang::is_quosure(fcondition)) {
     while (fcondition[[1]] == as.symbol("lp_filter_condition")) {
       fcondition <- fcondition[[2]]
     }
@@ -446,7 +446,7 @@ is_single_genomic_block <- function(
   fcondition
 ) {
   # Determine whether all non-genomic conditions apply to the same genomic range
-  if (!is.call(fcondition)) {
+  if (!rlang::is_quosure(fcondition)) {
     return(TRUE)
   }
   if (is_and_block(fcondition)) {

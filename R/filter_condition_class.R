@@ -112,20 +112,6 @@ is_atomic_filter_condition <- function(
 ) {
   UseMethod("is_atomic_filter_condition")
 }
-
-#' @rdname is_atomic_filter_condition
-#' @keywords internal
-#' @export
-is_atomic_filter_condition.call <- function(
-  fcondition,
-  finterface = get_file_interface(fcondition),
-  atomic_operators = names(atomic_fc_operators) |>
-    c(unlist(atomic_fc_operators)) |>
-    unname()
-) {
-  as.character(fcondition[[1]]) %in% atomic_operators &&
-    has_finterface_column_names(fcondition, finterface)
-}
 #' @rdname is_atomic_filter_condition
 #' @keywords internal
 #' @export
@@ -172,22 +158,6 @@ is_composite_filter_condition <- function(
     unname()
 ) {
   UseMethod("is_composite_filter_condition")
-}
-#' @rdname is_composite_filter_condition
-#' @keywords internal
-#' @export
-is_composite_filter_condition.call <- function(
-  fcondition,
-  finterface = get_file_interface(fcondition),
-  composite_operators = names(composite_fc_operators) |>
-    c(unlist(composite_fc_operators)) |>
-    unname()
-) {
-  if (length(fcondition) == 0) {
-    return(FALSE)
-  }
-  as.character(fcondition[[1]]) %in% composite_operators &&
-    has_finterface_column_names(fcondition, finterface)
 }
 #' @rdname is_composite_filter_condition
 #' @keywords internal
@@ -319,66 +289,6 @@ new_filter_condition.genomic_regions <- function(
   )
 }
 #' @export
-new_filter_condition.call <- function(
-  x,
-  finterface,
-  env = parent.frame(),
-  build = "auto"
-) {
-  if (!is.null(build) && build == "auto") {
-    build <- build(x) %||% build(finterface)
-  }
-  if (is_file_interface(finterface)) {
-    finterface_env <- new.env(parent = emptyenv())
-    finterface_env$finterface <- finterface
-  } else {
-    finterface_env <- finterface
-  }
-
-  if (is.null(x)) {
-    fcondition <- empty_filter_condition(build = build)
-  } else if (is_composite_filter_condition(x, finterface_env$finterface)) {
-    args <- lapply(
-      x[-1],
-      new_filter_condition,
-      finterface = finterface_env,
-      env = env,
-      build = build
-    )
-    fcondition <- switch(as.character(x[[1]]),
-      "&" = args[[1]] & args[[2]],
-      "|" = args[[1]] | args[[2]],
-      "(" = lp_wrap_fcondition(args[[1]]),
-      do.call(x[[1]], args)
-    )
-  } else if (is_atomic_filter_condition(x, finterface_env$finterface)) {
-    atomic_fc_name <- atomic_fc_operators[[as.character(x[[1]])]]
-    fcondition <- as_filter_condition(x)
-    fcondition[[1]] <- atomic_fc_name |>
-      as.symbol()
-    class(fcondition) <- c(
-      atomic_fc_name,
-      class(fcondition)
-    ) |>
-      unique()
-    fcondition <- evaluate_non_column_variables(
-      fcondition,
-      finterface_env$finterface,
-      env
-    ) |>
-      split_genomic_conditions(build = build)
-  } else {
-    fcondition <- as_filter_condition(x) |>
-      split_genomic_conditions(build = build)
-  }
-
-  attr(fcondition, "finterface_env") <- finterface_env
-
-  build(fcondition) <- build
-
-  fcondition
-}
-#' @export
 new_filter_condition.quosure <- function(
   x,
   finterface,
@@ -484,7 +394,7 @@ get_used_columns <- function(
       unique()
   }
 
-  if (is.call(fcondition)) {
+  if (rlang::is_quosure(fcondition)) {
     return(sapply(
       fcondition[-1],
       get_used_columns,

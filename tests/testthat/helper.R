@@ -254,11 +254,12 @@ local_summary_stats <- function(
 local_summary_stats_interface <- function(
   filename = "data.csv",
   prefixes = NULL,
+  build = NULL,
   ...,
   env = parent.frame()
 ) {
   local_summary_stats(filename = filename, prefixes = prefixes, ..., env = env)
-  new_file_interface(filename)
+  new_file_interface(filename, build = build)
 }
 
 encode_column <- function(
@@ -352,11 +353,12 @@ local_rsid_summary_stats <- function(
 
 local_rsid_summary_stats_interface <- function(
   filename = "data.csv",
+  build = NULL,
   ...,
   env = parent.frame()
 ) {
   local_rsid_summary_stats(filename = filename, ..., env = env)
-  new_file_interface(filename)
+  new_file_interface(filename, build = build)
 }
 
 local_file_with_comments <- function(

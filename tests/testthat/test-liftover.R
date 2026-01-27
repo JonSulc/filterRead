@@ -290,9 +290,7 @@ test_that("build() accessor works for different object types", {
   expect_null(build(dt_no_build))
 
   # Test build.file_interface (uses list method)
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface(build = "b36")
   expect_equal(build(finterface), "b36")
 
   # Test build on genomic_regions

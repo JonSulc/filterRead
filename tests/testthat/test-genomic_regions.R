@@ -695,9 +695,7 @@ test_that("as_genomic_regions with explicit build parameter", {
 })
 
 test_that("as_genomic_regions.eq_filter_condition handles chr equality", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   fcondition <- new_filter_condition(
     rlang::quo(chr == 1),
     finterface,
@@ -712,9 +710,7 @@ test_that("as_genomic_regions.eq_filter_condition handles chr equality", {
 })
 
 test_that("as_genomic_regions.eq_filter_condition handles pos equality", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   fcondition <- new_filter_condition(
     rlang::quo(pos == 12345),
     finterface,
@@ -728,9 +724,7 @@ test_that("as_genomic_regions.eq_filter_condition handles pos equality", {
 })
 
 test_that("as_genomic_regions.lt_filter_condition handles pos < value", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   fcondition <- new_filter_condition(
     rlang::quo(pos < 1000),
     finterface,
@@ -744,9 +738,7 @@ test_that("as_genomic_regions.lt_filter_condition handles pos < value", {
 })
 
 test_that("as_genomic_regions.gt_filter_condition handles pos > value", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   fcondition <- new_filter_condition(
     rlang::quo(pos > 1000),
     finterface,

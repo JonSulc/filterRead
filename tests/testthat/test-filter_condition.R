@@ -1,7 +1,5 @@
 test_that("Basic filter_condition initialization works with dummy variables", {
-  finterface <- local_file_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface()
   expect_no_error(new_filter_condition(rlang::quo(x < 3),
     finterface = finterface
   ))
@@ -87,9 +85,7 @@ test_that("Basic filter_condition initialization works with dummy variables", {
 })
 
 test_that("Basic filter_condition initialization works with column names", {
-  finterface <- local_file_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface()
   expect_no_error(new_filter_condition(rlang::quo(num < 3),
     finterface = finterface
   ))
@@ -175,9 +171,7 @@ test_that("Basic filter_condition initialization works with column names", {
 })
 
 test_that("Passing variables or complex objects works", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   my_chr <- 3
   expect_equal(
     new_filter_condition(rlang::quo(chr == my_chr),
@@ -198,9 +192,7 @@ test_that("Passing variables or complex objects works", {
 })
 
 test_that("Quoted values are handled correctly", {
-  finterface <- local_file_interface(quote = TRUE) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface(quote = TRUE)
   expect_equal(
     new_filter_condition(rlang::quo(char == "a"),
       finterface = finterface
@@ -232,9 +224,7 @@ test_that("Quoted values are handled correctly", {
 })
 
 test_that("Prefixes are handled properly", {
-  finterface <- local_file_interface(prefix = list(char = "test")) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface(prefix = list(char = "test"))
   expect_equal(
     new_filter_condition(
       rlang::quo(char == 1),
@@ -273,9 +263,7 @@ test_that("Prefixes are handled properly", {
 })
 
 test_that("And-block detection works", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   expect_true(is_and_block(1))
   expect_true(is_and_block("1"))
   expect_true(
@@ -329,9 +317,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(is_genomic_symbol(rlang::quo(ref)))
   expect_false(is_genomic_symbol(1))
 
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
 
   expect_false(
     has_chromosome_condition(
@@ -505,9 +491,7 @@ test_that("Genomic position conditions are correctly detected", {
 })
 
 test_that("Parenthesis stripping works", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
 
   expect_equal(
     new_filter_condition(
@@ -597,9 +581,7 @@ test_that("Parenthesis stripping works", {
 })
 
 test_that("empty_fc | empty_fc does not inherit or_filter_condition_class", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   fcondition1 <- empty_filter_condition(finterface_env = finterface)
   fcondition2 <- empty_filter_condition(
     finterface_env = attr(fcondition1, "finterface_env")
@@ -611,9 +593,7 @@ test_that("empty_fc | empty_fc does not inherit or_filter_condition_class", {
 })
 
 test_that("AND code block handling works", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   expect_no_error(
     new_filter_condition(
       rlang::quo(chr == 1 | chr == 2),
@@ -631,9 +611,7 @@ test_that("AND code block handling works", {
 })
 
 test_that("Getting genomic regions works", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
   expect_equal(
     new_filter_condition(
       rlang::quo(chr == 1 & 123 <= pos & pos <= 234),
@@ -649,7 +627,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_regions(),
-    new_genomic_regions(start = 123, end = 234, build = "b36")
+    new_genomic_regions(start = 123, end = 234)
   )
   expect_equal(
     new_filter_condition(
@@ -657,7 +635,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_regions(),
-    new_genomic_regions(chr = "1", start = 124, end = 233, build = "b36")
+    new_genomic_regions(chr = "1", start = 124, end = 233)
   )
   expect_equal(
     new_filter_condition(
@@ -665,7 +643,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_regions(),
-    new_genomic_regions(chr = "1", start = 124, end = 233, build = "b36")
+    new_genomic_regions(chr = "1", start = 124, end = 233)
   )
   expect_equal(
     new_filter_condition(
@@ -677,8 +655,7 @@ test_that("Getting genomic regions works", {
     new_genomic_regions(
       chr = c("1", "X"),
       start = c(123, 21),
-      end = c(234, 42),
-      build = "b36"
+      end = c(234, 42)
     )
   )
   expect_equal(
@@ -690,8 +667,7 @@ test_that("Getting genomic regions works", {
     new_genomic_regions(
       chr = c("1", "X"),
       start = 123,
-      end = 234,
-      build = "b36"
+      end = 234
     )
   )
   expect_equal(
@@ -700,7 +676,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_regions(),
-    empty_genomic_regions(build = "b36")
+    empty_genomic_regions()
   )
   expect_equal(
     new_filter_condition(
@@ -708,7 +684,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_regions(),
-    empty_genomic_regions(build = "b36")
+    empty_genomic_regions()
   )
   expect_equal(
     new_filter_condition(
@@ -721,8 +697,7 @@ test_that("Getting genomic regions works", {
     new_genomic_regions(
       chr = c("1", "X"),
       start = 123,
-      end = 234,
-      build = "b36"
+      end = 234
     )
   )
 })
@@ -766,9 +741,7 @@ test_that("Quoting works properly", {
 
 # Tests consolidated from test-fc_condition_functions.R
 test_that("Parsing to command line works", {
-  finterface <- local_file_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface()
   expect_equal(
     new_filter_condition(rlang::quo(num < 3),
       finterface = finterface
@@ -837,9 +810,7 @@ test_that("Parsing to command line works", {
 })
 
 test_that("%in% parsing works", {
-  finterface <- local_file_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface()
   expect_equal(
     new_filter_condition(
       rlang::quo(char %in% letters[1:5]),
@@ -898,9 +869,7 @@ test_that("%in% parsing works", {
 })
 
 test_that("Parentheses work as expected", {
-  finterface <- local_file_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_file_interface()
   expect_equal(
     new_filter_condition(
       rlang::quo((num < 3 & char == "a")),
@@ -969,9 +938,7 @@ test_that("Parentheses work as expected", {
 
 # Tests for new_filter_condition.genomic_regions constructor
 test_that("new_filter_condition.genomic_regions creates filter from regions", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
 
   gr <- new_genomic_regions(
     chr = "1",
@@ -988,9 +955,7 @@ test_that("new_filter_condition.genomic_regions creates filter from regions", {
 })
 
 test_that("new_filter_condition.genomic_regions handles build parameter", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface(build = "b36")
 
   gr <- new_genomic_regions(
     chr = "1",
@@ -1009,9 +974,7 @@ test_that("new_filter_condition.genomic_regions handles build parameter", {
 })
 
 test_that("new_filter_condition.genomic_regions works with multiple regions", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
 
   gr <- new_genomic_regions(
     chr = c("1", "2"),
@@ -1027,9 +990,7 @@ test_that("new_filter_condition.genomic_regions works with multiple regions", {
 })
 
 test_that("new_filter_condition.genomic_regions handles empty regions", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
 
   empty_gr <- empty_genomic_regions(build = "b36")
 
@@ -1039,11 +1000,8 @@ test_that("new_filter_condition.genomic_regions handles empty regions", {
   expect_equal(nrow(genomic_regions(fc)), 0)
 })
 
-# Tests for new_filter_condition.name constructor
 test_that("new_filter_condition.name evaluates name to get value", {
-  finterface <- local_summary_stats_interface() |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  finterface <- local_summary_stats_interface()
 
   gr <- new_genomic_regions(
     chr = "1",
@@ -1056,4 +1014,16 @@ test_that("new_filter_condition.name evaluates name to get value", {
 
   expect_true(is.filter_condition(fc))
   expect_equal(genomic_regions(fc), gr)
+})
+
+test_that("get_used_columns fuctions within nested conditions", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo((chr == 1 | pval < .05) | (alt == "A" & ref == "C")),
+    finterface
+  )
+  expect_equal(
+    sort(get_used_columns(fcondition)),
+    sort(c("alt", "chr", "pval", "ref"))
+  )
 })
