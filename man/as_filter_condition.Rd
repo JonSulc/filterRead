@@ -2,9 +2,15 @@
 % Please edit documentation in R/filter_condition_class.R
 \name{as_filter_condition}
 \alias{as_filter_condition}
+\alias{as_filter_condition.default}
+\alias{as_filter_condition.quosure}
 \title{Coerce an object to a filter_condition}
 \usage{
 as_filter_condition(x, ...)
+
+\method{as_filter_condition}{default}(x, ...)
+
+\method{as_filter_condition}{quosure}(x, ...)
 }
 \arguments{
 \item{x}{Object to coerce}

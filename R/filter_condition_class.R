@@ -38,7 +38,7 @@ empty_filter_condition <- function(
 ) {
   structure(
     list(),
-    class = c("filter_condition", "call"),
+    class = c("filter_condition", "list"),
     build = build,
     genomic_regions = genomic_regions,
     finterface_env = finterface_env
@@ -54,8 +54,33 @@ empty_filter_condition <- function(
 #' @param x Object to coerce
 #' @param ... Additional attributes to set
 #' @return Object with filter_condition class added
+#' @rdname as_filter_condition
 #' @keywords internal
+#' @export
 as_filter_condition <- function(
+  x,
+  ...
+) {
+  UseMethod("as_filter_condition")
+}
+#' @rdname as_filter_condition
+#' @keywords internal
+#' @export
+as_filter_condition.default <- function(
+  x,
+  ...
+) {
+  structure(
+    x,
+    class = c("filter_condition", class(x)) |>
+      unique(),
+    ...
+  )
+}
+#' @rdname as_filter_condition
+#' @keywords internal
+#' @export
+as_filter_condition.quosure <- function(
   x,
   ...
 ) {
@@ -75,8 +100,23 @@ as_filter_condition <- function(
 #' @param finterface file_interface for column name resolution
 #' @param atomic_operators Character vector of atomic operator names
 #' @return Logical indicating whether the condition is atomic
+#' @rdname is_atomic_filter_condition
 #' @keywords internal
+#' @export
 is_atomic_filter_condition <- function(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  atomic_operators = names(atomic_fc_operators) |>
+    c(unlist(atomic_fc_operators)) |>
+    unname()
+) {
+  UseMethod("is_atomic_filter_condition")
+}
+
+#' @rdname is_atomic_filter_condition
+#' @keywords internal
+#' @export
+is_atomic_filter_condition.call <- function(
   fcondition,
   finterface = get_file_interface(fcondition),
   atomic_operators = names(atomic_fc_operators) |>
@@ -85,6 +125,32 @@ is_atomic_filter_condition <- function(
 ) {
   as.character(fcondition[[1]]) %in% atomic_operators &&
     has_finterface_column_names(fcondition, finterface)
+}
+#' @rdname is_atomic_filter_condition
+#' @keywords internal
+#' @export
+is_atomic_filter_condition.quosure <- function(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  atomic_operators = names(atomic_fc_operators) |>
+    c(unlist(atomic_fc_operators)) |>
+    unname()
+) {
+  fexpr <- rlang::get_expr(fcondition)
+  if (is.name(fexpr)) {
+    return(FALSE)
+  }
+  as.character(fexpr[[1]]) %in% atomic_operators &&
+    has_finterface_column_names(fexpr, finterface)
+}
+#' @rdname is_atomic_filter_condition
+#' @keywords internal
+#' @export
+is_atomic_filter_condition.list <- function(
+  fcondition,
+  ...
+) {
+  FALSE
 }
 
 #' Check if a filter condition is composite
@@ -95,8 +161,22 @@ is_atomic_filter_condition <- function(
 #' @param finterface file_interface for column name resolution
 #' @param composite_operators Character vector of composite operator names
 #' @return Logical indicating whether the condition is composite
+#' @rdname is_composite_filter_condition
 #' @keywords internal
+#' @export
 is_composite_filter_condition <- function(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  composite_operators = names(composite_fc_operators) |>
+    c(unlist(composite_fc_operators)) |>
+    unname()
+) {
+  UseMethod("is_composite_filter_condition")
+}
+#' @rdname is_composite_filter_condition
+#' @keywords internal
+#' @export
+is_composite_filter_condition.call <- function(
   fcondition,
   finterface = get_file_interface(fcondition),
   composite_operators = names(composite_fc_operators) |>
@@ -109,6 +189,32 @@ is_composite_filter_condition <- function(
   as.character(fcondition[[1]]) %in% composite_operators &&
     has_finterface_column_names(fcondition, finterface)
 }
+#' @rdname is_composite_filter_condition
+#' @keywords internal
+#' @export
+is_composite_filter_condition.quosure <- function(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  composite_operators = names(composite_fc_operators) |>
+    c(unlist(composite_fc_operators)) |>
+    unname()
+) {
+  fexpr <- rlang::get_expr(fcondition)
+  if (length(fexpr) <= 1) {
+    return(FALSE)
+  }
+  as.character(fexpr[[1]]) %in% composite_operators &&
+    has_finterface_column_names(fexpr, finterface)
+}
+#' @rdname is_composite_filter_condition
+#' @keywords internal
+#' @export
+is_composite_filter_condition.list <- function(
+  fcondition,
+  ...
+) {
+  FALSE
+}
 
 #' Check if a filter condition references file interface columns
 #'
@@ -118,8 +224,19 @@ is_composite_filter_condition <- function(
 #' @param fcondition A filter_condition object
 #' @param finterface file_interface for column name resolution
 #' @return Logical indicating whether any column names are referenced
+#' @rdname has_finterface_column_names
 #' @keywords internal
+#' @export
 has_finterface_column_names <- function(
+  fcondition,
+  finterface
+) {
+  UseMethod("has_finterface_column_names")
+}
+#' @rdname has_finterface_column_names
+#' @keywords internal
+#' @export
+has_finterface_column_names.default <- function(
   fcondition,
   finterface
 ) {
@@ -136,12 +253,21 @@ has_finterface_column_names <- function(
   ) |>
     any()
 }
+#' @rdname has_finterface_column_names
+#' @keywords internal
+#' @export
+has_finterface_column_names.quosure <- function(
+  fcondition,
+  finterface
+) {
+  rlang::get_expr(fcondition) |>
+    has_finterface_column_names(finterface)
+}
 
 #' @export
 new_filter_condition <- function(
   x,
   finterface,
-  env = parent.frame(),
   build = NULL
 ) {
   UseMethod("new_filter_condition")
@@ -150,7 +276,6 @@ new_filter_condition <- function(
 new_filter_condition.default <- function(
   x,
   finterface,
-  env = parent.frame(),
   build = NULL
 ) {
   x
@@ -169,7 +294,6 @@ new_filter_condition.name <- function(
   new_filter_condition(
     x,
     finterface = finterface,
-    env = env,
     build = build
   )
 }
@@ -177,7 +301,6 @@ new_filter_condition.name <- function(
 new_filter_condition.genomic_regions <- function(
   x,
   finterface,
-  env = parent.frame(),
   build = NULL
 ) {
   if (missing(build) || is.null(build)) {
@@ -256,7 +379,79 @@ new_filter_condition.call <- function(
   fcondition
 }
 #' @export
-`new_filter_condition.(` <- new_filter_condition.call
+new_filter_condition.quosure <- function(
+  x,
+  finterface,
+  build = "auto"
+) {
+  if (!is.null(build) && build == "auto") {
+    build <- build(x) %||% build(finterface)
+  }
+  if (is_file_interface(finterface)) {
+    finterface_env <- new.env(parent = emptyenv())
+    finterface_env$finterface <- finterface
+  } else {
+    finterface_env <- finterface
+  }
+
+  if (is.null(rlang::get_expr(x))) {
+    # TODO Check this actually ever triggers
+    fcondition <- empty_filter_condition(build = build)
+  } else if (is_composite_filter_condition(x, finterface_env$finterface)) {
+    fc_operator <- rlang::get_expr(x)[[1]]
+    args <- lapply(
+      rlang::get_expr(x)[-1],
+      rlang::new_quosure,
+      env = rlang::get_env(x)
+    ) |>
+      lapply(
+        new_filter_condition,
+        finterface = finterface_env,
+        build = build
+      )
+    fcondition <- switch(as.character(fc_operator),
+      "&" = args[[1]] & args[[2]],
+      "|" = args[[1]] | args[[2]],
+      "(" = lp_wrap_fcondition(args[[1]]),
+      do.call(fc_operator, args)
+    )
+  } else if (is_atomic_filter_condition(x, finterface_env$finterface)) {
+    atomic_fc_name <- atomic_fc_operators[[
+      as.character(rlang::get_expr(x)[[1]])
+    ]]
+    fcondition <- as_filter_condition(x)
+    fcondition[[1]] <- as.symbol(atomic_fc_name)
+    class(fcondition) <- c(
+      atomic_fc_name,
+      class(fcondition)
+    ) |>
+      unique()
+    fcondition <- evaluate_non_column_variables(
+      fcondition,
+      finterface_env$finterface
+    ) |>
+      split_genomic_conditions(build = build)
+  } else if (is.name(rlang::get_expr(x))) {
+    return(
+      new_filter_condition(
+        rlang::eval_tidy(x),
+        finterface = finterface_env,
+        build = build
+      )
+    )
+  } else {
+    fcondition <- as_filter_condition(x) |>
+      split_genomic_conditions(build = build)
+  }
+
+  attr(fcondition, "finterface_env") <- finterface_env
+
+  build(fcondition) <- build
+
+  fcondition
+}
+#' @export
+`new_filter_condition.(` <- new_filter_condition.quosure
 
 #' Get column names used in a filter_condition
 #'
@@ -335,6 +530,7 @@ format.filter_condition <- function(
     eq_filter_condition  = "==",
     in_filter_condition  = "%in%"
   )
+
   if (length(x) == 0) {
     fcondition_str <- "<Empty fcondition>"
   } else {
@@ -379,29 +575,67 @@ format.filter_condition <- function(
 }
 
 #' @export
+`[[.filter_condition` <- function(
+  x,
+  ...
+) {
+  rlang::get_expr(x)[[...]]
+}
+
+#' @export
+`[[<-.filter_condition` <- function(
+  x,
+  ...,
+  value
+) {
+  fexpr <- rlang::get_expr(x)
+  fexpr[[...]] <- value
+  rlang::set_expr(x, fexpr)
+}
+
+#' @export
+`[.filter_condition` <- function(
+  x,
+  ...
+) {
+  rlang::get_expr(x)[...]
+}
+
+#' @export
+`[<-.filter_condition` <- function(
+  x,
+  ...,
+  value
+) {
+  fexpr <- rlang::get_expr(x)
+  fexpr[...] <- value
+  rlang::set_expr(x, fexpr)
+}
+
+#' @export
 post_process <- function(x, finterface, env) {
   UseMethod("post_process")
 }
 #' @export
 post_process.lp_filter_condition <- function(
   x,
-  finterface = get_file_interface(x),
-  env = NULL
+  finterface = get_file_interface(x)
 ) {
-  x[[2]] <- post_process(x[[2]], finterface = finterface, env = env)
+  x[[2]] <- post_process(
+    x[[2]],
+    finterface = finterface
+  )
   x
 }
 #' @export
 post_process.and_filter_condition <- function(
   x,
-  finterface = get_file_interface(x),
-  env = NULL
+  finterface = get_file_interface(x)
 ) {
   x[-1] <- lapply(
     x[-1],
     post_process,
-    finterface = finterface,
-    env = env
+    finterface = finterface
   )
   x
 }
@@ -410,13 +644,15 @@ post_process.or_filter_condition <- post_process.and_filter_condition
 
 # Comparison operators don't need post-processing - just return unchanged
 #' @export
-post_process.lt_filter_condition <- function(x, finterface, env) x
+post_process.filter_condition <- function(x, finterface, env) x
 #' @export
-post_process.lte_filter_condition <- post_process.lt_filter_condition
+post_process.lte_filter_condition <- post_process.filter_condition
 #' @export
-post_process.gt_filter_condition <- post_process.lt_filter_condition
+post_process.gt_filter_condition <- post_process.filter_condition
 #' @export
-post_process.gte_filter_condition <- post_process.lt_filter_condition
+post_process.gte_filter_condition <- post_process.filter_condition
+#' @export
+post_process.lt_filter_condition <- post_process.filter_condition
 
 #' @export
 post_process.eq_filter_condition <- function(

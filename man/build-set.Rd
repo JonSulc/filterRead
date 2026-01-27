@@ -3,6 +3,7 @@
 \name{build<-}
 \alias{build<-}
 \alias{build<-.default}
+\alias{build<-.filter_condition}
 \alias{build<-.data.table}
 \alias{build<-.list}
 \alias{build<-.file_interface}
@@ -11,6 +12,8 @@
 build(x) <- value
 
 \method{build}{default}(x) <- value
+
+\method{build}{filter_condition}(x) <- value
 
 \method{build}{data.table}(x) <- value
 

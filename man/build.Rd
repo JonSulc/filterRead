@@ -3,6 +3,7 @@
 \name{build}
 \alias{build}
 \alias{build.default}
+\alias{build.filter_condition}
 \alias{build.character}
 \alias{build.list}
 \alias{build.file_interface}
@@ -11,6 +12,8 @@
 build(x)
 
 \method{build}{default}(x)
+
+\method{build}{filter_condition}(x)
 
 \method{build}{character}(x)
 

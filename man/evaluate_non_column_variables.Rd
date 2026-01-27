@@ -4,7 +4,7 @@
 \alias{evaluate_non_column_variables}
 \title{Evaluate non-column symbols in filter condition}
 \usage{
-evaluate_non_column_variables(fcondition, finterface, env)
+evaluate_non_column_variables(fcondition, finterface)
 }
 \arguments{
 \item{fcondition}{A filter_condition call}

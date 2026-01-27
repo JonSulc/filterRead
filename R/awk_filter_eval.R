@@ -23,8 +23,7 @@
 eval_fcondition_w_gregions <- function(
   fcondition,
   finterface = get_file_interface(fcondition),
-  column_indices = get_column_indices(finterface),
-  env = parent.frame()
+  column_indices = get_column_indices(finterface)
 ) {
   # For non-AND blocks (i.e., OR at top level), recursively process children
   if (!non_genomic_is_and_block(fcondition)) {
@@ -34,8 +33,7 @@ eval_fcondition_w_gregions <- function(
         lapply(
           fcondition[-1],
           eval_fcondition_w_gregions,
-          column_indices = column_indices,
-          env = env
+          column_indices = column_indices
         )
       )
     )
@@ -43,8 +41,7 @@ eval_fcondition_w_gregions <- function(
   # For AND blocks, evaluate non-genomic conditions first
   awk_conditions <- eval_fcondition(
     fcondition,
-    column_indices = column_indices,
-    env = env
+    column_indices = column_indices
   )
   # Then add genomic region conditions (chr == X && Y <= pos && pos <= Z)
   awk_conditions$condition <- c(
@@ -79,19 +76,15 @@ eval_fcondition_w_gregions <- function(
 eval_fcondition <- function(
   fcondition,
   finterface = get_file_interface(fcondition),
-  column_indices = get_column_indices(finterface),
-  env = parent.frame()
+  column_indices = get_column_indices(finterface)
 ) {
   if (length(fcondition) == 0) {
     return()
   }
   # Evaluate fcondition in environment where chr="$1", pos="$2", etc.
   # post_process handles quote escaping and prefix handling
-  with(
-    column_indices,
-    post_process(fcondition, env = env) |>
-      eval()
-  )
+  post_process(fcondition) |>
+    rlang::eval_tidy(data = column_indices)
 }
 
 #' Convert genomic_regions from filter_condition to awk

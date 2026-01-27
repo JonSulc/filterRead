@@ -35,9 +35,9 @@
 lp_wrap_fcondition <- function(
   fcall
 ) {
-  fcondition <- rlang::expr(lp_filter_condition())
-  fcondition[[2]] <- fcall
+  fcondition <- rlang::quo(lp_filter_condition())
   fcondition <- as_filter_condition(fcondition)
+  fcondition[[2]] <- fcall
   class(fcondition) <- c("lp_filter_condition", class(fcondition)) |>
     unique()
   build(fcondition) <- build(fcall)

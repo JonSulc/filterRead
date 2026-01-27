@@ -7,8 +7,7 @@
 eval_fcondition(
   fcondition,
   finterface = get_file_interface(fcondition),
-  column_indices = get_column_indices(finterface),
-  env = parent.frame()
+  column_indices = get_column_indices(finterface)
 )
 }
 \arguments{

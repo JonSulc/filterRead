@@ -369,7 +369,7 @@ head.file_interface <- function(
   return_only_cmd = FALSE
 ) {
   fcondition <- new_filter_condition(
-    rlang::enexpr(conditions),
+    rlang::enquo(conditions),
     finterface = finterface
   )
   command_line <- fcondition_to_awk(

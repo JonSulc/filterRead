@@ -440,6 +440,10 @@ build.default <- function(x) {
 
 #' @rdname build
 #' @export
+build.filter_condition <- build.default
+
+#' @rdname build
+#' @export
 build.character <- function(x) {
   x
 }
@@ -474,6 +478,10 @@ build.file_interface <- build.list
   attr(x, "build") <- value
   x
 }
+
+#' @rdname build-set
+#' @export
+`build<-.filter_condition` <- `build<-.default`
 
 #' @rdname build-set
 #' @export

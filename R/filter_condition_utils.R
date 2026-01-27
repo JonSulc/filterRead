@@ -9,7 +9,8 @@
 is_and_block <- function(
   fcondition
 ) {
-  if (!inherits(fcondition, "call")) {
+  if (!inherits(fcondition, "quosure") &&
+    is.null(genomic_regions(fcondition))) {
     return(TRUE)
   }
 
@@ -220,7 +221,8 @@ has_non_genomic_condition <- function(
 is_genomic_symbol <- function(
   symbol
 ) {
-  symbol == as.symbol("chr") | symbol == as.symbol("pos")
+  rlang::get_expr(symbol) == as.symbol("chr") |
+    rlang::get_expr(symbol) == as.symbol("pos")
 }
 
 #' Split genomic conditions from a filter condition
@@ -257,20 +259,6 @@ split_genomic_conditions <- function(
     )
   }
   stop("This should not be occurring")
-  # Contains mix of genomic and non-genomic conditions
-  if (fcondition[[1]] == as.symbol("and_filter_condition")) {
-    return(
-      split_genomic_conditions(fcondition[[2]], build = build) &
-        split_genomic_conditions(fcondition[[3]], build = build)
-    )
-  }
-  if (fcondition[[1]] == as.symbol("or_filter_condition")) {
-    return(
-      split_genomic_conditions(fcondition[[2]], build = build) |
-        split_genomic_conditions(fcondition[[3]], build = build)
-    )
-  }
-  fcondition
 }
 
 #' Extract chromosome conditions from a filter condition
@@ -399,6 +387,15 @@ pos_condition_to_genomic_region <- function(
   NULL
 }
 
+#' @export
+length.filter_condition <- function(x) {
+  if (!inherits(x, "quosure")) {
+    return(0)
+  }
+  rlang::get_expr(x) |>
+    length()
+}
+
 #' Remove parenthesis wrappers from a filter condition
 #'
 #' Unwraps lp_filter_condition (parenthesis) nodes from a filter condition.
@@ -414,7 +411,7 @@ strip_parentheses <- function(
   fcondition,
   recursive = TRUE
 ) {
-  if (length(fcondition) == 0) {
+  if (length(fcondition) <= 1) {
     return(fcondition)
   }
   if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
@@ -490,17 +487,16 @@ is_single_genomic_block <- function(
 #' @keywords internal
 evaluate_non_column_variables <- function(
   fcondition,
-  finterface,
-  env
+  finterface
 ) {
   # Evaluate all arguments except the function name (first element)
   fcondition[-1] <- lapply(
     fcondition[-1],
-    \(x) {
-      if (is_column_symbol(x, finterface)) {
-        return(x)
+    \(fx) {
+      if (is_column_symbol(fx, finterface)) {
+        return(fx)
       }
-      eval(x, env)
+      eval(fx, rlang::get_env(fcondition))
     }
   )
   fcondition

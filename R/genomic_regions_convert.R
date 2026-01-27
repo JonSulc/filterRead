@@ -100,7 +100,7 @@ as_genomic_regions.eq_filter_condition <- function(
       build = build
     ))
   }
-  new_genomic_regions(chr = NA_character_, build = build)
+  full_genomic_regions(build = build)
 }
 #' @export
 as_genomic_regions.lt_filter_condition <- function(
@@ -154,7 +154,7 @@ as_genomic_regions.lt_filter_condition <- function(
       )
     }
   }
-  new_genomic_regions(chr = NA_character_, build = build)
+  full_genomic_regions(build = build)
 }
 #' @export
 as_genomic_regions.lte_filter_condition <- function(
@@ -208,7 +208,7 @@ as_genomic_regions.lte_filter_condition <- function(
       )
     }
   }
-  new_genomic_regions(chr = NA_character_, build = build)
+  full_genomic_regions(build = build)
 }
 #' @export
 as_genomic_regions.gt_filter_condition <- function(
@@ -262,7 +262,7 @@ as_genomic_regions.gt_filter_condition <- function(
       )
     }
   }
-  new_genomic_regions(chr = NA_character_, build = build)
+  full_genomic_regions(build = build)
 }
 #' @export
 as_genomic_regions.gte_filter_condition <- function(
@@ -316,6 +316,17 @@ as_genomic_regions.gte_filter_condition <- function(
       )
     }
   }
-  new_genomic_regions(chr = NA_character_, build = build)
+  full_genomic_regions(build = build)
 }
-
+#' @export
+as_genomic_regions.filter_condition <- function(
+  x,
+  build = NULL,
+  ordered_chr = 1:22,
+  ...
+) {
+  if (!is.null(genomic_regions(x))) {
+    return(genomic_regions(x))
+  }
+  full_genomic_regions(build = build)
+}

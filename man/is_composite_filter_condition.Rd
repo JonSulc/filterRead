@@ -2,6 +2,9 @@
 % Please edit documentation in R/filter_condition_class.R
 \name{is_composite_filter_condition}
 \alias{is_composite_filter_condition}
+\alias{is_composite_filter_condition.call}
+\alias{is_composite_filter_condition.quosure}
+\alias{is_composite_filter_condition.list}
 \title{Check if a filter condition is composite}
 \usage{
 is_composite_filter_condition(
@@ -10,6 +13,22 @@ is_composite_filter_condition(
   composite_operators = unname(c(names(composite_fc_operators),
     unlist(composite_fc_operators)))
 )
+
+\method{is_composite_filter_condition}{call}(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  composite_operators = unname(c(names(composite_fc_operators),
+    unlist(composite_fc_operators)))
+)
+
+\method{is_composite_filter_condition}{quosure}(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  composite_operators = unname(c(names(composite_fc_operators),
+    unlist(composite_fc_operators)))
+)
+
+\method{is_composite_filter_condition}{list}(fcondition, ...)
 }
 \arguments{
 \item{fcondition}{A filter_condition object}

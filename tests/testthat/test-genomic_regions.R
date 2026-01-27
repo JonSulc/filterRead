@@ -695,54 +695,68 @@ test_that("as_genomic_regions with explicit build parameter", {
 })
 
 test_that("as_genomic_regions.eq_filter_condition handles chr equality", {
-  fc <- structure(
-    quote(eq_filter_condition(chr, "1")),
-    class = c("eq_filter_condition", "filter_condition", "call")
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+  fcondition <- new_filter_condition(
+    rlang::quo(chr == 1),
+    finterface,
+    build = "b38"
   )
-  attr(fc, "build") <- "b38"
 
-  result <- as_genomic_regions(fc)
-  expect_true(is_genomic_regions(result))
-  # Chromosomes may have "chr" prefix added
-  expect_true(grepl("1$", result$chr))
-  expect_equal(build(result), "b38")
+  result <- as_genomic_regions(fcondition)
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 1, build = "b38")
+  )
 })
 
 test_that("as_genomic_regions.eq_filter_condition handles pos equality", {
-  fc <- structure(
-    quote(eq_filter_condition(pos, 12345)),
-    class = c("eq_filter_condition", "filter_condition", "call")
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+  fcondition <- new_filter_condition(
+    rlang::quo(pos == 12345),
+    finterface,
+    build = "b38"
   )
-  attr(fc, "build") <- "b38"
 
-  result <- as_genomic_regions(fc)
-  expect_true(is_genomic_regions(result))
-  expect_equal(result$start, 12345)
-  expect_equal(result$end, 12345)
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(start = 12345, end = 12345, build = "b38")
+  )
 })
 
 test_that("as_genomic_regions.lt_filter_condition handles pos < value", {
-  fc <- structure(
-    quote(lt_filter_condition(pos, 1000)),
-    class = c("lt_filter_condition", "filter_condition", "call")
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+  fcondition <- new_filter_condition(
+    rlang::quo(pos < 1000),
+    finterface,
+    build = "b38"
   )
-  attr(fc, "build") <- "b38"
 
-  result <- as_genomic_regions(fc)
-  expect_true(is_genomic_regions(result))
-  expect_true(all(result$end < 1000))
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(end = 999, build = "b38")
+  )
 })
 
 test_that("as_genomic_regions.gt_filter_condition handles pos > value", {
-  fc <- structure(
-    quote(gt_filter_condition(pos, 1000)),
-    class = c("gt_filter_condition", "filter_condition", "call")
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+  fcondition <- new_filter_condition(
+    rlang::quo(pos > 1000),
+    finterface,
+    build = "b38"
   )
-  attr(fc, "build") <- "b38"
 
-  result <- as_genomic_regions(fc)
-  expect_true(is_genomic_regions(result))
-  expect_true(all(result$start > 1000))
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(start = 1001, build = "b38")
+  )
 })
 
 # Tests for internal helper functions

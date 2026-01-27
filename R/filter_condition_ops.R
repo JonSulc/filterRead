@@ -26,7 +26,7 @@
     return(fcondition1 & fcondition2[[2]] | fcondition1 & fcondition2[[3]])
   }
 
-  fcondition <- rlang::expr(and_filter_condition()) |>
+  fcondition <- rlang::quo(and_filter_condition()) |>
     as_filter_condition()
   fcondition[2:3] <- list(fcondition1, fcondition2)
   attr(fcondition, "finterface_env") <- attr(fcondition1, "finterface_env")
@@ -57,7 +57,13 @@
     attr(fcondition2, "finterface_env")
   ))
 
-  fcondition <- rlang::expr(or_filter_condition()) |>
+  if (length(fcondition1) == 0 && length(fcondition2) == 0) {
+    genomic_regions(fcondition1) <- genomic_regions(fcondition1) |
+      genomic_regions(fcondition2)
+    return(fcondition1)
+  }
+
+  fcondition <- rlang::quo(or_filter_condition()) |>
     as_filter_condition()
   fcondition[2:3] <- list(fcondition1, fcondition2)
   attr(fcondition, "finterface_env") <- attr(fcondition1, "finterface_env")

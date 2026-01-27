@@ -2,6 +2,9 @@
 % Please edit documentation in R/filter_condition_class.R
 \name{is_atomic_filter_condition}
 \alias{is_atomic_filter_condition}
+\alias{is_atomic_filter_condition.call}
+\alias{is_atomic_filter_condition.quosure}
+\alias{is_atomic_filter_condition.list}
 \title{Check if a filter condition is atomic}
 \usage{
 is_atomic_filter_condition(
@@ -9,6 +12,20 @@ is_atomic_filter_condition(
   finterface = get_file_interface(fcondition),
   atomic_operators = unname(c(names(atomic_fc_operators), unlist(atomic_fc_operators)))
 )
+
+\method{is_atomic_filter_condition}{call}(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  atomic_operators = unname(c(names(atomic_fc_operators), unlist(atomic_fc_operators)))
+)
+
+\method{is_atomic_filter_condition}{quosure}(
+  fcondition,
+  finterface = get_file_interface(fcondition),
+  atomic_operators = unname(c(names(atomic_fc_operators), unlist(atomic_fc_operators)))
+)
+
+\method{is_atomic_filter_condition}{list}(fcondition, ...)
 }
 \arguments{
 \item{fcondition}{A filter_condition object}

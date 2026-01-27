@@ -2,9 +2,15 @@
 % Please edit documentation in R/filter_condition_class.R
 \name{has_finterface_column_names}
 \alias{has_finterface_column_names}
+\alias{has_finterface_column_names.default}
+\alias{has_finterface_column_names.quosure}
 \title{Check if a filter condition references file interface columns}
 \usage{
 has_finterface_column_names(fcondition, finterface)
+
+\method{has_finterface_column_names}{default}(fcondition, finterface)
+
+\method{has_finterface_column_names}{quosure}(fcondition, finterface)
 }
 \arguments{
 \item{fcondition}{A filter_condition object}

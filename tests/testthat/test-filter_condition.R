@@ -2,19 +2,19 @@ test_that("Basic filter_condition initialization works with dummy variables", {
   finterface <- local_file_interface() |>
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
-  expect_no_error(new_filter_condition(rlang::expr(x < 3),
+  expect_no_error(new_filter_condition(rlang::quo(x < 3),
     finterface = finterface
   ))
-  expect_no_error(new_filter_condition(rlang::expr(x > 3),
+  expect_no_error(new_filter_condition(rlang::quo(x > 3),
     finterface = finterface
   ))
-  expect_no_error(new_filter_condition(rlang::expr(x <= 3),
+  expect_no_error(new_filter_condition(rlang::quo(x <= 3),
     finterface = finterface
   ))
-  expect_no_error(new_filter_condition(rlang::expr(x >= 3),
+  expect_no_error(new_filter_condition(rlang::quo(x >= 3),
     finterface = finterface
   ))
-  expect_no_error(new_filter_condition(rlang::expr(x == 3),
+  expect_no_error(new_filter_condition(rlang::quo(x == 3),
     finterface = finterface
   ))
 
@@ -25,60 +25,60 @@ test_that("Basic filter_condition initialization works with dummy variables", {
   }
 
   expect_equal(
-    new_filter_condition(rlang::expr(num < 3),
+    new_filter_condition(rlang::quo(num < 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(lt_filter_condition(num, 3)),
-      class = c("lt_filter_condition", "filter_condition", "call"),
+      rlang::quo(lt_filter_condition(num, 3)),
+      class = c("lt_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num > 3),
+    new_filter_condition(rlang::quo(num > 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(gt_filter_condition(num, 3)),
-      class = c("gt_filter_condition", "filter_condition", "call"),
+      rlang::quo(gt_filter_condition(num, 3)),
+      class = c("gt_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num <= 3),
+    new_filter_condition(rlang::quo(num <= 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(lte_filter_condition(num, 3)),
-      class = c("lte_filter_condition", "filter_condition", "call"),
+      rlang::quo(lte_filter_condition(num, 3)),
+      class = c("lte_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num >= 3),
+    new_filter_condition(rlang::quo(num >= 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(gte_filter_condition(num, 3)),
-      class = c("gte_filter_condition", "filter_condition", "call"),
+      rlang::quo(gte_filter_condition(num, 3)),
+      class = c("gte_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num == 3),
+    new_filter_condition(rlang::quo(num == 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(eq_filter_condition(num, 3)),
-      class = c("eq_filter_condition", "filter_condition", "call"),
+      rlang::quo(eq_filter_condition(num, 3)),
+      class = c("eq_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
@@ -90,19 +90,19 @@ test_that("Basic filter_condition initialization works with column names", {
   finterface <- local_file_interface() |>
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
-  expect_no_error(new_filter_condition(rlang::expr(num < 3),
+  expect_no_error(new_filter_condition(rlang::quo(num < 3),
     finterface = finterface
   ))
-  expect_no_error(new_filter_condition(rlang::expr(num > 3),
+  expect_no_error(new_filter_condition(rlang::quo(num > 3),
     finterface = finterface
   ))
-  expect_no_error(new_filter_condition(rlang::expr(num <= 3),
+  expect_no_error(new_filter_condition(rlang::quo(num <= 3),
     finterface = finterface
   ))
-  expect_no_error(new_filter_condition(rlang::expr(num >= 3),
+  expect_no_error(new_filter_condition(rlang::quo(num >= 3),
     finterface = finterface
   ))
-  expect_no_error(new_filter_condition(rlang::expr(num == 3),
+  expect_no_error(new_filter_condition(rlang::quo(num == 3),
     finterface = finterface
   ))
 
@@ -113,60 +113,60 @@ test_that("Basic filter_condition initialization works with column names", {
   }
 
   expect_equal(
-    new_filter_condition(rlang::expr(num < 3),
+    new_filter_condition(rlang::quo(num < 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(lt_filter_condition(num, 3)),
-      class = c("lt_filter_condition", "filter_condition", "call"),
+      rlang::quo(lt_filter_condition(num, 3)),
+      class = c("lt_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num > 3),
+    new_filter_condition(rlang::quo(num > 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(gt_filter_condition(num, 3)),
-      class = c("gt_filter_condition", "filter_condition", "call"),
+      rlang::quo(gt_filter_condition(num, 3)),
+      class = c("gt_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num <= 3),
+    new_filter_condition(rlang::quo(num <= 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(lte_filter_condition(num, 3)),
-      class = c("lte_filter_condition", "filter_condition", "call"),
+      rlang::quo(lte_filter_condition(num, 3)),
+      class = c("lte_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num >= 3),
+    new_filter_condition(rlang::quo(num >= 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(gte_filter_condition(num, 3)),
-      class = c("gte_filter_condition", "filter_condition", "call"),
+      rlang::quo(gte_filter_condition(num, 3)),
+      class = c("gte_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num == 3),
+    new_filter_condition(rlang::quo(num == 3),
       finterface = finterface
     ),
     structure(
-      rlang::expr(eq_filter_condition(num, 3)),
-      class = c("eq_filter_condition", "filter_condition", "call"),
+      rlang::quo(eq_filter_condition(num, 3)),
+      class = c("eq_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = finterface_env,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
@@ -180,18 +180,18 @@ test_that("Passing variables or complex objects works", {
     withr::with_output_sink(new = "/dev/null")
   my_chr <- 3
   expect_equal(
-    new_filter_condition(rlang::expr(chr == my_chr),
+    new_filter_condition(rlang::quo(chr == my_chr),
       finterface = finterface
     ),
-    new_filter_condition(rlang::expr(chr == 3),
+    new_filter_condition(rlang::quo(chr == 3),
       finterface = finterface
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(chr == 2 * my_chr),
+    new_filter_condition(rlang::quo(chr == 2 * my_chr),
       finterface = finterface
     ),
-    new_filter_condition(rlang::expr(chr == 6),
+    new_filter_condition(rlang::quo(chr == 6),
       finterface = finterface
     )
   )
@@ -202,14 +202,14 @@ test_that("Quoted values are handled correctly", {
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
-    new_filter_condition(rlang::expr(char == "a"),
+    new_filter_condition(rlang::quo(char == "a"),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$1 == \"\\\"a\\\"\"")
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num == "a"),
+    new_filter_condition(rlang::quo(num == "a"),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
@@ -218,13 +218,13 @@ test_that("Quoted values are handled correctly", {
 
 
   test_in_fc(
-    rlang::expr(char %in% c("a", 1)),
+    rlang::quo(char %in% c("a", 1)),
     finterface = finterface,
     expected_condition = "($1 in var%s)",
     file_contents = sprintf("\"%s\"", c("a", 1))
   )
   test_in_fc(
-    rlang::expr(num %in% c("a", 1)),
+    rlang::quo(num %in% c("a", 1)),
     finterface = finterface,
     expected_condition = "($2 in var%s)",
     file_contents = c("a", 1)
@@ -237,7 +237,7 @@ test_that("Prefixes are handled properly", {
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
-      rlang::expr(char == 1),
+      rlang::quo(char == 1),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
@@ -245,7 +245,7 @@ test_that("Prefixes are handled properly", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(char == "test1"),
+      rlang::quo(char == "test1"),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
@@ -253,19 +253,19 @@ test_that("Prefixes are handled properly", {
   )
 
   test_in_fc(
-    rlang::expr(num %in% 1:3),
+    rlang::quo(num %in% 1:3),
     finterface = finterface,
     expected_condition = "($2 in var%s)",
     file_contents = as.character(1:3)
   )
   test_in_fc(
-    rlang::expr(char %in% 1:3),
+    rlang::quo(char %in% 1:3),
     finterface = finterface,
     expected_condition = "($1 in var%s)",
     file_contents = paste0("test", 1:3)
   )
   test_in_fc(
-    rlang::expr(char %in% paste0("test", 1:3)),
+    rlang::quo(char %in% paste0("test", 1:3)),
     finterface = finterface,
     expected_condition = "($1 in var%s)",
     file_contents = paste0("test", 1:3)
@@ -280,53 +280,53 @@ test_that("And-block detection works", {
   expect_true(is_and_block("1"))
   expect_true(
     is_and_block(new_filter_condition(
-      rlang::expr(chr == 1),
+      rlang::quo(chr == 1),
       finterface
     ))
   )
   expect_true(
     is_and_block(new_filter_condition(
-      rlang::expr(pos < 1),
+      rlang::quo(pos < 1),
       finterface
     ))
   )
   expect_true(
     is_and_block(new_filter_condition(
-      rlang::expr(123 < pos & pos < 456),
+      rlang::quo(123 < pos & pos < 456),
       finterface
     ))
   )
   expect_true(
     is_and_block(new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos & pos < 456),
+      rlang::quo(chr == 1 & 123 < pos & pos < 456),
       finterface
     ))
   )
 
   expect_false(
     is_and_block(new_filter_condition(
-      rlang::expr(chr == 1 | 123 < pos & pos < 456),
+      rlang::quo(chr == 1 | 123 < pos & pos < 456),
       finterface
     ))
   )
   expect_false(
     is_and_block(new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos | pos < 456),
+      rlang::quo(chr == 1 & 123 < pos | pos < 456),
       finterface
     ))
   )
   expect_false(
     is_and_block(new_filter_condition(
-      rlang::expr(chr == 1 | 123 < pos | pos < 456),
+      rlang::quo(chr == 1 | 123 < pos | pos < 456),
       finterface
     ))
   )
 })
 
 test_that("Genomic position conditions are correctly detected", {
-  expect_true(is_genomic_symbol(rlang::expr(chr)))
-  expect_true(is_genomic_symbol(rlang::expr(pos)))
-  expect_false(is_genomic_symbol(rlang::expr(ref)))
+  expect_true(is_genomic_symbol(rlang::quo(chr)))
+  expect_true(is_genomic_symbol(rlang::quo(pos)))
+  expect_false(is_genomic_symbol(rlang::quo(ref)))
   expect_false(is_genomic_symbol(1))
 
   finterface <- local_summary_stats_interface() |>
@@ -336,7 +336,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_chromosome_condition(
       new_filter_condition(
-        rlang::expr(NULL),
+        rlang::quo(NULL),
         finterface
       )
     )
@@ -344,7 +344,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_chromosome_condition(
       new_filter_condition(
-        rlang::expr(ref == "A"),
+        rlang::quo(ref == "A"),
         finterface
       )
     )
@@ -352,7 +352,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_chromosome_condition(
       new_filter_condition(
-        rlang::expr(pval < .05),
+        rlang::quo(pval < .05),
         finterface
       )
     )
@@ -360,7 +360,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_chromosome_condition(
       new_filter_condition(
-        rlang::expr(123 < pos & pos < 456 & pval < .05),
+        rlang::quo(123 < pos & pos < 456 & pval < .05),
         finterface
       )
     )
@@ -368,7 +368,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_true(
     has_chromosome_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 & 123 < pos & pos < 456 & pval < .05),
+        rlang::quo(chr == 1 & 123 < pos & pos < 456 & pval < .05),
         finterface
       )
     )
@@ -376,7 +376,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_true(
     has_chromosome_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 | 123 < pos & pos < 456 & pval < .05),
+        rlang::quo(chr == 1 | 123 < pos & pos < 456 & pval < .05),
         finterface
       )
     )
@@ -385,7 +385,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1),
+        rlang::quo(chr == 1),
         finterface
       )
     )
@@ -393,7 +393,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(pos < 1),
+        rlang::quo(pos < 1),
         finterface
       )
     )
@@ -401,7 +401,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(123 < pos & pos < 456),
+        rlang::quo(123 < pos & pos < 456),
         finterface
       )
     )
@@ -409,7 +409,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 & 123 < pos & pos < 456),
+        rlang::quo(chr == 1 & 123 < pos & pos < 456),
         finterface
       )
     )
@@ -417,7 +417,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 | 123 < pos & pos < 456),
+        rlang::quo(chr == 1 | 123 < pos & pos < 456),
         finterface
       )
     )
@@ -425,7 +425,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 & 123 < pos | pos < 456),
+        rlang::quo(chr == 1 & 123 < pos | pos < 456),
         finterface
       )
     )
@@ -433,7 +433,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 | 123 < pos | pos < 456),
+        rlang::quo(chr == 1 | 123 < pos | pos < 456),
         finterface
       )
     )
@@ -441,7 +441,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_true(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(ref == "A"),
+        rlang::quo(ref == "A"),
         finterface
       )
     )
@@ -449,7 +449,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_true(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(pval < .05),
+        rlang::quo(pval < .05),
         finterface
       )
     )
@@ -457,7 +457,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_false(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 & (pos < 123 | 345 < pos)),
+        rlang::quo(chr == 1 & (pos < 123 | 345 < pos)),
         finterface
       )
     )
@@ -465,7 +465,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_true(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(123 < pos & pos < 456 & pval < .05),
+        rlang::quo(123 < pos & pos < 456 & pval < .05),
         finterface
       )
     )
@@ -473,7 +473,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_true(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 & 123 < pos & pos < 456 & pval < .05),
+        rlang::quo(chr == 1 & 123 < pos & pos < 456 & pval < .05),
         finterface
       )
     )
@@ -481,7 +481,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_true(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 | 123 < pos & pos < 456 & pval < .05),
+        rlang::quo(chr == 1 | 123 < pos & pos < 456 & pval < .05),
         finterface
       )
     )
@@ -489,7 +489,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_true(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 & 123 < pos | pos < 456 & pval < .05),
+        rlang::quo(chr == 1 & 123 < pos | pos < 456 & pval < .05),
         finterface
       )
     )
@@ -497,7 +497,7 @@ test_that("Genomic position conditions are correctly detected", {
   expect_true(
     has_non_genomic_condition(
       new_filter_condition(
-        rlang::expr(chr == 1 | 123 < pos | pos < 456 & pval < .05),
+        rlang::quo(chr == 1 | 123 < pos | pos < 456 & pval < .05),
         finterface
       )
     )
@@ -511,14 +511,14 @@ test_that("Parenthesis stripping works", {
 
   expect_equal(
     new_filter_condition(
-      rlang::expr((chr == 1)),
+      rlang::quo((chr == 1)),
       finterface
     )[[1]],
     as.symbol("lp_filter_condition")
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(chr == 1),
+      rlang::quo(chr == 1),
       finterface
     ) |>
       length(),
@@ -526,69 +526,87 @@ test_that("Parenthesis stripping works", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr((chr == 1)),
+      rlang::quo((chr == 1)),
       finterface
     ) |>
       strip_parentheses(),
     new_filter_condition(
-      rlang::expr(chr == 1),
+      rlang::quo(chr == 1),
       finterface
     )
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(((chr == 1))),
+      rlang::quo(((chr == 1))),
       finterface
     ) |>
       strip_parentheses(recursive = TRUE),
     new_filter_condition(
-      rlang::expr(chr == 1),
+      rlang::quo(chr == 1),
       finterface
     )
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(((chr == 1))),
+      rlang::quo(((chr == 1))),
       finterface
     ) |>
       strip_parentheses(recursive = FALSE),
     new_filter_condition(
-      rlang::expr(chr == 1),
+      rlang::quo(chr == 1),
       finterface
     )
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(((chr == 1) & (123 < pos & pos < 234))),
+      rlang::quo(((chr == 1) & (123 < pos & pos < 234))),
       finterface
     ) |>
-      strip_parentheses(recursive = FALSE),
+      strip_parentheses(recursive = FALSE) |>
+      rlang::get_expr(),
     new_filter_condition(
-      rlang::expr((chr == 1) & (123 < pos & pos < 234)),
+      rlang::quo((chr == 1) & (123 < pos & pos < 234)),
       finterface
-    )
+    ) |>
+      rlang::get_expr()
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(((chr == 1) & (pos < 123 | 234 < pos))),
+      rlang::quo(((chr == 1) & (pos < 123 | 234 < pos))),
       finterface
     ) |>
       strip_parentheses(recursive = TRUE),
     new_filter_condition(
-      rlang::expr(chr == 1 & pos < 123 | chr == 1 & 234 < pos),
+      rlang::quo(chr == 1 & pos < 123 | chr == 1 & 234 < pos),
       finterface
     )
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(((chr == 1) & (123 < pos & pos < 234))),
+      rlang::quo(((chr == 1) & (123 < pos & pos < 234))),
       finterface
     ) |>
-      strip_parentheses(recursive = FALSE),
+      strip_parentheses(recursive = FALSE) |>
+      rlang::get_expr(),
     new_filter_condition(
-      rlang::expr((chr == 1) & (123 < pos & pos < 234)),
+      rlang::quo((chr == 1) & (123 < pos & pos < 234)),
       finterface
-    )
+    ) |>
+      rlang::get_expr()
+  )
+})
+
+test_that("empty_fc | empty_fc does not inherit or_filter_condition_class", {
+  finterface <- local_summary_stats_interface() |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+  fcondition1 <- empty_filter_condition(finterface_env = finterface)
+  fcondition2 <- empty_filter_condition(
+    finterface_env = attr(fcondition1, "finterface_env")
+  )
+  expect_equal(
+    class(fcondition1 | fcondition2),
+    c("filter_condition", "list")
   )
 })
 
@@ -598,14 +616,14 @@ test_that("AND code block handling works", {
     withr::with_output_sink(new = "/dev/null")
   expect_no_error(
     new_filter_condition(
-      rlang::expr(chr == 1 | chr == 2),
+      rlang::quo(chr == 1 | chr == 2),
       finterface
     ) |>
       eval_fcondition_w_gregions()
   )
   expect_no_error(
     new_filter_condition(
-      rlang::expr(pval < .05 & (chr == 1 | chr == 2)),
+      rlang::quo(pval < .05 & (chr == 1 | chr == 2)),
       finterface
     ) |>
       eval_fcondition_w_gregions()
@@ -618,7 +636,7 @@ test_that("Getting genomic regions works", {
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 <= pos & pos <= 234),
+      rlang::quo(chr == 1 & 123 <= pos & pos <= 234),
       finterface,
       build = NULL
     ) |>
@@ -627,7 +645,7 @@ test_that("Getting genomic regions works", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(123 <= pos & pos <= 234),
+      rlang::quo(123 <= pos & pos <= 234),
       finterface
     ) |>
       genomic_regions(),
@@ -635,7 +653,7 @@ test_that("Getting genomic regions works", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos & pos < 234),
+      rlang::quo(chr == 1 & 123 < pos & pos < 234),
       finterface
     ) |>
       genomic_regions(),
@@ -643,7 +661,7 @@ test_that("Getting genomic regions works", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(chr < 2 & 123 < pos & pos < 234),
+      rlang::quo(chr < 2 & 123 < pos & pos < 234),
       finterface
     ) |>
       genomic_regions(),
@@ -651,7 +669,7 @@ test_that("Getting genomic regions works", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 <= pos & pos <= 234 |
+      rlang::quo(chr == 1 & 123 <= pos & pos <= 234 |
         chr == "X" & 21 <= pos & pos <= 42),
       finterface
     ) |>
@@ -665,7 +683,7 @@ test_that("Getting genomic regions works", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr((chr == 1 | chr == "X") & 123 <= pos & pos <= 234),
+      rlang::quo((chr == 1 | chr == "X") & 123 <= pos & pos <= 234),
       finterface
     ) |>
       genomic_regions(),
@@ -678,7 +696,7 @@ test_that("Getting genomic regions works", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr((chr == 1 & chr == "X") & 123 <= pos & pos <= 234),
+      rlang::quo((chr == 1 & chr == "X") & 123 <= pos & pos <= 234),
       finterface
     ) |>
       genomic_regions(),
@@ -686,7 +704,7 @@ test_that("Getting genomic regions works", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr((chr == 1 | chr == "X") & 234 <= pos & pos <= 123),
+      rlang::quo((chr == 1 | chr == "X") & 234 <= pos & pos <= 123),
       finterface
     ) |>
       genomic_regions(),
@@ -694,7 +712,7 @@ test_that("Getting genomic regions works", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr((chr == 1 | chr == "X") &
+      rlang::quo((chr == 1 | chr == "X") &
         42 < pos & 123 <= pos &
         pos <= 234 & pos < 512),
       finterface
@@ -752,42 +770,42 @@ test_that("Parsing to command line works", {
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
-    new_filter_condition(rlang::expr(num < 3),
+    new_filter_condition(rlang::quo(num < 3),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 < 3")
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num > 3),
+    new_filter_condition(rlang::quo(num > 3),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 > 3")
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num <= 3),
+    new_filter_condition(rlang::quo(num <= 3),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 <= 3")
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num >= 3),
+    new_filter_condition(rlang::quo(num >= 3),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 >= 3")
   )
   expect_equal(
-    new_filter_condition(rlang::expr(num == 3),
+    new_filter_condition(rlang::quo(num == 3),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
     list(condition = "$2 == 3")
   )
   expect_equal(
-    new_filter_condition(rlang::expr(char == "a"),
+    new_filter_condition(rlang::quo(char == "a"),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
@@ -795,7 +813,7 @@ test_that("Parsing to command line works", {
   )
 
   expect_equal(
-    new_filter_condition(rlang::expr(char < 3 | num > 42),
+    new_filter_condition(rlang::quo(char < 3 | num > 42),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
@@ -806,7 +824,7 @@ test_that("Parsing to command line works", {
     )
   )
   expect_equal(
-    new_filter_condition(rlang::expr(char < 3 & num > 42),
+    new_filter_condition(rlang::quo(char < 3 & num > 42),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
@@ -824,16 +842,17 @@ test_that("%in% parsing works", {
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
-      rlang::expr(char %in% letters[1:5]),
+      rlang::quo(char %in% letters[1:5]),
       finterface = finterface
     ),
     structure(
       {
-        fcall <- rlang::expr(in_filter_condition(char))
-        fcall[[3]] <- c("a", "b", "c", "d", "e")
-        fcall
+        fcall <- rlang::quo(in_filter_condition(char))
+        fexpr <- rlang::get_expr(fcall)
+        fexpr[[3]] <- c("a", "b", "c", "d", "e")
+        rlang::set_expr(fcall, fexpr)
       },
-      class = c("in_filter_condition", "filter_condition", "call"),
+      class = c("in_filter_condition", "filter_condition", "quosure", "formula"),
       finterface_env = {
         env <- new.env(parent = emptyenv())
         env$finterface <- finterface
@@ -844,7 +863,7 @@ test_that("%in% parsing works", {
     )
   )
 
-  test_in_fc(rlang::expr(char %in% letters[1:5]),
+  test_in_fc(rlang::quo(char %in% letters[1:5]),
     finterface         = finterface,
     expected_condition = "($1 in var%s)",
     file_contents      = letters[1:5]
@@ -870,7 +889,7 @@ test_that("%in% parsing works", {
         "\\}' [^[:space:]]+/file\\1 data\\.csv"
       ),
       new_filter_condition(
-        rlang::expr(char %in% letters[1:5]),
+        rlang::quo(char %in% letters[1:5]),
         finterface = finterface
       ) |>
         fcondition_to_awk(return_only_cmd = TRUE)
@@ -884,7 +903,7 @@ test_that("Parentheses work as expected", {
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
-      rlang::expr((num < 3 & char == "a")),
+      rlang::quo((num < 3 & char == "a")),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
@@ -896,7 +915,7 @@ test_that("Parentheses work as expected", {
   )
   expect_equal(
     new_filter_condition(
-      rlang::expr((num < 3 & char == "a") | (123 < num & num < 234 & char == "b")),
+      rlang::quo((num < 3 & char == "a") | (123 < num & num < 234 & char == "b")),
       finterface = finterface
     ) |>
       eval_fcondition(finterface = finterface),
@@ -908,14 +927,14 @@ test_that("Parentheses work as expected", {
   )
 
   test_in_fc(
-    rlang::expr((num < 3 & char == "a") | (num < 12 & char %in% letters[1:3])),
+    rlang::quo((num < 3 & char == "a") | (num < 12 & char %in% letters[1:3])),
     finterface = finterface,
     expected_condition = "($2 < 3 && $1 == \"a\") || ($2 < 12 && ($1 in var%s))",
     file_contents = letters[1:3]
   )
 
   test_in_fc(
-    rlang::expr((num < 3 & char == "a") |
+    rlang::quo((num < 3 & char == "a") |
       (123 < num & num < 234 & char == "b") |
       (num < 12 & char %in% letters[1:3])),
     finterface = finterface,
@@ -928,7 +947,7 @@ test_that("Parentheses work as expected", {
   )
 
   test_in_fc(
-    rlang::expr((num < 3 & char == "a") |
+    rlang::quo((num < 3 & char == "a") |
       (num < 12 & char %in% letters[1:3]) |
       (123 < num & num < 234 & char == "b")),
     finterface = finterface,
@@ -941,7 +960,7 @@ test_that("Parentheses work as expected", {
   )
 
   test_in_fc(
-    rlang::expr((3 <= num | num %in% c("a", 1)) & num <= 5),
+    rlang::quo((3 <= num | num %in% c("a", 1)) & num <= 5),
     finterface = finterface,
     expected_condition = "(3 <= $2 || ($2 in var%s)) && $2 <= 5",
     file_contents = c("a", 1)
@@ -1033,7 +1052,7 @@ test_that("new_filter_condition.name evaluates name to get value", {
     build = "b36"
   )
 
-  fc <- new_filter_condition(rlang::expr(gr), finterface)
+  fc <- new_filter_condition(rlang::quo(gr), finterface)
 
   expect_true(is.filter_condition(fc))
   expect_equal(genomic_regions(fc), gr)

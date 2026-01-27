@@ -115,56 +115,56 @@ test_that("Genomic blocks are correctly identified", {
     withr::with_output_sink(new = "/dev/null")
   expect_true(
     new_filter_condition(
-      rlang::expr(pval < .05),
+      rlang::quo(pval < .05),
       finterface
     ) |>
       is_single_genomic_block()
   )
   expect_true(
     new_filter_condition(
-      rlang::expr(chr == 1),
+      rlang::quo(chr == 1),
       finterface
     ) |>
       is_single_genomic_block()
   )
   expect_true(
     new_filter_condition(
-      rlang::expr(chr == 1 & pval < .05),
+      rlang::quo(chr == 1 & pval < .05),
       finterface
     ) |>
       is_single_genomic_block()
   )
   expect_false(
     new_filter_condition(
-      rlang::expr(chr == 1 | pval < .05),
+      rlang::quo(chr == 1 | pval < .05),
       finterface
     ) |>
       is_single_genomic_block()
   )
   expect_false(
     new_filter_condition(
-      rlang::expr(chr == 1 & pos < 123 | pval < .05),
+      rlang::quo(chr == 1 & pos < 123 | pval < .05),
       finterface
     ) |>
       is_single_genomic_block()
   )
   expect_false(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos & pos < 234 | pval < .05),
+      rlang::quo(chr == 1 & 123 < pos & pos < 234 | pval < .05),
       finterface
     ) |>
       is_single_genomic_block()
   )
   expect_true(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05),
+      rlang::quo(chr == 1 & 123 < pos & pos < 234 & pval < .05),
       finterface
     ) |>
       is_single_genomic_block()
   )
   expect_true(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos & pos < 234 &
+      rlang::quo(chr == 1 & 123 < pos & pos < 234 &
         pval < .05 & ref == "A"),
       finterface
     ) |>
@@ -172,7 +172,7 @@ test_that("Genomic blocks are correctly identified", {
   )
   expect_true(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos & pos < 234 |
+      rlang::quo(chr == 1 & 123 < pos & pos < 234 |
         chr == 2 & 21 < pos & pos < 42),
       finterface
     ) |>
@@ -181,21 +181,21 @@ test_that("Genomic blocks are correctly identified", {
 
   expect_false(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos | pos < 234 & pval < .05),
+      rlang::quo(chr == 1 & 123 < pos | pos < 234 & pval < .05),
       finterface
     ) |>
       is_single_genomic_block()
   )
   expect_false(
     new_filter_condition(
-      rlang::expr(chr == 1 | 123 < pos & pos < 234 & pval < .05),
+      rlang::quo(chr == 1 | 123 < pos & pos < 234 & pval < .05),
       finterface
     ) |>
       is_single_genomic_block()
   )
   expect_false(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05 |
+      rlang::quo(chr == 1 & 123 < pos & pos < 234 & pval < .05 |
         chr == 2 & 21 < pos & pos < 42),
       finterface
     ) |>
@@ -203,7 +203,7 @@ test_that("Genomic blocks are correctly identified", {
   )
   expect_false(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos & pos < 234 |
+      rlang::quo(chr == 1 & 123 < pos & pos < 234 |
         chr == 2 & 21 < pos & pos < 42 & pval < .01),
       finterface
     ) |>
@@ -211,7 +211,7 @@ test_that("Genomic blocks are correctly identified", {
   )
   expect_false(
     new_filter_condition(
-      rlang::expr(chr == 1 & 123 < pos & pos < 234 & pval < .05 |
+      rlang::quo(chr == 1 & 123 < pos & pos < 234 & pval < .05 |
         chr == 2 & 21 < pos & pos < 42 & pval < .01),
       finterface
     ) |>
@@ -226,7 +226,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
     new_filter_condition(
-      rlang::expr(
+      rlang::quo(
         (chr == 1 & 123 < pos & pos < 234 & pval < .05) |
           (chr == 2 & 21 < pos & pos < 42 & pval < .01)
       ),
@@ -265,7 +265,7 @@ test_that("Genomic ranges are correctly identified", {
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
-    new_filter_condition(rlang::expr(chr == 1 & pos < 123), finterface) |>
+    new_filter_condition(rlang::quo(chr == 1 & pos < 123), finterface) |>
       genomic_regions(),
     new_genomic_regions(chr = "1", start = NA_real_, end = 122, build = "b38")
   )
@@ -277,7 +277,7 @@ test_that("Genomic ranges are correctly structured", {
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
-    new_filter_condition(rlang::expr(pos < 123), finterface) |>
+    new_filter_condition(rlang::quo(pos < 123), finterface) |>
       genomic_regions(),
     new_genomic_regions(
       end = 122,
