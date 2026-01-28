@@ -46,7 +46,9 @@ liftover.genomic_regions <- function(
     target <- attr(chain_dt, "to")
   } else {
     if (is.null(build(x))) {
-      if (is.null(target)) return(x)
+      if (is.null(target)) {
+        return(x)
+      }
       warning(
         "No build configured for genomic_regions, ",
         "returning original object"
@@ -159,7 +161,7 @@ liftover.genomic_regions <- function(
 }
 
 # Set Operations
-# 
+#
 # genomic_regions supports set operations for combining regions:
 # - Union (+ or |): combine all regions from both sets
 # - Intersection (&): find overlapping portions
@@ -176,8 +178,108 @@ liftover.genomic_regions <- function(
   e1,
   e2
 ) {
+  if (!is_included(e1)) {
+    if (!is_included(e2)) {
+      return(!(!e1 & !e2))
+    }
+    return(
+      expand_genomic_regions(e1) + e2
+    )
+  }
+  if (!is_included(e2)) {
+    return(
+      e1 + expand_genomic_regions(e2)
+    )
+  }
   rbind(e1, e2) |>
     merge_contiguous_regions()
+}
+
+#' @export
+`!.genomic_regions` <- function(
+  x
+) {
+  is_included(x) <- !is_included(x)
+  x
+}
+is_included <- function(gregions) {
+  attr(gregions, "include")
+}
+`is_included<-` <- function(gregions, value) {
+  stopifnot(is.logical(attr(gregions, "include")))
+  attr(gregions, "include") <- value
+  gregions
+}
+
+#' @export
+`-.genomic_regions` <- function(
+  e1,
+  e2 = NULL
+) {
+  if (missing(e2)) {
+    return(!e1)
+  }
+  e1 & !e2
+}
+
+expand_genomic_regions <- function(
+  gregions,
+  ordered_chr = 1:22
+) {
+  if (is_included(gregions)) {
+    return(gregions)
+  }
+  if (nrow(gregions) == 0) {
+    return(full_genomic_regions(build = build(gregions)))
+  }
+  if (1 < nrow(gregions)) {
+    return(
+      lapply(
+        seq_len(nrow(gregions)),
+        \(index) {
+          expand_genomic_regions(gregions[index], ordered_chr)
+        }
+      ) |>
+        Reduce(f = "&")
+    )
+  }
+  full_chrs <- new_genomic_regions(
+    chr = setdiff(ordered_chr, drop_chr_prefix(gregions$chr)),
+    build = build(gregions)
+  )
+  if (!is.na(gregions$start) && 1 < gregions$start) {
+    include_before <- data.table::data.table(
+      chr = gregions$chr,
+      start = 1,
+      end = gregions$start - 1
+    )
+  } else {
+    include_before <- data.table::data.table(
+      chr = character(0),
+      start = integer(0),
+      end = integer(0)
+    )
+  }
+  if (!is.na(gregions$end)) {
+    include_after <- data.table::data.table(
+      chr = gregions$chr,
+      start = gregions$end + 1,
+      end = NA_integer_
+    )
+  } else {
+    include_after <- data.table::data.table(
+      chr = character(0),
+      start = integer(0),
+      end = integer(0)
+    )
+  }
+  list(
+    include_before,
+    include_after
+  ) |>
+    data.table::rbindlist() |>
+    as_genomic_regions(build = build(gregions)) |>
+    rbind(full_chrs)
 }
 
 #' Combine genomic_regions by rows
@@ -189,6 +291,12 @@ rbind.genomic_regions <- function(
   ...
 ) {
   dots <- list(...)
+  if (!all(sapply(dots, is_included) == is_included(dots[[1]]))) {
+    stop(
+      "Attempting to rbind genomic_regions of different types ",
+      "(both including and excluding the described regions)."
+    )
+  }
   # Check if all inputs have the required columns
   # (waldo may pass modified objects without these columns)
   required_cols <- c("chr", "start", "end")
@@ -208,7 +316,8 @@ rbind.genomic_regions <- function(
     ) |>
     data.table::rbindlist(use.names = TRUE, fill = TRUE) |>
     as_genomic_regions(
-      build = build(dots[[1]])
+      build = build(dots[[1]]),
+      include = is_included(dots[[1]])
     )
 }
 
@@ -246,6 +355,23 @@ rbind.genomic_regions <- function(
       "converting the second."
     )
     e2 <- liftover(e2, build(e1))
+  }
+
+  if (!is_included(e1)) {
+    if (!is_included(e2)) {
+      return(
+        rbind(e1, e2) |>
+          merge_contiguous_regions()
+      )
+    }
+    return(
+      expand_genomic_regions(e1) & e2
+    )
+  }
+  if (!is_included(e2)) {
+    return(
+      e1 & expand_genomic_regions(e2)
+    )
   }
 
   # Intersection with empty set = empty set
@@ -303,6 +429,7 @@ prepare_for_intersection <- function(e1, e2) {
 #' @return genomic_regions with overlapping portions
 #' @keywords internal
 compute_intersection <- function(e1, e2, build) {
+  # TODO Handle 'include'
   data.table::foverlaps(e1, e2, nomatch = 0)[
     ,
     c(
@@ -359,7 +486,7 @@ expand_na_chr <- function(
 }
 
 # Sentinel Value Handling for foverlaps
-# 
+#
 # data.table::foverlaps cannot handle NA values in any columns.
 # NAs are replaced with sentinel values, which enable foverlaps and can then
 # be substituted back for NA after foverlaps-dependent operations.
@@ -476,5 +603,6 @@ merge_contiguous_regions <- function(
     .SD,
     .SDcols = -"group"
   ] |>
-    as_genomic_regions()
+    # 'build' is preserved but 'include' is not
+    as_genomic_regions(include = is_included(gregions))
 }

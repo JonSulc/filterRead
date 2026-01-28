@@ -1,5 +1,5 @@
 # Genomic Regions
-# 
+#
 # This module provides the genomic_regions class for representing and
 # manipulating genomic coordinate ranges. Key features:
 #
@@ -25,6 +25,8 @@
 #' @param build Genome build identifier ("b38", "b37", "b36", default: NULL)
 #' @param chr_prefix Prefix to add to chromosome names (default: "chr")
 #' @param merge_contiguous If TRUE, merge overlapping/adjacent regions
+#' @param include If TRUE, the genomic_regions includes the positions specified,
+#'   otherwise it excludes them.
 #'
 #' @return A genomic_regions object (data.table with class attribute)
 #' @keywords internal
@@ -34,11 +36,12 @@ new_genomic_regions <- function(
   end = integer(),
   build = NULL,
   chr_prefix = "chr",
-  merge_contiguous = TRUE
+  merge_contiguous = TRUE,
+  include = TRUE
 ) {
   if (data.table::is.data.table(chr)) {
     return(
-      as_genomic_regions(chr, build = build)
+      as_genomic_regions(chr, build = build, include = include)
     )
   }
 
@@ -71,7 +74,7 @@ new_genomic_regions <- function(
     start = start,
     end = end
   ) |>
-    as_genomic_regions(build = build)
+    as_genomic_regions(build = build, include = include)
   if (!merge_contiguous) {
     return(genomic_regions_dt)
   }
@@ -199,7 +202,12 @@ print.genomic_regions <- function(
 ) {
   NextMethod()
   if (!is.null(build(x))) {
-    cat("Build:", build(x))
+    cat("Build:", build(x), "\n")
+  }
+  if (is_included(x)) {
+    cat("Included\n")
+  } else {
+    cat("Excluded\n")
   }
 }
 
@@ -209,7 +217,8 @@ str.genomic_regions <- function(
   ...
 ) {
   sprintf(
-    "{%s}",
+    "%s{%s}",
+    ifelse(is_included(x), "", "!"),
     x[
       ,
       .(region_str = sprintf(

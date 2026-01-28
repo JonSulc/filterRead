@@ -21,21 +21,24 @@ as_genomic_regions <- function(
 as_genomic_regions.data.frame <- function(
   x,
   build = NULL,
+  include = NULL,
   ...
 ) {
   build <- build %||% build(x)
-  genomic_regions <- data.table::as.data.table(x) |>
+  include <- include %||% is_included(x) %||% TRUE
+  gregions <- data.table::as.data.table(x) |>
     data.table::copy()
-  validate_genomic_regions_dt(genomic_regions)
-  build(genomic_regions) <- build
+  validate_genomic_regions_dt(gregions)
+  build(gregions) <- build
+  attr(gregions, "include") <- include
   data.table::setattr(
-    genomic_regions,
+    gregions,
     "class",
-    c("genomic_regions", class(genomic_regions)) |>
+    c("genomic_regions", class(gregions)) |>
       unique()
   )
-  data.table::setkey(genomic_regions, chr, start, end)
-  genomic_regions
+  data.table::setkey(gregions, chr, start, end)
+  gregions
 }
 #' @export
 as_genomic_regions.and_filter_condition <- function(

@@ -10,7 +10,8 @@ new_genomic_regions(
   end = integer(),
   build = NULL,
   chr_prefix = "chr",
-  merge_contiguous = TRUE
+  merge_contiguous = TRUE,
+  include = TRUE
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ new_genomic_regions(
 \item{chr_prefix}{Prefix to add to chromosome names (default: "chr")}
 
 \item{merge_contiguous}{If TRUE, merge overlapping/adjacent regions}
+
+\item{include}{If TRUE, the genomic_regions includes the positions specified,
+otherwise it excludes them.}
 }
 \value{
 A genomic_regions object (data.table with class attribute)
