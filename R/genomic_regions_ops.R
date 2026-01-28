@@ -1,7 +1,3 @@
-# =============================================================================
-# Constants
-# =============================================================================
-
 # Sentinel values for NA replacement during foverlaps operations
 # These must stay in sync between replace_na_with_sentinel and
 # replace_sentinel_with_na
@@ -9,10 +5,6 @@ CHR_SENTINEL <- ""
 START_SENTINEL <- 0L
 # Need to subtract 1 because foverlaps adds 1
 END_SENTINEL <- .Machine$integer.max - 1L
-
-# =============================================================================
-# Liftover (Coordinate Conversion Between Genome Builds)
-# =============================================================================
 
 #' Liftover genomic_regions to a different genome build
 #'
@@ -166,9 +158,8 @@ liftover.genomic_regions <- function(
     data.table::setattr("build", gr_attributes$build)
 }
 
-# =============================================================================
 # Set Operations
-# =============================================================================
+# 
 # genomic_regions supports set operations for combining regions:
 # - Union (+ or |): combine all regions from both sets
 # - Intersection (&): find overlapping portions
@@ -259,7 +250,7 @@ rbind.genomic_regions <- function(
 
   # Intersection with empty set = empty set
   if (is.null(e1) || is.null(e2) || nrow(e1) == 0 || nrow(e2) == 0) {
-    return(new_genomic_regions(build = build(e1)))
+    return(empty_genomic_regions(build = build(e1)))
   }
 
   # Handle mixed NA chromosomes by splitting and recursing
@@ -275,9 +266,7 @@ rbind.genomic_regions <- function(
   compute_intersection(prepared$e1, prepared$e2, build = build(e1))
 }
 
-# =============================================================================
 # Helper Functions for Intersection
-# =============================================================================
 
 #' Prepare genomic_regions pair for intersection
 #'
@@ -369,9 +358,8 @@ expand_na_chr <- function(
     as_genomic_regions(build = build(gregions1))
 }
 
-# =============================================================================
 # Sentinel Value Handling for foverlaps
-# =============================================================================
+# 
 # data.table::foverlaps cannot handle NA values in any columns.
 # NAs are replaced with sentinel values, which enable foverlaps and can then
 # be substituted back for NA after foverlaps-dependent operations.
@@ -442,9 +430,7 @@ replace_sentinel_with_na <- function(
     data.table::setkey("chr", "start", "end")
 }
 
-# =============================================================================
 # Region Merging
-# =============================================================================
 
 #' Merge overlapping and contiguous genomic regions
 #'

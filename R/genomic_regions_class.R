@@ -1,6 +1,5 @@
-# =============================================================================
 # Genomic Regions
-# =============================================================================
+# 
 # This module provides the genomic_regions class for representing and
 # manipulating genomic coordinate ranges. Key features:
 #
@@ -125,18 +124,7 @@ full_genomic_regions <- function(
   )
 }
 
-# =============================================================================
-# as_genomic_regions Methods
-# =============================================================================
-# These methods convert various objects to genomic_regions. Each filter
-# condition type has a method that extracts the genomic constraints:
-# - eq_filter_condition: chr == X, pos == Y
-# - lt/lte/gt/gte: pos comparisons -> start/end bounds
-# - and/or: combine child regions with &/|
-
-# =============================================================================
 # Utility Functions
-# =============================================================================
 
 #' Check if object is genomic_regions
 #'

@@ -1027,3 +1027,70 @@ test_that("get_used_columns fuctions within nested conditions", {
     sort(c("alt", "chr", "pval", "ref"))
   )
 })
+
+test_that("Not-equal operator works with numeric values", {
+  finterface <- local_file_interface()
+
+  expect_no_error(new_filter_condition(
+    rlang::quo(num != 3),
+    finterface = finterface
+  ))
+
+  fc <- new_filter_condition(rlang::quo(num != 3), finterface = finterface)
+  expect_equal(fc[[1]], as.symbol("neq_filter_condition"))
+  expect_s3_class(fc, "neq_filter_condition")
+
+  result <- eval_fcondition(fc, finterface = finterface)
+  expect_equal(result$condition, "$2 != 3")
+})
+
+test_that("Not-equal operator works with string values", {
+  finterface <- local_file_interface()
+
+  fc <- new_filter_condition(
+    rlang::quo(char != "a"),
+    finterface = finterface
+  )
+  expect_equal(fc[[1]], as.symbol("neq_filter_condition"))
+
+  result <- eval_fcondition(fc, finterface = finterface)
+  expect_equal(result$condition, "$1 != \"a\"")
+})
+
+test_that("Not-equal operator works with quoted values", {
+  finterface <- local_file_interface(quote = TRUE)
+
+  result <- new_filter_condition(
+    rlang::quo(char != "a"),
+    finterface = finterface
+  ) |>
+    eval_fcondition(finterface = finterface)
+  expect_equal(result$condition, "$1 != \"\\\"a\\\"\"")
+})
+
+test_that("Not-equal operator combines with other conditions", {
+  finterface <- local_file_interface()
+
+  fc <- new_filter_condition(
+    rlang::quo(num != 3 & char != "a"),
+    finterface = finterface
+  )
+  result <- eval_fcondition(fc, finterface = finterface)
+  expect_equal(result$condition, "$2 != 3 && $1 != \"a\"")
+
+  fc_or <- new_filter_condition(
+    rlang::quo(num != 3 | char == "a"),
+    finterface = finterface
+  )
+  result_or <- eval_fcondition(fc_or, finterface = finterface)
+  expect_equal(result_or$condition, "$2 != 3 || $1 == \"a\"")
+})
+
+test_that("Not-equal operator works with genomic conditions", {
+  skip("Not yet implemented")
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(chr != 1),
+    finterface
+  )
+})

@@ -9,6 +9,7 @@ is.filter_condition <- function(x) inherits(x, "filter_condition")
 
 atomic_fc_operators <- list(
   "==" = "eq_filter_condition",
+  "!=" = "neq_filter_condition",
   "<" = "lt_filter_condition",
   "<=" = "lte_filter_condition",
   ">" = "gt_filter_condition",
@@ -438,6 +439,7 @@ format.filter_condition <- function(
     gt_filter_condition  = ">",
     gte_filter_condition = ">=",
     eq_filter_condition  = "==",
+    neq_filter_condition = "!=",
     in_filter_condition  = "%in%"
   )
 
@@ -584,6 +586,8 @@ post_process.eq_filter_condition <- function(
   }
   x
 }
+#' @export
+post_process.neq_filter_condition <- post_process.eq_filter_condition
 #' @export
 post_process.in_filter_condition <- function(
   x,

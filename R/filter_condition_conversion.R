@@ -126,6 +126,13 @@ gte_filter_condition <- make_comparison_filter(">=")
 #' @keywords internal
 eq_filter_condition <- make_comparison_filter("==")
 
+#' Build awk not-equal condition
+#' @param var1 Left operand (column ref or value)
+#' @param var2 Right operand (column ref or value)
+#' @return List with `condition` element: "var1 != var2"
+#' @keywords internal
+neq_filter_condition <- make_comparison_filter("!=")
+
 #' Build awk membership condition (for R %in% operator)
 #'
 #' Creates an awk condition that checks if a column value exists in a set

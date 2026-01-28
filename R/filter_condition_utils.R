@@ -203,7 +203,7 @@ has_non_genomic_condition <- function(
   if (as.character(fcondition[[1]]) %in% c(
     "lt_filter_condition", "lte_filter_condition",
     "gt_filter_condition", "gte_filter_condition",
-    "eq_filter_condition"
+    "eq_filter_condition", "neq_filter_condition"
   )) {
     return(!is_genomic_symbol(fcondition[[2]]) & !is_genomic_symbol(fcondition[[3]]))
   }

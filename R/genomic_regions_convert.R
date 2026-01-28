@@ -103,6 +103,12 @@ as_genomic_regions.eq_filter_condition <- function(
   full_genomic_regions(build = build)
 }
 #' @export
+as_genomic_regions.neq_filter_condition <- function(
+  ...
+) {
+  !as_genomic_regions.eq_filter_condition(...)
+}
+#' @export
 as_genomic_regions.lt_filter_condition <- function(
   x,
   build = NULL,
