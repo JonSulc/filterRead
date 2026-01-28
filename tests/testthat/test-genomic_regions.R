@@ -954,9 +954,7 @@ test_that("`+` handles negative genomic_regions", {
   )
 })
 
-# =============================================================================
 # Negation Tests
-# =============================================================================
 
 # Basic `!` operator tests ---------------------------------------------------
 
@@ -1358,7 +1356,7 @@ test_that("single-row negative region expands to complement", {
   expect_equal(nrow(chr1_rows), 2)
   expect_equal(chr1_rows$start, c(1, 201))
   expect_equal(chr1_rows$end[1], 99)
-  expect_true(is.na(chr1_rows$end[2]))  # to end of chromosome
+  expect_true(is.na(chr1_rows$end[2])) # to end of chromosome
 })
 
 test_that("positive region returns unchanged from expand_genomic_regions", {
@@ -1538,4 +1536,212 @@ test_that("negative region at end of chromosome expands correctly", {
   expect_equal(nrow(chr1_rows), 1)
   expect_equal(chr1_rows$start, 1)
   expect_equal(chr1_rows$end, 999)
+})
+
+# Equality (==) Tests ---------------------------------------------------------
+
+test_that("`==` returns TRUE for identical simple regions", {
+  region1 <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+  region2 <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+
+  expect_true(region1 == region2)
+})
+
+test_that("`==` returns TRUE for self-comparison", {
+  region <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+
+  expect_true(region == region)
+})
+
+test_that("`==` returns FALSE for different regions", {
+  region1 <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+  region2 <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 300,
+    build = "b38"
+  )
+
+  expect_false(region1 == region2)
+})
+
+test_that("`==` returns FALSE when row counts differ", {
+  region1 <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+  region2 <- rbind(
+    new_genomic_regions(chr = 1, start = 100, end = 150, build = "b38"),
+    new_genomic_regions(chr = 1, start = 251, end = 300, build = "b38")
+  )
+
+  expect_false(region1 == region2)
+})
+
+test_that("`==` returns TRUE for equivalent positive and negative regions", {
+  # A single excluded region should equal its positive expansion
+  negative <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b38",
+    include = FALSE
+  )
+  positive_expanded <- expand_genomic_regions(negative)
+
+  expect_true(negative == positive_expanded)
+})
+
+test_that("`==` returns TRUE for empty regions", {
+  empty1 <- new_genomic_regions(build = "b38")
+  empty2 <- new_genomic_regions(build = "b38")
+
+  expect_true(empty1 == empty2)
+})
+
+test_that("`==` returns TRUE for full genome regions", {
+  full1 <- full_genomic_regions(build = "b38")
+  full2 <- full_genomic_regions(build = "b38")
+
+  expect_true(full1 == full2)
+})
+
+test_that("`==` returns TRUE for multi-row identical regions", {
+  region1 <- rbind(
+    new_genomic_regions(chr = 1, start = 100, end = 200, build = "b38"),
+    new_genomic_regions(chr = 2, start = 300, end = 400, build = "b38")
+  )
+  region2 <- rbind(
+    new_genomic_regions(chr = 1, start = 100, end = 200, build = "b38"),
+    new_genomic_regions(chr = 2, start = 300, end = 400, build = "b38")
+  )
+
+  expect_true(region1 == region2)
+})
+
+test_that("`==` returns FALSE for different chromosomes", {
+  region1 <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+  region2 <- new_genomic_regions(
+    chr = 2,
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+
+  expect_false(region1 == region2)
+})
+
+# Compact Function Tests ------------------------------------------------------
+
+test_that("compact returns original when already compact", {
+  region <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b38"
+  )
+
+  compacted <- compact(region)
+  expect_equal(nrow(compacted), 1)
+  expect_equal(compacted$chr, "chr1")
+  expect_equal(compacted$start, 100)
+  expect_equal(compacted$end, 200)
+})
+
+test_that("compact reduces adjacent regions via negation", {
+  # Two adjacent regions on same chromosome
+  adjacent <- rbind(
+    new_genomic_regions(chr = 1, start = 100, end = 200, build = "b38"),
+    new_genomic_regions(chr = 1, start = 201, end = 300, build = "b38"),
+    merge_contiguous = FALSE
+  )
+
+  compacted <- compact(adjacent)
+  # Should find a more compact representation
+  expect_true(nrow(compacted) <= nrow(adjacent))
+})
+
+test_that("compact prefers negative representation when more compact", {
+  # A region covering most chromosomes is more compact as negative
+  # E.g., "all of chr1-chr21" can be represented as "!chr22"
+  many_chrs <- new_genomic_regions(chr = 1:21)
+
+  compacted <- compact(many_chrs)
+  # Should be represented as negative (excluding chr22) = 1 row
+  expect_equal(
+    nrow(compacted),
+    1
+  )
+  expect_false(is_included(compacted))
+  expect_equal(
+    compacted,
+    new_genomic_regions(chr = 22, include = FALSE)
+  )
+})
+
+test_that("compact preserves build attribute", {
+  region <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b37"
+  )
+
+  compacted <- compact(region)
+  expect_equal(build(compacted), "b37")
+})
+
+test_that("compact handles empty regions", {
+  empty <- new_genomic_regions(build = "b38")
+
+  compacted <- compact(empty)
+  expect_equal(nrow(compacted), 0)
+})
+
+test_that("compact handles full genome region", {
+  full <- full_genomic_regions(build = "b38")
+
+  compacted <- compact(full)
+  # Full genome is already compact (1 row with NA chr)
+  expect_equal(nrow(compacted), 1)
+  expect_true(is.na(compacted$chr))
+})
+
+test_that("compact returns semantically equivalent region", {
+  # The compacted region should equal the original
+  overlapping <- rbind(
+    new_genomic_regions(chr = 1, start = 100, end = 200, build = "b38"),
+    new_genomic_regions(chr = 1, start = 150, end = 250, build = "b38"),
+    new_genomic_regions(chr = 2, start = 300, end = 400, build = "b38")
+  )
+
+  compacted <- compact(overlapping)
+  expect_true(overlapping == compacted)
 })

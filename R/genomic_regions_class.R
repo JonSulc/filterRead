@@ -69,16 +69,16 @@ new_genomic_regions <- function(
     stop("start must be less than end.")
   }
 
-  genomic_regions_dt <- data.table::data.table(
+  data.table::data.table(
     chr = format_chr(chr, prefix = chr_prefix),
     start = start,
     end = end
   ) |>
-    as_genomic_regions(build = build, include = include)
-  if (!merge_contiguous) {
-    return(genomic_regions_dt)
-  }
-  merge_contiguous_regions(genomic_regions_dt)
+    as_genomic_regions(
+      build = build,
+      include = include,
+      merge_contiguous = merge_contiguous
+    )
 }
 
 #' Validate a genomic_regions data.table
@@ -168,7 +168,7 @@ format_chr <- function(
 #' @keywords internal
 copy_genomic_regions <- function(gregions) {
   data.table::copy(gregions) |>
-    as_genomic_regions()
+    as_genomic_regions(merge_contiguous = FALSE)
 }
 
 #' Remove prefix from chromosome names

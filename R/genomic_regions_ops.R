@@ -206,7 +206,7 @@ is_included <- function(gregions) {
   attr(gregions, "include")
 }
 `is_included<-` <- function(gregions, value) {
-  stopifnot(is.logical(attr(gregions, "include")))
+  stopifnot(is.logical(value))
   attr(gregions, "include") <- value
   gregions
 }
@@ -220,6 +220,22 @@ is_included <- function(gregions) {
     return(!e1)
   }
   e1 & !e2
+}
+
+#' @export
+`==.genomic_regions` <- function(
+  e1,
+  e2
+) {
+  e1 <- expand_genomic_regions(e1)
+  e2 <- liftover(e2, build(e1)) |>
+    expand_genomic_regions()
+
+  if (nrow(e1) != nrow(e2)) {
+    return(FALSE)
+  }
+
+  identical(data.table::as.data.table(e1), data.table::as.data.table(e2))
 }
 
 expand_genomic_regions <- function(
@@ -288,7 +304,8 @@ expand_genomic_regions <- function(
 #' @return Combined genomic_regions
 #' @export
 rbind.genomic_regions <- function(
-  ...
+  ...,
+  merge_contiguous = TRUE
 ) {
   dots <- list(...)
   if (!all(sapply(dots, is_included) == is_included(dots[[1]]))) {
@@ -317,7 +334,8 @@ rbind.genomic_regions <- function(
     data.table::rbindlist(use.names = TRUE, fill = TRUE) |>
     as_genomic_regions(
       build = build(dots[[1]]),
-      include = is_included(dots[[1]])
+      include = is_included(dots[[1]]),
+      merge_contiguous = merge_contiguous
     )
 }
 
@@ -604,5 +622,22 @@ merge_contiguous_regions <- function(
     .SDcols = -"group"
   ] |>
     # 'build' is preserved but 'include' is not
-    as_genomic_regions(include = is_included(gregions))
+    as_genomic_regions(
+      include = is_included(gregions),
+      merge_contiguous = FALSE
+    )
+}
+
+#' @export
+compact <- function(gregions) {
+  expanded_gregions <- expand_genomic_regions(gregions)
+  expanded_ngregions <- !expand_genomic_regions(!gregions)
+  if (nrow(expanded_ngregions) < nrow(expanded_gregions) &&
+    nrow(expanded_ngregions) < nrow(gregions)) {
+    return(expanded_ngregions)
+  }
+  if (nrow(expanded_gregions) < nrow(gregions)) {
+    return(expanded_gregions)
+  }
+  gregions
 }

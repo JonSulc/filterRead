@@ -22,6 +22,7 @@ as_genomic_regions.data.frame <- function(
   x,
   build = NULL,
   include = NULL,
+  merge_contiguous = TRUE,
   ...
 ) {
   build <- build %||% build(x)
@@ -30,7 +31,7 @@ as_genomic_regions.data.frame <- function(
     data.table::copy()
   validate_genomic_regions_dt(gregions)
   build(gregions) <- build
-  attr(gregions, "include") <- include
+  is_included(gregions) <- include
   data.table::setattr(
     gregions,
     "class",
@@ -38,7 +39,10 @@ as_genomic_regions.data.frame <- function(
       unique()
   )
   data.table::setkey(gregions, chr, start, end)
-  gregions
+
+  if (!merge_contiguous) return(gregions)
+
+  merge_contiguous_regions(gregions)
 }
 #' @export
 as_genomic_regions.and_filter_condition <- function(
