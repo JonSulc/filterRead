@@ -263,7 +263,7 @@ validate_file_interface <- function(
       c("gzipped", "values_are_quoted")[
         !c("gzipped", "values_are_quoted") %chin% attributes(finterface)
       ] |>
-        paste(collapse(", "))
+        paste(collapse = ", ")
     )
   }
   stopifnot(is.logical(attr(finterface, "gzipped")))
