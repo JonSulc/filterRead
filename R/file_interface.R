@@ -219,7 +219,7 @@ detect_prefix_from_first_line <- function(finterface, skip_prefix = NULL) {
 }
 
 #' Detect comment prefix from a file
-#' 
+#'
 #' Identifies the prefix of commented lines at the beginning of a file to drop
 #' them when parsing the file.
 #'
@@ -299,7 +299,11 @@ head.file_interface <- function(
   return_only_cmd = FALSE,
   ...
 ) {
-  cmd <- compile_awk_cmds(x, nlines = nlines + 1)
+  cmd <- compile_awk_cmds(
+    x,
+    nlines = nlines + 1,
+    return_only_cmd = return_only_cmd
+  )
 
   if (return_only_cmd) {
     return(cmd)

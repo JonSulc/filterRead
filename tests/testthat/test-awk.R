@@ -49,6 +49,27 @@ test_that("compile_awk_cmds: complex case with nlines and prefixes", {
   expect_equal(result, expected)
 })
 
+test_that("compile_awk_cmds: case with empty nlines", {
+  finterface <- list(
+    filename = "data.csv",
+    gzipped = FALSE,
+    comment_prefix = "^//",
+    trim_prefix = "^%",
+    sep = ","
+  )
+  expect_equal(
+    compile_awk_cmds(finterface, nlines = integer(0)),
+    "awk 'BEGIN{\n  FS = \",\"
+  OFS = \",\"
+}
+/^\\/\\// { next }
+{
+  gsub(/^%/, \"\", $0)
+  print $0
+}' data.csv"
+  )
+})
+
 # Keep existing internal function tests for completeness
 test_that("wrap_condition_block: basic functionality", {
   expect_equal(

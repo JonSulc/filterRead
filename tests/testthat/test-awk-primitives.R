@@ -66,29 +66,42 @@ test_that("build_trim_prefix_code escapes brackets", {
 })
 
 test_that("build_trim_prefix_code handles complex patterns", {
-  result <- build_trim_prefix_code("^\\/\\/")
-  expect_equal(result, 'gsub(/^\\\\/\\\\//, "", $0)')
+  expect_equal(
+    build_trim_prefix_code("^\\/\\/"),
+    'gsub(/^\\\\/\\\\//, "", $0)'
+  )
 })
 
 test_that("build_line_limit_code returns NULL for NULL input", {
-  result <- build_line_limit_code(NULL)
-  expect_null(result)
+  expect_null(
+    build_line_limit_code(NULL)
+  )
+  expect_null(
+    build_line_limit_code(integer(0))
+  )
 })
 
 test_that("build_line_limit_code creates correct line counting code", {
-  result <- build_line_limit_code(100)
-  expected <- "if (++output_lines <= max_lines) print $0; else exit"
-  expect_equal(result, expected)
+  expect_equal(
+    build_line_limit_code(100),
+    "if (++output_lines <= max_lines) print $0; else exit"
+  )
 })
 
 test_that("build_awk_begin_block works without nlines", {
-  result <- build_awk_begin_block("\t")
-  expect_equal(result, "BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}")
+  expect_equal(
+    build_awk_begin_block("\t"),
+    "BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}"
+  )
+  expect_equal(
+    build_awk_begin_block("\t", nlines = integer(0)),
+    "BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}"
+  )
 })
 
 test_that("build_awk_begin_block returns NULL when no sep or nlines", {
-  result <- build_awk_begin_block(NULL)
-  expect_null(result)
+  expect_null(build_awk_begin_block(NULL))
+  expect_null(build_awk_begin_block(NULL, nlines = integer(0)))
 })
 
 test_that("build_awk_begin_block works with nlines only (no sep)", {

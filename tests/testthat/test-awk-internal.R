@@ -203,6 +203,24 @@ test_that("wrap_main_file_code works with various parameter combinations", {
   )
 })
 
+test_that("wrap_full_code_block works with empty nlines", {
+  expect_equal(
+    wrap_condition_block(
+      column_arrays_after_conditions = "$1 = \"chr\"$1",
+      nlines = NULL
+    ),
+    "$1 = \"chr\"$1\nprint $0"
+  )
+  # Because NULL + 1 = integer(0), the function also neeed to handle that
+  expect_equal(
+    wrap_condition_block(
+      column_arrays_after_conditions = "$1 = \"chr\"$1",
+      nlines = integer(0)
+    ),
+    "$1 = \"chr\"$1\nprint $0"
+  )
+})
+
 test_that("wrap_full_code_block works with complex data structures", {
   # Basic case with no conditions
   expect_equal(

@@ -199,7 +199,7 @@ wrap_condition_block <- function(
   )
 
   # Add line limit check if needed
-  if (!is.null(nlines)) {
+  if (length(nlines) != 0) {
     print_line <- sprintf(
       "if (++output_lines <= max_lines) %s; else exit",
       print_line
@@ -283,13 +283,6 @@ wrap_main_file_code <- function(
       column_arrays_after_conditions = column_arrays_after_conditions,
       nlines = nlines
     )
-  } else if (nrow(fcondition_awk_dt) == 0) {
-    # Simple case: just print (with optional line limit)
-    if (is.null(nlines)) {
-      condition_block <- "print $0"
-    } else {
-      condition_block <- "if (++output_lines <= max_lines) print $0; else exit"
-    }
   } else {
     # Multiple condition blocks (e.g., from OR of genomic regions)
     # Each row becomes an else-if branch
@@ -426,7 +419,7 @@ build_trim_prefix_code <- function(trim_prefix) {
 #' @return Awk if statement for line limiting, or NULL if no limit
 #' @keywords internal
 build_line_limit_code <- function(nlines) {
-  if (is.null(nlines)) {
+  if (length(nlines) == 0) {
     return(NULL)
   }
   sprintf("if (++output_lines <= max_lines) print $0; else exit")
@@ -444,10 +437,13 @@ build_line_limit_code <- function(nlines) {
 #'
 #' @return Awk BEGIN block string, or NULL if not needed
 #' @keywords internal
-build_awk_begin_block <- function(sep, nlines = NULL, use_command_line_fs = FALSE)
-{
+build_awk_begin_block <- function(
+  sep,
+  nlines = NULL,
+  use_command_line_fs = FALSE
+) {
   # If no sep provided and no nlines needed, no BEGIN block required
-  if (is.null(sep) && is.null(nlines)) {
+  if (is.null(sep) && length(nlines) == 0) {
     return(NULL)
   }
 
@@ -466,7 +462,7 @@ build_awk_begin_block <- function(sep, nlines = NULL, use_command_line_fs = FALS
   }
 
   # Add line counting variables if nlines is provided
-  if (!is.null(nlines)) {
+  if (length(nlines) != 0) {
     begin_parts <- c(
       begin_parts,
       "output_lines = 0",
@@ -558,7 +554,7 @@ awk_load_file_cmd <- function(
 ) {
   has_prefixes <- !is.null(finterface$comment_prefix) ||
     !is.null(finterface$trim_prefix)
-  needs_processing <- has_prefixes || !is.null(nlines)
+  needs_processing <- has_prefixes || length(nlines) != 0
 
   if (only_read) {
     # For only_read cases with processing needed, build complete pipeline
