@@ -8,14 +8,18 @@ test_that("compile_awk_cmds: simple file interface with only_read", {
     trim_prefix = NULL,
     sep = "\t"
   )
-  result <- compile_awk_cmds(finterface, nlines = 5)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n",
-    "  output_lines = 0\n  max_lines = 5\n}",
-    "\n{\n  if (++output_lines <= max_lines) print $0; else exit\n}'",
-    " test.txt"
+  expect_equal(
+    compile_awk_cmds(finterface, nlines = 5, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  output_lines = 0
+  max_lines = 5
+}
+{
+  if (++output_lines <= max_lines) print $0; else exit
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("awk_load_file_cmd: gzipped file head", {
@@ -23,11 +27,10 @@ test_that("awk_load_file_cmd: gzipped file head", {
     filename = "test.txt.gz",
     gzipped = TRUE
   )
-  result <- awk_load_file_cmd(finterface, nlines = 1, only_read = FALSE)
-  expected <- paste0(
+  expect_equal(
+    awk_load_file_cmd(finterface, nlines = 1, only_read = FALSE),
     "awk"
   )
-  expect_equal(result, expected)
 })
 
 test_that("compile_awk_cmds: complex case with nlines and prefixes", {
@@ -38,15 +41,20 @@ test_that("compile_awk_cmds: complex case with nlines and prefixes", {
     trim_prefix = "^%",
     sep = ","
   )
-  result <- compile_awk_cmds(finterface, nlines = 100)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \",\"\n  OFS = \",\"\n",
-    "  output_lines = 0\n  max_lines = 100\n}",
-    "\n/^\\/\\// { next }\n{\n  gsub(/^%/, \"\", $0)",
-    "\n  if (++output_lines <= max_lines) print $0; else exit\n}'",
-    " data.csv"
+  expect_equal(
+    compile_awk_cmds(finterface, nlines = 100, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \",\"
+  OFS = \",\"
+  output_lines = 0
+  max_lines = 100
+}
+/^\\/\\// { next }
+{
+  gsub(/^%/, \"\", $0)
+  if (++output_lines <= max_lines) print $0; else exit
+}' data.csv"
   )
-  expect_equal(result, expected)
 })
 
 test_that("compile_awk_cmds: case with empty nlines", {
@@ -58,8 +66,9 @@ test_that("compile_awk_cmds: case with empty nlines", {
     sep = ","
   )
   expect_equal(
-    compile_awk_cmds(finterface, nlines = integer(0)),
-    "awk 'BEGIN{\n  FS = \",\"
+    compile_awk_cmds(finterface, nlines = integer(0), skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \",\"
   OFS = \",\"
 }
 /^\\/\\// { next }
@@ -86,11 +95,9 @@ test_that("wrap_condition_block: basic functionality", {
       column_arrays_after_conditions = NULL,
       print_prefix = NULL
     ),
-    paste0(
-      "if ($1 == 1) {\n",
-      "  print $0\n",
-      "}"
-    )
+    "if ($1 == 1) {
+  print $0
+}"
   )
 })
 

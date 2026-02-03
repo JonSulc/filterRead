@@ -70,24 +70,24 @@ test_that("File reading works", {
     finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345,
       return_only_cmd = TRUE
     ],
-    paste0(
-      "awk 'BEGIN{
+    "awk 'BEGIN{
+  FS = \",\"
   OFS = \",\"
+  header_skipped = 0
 }
 {
   if (NR == FNR) {
     rsid0[$3]=$1 OFS $2
   }
   else {
-    if ($1 in rsid0) {
+    if (FNR == 1) next
+      if ($1 in rsid0) {
       if ($5 < 0.05) {
         print rsid0[$1] OFS $0
       }
     }
   }
-}' FS=\"\\t\" <(tabix /home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz 1:123-12345) FS=\",\"",
-      " data.csv"
-    )
+}' FS=\"\\t\" <(tabix /home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz 1:123-12345) FS=\",\" data.csv"
   )
 })
 
@@ -211,7 +211,9 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
     ) |>
       fcondition_to_awk(return_only_cmd = TRUE),
     "awk 'BEGIN{
+  FS = \",\"
   OFS = \",\"
+  header_skipped = 0
 }
 {
   if (NR == FNR) {
@@ -221,7 +223,8 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
     rsid1[$3]=$1 OFS $2
   }
   else {
-    if ($1 in rsid0) {
+    if (FNR == 1) next
+      if ($1 in rsid0) {
       if (($5 < 0.05)) {
         print rsid0[$1] OFS $0
       }

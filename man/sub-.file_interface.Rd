@@ -4,7 +4,7 @@
 \alias{[.file_interface}
 \title{Subset a file interface with filtering conditions}
 \usage{
-\method{[}{file_interface}(finterface, conditions = NULL, ..., return_only_cmd = FALSE)
+\method{[}{file_interface}(finterface, conditions = NULL, nlines = NULL, ..., return_only_cmd = FALSE)
 }
 \arguments{
 \item{finterface}{A file_interface object.}

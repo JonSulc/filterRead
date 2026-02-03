@@ -76,6 +76,7 @@ build_awk_file_args <- function(
 #' @param column_arrays_after_conditions Awk code for column processing after
 #'   condition passes (for output formatting)
 #' @param nlines Optional limit on number of output lines
+#' @param skip_header If TRUE and multi-file, add FNR == 1 skip inside block
 #' @param return_only_cmd If TRUE, return awk inline; if FALSE, use temp file
 #'
 #' @return Character string with complete awk command
@@ -86,6 +87,7 @@ compile_awk_cmds <- function(
   column_arrays_before_conditions = NULL,
   column_arrays_after_conditions = get_awk_column_arrays(finterface)$after_if,
   nlines = NULL,
+  skip_header = TRUE,
   return_only_cmd = FALSE
 ) {
   # Simple read: just cat/zcat the file (with optional prefix handling)
@@ -94,8 +96,20 @@ compile_awk_cmds <- function(
     column_arrays_before_conditions,
     column_arrays_after_conditions
   )) {
-    return(awk_load_file_cmd(finterface, nlines = nlines, only_read = TRUE))
+    return(
+      awk_load_file_cmd(
+        finterface,
+        nlines = nlines,
+        skip_header = skip_header,
+        only_read = TRUE
+      )
+    )
   }
+
+  # Detect multi-file processing (%in% with additional files, RSID matching)
+  is_multi_file <- !is.null(fcondition_awk_dt$additional_files) ||
+    !is.null(fcondition_awk_dt$variable_arrays) ||
+    !is.null(fcondition_awk_dt$process_substitution)
 
   # Build main processing code (conditions, column transforms, output)
   main_file_code <- wrap_main_file_code(
@@ -103,7 +117,8 @@ compile_awk_cmds <- function(
     fcondition_awk_dt               = fcondition_awk_dt,
     column_arrays_before_conditions = column_arrays_before_conditions,
     column_arrays_after_conditions  = column_arrays_after_conditions,
-    nlines                          = nlines
+    nlines                          = nlines,
+    skip_header                     = skip_header && is_multi_file
   )
 
   # Wrap with RSID loading blocks if needed
@@ -117,10 +132,12 @@ compile_awk_cmds <- function(
   use_command_line_fs <- !is.null(fcondition_awk_dt$process_substitution)
 
   # Build BEGIN block and assemble complete awk script
+  # For multi-file, header skip is handled inside wrap_main_file_code
   awk_script <- paste(
     c(
       build_awk_begin_block(finterface$sep, nlines, use_command_line_fs),
       build_comment_filter_pattern(finterface$comment_prefix),
+      if (skip_header && !is_multi_file) build_header_skip_pattern(),
       full_code_block
     ),
     collapse = "\n"
@@ -267,6 +284,7 @@ increase_indent <- function(
 #' @param column_arrays_before_conditions Column splits before conditions
 #' @param column_arrays_after_conditions Column processing after conditions
 #' @param nlines Optional output line limit
+#' @param skip_header If TRUE and multi-file, add FNR == 1 skip inside block
 #'
 #' @return Awk code string for main file processing
 #' @keywords internal
@@ -275,7 +293,8 @@ wrap_main_file_code <- function(
   fcondition_awk_dt,
   column_arrays_before_conditions,
   column_arrays_after_conditions,
-  nlines = NULL
+  nlines = NULL,
+  skip_header = FALSE
 ) {
   # Build condition block(s) based on fcondition_awk_dt rows
   if (is.null(fcondition_awk_dt) || nrow(fcondition_awk_dt) == 0) {
@@ -306,16 +325,20 @@ wrap_main_file_code <- function(
   # Add trim prefix processing (remove line prefixes like "chr")
   trim_prefix_code <- build_trim_prefix_code(finterface$trim_prefix)
 
-  # Combine: prefix trim -> column splits -> condition blocks
+  # For multi-file processing, skip header using FNR == 1 (resets per file)
+  header_skip_code <- if (skip_header) "if (FNR == 1) next" else NULL
+
+  # Combine: header skip -> prefix trim -> column splits -> condition blocks
   full_code <- c(
-    trim_prefix_code, column_arrays_before_conditions,
+    header_skip_code, trim_prefix_code, column_arrays_before_conditions,
     condition_block
   ) |>
     paste(collapse = "\n  ")
 
   # Wrap in block if multi-file processing (for else chain with RSID blocks)
   if (!"additional_files" %in% names(fcondition_awk_dt) &
-    !"process_substitution" %in% names(fcondition_awk_dt)) {
+    !"process_substitution" %in% names(fcondition_awk_dt) &
+    !"variable_arrays" %in% names(fcondition_awk_dt)) {
     return(full_code)
   }
 
@@ -400,6 +423,18 @@ build_comment_filter_pattern <- function(comment_prefix) {
   sprintf("/%s/ { next }", escaped_prefix)
 }
 
+#' Build awk pattern to skip header line
+#'
+#' Skips the first non-comment line (header) using a flag-based approach.
+#' The flag `header_skipped` must be initialized to 0 in the BEGIN block.
+#' This pattern must be placed AFTER the comment filtering pattern.
+#'
+#' @return Awk pattern that skips the first non-comment line
+#' @keywords internal
+build_header_skip_pattern <- function() {
+  "!header_skipped { header_skipped = 1; next }"
+}
+
 #' Build awk code to remove line prefix
 #'
 #' @param trim_prefix Prefix to remove from each line
@@ -427,26 +462,22 @@ build_line_limit_code <- function(nlines) {
 
 #' Build awk BEGIN block
 #'
-#' Creates BEGIN block with field separator setup and optional line counting
-#' variables for output limiting.
+#' Creates BEGIN block with field separator setup, header skip flag, and
+#' optional line counting variables for output limiting.
 #'
 #' @param sep Field separator character
 #' @param nlines Optional output line limit
 #' @param use_command_line_fs If TRUE, FS is set on command line (for
 #'   multi-file processing with different separators)
 #'
-#' @return Awk BEGIN block string, or NULL if not needed
+#' @return Awk BEGIN block string
 #' @keywords internal
 build_awk_begin_block <- function(
   sep,
   nlines = NULL,
+  skip_header = TRUE,
   use_command_line_fs = FALSE
 ) {
-  # If no sep provided and no nlines needed, no BEGIN block required
-  if (is.null(sep) && length(nlines) == 0) {
-    return(NULL)
-  }
-
   begin_parts <- c()
 
   # Add FS/OFS if sep is provided and not using command line FS
@@ -470,6 +501,16 @@ build_awk_begin_block <- function(
     )
   }
 
+  # Add header skip flag if necessary
+  if (skip_header) {
+    begin_parts <- c(begin_parts, "header_skipped = 0")
+  }
+
+  # Return NULL if nothing to put in BEGIN block
+  if (length(begin_parts) == 0) {
+    return(NULL)
+  }
+
   sprintf("BEGIN{\n  %s\n}", paste(begin_parts, collapse = "\n  "))
 }
 
@@ -485,13 +526,23 @@ build_awk_begin_block <- function(
 #'
 #' @param finterface File interface with sep, comment_prefix, trim_prefix
 #' @param nlines Optional output line limit
+#' @param skip_header If TRUE, skip the header line (first non-comment line)
 #'
 #' @return Complete awk command string
 #' @keywords internal
-build_read_only_awk_script <- function(finterface, nlines = NULL) {
+build_read_only_awk_script <- function(
+  finterface,
+  nlines = NULL,
+  skip_header = TRUE
+) {
   parts <- c(
-    build_awk_begin_block(finterface$sep, nlines),
-    build_comment_filter_pattern(finterface$comment_prefix)
+    build_awk_begin_block(
+      finterface$sep,
+      nlines = nlines,
+      skip_header = skip_header
+    ),
+    build_comment_filter_pattern(finterface$comment_prefix),
+    if (skip_header) build_header_skip_pattern()
   )
 
   # Build main block content
@@ -543,6 +594,7 @@ wrap_filename <- function(finterface) {
 #'
 #' @param finterface File interface object
 #' @param nlines Optional output line limit
+#' @param skip_header If TRUE, skip the header line (first non-comment line)
 #' @param only_read If TRUE, this is a read-only operation (no filtering)
 #'
 #' @return Command string: "cat file", "zcat file.gz", or complete awk command
@@ -550,16 +602,17 @@ wrap_filename <- function(finterface) {
 awk_load_file_cmd <- function(
   finterface,
   nlines = NULL,
+  skip_header = TRUE,
   only_read = FALSE
 ) {
   has_prefixes <- !is.null(finterface$comment_prefix) ||
     !is.null(finterface$trim_prefix)
-  needs_processing <- has_prefixes || length(nlines) != 0
+  needs_processing <- has_prefixes || length(nlines) != 0 || skip_header
 
   if (only_read) {
     # For only_read cases with processing needed, build complete pipeline
     if (needs_processing) {
-      return(build_read_only_awk_script(finterface, nlines))
+      return(build_read_only_awk_script(finterface, nlines, skip_header))
     }
     # Simple case: just cat/zcat the file
     return(build_file_read_cmd(finterface))

@@ -4,7 +4,7 @@
 \alias{fcondition_to_awk}
 \title{Convert filter condition to complete awk command}
 \usage{
-fcondition_to_awk(fcondition, return_only_cmd = FALSE)
+fcondition_to_awk(fcondition, nlines = NULL, return_only_cmd = FALSE)
 }
 \arguments{
 \item{fcondition}{A filter_condition object}

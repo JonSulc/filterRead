@@ -1,6 +1,3 @@
-# =============================================================================
-# Column Info (Column Detection and Metadata)
-# =============================================================================
 # These functions detect and configure column metadata for file interfaces:
 # - Matching input column names to standard names (chr, pos, pval, etc.)
 # - Detecting quoted values and prefixes (e.g., "chr" prefix)
@@ -158,10 +155,6 @@ check_single_column_regex <- function(
   })
 }
 
-# =============================================================================
-# Value Detection Functions
-# =============================================================================
-
 #' Add quoted column indicator
 #'
 #' Detects whether column values are quoted (surrounded by double quotes).
@@ -274,9 +267,6 @@ add_chr_prefix <- function(
   ][]
 }
 
-# =============================================================================
-# Encoded Column Functions
-# =============================================================================
 
 #' Set up encoding columns for split/recode operations
 #'
@@ -446,9 +436,6 @@ expand_single_encoded_row <- function(
   ]
 }
 
-# =============================================================================
-# Utility Functions
-# =============================================================================
 
 #' Get column names from file interface
 #'
@@ -473,17 +460,3 @@ column_names <- function(
     data.table::fcoalesce(standard_name, input_name)
   ]
 }
-
-# =============================================================================
-# Allele Matching
-# =============================================================================
-
-#' Add allele matching configuration to column info
-#'
-#' When a file has allele1, allele2, and alt columns (but no ref),
-#' sets up awk code to deduce the reference allele from the effect allele.
-#'
-#' @param column_info data.table with column metadata (modified in place)
-#'
-#' @return column_info (modified by reference)
-#' @keywords internal

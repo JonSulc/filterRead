@@ -299,9 +299,16 @@ head.file_interface <- function(
   return_only_cmd = FALSE,
   ...
 ) {
+  # When column_info does not exist, head() is called for data.table::fread()
+  # to parse column names, in which case we need to return one additional row
+  # (the header), otherwise the header is skipped
+  has_column_info <- "column_info" %in% names(x)
+  effective_nlines <- nlines + !has_column_info
+
   cmd <- compile_awk_cmds(
     x,
-    nlines = nlines + 1,
+    nlines = effective_nlines,
+    skip_header = has_column_info,
     return_only_cmd = return_only_cmd
   )
 
@@ -309,7 +316,7 @@ head.file_interface <- function(
     return(cmd)
   }
 
-  if (!"column_info" %in% names(x)) {
+  if (!has_column_info) {
     return(
       data.table::fread(
         cmd = paste("bash -c", shQuote(cmd)),
@@ -369,6 +376,7 @@ head.file_interface <- function(
 `[.file_interface` <- function(
   finterface,
   conditions = NULL,
+  nlines = NULL,
   ...,
   return_only_cmd = FALSE
 ) {
@@ -378,6 +386,7 @@ head.file_interface <- function(
   )
   command_line <- fcondition_to_awk(
     fcondition,
+    nlines = nlines,
     return_only_cmd = return_only_cmd
   )
 
@@ -397,6 +406,23 @@ head.file_interface <- function(
       }
     }
   )
+}
+
+#' Load a full file from the file_interface
+#'
+#' Loads all data from the file_interface without filtering but still providing
+#' post-processing (standardizing names, etc.). RSID-indexed files are not
+#' re-indexed with chr or pos.
+#'
+#' @param x A file_interface object.
+#'
+#' @return A data.table with the loaded data.
+#'
+#' @export
+read_file_interface <- function(
+  file_interface
+) {
+  file_interface[]
 }
 
 #' Print a file interface object

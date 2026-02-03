@@ -497,3 +497,118 @@ test_that("Encoded columns are correctly parsed and loaded", {
     finterface_enc[chr == 1][, all(chr == 1)]
   )
 })
+
+test_that("nlines parameter limits output rows", {
+  finterface <- local_file_interface("data.csv")
+
+  # nlines with no filtering
+  expect_equal(
+    finterface[nlines = 3],
+    head(dummy_dt(), 3)
+  )
+  expect_equal(
+    finterface[nlines = 1],
+    head(dummy_dt(), 1)
+  )
+
+  # nlines with filtering conditions
+  expect_equal(
+    finterface[2 < num, nlines = 2],
+    head(dummy_dt()[num > 2], 2)
+  )
+  expect_equal(
+    finterface[num < 5, nlines = 3],
+    head(dummy_dt()[num < 5], 3)
+  )
+
+  # nlines larger than file returns all rows
+  expect_equal(
+    finterface[nlines = 100],
+    dummy_dt()
+  )
+
+  # nlines with gzipped file
+  finterface_gz <- local_file_interface("data.csv.gz")
+  expect_equal(
+    finterface_gz[nlines = 2],
+    head(dummy_dt(), 2)
+  )
+  expect_equal(
+    finterface_gz[num > 3, nlines = 2],
+    head(dummy_dt()[num > 3], 2)
+  )
+})
+
+test_that("Empty brackets read full file", {
+  finterface <- local_file_interface("data.csv")
+
+  # Empty brackets return all rows
+  expect_equal(
+    finterface[],
+    dummy_dt()
+  )
+
+  # Works with gzipped files
+  finterface_gz <- local_file_interface("data.csv.gz")
+  expect_equal(
+    finterface_gz[],
+    dummy_dt()
+  )
+
+  # Works with quoted values
+  fquoted <- local_file_interface("data_quoted.csv", quote = TRUE)
+  expect_equal(
+    fquoted[],
+    dummy_dt()
+  )
+})
+
+test_that("read_file_interface reads full file", {
+  finterface <- local_file_interface("data.csv")
+
+  # read_file_interface returns all rows
+  expect_equal(
+    read_file_interface(finterface),
+    dummy_dt()
+  )
+
+  # Equivalent to empty brackets
+  expect_equal(
+    read_file_interface(finterface),
+    finterface[]
+  )
+
+  # Works with gzipped files
+  finterface_gz <- local_file_interface("data.csv.gz")
+  expect_equal(
+    read_file_interface(finterface_gz),
+    dummy_dt()
+  )
+})
+
+test_that("Header is consistently skipped regardless of filter condition", {
+  finterface <- local_file_interface("data.csv")
+
+  # Previously, nlines interacted with headers passing the filter condition
+  # For instance, for [num < 5], awk substitutes num for 0, yielding 0 < 5,
+  # in which case the header was counted as one of the lines of output.
+  # In cases where the header did not match, e.g., 2 < num (=> 2 < 0), the
+  # header was not included, leading to inconsistent behavior.
+
+  expect_equal(
+    nrow(finterface[num < 5, nlines = 2]),
+    2
+  )
+  expect_equal(
+    nrow(finterface[num < 5, nlines = 1]),
+    1
+  )
+  expect_equal(
+    nrow(finterface[2 < num, nlines = 2]),
+    2
+  )
+  expect_equal(
+    nrow(finterface[2 < num, nlines = 1]),
+    1
+  )
+})

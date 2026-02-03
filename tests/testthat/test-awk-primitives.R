@@ -90,56 +90,65 @@ test_that("build_line_limit_code creates correct line counting code", {
 
 test_that("build_awk_begin_block works without nlines", {
   expect_equal(
-    build_awk_begin_block("\t"),
+    build_awk_begin_block("\t", skip_header = FALSE),
     "BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}"
   )
   expect_equal(
-    build_awk_begin_block("\t", nlines = integer(0)),
+    build_awk_begin_block("\t", nlines = integer(0), skip_header = FALSE),
     "BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}"
   )
 })
 
 test_that("build_awk_begin_block returns NULL when no sep or nlines", {
-  expect_null(build_awk_begin_block(NULL))
-  expect_null(build_awk_begin_block(NULL, nlines = integer(0)))
+  expect_null(build_awk_begin_block(NULL, skip_header = FALSE))
+  expect_null(build_awk_begin_block(NULL, nlines = integer(0), skip_header = FALSE))
 })
 
 test_that("build_awk_begin_block works with nlines only (no sep)", {
-  result <- build_awk_begin_block(NULL, 50)
+  result <- build_awk_begin_block(NULL, 50, skip_header = FALSE)
   expected <- "BEGIN{\n  output_lines = 0\n  max_lines = 50\n}"
   expect_equal(result, expected)
 })
 
 test_that("build_awk_begin_block with command line FS (only OFS in BEGIN)", {
-  result <- build_awk_begin_block("\t", NULL, use_command_line_fs = TRUE)
+  result <- build_awk_begin_block(
+    "\t", NULL, skip_header = FALSE, use_command_line_fs = TRUE
+  )
   expect_equal(result, "BEGIN{\n  OFS = \"\t\"\n}")
 })
 
 test_that("build_awk_begin_block with command line FS and nlines", {
-  result <- build_awk_begin_block(",", 100, use_command_line_fs = TRUE)
-  expected <- paste0(
-    "BEGIN{\n  OFS = \",\"\n",
-    "  output_lines = 0\n  max_lines = 100\n}"
+  expect_equal(
+    build_awk_begin_block(
+      ",", 100, skip_header = FALSE, use_command_line_fs = TRUE
+    ),
+    "BEGIN{
+  OFS = \",\"
+  output_lines = 0
+  max_lines = 100
+}"
   )
-  expect_equal(result, expected)
 })
 
 test_that("build_awk_begin_block works with nlines", {
-  result <- build_awk_begin_block("\t", 100)
-  expected <- paste0(
-    "BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n",
-    "  output_lines = 0\n  max_lines = 100\n}"
+  expect_equal(
+    build_awk_begin_block("\t", 100, skip_header = FALSE),
+    "BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  output_lines = 0
+  max_lines = 100
+}"
   )
-  expect_equal(result, expected)
 })
 
 test_that("build_awk_begin_block handles different separators", {
-  result <- build_awk_begin_block(",")
+  result <- build_awk_begin_block(",", skip_header = FALSE)
   expect_equal(result, "BEGIN{\n  FS = \",\"\n  OFS = \",\"\n}")
 })
 
 test_that("build_awk_begin_block handles separator with special chars", {
-  result <- build_awk_begin_block("|")
+  result <- build_awk_begin_block("|", skip_header = FALSE)
   expect_equal(result, "BEGIN{\n  FS = \"|\"\n  OFS = \"|\"\n}")
 })
 

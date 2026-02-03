@@ -9,8 +9,13 @@ test_that("awk_load_file_cmd: simple case, only_read=TRUE, no processing", {
     comment_prefix = NULL,
     trim_prefix = NULL
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE)
+  # With skip_header=FALSE, returns simple cat command
+  result <- awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE)
   expect_equal(result, "cat test.txt")
+
+  # Default skip_header=TRUE returns awk command with header skip
+  result_skip <- awk_load_file_cmd(finterface, only_read = TRUE)
+  expect_match(result_skip, "header_skipped")
 })
 
 test_that("awk_load_file_cmd: simple case, only_read=FALSE, no processing", {
@@ -31,8 +36,13 @@ test_that("awk_load_file_cmd: gzipped, only_read=TRUE, no processing", {
     comment_prefix = NULL,
     trim_prefix = NULL
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE)
+  # With skip_header=FALSE, returns simple zcat command
+  result <- awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE)
   expect_equal(result, "zcat test.txt.gz")
+
+  # Default skip_header=TRUE returns awk command with header skip
+  result_skip <- awk_load_file_cmd(finterface, only_read = TRUE)
+  expect_match(result_skip, "header_skipped")
 })
 
 test_that("awk_load_file_cmd: gzipped, only_read=FALSE, no processing", {
@@ -54,12 +64,17 @@ test_that("awk_load_file_cmd: comment prefix, only_read=TRUE", {
     trim_prefix = NULL,
     sep = "\t"
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
-    "\n/^##/ { next }\n{\n  print $0\n}' test.txt"
+  expect_equal(
+    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+}
+/^##/ { next }
+{
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("awk_load_file_cmd: comment prefix, only_read=FALSE", {
@@ -82,12 +97,17 @@ test_that("awk_load_file_cmd: trim prefix, only_read=TRUE", {
     trim_prefix = "^#",
     sep = "\t"
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
-    "\n{\n  gsub(/^#/, \"\", $0)\n  print $0\n}' test.txt"
+  expect_equal(
+    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+}
+{
+  gsub(/^#/, \"\", $0)
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("awk_load_file_cmd: both prefixes, only_read=TRUE", {
@@ -98,13 +118,18 @@ test_that("awk_load_file_cmd: both prefixes, only_read=TRUE", {
     trim_prefix = "^#",
     sep = "\t"
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
-    "\n/^##/ { next }\n{\n  gsub(/^#/, \"\", $0)",
-    "\n  print $0\n}' test.txt"
+  expect_equal(
+    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+}
+/^##/ { next }
+{
+  gsub(/^#/, \"\", $0)
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("awk_load_file_cmd: gzipped with both prefixes, only_read=TRUE", {
@@ -115,13 +140,18 @@ test_that("awk_load_file_cmd: gzipped with both prefixes, only_read=TRUE", {
     trim_prefix = "^#",
     sep = "\t"
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
-    "\n/^##/ { next }\n{\n  gsub(/^#/, \"\", $0)",
-    "\n  print $0\n}' <(zcat test.txt.gz)"
+  expect_equal(
+    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+}
+/^##/ { next }
+{
+  gsub(/^#/, \"\", $0)
+  print $0
+}' <(zcat test.txt.gz)"
   )
-  expect_equal(result, expected)
 })
 
 test_that("awk_load_file_cmd: nlines only, only_read=TRUE", {
@@ -132,14 +162,20 @@ test_that("awk_load_file_cmd: nlines only, only_read=TRUE", {
     trim_prefix = NULL,
     sep = "\t"
   )
-  result <- awk_load_file_cmd(finterface, nlines = 100, only_read = TRUE)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n",
-    "  output_lines = 0\n  max_lines = 100\n}",
-    "\n{\n  if (++output_lines <= max_lines) print $0; else exit\n}'",
-    " test.txt"
+  expect_equal(
+    awk_load_file_cmd(
+      finterface, nlines = 100, only_read = TRUE, skip_header = FALSE
+    ),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  output_lines = 0
+  max_lines = 100
+}
+{
+  if (++output_lines <= max_lines) print $0; else exit
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("awk_load_file_cmd: nlines only, only_read=FALSE", {
@@ -162,15 +198,22 @@ test_that("awk_load_file_cmd: prefixes with nlines, only_read=TRUE", {
     trim_prefix = "^#",
     sep = "\t"
   )
-  result <- awk_load_file_cmd(finterface, nlines = 50, only_read = TRUE)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n",
-    "  output_lines = 0\n  max_lines = 50\n}",
-    "\n/^##/ { next }\n{\n  gsub(/^#/, \"\", $0)",
-    "\n  if (++output_lines <= max_lines) print $0; else exit\n}'",
-    " test.txt"
+  expect_equal(
+    awk_load_file_cmd(
+      finterface, nlines = 50, only_read = TRUE, skip_header = FALSE
+    ),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  output_lines = 0
+  max_lines = 50
+}
+/^##/ { next }
+{
+  gsub(/^#/, \"\", $0)
+  if (++output_lines <= max_lines) print $0; else exit
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("awk_load_file_cmd: gzipped with prefixes and nlines, only_read=TRUE", {
@@ -181,15 +224,22 @@ test_that("awk_load_file_cmd: gzipped with prefixes and nlines, only_read=TRUE",
     trim_prefix = "^%",
     sep = ","
   )
-  result <- awk_load_file_cmd(finterface, nlines = 25, only_read = TRUE)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \",\"\n  OFS = \",\"\n",
-    "  output_lines = 0\n  max_lines = 25\n}",
-    "\n/^\\/\\// { next }\n{\n  gsub(/^%/, \"\", $0)",
-    "\n  if (++output_lines <= max_lines) print $0; else exit\n}'",
-    " <(zcat test.txt.gz)"
+  expect_equal(
+    awk_load_file_cmd(
+      finterface, nlines = 25, only_read = TRUE, skip_header = FALSE
+    ),
+    "awk 'BEGIN{
+  FS = \",\"
+  OFS = \",\"
+  output_lines = 0
+  max_lines = 25
+}
+/^\\/\\// { next }
+{
+  gsub(/^%/, \"\", $0)
+  if (++output_lines <= max_lines) print $0; else exit
+}' <(zcat test.txt.gz)"
   )
-  expect_equal(result, expected)
 })
 
 test_that("awk_load_file_cmd: complex patterns", {
@@ -200,13 +250,18 @@ test_that("awk_load_file_cmd: complex patterns", {
     trim_prefix = "\\*",
     sep = "|"
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"|\"\n  OFS = \"|\"\n}",
-    "\n/\\*\\*/ { next }\n{\n  gsub(/\\*/, \"\", $0)",
-    "\n  print $0\n}' complex.txt"
+  expect_equal(
+    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"|\"
+  OFS = \"|\"
+}
+/\\*\\*/ { next }
+{
+  gsub(/\\*/, \"\", $0)
+  print $0
+}' complex.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("awk_load_file_cmd: special characters in filename", {
@@ -216,7 +271,7 @@ test_that("awk_load_file_cmd: special characters in filename", {
     comment_prefix = NULL,
     trim_prefix = NULL
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE)
+  result <- awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE)
   expect_equal(result, "zcat file with spaces.txt.gz")
 })
 
@@ -228,11 +283,16 @@ test_that("awk_load_file_cmd: edge case with empty patterns", {
     trim_prefix = "",
     sep = "\t"
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
-    "\n// { next }\n{\n  gsub(//, \"\", $0)",
-    "\n  print $0\n}' test.txt"
+  expect_equal(
+    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+}
+// { next }
+{
+  gsub(//, \"\", $0)
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
 })

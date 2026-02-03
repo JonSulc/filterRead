@@ -183,6 +183,7 @@ single_genomic_region_to_fc <- function(
 #' @keywords internal
 fcondition_to_awk <- function(
   fcondition,
+  nlines = NULL,
   return_only_cmd = FALSE
 ) {
   # Determine which columns need array splitting (for encoded columns)
@@ -197,6 +198,7 @@ fcondition_to_awk <- function(
     fcondition_awk_dt = fcondition_and_rsid_to_awk(fcondition),
     column_arrays_before_conditions = column_arrays$before_if,
     column_arrays_after_conditions = column_arrays$after_if,
+    nlines = nlines,
     return_only_cmd = return_only_cmd
   )
 }

@@ -4,12 +4,19 @@
 \alias{awk_load_file_cmd}
 \title{Get file loading command (entry point for simple reads)}
 \usage{
-awk_load_file_cmd(finterface, nlines = NULL, only_read = FALSE)
+awk_load_file_cmd(
+  finterface,
+  nlines = NULL,
+  skip_header = TRUE,
+  only_read = FALSE
+)
 }
 \arguments{
 \item{finterface}{File interface object}
 
 \item{nlines}{Optional output line limit}
+
+\item{skip_header}{If TRUE, skip the header line (first non-comment line)}
 
 \item{only_read}{If TRUE, this is a read-only operation (no filtering)}
 }

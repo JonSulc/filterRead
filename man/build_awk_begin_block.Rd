@@ -4,7 +4,12 @@
 \alias{build_awk_begin_block}
 \title{Build awk BEGIN block}
 \usage{
-build_awk_begin_block(sep, nlines = NULL, use_command_line_fs = FALSE)
+build_awk_begin_block(
+  sep,
+  nlines = NULL,
+  skip_header = TRUE,
+  use_command_line_fs = FALSE
+)
 }
 \arguments{
 \item{sep}{Field separator character}
@@ -15,10 +20,10 @@ build_awk_begin_block(sep, nlines = NULL, use_command_line_fs = FALSE)
 multi-file processing with different separators)}
 }
 \value{
-Awk BEGIN block string, or NULL if not needed
+Awk BEGIN block string
 }
 \description{
-Creates BEGIN block with field separator setup and optional line counting
-variables for output limiting.
+Creates BEGIN block with field separator setup, header skip flag, and
+optional line counting variables for output limiting.
 }
 \keyword{internal}

@@ -10,6 +10,7 @@ compile_awk_cmds(
   column_arrays_before_conditions = NULL,
   column_arrays_after_conditions = get_awk_column_arrays(finterface)$after_if,
   nlines = NULL,
+  skip_header = TRUE,
   return_only_cmd = FALSE
 )
 }
@@ -26,6 +27,8 @@ before evaluating conditions}
 condition passes (for output formatting)}
 
 \item{nlines}{Optional limit on number of output lines}
+
+\item{skip_header}{If TRUE and multi-file, add FNR == 1 skip inside block}
 
 \item{return_only_cmd}{If TRUE, return awk inline; if FALSE, use temp file}
 }

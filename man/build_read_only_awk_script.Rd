@@ -4,12 +4,14 @@
 \alias{build_read_only_awk_script}
 \title{Build read-only awk script (no filtering)}
 \usage{
-build_read_only_awk_script(finterface, nlines = NULL)
+build_read_only_awk_script(finterface, nlines = NULL, skip_header = TRUE)
 }
 \arguments{
 \item{finterface}{File interface with sep, comment_prefix, trim_prefix}
 
 \item{nlines}{Optional output line limit}
+
+\item{skip_header}{If TRUE, skip the header line (first non-comment line)}
 }
 \value{
 Complete awk command string

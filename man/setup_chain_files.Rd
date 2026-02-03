@@ -5,7 +5,8 @@
 \title{Download UCSC chain files for liftover}
 \usage{
 setup_chain_files(
-  builds = c("b37_to_b38", "b38_to_b37", "b36_to_b37", "b37_to_b36", "b36_to_b38"),
+  builds = c("b37_to_b38", "b38_to_b37", "b36_to_b37", "b37_to_b36", "b36_to_b38",
+    "b38_to_b36"),
   path = get_chain_path(warn = FALSE),
   force = FALSE
 )

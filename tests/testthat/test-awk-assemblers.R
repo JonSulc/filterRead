@@ -8,13 +8,29 @@ test_that("build_read_only_awk_script with no prefixes or nlines", {
     sep = "\t",
     gzipped = FALSE
   )
-  result <- build_read_only_awk_script(finterface)
-  expected <- paste(
-    "awk",
-    "'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}\n{\n  print $0\n}'",
-    "test.txt"
+  
+  expect_equal(
+    build_read_only_awk_script(finterface, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+}
+{
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
+  expect_equal(
+    build_read_only_awk_script(finterface, skip_header = TRUE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  header_skipped = 0
+}
+!header_skipped { header_skipped = 1; next }
+{
+  print $0
+}' test.txt"
+  )
 })
 
 test_that("build_read_only_awk_script with comment prefix only", {
@@ -25,12 +41,30 @@ test_that("build_read_only_awk_script with comment prefix only", {
     sep = "\t",
     gzipped = FALSE
   )
-  result <- build_read_only_awk_script(finterface)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
-    "\n/^##/ { next }\n{\n  print $0\n}' test.txt"
+  expect_equal(
+    build_read_only_awk_script(finterface, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+}
+/^##/ { next }
+{
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
+  expect_equal(
+    build_read_only_awk_script(finterface, skip_header = TRUE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  header_skipped = 0
+}
+/^##/ { next }
+!header_skipped { header_skipped = 1; next }
+{
+  print $0
+}' test.txt"
+  )
 })
 
 test_that("build_read_only_awk_script with trim prefix only", {
@@ -41,12 +75,17 @@ test_that("build_read_only_awk_script with trim prefix only", {
     sep = "\t",
     gzipped = FALSE
   )
-  result <- build_read_only_awk_script(finterface)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
-    "\n{\n  gsub(/^#/, \"\", $0)\n  print $0\n}' test.txt"
+  expect_equal(
+    build_read_only_awk_script(finterface, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+}
+{
+  gsub(/^#/, \"\", $0)
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("build_read_only_awk_script with both prefixes", {
@@ -57,13 +96,18 @@ test_that("build_read_only_awk_script with both prefixes", {
     sep = "\t",
     gzipped = FALSE
   )
-  result <- build_read_only_awk_script(finterface)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n}",
-    "\n/^##/ { next }\n{\n  gsub(/^#/, \"\", $0)",
-    "\n  print $0\n}' test.txt"
+  expect_equal(
+    build_read_only_awk_script(finterface, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+}
+/^##/ { next }
+{
+  gsub(/^#/, \"\", $0)
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("build_read_only_awk_script with nlines only", {
@@ -74,14 +118,32 @@ test_that("build_read_only_awk_script with nlines only", {
     sep = "\t",
     gzipped = FALSE
   )
-  result <- build_read_only_awk_script(finterface, nlines = 100)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n",
-    "  output_lines = 0\n  max_lines = 100\n}",
-    "\n{\n  if (++output_lines <= max_lines) print $0; else exit\n}'",
-    " test.txt"
+  expect_equal(
+    build_read_only_awk_script(finterface, nlines = 100, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  output_lines = 0
+  max_lines = 100
+}
+{
+  if (++output_lines <= max_lines) print $0; else exit
+}' test.txt"
   )
-  expect_equal(result, expected)
+  expect_equal(
+    build_read_only_awk_script(finterface, nlines = 100),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  output_lines = 0
+  max_lines = 100
+  header_skipped = 0
+}
+!header_skipped { header_skipped = 1; next }
+{
+  if (++output_lines <= max_lines) print $0; else exit
+}' test.txt"
+  )
 })
 
 test_that("build_read_only_awk_script with prefixes and nlines", {
@@ -92,15 +154,36 @@ test_that("build_read_only_awk_script with prefixes and nlines", {
     sep = "\t",
     gzipped = FALSE
   )
-  result <- build_read_only_awk_script(finterface, nlines = 100)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"\t\"\n  OFS = \"\t\"\n",
-    "  output_lines = 0\n  max_lines = 100\n}",
-    "\n/^##/ { next }\n{\n  gsub(/^#/, \"\", $0)",
-    "\n  if (++output_lines <= max_lines) print $0; else exit\n}'",
-    " test.txt"
+  expect_equal(
+    build_read_only_awk_script(finterface, nlines = 100, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  output_lines = 0
+  max_lines = 100
+}
+/^##/ { next }
+{
+  gsub(/^#/, \"\", $0)
+  if (++output_lines <= max_lines) print $0; else exit
+}' test.txt"
   )
-  expect_equal(result, expected)
+  expect_equal(
+    build_read_only_awk_script(finterface, nlines = 100, skip_header = TRUE),
+    "awk 'BEGIN{
+  FS = \"\t\"
+  OFS = \"\t\"
+  output_lines = 0
+  max_lines = 100
+  header_skipped = 0
+}
+/^##/ { next }
+!header_skipped { header_skipped = 1; next }
+{
+  gsub(/^#/, \"\", $0)
+  if (++output_lines <= max_lines) print $0; else exit
+}' test.txt"
+  )
 })
 
 test_that("build_read_only_awk_script handles different separators", {
@@ -111,13 +194,16 @@ test_that("build_read_only_awk_script handles different separators", {
     sep = ",",
     gzipped = FALSE
   )
-  result <- build_read_only_awk_script(finterface)
-  expected <- paste(
-    "awk",
-    "'BEGIN{\n  FS = \",\"\n  OFS = \",\"\n}\n{\n  print $0\n}'",
-    "test.txt"
+  expect_equal(
+    build_read_only_awk_script(finterface, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \",\"
+  OFS = \",\"
+}
+{
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 
 test_that("build_read_only_awk_script with complex patterns", {
@@ -128,12 +214,17 @@ test_that("build_read_only_awk_script with complex patterns", {
     sep = "|",
     gzipped = FALSE
   )
-  result <- build_read_only_awk_script(finterface)
-  expected <- paste0(
-    "awk 'BEGIN{\n  FS = \"|\"\n  OFS = \"|\"\n}",
-    "\n/^<!--/ { next }\n{\n  gsub(/^\\/\\//, \"\", $0)",
-    "\n  print $0\n}' test.txt"
+  expect_equal(
+    build_read_only_awk_script(finterface, skip_header = FALSE),
+    "awk 'BEGIN{
+  FS = \"|\"
+  OFS = \"|\"
+}
+/^<!--/ { next }
+{
+  gsub(/^\\/\\//, \"\", $0)
+  print $0
+}' test.txt"
   )
-  expect_equal(result, expected)
 })
 

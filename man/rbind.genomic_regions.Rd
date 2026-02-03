@@ -4,7 +4,7 @@
 \alias{rbind.genomic_regions}
 \title{Combine genomic_regions by rows}
 \usage{
-\method{rbind}{genomic_regions}(...)
+\method{rbind}{genomic_regions}(..., merge_contiguous = TRUE)
 }
 \arguments{
 \item{...}{genomic_regions objects to combine}

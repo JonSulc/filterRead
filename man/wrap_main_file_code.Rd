@@ -9,7 +9,8 @@ wrap_main_file_code(
   fcondition_awk_dt,
   column_arrays_before_conditions,
   column_arrays_after_conditions,
-  nlines = NULL
+  nlines = NULL,
+  skip_header = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ wrap_main_file_code(
 \item{column_arrays_after_conditions}{Column processing after conditions}
 
 \item{nlines}{Optional output line limit}
+
+\item{skip_header}{If TRUE and multi-file, add FNR == 1 skip inside block}
 }
 \value{
 Awk code string for main file processing
