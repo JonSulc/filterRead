@@ -25,6 +25,7 @@ processing the main data file.
 \details{
 The generated awk code uses FILENAME to detect when reading the temp file,
 stores each line as an array key with value 1, then skips to next line.
-Example output: \code{if (FILENAME == "/tmp/file123") \{ var123[$0] = 1; next \}}
+Example output:
+  \code{if (FILENAME == "/tmp/file123") \{ var123[$0] = 1; next \}}
 }
 \keyword{internal}

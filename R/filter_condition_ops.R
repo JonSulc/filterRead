@@ -15,8 +15,8 @@
   }
 
   stopifnot(identical(
-    attr(fcondition1, "finterface_env"),
-    attr(fcondition2, "finterface_env")
+    attr(fcondition1, "context")$finterface,
+    attr(fcondition2, "context")$finterface
   ))
 
   if (fcondition1[[1]] == as.symbol("or_filter_condition")) {
@@ -29,7 +29,7 @@
   fcondition <- rlang::quo(and_filter_condition()) |>
     as_filter_condition()
   fcondition[2:3] <- list(fcondition1, fcondition2)
-  attr(fcondition, "finterface_env") <- attr(fcondition1, "finterface_env")
+  attr(fcondition, "context") <- attr(fcondition1, "context")
   genomic_regions(fcondition) <- genomic_regions(fcondition1) & genomic_regions(fcondition2)
 
   if (!identical(build(fcondition1), build(fcondition2))) {
@@ -53,8 +53,8 @@
   fcondition2
 ) {
   stopifnot(identical(
-    attr(fcondition1, "finterface_env"),
-    attr(fcondition2, "finterface_env")
+    attr(fcondition1, "context")$finterface,
+    attr(fcondition2, "context")$finterface
   ))
 
   if (length(fcondition1) == 0 && length(fcondition2) == 0) {
@@ -66,7 +66,7 @@
   fcondition <- rlang::quo(or_filter_condition()) |>
     as_filter_condition()
   fcondition[2:3] <- list(fcondition1, fcondition2)
-  attr(fcondition, "finterface_env") <- attr(fcondition1, "finterface_env")
+  attr(fcondition, "context") <- attr(fcondition1, "context")
   if (is_single_genomic_block(fcondition)) {
     if (length(fcondition1) == 0) {
       fcondition <- fcondition2

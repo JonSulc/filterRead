@@ -254,7 +254,7 @@ split_genomic_conditions <- function(
       empty_filter_condition(
         build = build,
         genomic_regions = as_genomic_regions(fcondition, build = build),
-        finterface_env = attr(fcondition, "finterface_env")
+        context = attr(fcondition, "context")
       )
     )
   }

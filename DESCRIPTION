@@ -48,3 +48,4 @@ Collate:
     'liftover.R'
     'rsid_matching.R'
     'value_formatting.R'
+    'zzz.R'

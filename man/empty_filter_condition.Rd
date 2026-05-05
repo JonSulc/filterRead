@@ -7,7 +7,7 @@
 empty_filter_condition(
   build = NULL,
   genomic_regions = full_genomic_regions(build = build),
-  finterface_env = NULL
+  context = NULL
 )
 }
 \arguments{
@@ -15,7 +15,7 @@ empty_filter_condition(
 
 \item{genomic_regions}{Genomic regions to associate with the condition}
 
-\item{finterface_env}{Environment containing the file_interface}
+\item{context}{Environment carrying $finterface and $env for the condition}
 }
 \value{
 An empty filter_condition object

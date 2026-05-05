@@ -29,20 +29,20 @@ composite_fc_operators <- list(
 #'
 #' @param build Optional genome build (b36, b37, b38)
 #' @param genomic_regions Genomic regions to associate with the condition
-#' @param finterface_env Environment containing the file_interface
+#' @param context Environment carrying $finterface and $env for the condition
 #' @return An empty filter_condition object
 #' @keywords internal
 empty_filter_condition <- function(
   build = NULL,
   genomic_regions = full_genomic_regions(build = build),
-  finterface_env = NULL
+  context = NULL
 ) {
   structure(
     list(),
     class = c("filter_condition", "list"),
     build = build,
     genomic_regions = genomic_regions,
-    finterface_env = finterface_env
+    context = context
   )
 }
 
@@ -239,7 +239,8 @@ has_finterface_column_names.quosure <- function(
 new_filter_condition <- function(
   x,
   finterface,
-  build = NULL
+  build = NULL,
+  ...
 ) {
   UseMethod("new_filter_condition")
 }
@@ -247,7 +248,8 @@ new_filter_condition <- function(
 new_filter_condition.default <- function(
   x,
   finterface,
-  build = NULL
+  build = NULL,
+  ...
 ) {
   x
 }
@@ -255,8 +257,9 @@ new_filter_condition.default <- function(
 new_filter_condition.name <- function(
   x,
   finterface,
-  env = parent.frame(),
-  build = NULL
+  build = NULL,
+  ...,
+  env = parent.frame()
 ) {
   x <- eval(x, envir = env)
   if (missing(build) || is.null(build)) {
@@ -272,43 +275,47 @@ new_filter_condition.name <- function(
 new_filter_condition.genomic_regions <- function(
   x,
   finterface,
-  build = NULL
+  build = NULL,
+  ...
 ) {
   if (missing(build) || is.null(build)) {
     build <- build(finterface) %||% build(x)
   }
   if (is_file_interface(finterface)) {
-    finterface_env <- new.env(parent = emptyenv())
-    finterface_env$finterface <- finterface
+    context <- new.env(parent = emptyenv())
+    context$finterface <- finterface
+    context$env <- NULL
   } else {
-    finterface_env <- finterface
+    context <- finterface
   }
   empty_filter_condition(
     build = build,
     genomic_regions = liftover(x, build),
-    finterface_env = finterface_env
+    context = context
   )
 }
 #' @export
 new_filter_condition.quosure <- function(
   x,
   finterface,
-  build = "auto"
+  build = "auto",
+  ...
 ) {
   if (!is.null(build) && build == "auto") {
     build <- build(x) %||% build(finterface)
   }
   if (is_file_interface(finterface)) {
-    finterface_env <- new.env(parent = emptyenv())
-    finterface_env$finterface <- finterface
+    context <- new.env(parent = emptyenv())
+    context$finterface <- finterface
+    context$env <- rlang::quo_get_env(x)
   } else {
-    finterface_env <- finterface
+    context <- finterface
   }
 
   if (is.null(rlang::get_expr(x))) {
     # TODO Check this actually ever triggers
     fcondition <- empty_filter_condition(build = build)
-  } else if (is_composite_filter_condition(x, finterface_env$finterface)) {
+  } else if (is_composite_filter_condition(x, context$finterface)) {
     fc_operator <- rlang::get_expr(x)[[1]]
     args <- lapply(
       rlang::get_expr(x)[-1],
@@ -317,7 +324,7 @@ new_filter_condition.quosure <- function(
     ) |>
       lapply(
         new_filter_condition,
-        finterface = finterface_env,
+        finterface = context,
         build = build
       )
     fcondition <- switch(as.character(fc_operator),
@@ -326,7 +333,7 @@ new_filter_condition.quosure <- function(
       "(" = lp_wrap_fcondition(args[[1]]),
       do.call(fc_operator, args)
     )
-  } else if (is_atomic_filter_condition(x, finterface_env$finterface)) {
+  } else if (is_atomic_filter_condition(x, context$finterface)) {
     atomic_fc_name <- atomic_fc_operators[[
       as.character(rlang::get_expr(x)[[1]])
     ]]
@@ -339,14 +346,14 @@ new_filter_condition.quosure <- function(
       unique()
     fcondition <- evaluate_non_column_variables(
       fcondition,
-      finterface_env$finterface
+      context$finterface
     ) |>
       split_genomic_conditions(build = build)
   } else if (is.name(rlang::get_expr(x))) {
     return(
       new_filter_condition(
         rlang::eval_tidy(x),
-        finterface = finterface_env,
+        finterface = context,
         build = build
       )
     )
@@ -355,7 +362,7 @@ new_filter_condition.quosure <- function(
       split_genomic_conditions(build = build)
   }
 
-  attr(fcondition, "finterface_env") <- finterface_env
+  attr(fcondition, "context") <- context
 
   build(fcondition) <- build
 
@@ -416,7 +423,7 @@ get_used_columns <- function(
 #' Get the file interface from a filter condition
 #'
 #' Extracts the file interface object stored in the filter condition's
-#' finterface_env attribute.
+#' context attribute.
 #'
 #' @param fcondition A filter_condition object
 #' @return The file_interface object, or NULL if not set
@@ -424,7 +431,7 @@ get_used_columns <- function(
 get_file_interface <- function(
   fcondition
 ) {
-  attr(fcondition, "finterface_env")$finterface
+  attr(fcondition, "context")$finterface
 }
 
 #' @export
@@ -525,7 +532,7 @@ format.filter_condition <- function(
 }
 
 #' @export
-post_process <- function(x, finterface, env) {
+post_process <- function(x, finterface) {
   UseMethod("post_process")
 }
 #' @export
@@ -556,7 +563,7 @@ post_process.or_filter_condition <- post_process.and_filter_condition
 
 # Comparison operators don't need post-processing - just return unchanged
 #' @export
-post_process.filter_condition <- function(x, finterface, env) x
+post_process.filter_condition <- function(x, finterface) x
 #' @export
 post_process.lte_filter_condition <- post_process.filter_condition
 #' @export
@@ -569,9 +576,9 @@ post_process.lt_filter_condition <- post_process.filter_condition
 #' @export
 post_process.eq_filter_condition <- function(
   x,
-  finterface = get_file_interface(x),
-  env = NULL
+  finterface = get_file_interface(x)
 ) {
+  env <- attr(x, "context")$env
   is_column_name <- sapply(
     x[-1],
     is_column_symbol,
@@ -591,9 +598,9 @@ post_process.neq_filter_condition <- post_process.eq_filter_condition
 #' @export
 post_process.in_filter_condition <- function(
   x,
-  finterface = get_file_interface(x),
-  env = NULL
+  finterface = get_file_interface(x)
 ) {
+  env <- attr(x, "context")$env
   x[[3]] <- eval(x[[3]], env) |>
     check_post_processing(x[[2]], finterface, to_write = TRUE)
   x
@@ -601,8 +608,7 @@ post_process.in_filter_condition <- function(
 #' @export
 post_process.genomic_regions <- function(
   x,
-  finterface,
-  env = NULL
+  finterface
 ) {
   copy_genomic_regions(x)[
     !is.na(chr),

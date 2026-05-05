@@ -16,9 +16,10 @@ test_that("Basic filter_condition initialization works with dummy variables", {
     finterface = finterface
   ))
 
-  finterface_env <- {
+  context <- {
     env <- new.env(parent = emptyenv())
     env$finterface <- finterface
+    env$env <- environment()
     env
   }
 
@@ -29,7 +30,7 @@ test_that("Basic filter_condition initialization works with dummy variables", {
     structure(
       rlang::quo(lt_filter_condition(num, 3)),
       class = c("lt_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -41,7 +42,7 @@ test_that("Basic filter_condition initialization works with dummy variables", {
     structure(
       rlang::quo(gt_filter_condition(num, 3)),
       class = c("gt_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -53,7 +54,7 @@ test_that("Basic filter_condition initialization works with dummy variables", {
     structure(
       rlang::quo(lte_filter_condition(num, 3)),
       class = c("lte_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -65,7 +66,7 @@ test_that("Basic filter_condition initialization works with dummy variables", {
     structure(
       rlang::quo(gte_filter_condition(num, 3)),
       class = c("gte_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -77,7 +78,7 @@ test_that("Basic filter_condition initialization works with dummy variables", {
     structure(
       rlang::quo(eq_filter_condition(num, 3)),
       class = c("eq_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -102,9 +103,10 @@ test_that("Basic filter_condition initialization works with column names", {
     finterface = finterface
   ))
 
-  finterface_env <- {
+  context <- {
     env <- new.env(parent = emptyenv())
     env$finterface <- finterface
+    env$env <- environment()
     env
   }
 
@@ -115,7 +117,7 @@ test_that("Basic filter_condition initialization works with column names", {
     structure(
       rlang::quo(lt_filter_condition(num, 3)),
       class = c("lt_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -127,7 +129,7 @@ test_that("Basic filter_condition initialization works with column names", {
     structure(
       rlang::quo(gt_filter_condition(num, 3)),
       class = c("gt_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -139,7 +141,7 @@ test_that("Basic filter_condition initialization works with column names", {
     structure(
       rlang::quo(lte_filter_condition(num, 3)),
       class = c("lte_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -151,7 +153,7 @@ test_that("Basic filter_condition initialization works with column names", {
     structure(
       rlang::quo(gte_filter_condition(num, 3)),
       class = c("gte_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -163,7 +165,7 @@ test_that("Basic filter_condition initialization works with column names", {
     structure(
       rlang::quo(eq_filter_condition(num, 3)),
       class = c("eq_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = finterface_env,
+      context = context,
       build = "b38",
       genomic_regions = full_genomic_regions(build = "b38")
     )
@@ -582,9 +584,14 @@ test_that("Parenthesis stripping works", {
 
 test_that("empty_fc | empty_fc does not inherit or_filter_condition_class", {
   finterface <- local_summary_stats_interface()
-  fcondition1 <- empty_filter_condition(finterface_env = finterface)
+  context <- {
+    env <- new.env(parent = emptyenv())
+    env$finterface <- finterface
+    env
+  }
+  fcondition1 <- empty_filter_condition(context = context)
   fcondition2 <- empty_filter_condition(
-    finterface_env = attr(fcondition1, "finterface_env")
+    context = attr(fcondition1, "context")
   )
   expect_equal(
     class(fcondition1 | fcondition2),
@@ -824,9 +831,10 @@ test_that("%in% parsing works", {
         rlang::set_expr(fcall, fexpr)
       },
       class = c("in_filter_condition", "filter_condition", "quosure", "formula"),
-      finterface_env = {
+      context = {
         env <- new.env(parent = emptyenv())
         env$finterface <- finterface
+        env$env <- environment()
         env
       },
       build = "b38",

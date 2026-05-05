@@ -14,6 +14,6 @@ The file_interface object, or NULL if not set
 }
 \description{
 Extracts the file interface object stored in the filter condition's
-finterface_env attribute.
+context attribute.
 }
 \keyword{internal}

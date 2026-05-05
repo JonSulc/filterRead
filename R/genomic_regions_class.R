@@ -198,7 +198,8 @@ is_full_genome <- function(gregions) {
 
 #' @export
 print.genomic_regions <- function(
-  x
+  x,
+  ...
 ) {
   NextMethod()
   if (!is.null(build(x))) {
@@ -213,13 +214,13 @@ print.genomic_regions <- function(
 
 #' @export
 str.genomic_regions <- function(
-  x,
+  object,
   ...
 ) {
   sprintf(
     "%s{%s}",
-    ifelse(is_included(x), "", "!"),
-    x[
+    ifelse(is_included(object), "", "!"),
+    object[
       ,
       .(region_str = sprintf(
         "%s:%i-%s",
