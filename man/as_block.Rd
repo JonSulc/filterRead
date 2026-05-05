@@ -2,7 +2,7 @@
 % Please edit documentation in R/awk_codegen.R
 \name{as_block}
 \alias{as_block}
-\title{Wrap code in awk block syntax { ... }}
+\title{Wrap code in awk block syntax \{ ... \}}
 \usage{
 as_block(code)
 }
@@ -13,6 +13,6 @@ as_block(code)
 Code wrapped in braces with proper indentation
 }
 \description{
-Wrap code in awk block syntax { ... }
+Wrap code in awk block syntax \{ ... \}
 }
 \keyword{internal}

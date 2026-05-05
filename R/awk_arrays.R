@@ -117,7 +117,8 @@ awk_combine_split_for_output <- function(
 #' @details
 #' The generated awk code uses FILENAME to detect when reading the temp file,
 #' stores each line as an array key with value 1, then skips to next line.
-#' Example output: `if (FILENAME == "/tmp/file123") { var123[$0] = 1; next }`
+#' Example output:
+#'   \code{if (FILENAME == "/tmp/file123") \{ var123[$0] = 1; next \}}
 setup_variable_array <- function(
   values,
   filename,
@@ -164,4 +165,3 @@ get_column_indices <- function(
   }
   column_indices
 }
-

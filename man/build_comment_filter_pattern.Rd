@@ -10,7 +10,7 @@ build_comment_filter_pattern(comment_prefix)
 \item{comment_prefix}{Prefix that marks comment lines (e.g., "#")}
 }
 \value{
-Awk pattern like `/^#/ { next }`, or NULL if no prefix
+Awk pattern like \code{/^#/ \{ next \}}, or NULL if no prefix
 }
 \description{
 Build awk pattern to skip comment lines

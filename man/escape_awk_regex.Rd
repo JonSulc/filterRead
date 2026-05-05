@@ -14,6 +14,6 @@ Escaped pattern safe for use in awk regex, or NULL if input is NULL
 }
 \description{
 Escapes characters that have special meaning in awk regex patterns:
-/, [, ], (, ), {, }, +, ?, |
+/, [, ], (, ), \{, \}, +, ?, |
 }
 \keyword{internal}

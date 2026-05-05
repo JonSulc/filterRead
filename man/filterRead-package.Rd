@@ -8,4 +8,8 @@
 \description{
 Creates an easy-to-use interface for loading tab/comma-separated value files efficiently. Conditions for filtering can be specified in R-style and are translated to awk command line before passing on to data.table::fread for loading.
 }
+\author{
+\strong{Maintainer}: Jonathan Sulc \email{jonsulc@gmail.com}
+
+}
 \keyword{internal}

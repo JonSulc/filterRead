@@ -166,7 +166,7 @@ compile_awk_cmds <- function(
 # =============================================================================
 # These functions format and structure awk code blocks.
 
-#' Wrap code in awk block syntax { ... }
+#' Wrap code in awk block syntax \{ ... \}
 #'
 #' @param code Awk code string to wrap
 #' @return Code wrapped in braces with proper indentation
@@ -353,7 +353,7 @@ wrap_main_file_code <- function(
 #' @param fcondition_awk_dt data.table with awk_code_block, variable_arrays
 #' @param main_file_code Awk code for main file processing
 #'
-#' @return Complete awk code block wrapped in { }
+#' @return Complete awk code block wrapped in \{ \}
 #' @keywords internal
 wrap_full_code_block <- function(
   fcondition_awk_dt,
@@ -380,7 +380,7 @@ wrap_full_code_block <- function(
 #' Escape special regex characters for awk patterns
 #'
 #' Escapes characters that have special meaning in awk regex patterns:
-#' /, [, ], (, ), {, }, +, ?, |
+#' /, [, ], (, ), \{, \}, +, ?, |
 #'
 #' @param pattern Character string to escape
 #' @return Escaped pattern safe for use in awk regex, or NULL if input is NULL
@@ -413,7 +413,7 @@ build_file_read_cmd <- function(finterface) {
 #' Build awk pattern to skip comment lines
 #'
 #' @param comment_prefix Prefix that marks comment lines (e.g., "#")
-#' @return Awk pattern like `/^#/ { next }`, or NULL if no prefix
+#' @return Awk pattern like \code{/^#/ \{ next \}}, or NULL if no prefix
 #' @keywords internal
 build_comment_filter_pattern <- function(comment_prefix) {
   if (is.null(comment_prefix)) {

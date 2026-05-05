@@ -8,9 +8,10 @@
 #' @importFrom rlang caller_env
 #' @importFrom rlang enexpr
 #' @importFrom rlang env
+#' @importFrom stats na.omit setNames
 #' @importFrom stringr str_detect
 #' @importFrom stringr str_match
 #' @importFrom stringr str_trim
-#' @importFrom utils head
+#' @importFrom utils capture.output download.file head str
 ## usethis namespace: end
 NULL

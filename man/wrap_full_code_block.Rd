@@ -12,7 +12,7 @@ wrap_full_code_block(fcondition_awk_dt, main_file_code)
 \item{main_file_code}{Awk code for main file processing}
 }
 \value{
-Complete awk code block wrapped in { }
+Complete awk code block wrapped in \{ \}
 }
 \description{
 Assembles RSID loading blocks, variable array blocks, and main file

@@ -133,7 +133,7 @@ eq_filter_condition <- make_comparison_filter("==")
 #' @keywords internal
 neq_filter_condition <- make_comparison_filter("!=")
 
-#' Build awk membership condition (for R %in% operator)
+#' Build awk membership condition (for R \%in\% operator)
 #'
 #' Creates an awk condition that checks if a column value exists in a set
 #' of values. Values are written to a temp file and loaded into an awk

@@ -346,6 +346,7 @@ rbind.genomic_regions <- function(
 #'
 #' @param e1,e2 genomic_regions objects
 #' @return Combined genomic_regions
+#' @name or-.genomic_regions
 #' @export
 `|.genomic_regions` <- `+.genomic_regions`
 

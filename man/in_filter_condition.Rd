@@ -2,7 +2,7 @@
 % Please edit documentation in R/filter_condition_conversion.R
 \name{in_filter_condition}
 \alias{in_filter_condition}
-\title{Build awk membership condition (for R %in% operator)}
+\title{Build awk membership condition (for R \%in\% operator)}
 \usage{
 in_filter_condition(column_name, values, filename = tempfile())
 }
