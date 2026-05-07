@@ -16,8 +16,6 @@ eval_fcondition_w_gregions(
 \item{finterface}{File interface for column mappings}
 
 \item{column_indices}{Named list mapping column names to awk refs}
-
-\item{env}{Environment for evaluating non-column variables}
 }
 \value{
 List with components:

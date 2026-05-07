@@ -16,8 +16,6 @@ eval_fcondition(
 \item{finterface}{File interface for column mappings}
 
 \item{column_indices}{Named list mapping column names to awk refs}
-
-\item{env}{Environment for evaluating non-column R variables}
 }
 \value{
 List with condition string and optional variable_arrays/files

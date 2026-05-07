@@ -349,6 +349,8 @@ head.file_interface <- function(
 #'   use column names, comparison operators (&lt;, &gt;, ==, !=, etc.),
 #'   and logical operators (&, |). Examples: \code{pval < 5e-8},
 #'   \code{chr == 1 & pos > 1000000}. If NULL, returns all rows.
+#' @param nlines Optional integer cap on the number of matching lines to
+#'   return. NULL or `integer(0)` means no cap.
 #' @param ... Additional arguments passed to data.table::fread().
 #' @param return_only_cmd Logical. If TRUE, returns the awk command
 #'   string instead of executing it. Useful for debugging or piping
@@ -414,7 +416,7 @@ head.file_interface <- function(
 #' post-processing (standardizing names, etc.). RSID-indexed files are not
 #' re-indexed with chr or pos.
 #'
-#' @param x A file_interface object.
+#' @param file_interface A file_interface object.
 #'
 #' @return A data.table with the loaded data.
 #'

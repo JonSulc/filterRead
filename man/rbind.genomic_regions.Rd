@@ -8,6 +8,9 @@
 }
 \arguments{
 \item{...}{genomic_regions objects to combine}
+
+\item{merge_contiguous}{If TRUE, contiguous regions in the result are
+merged into a single row.}
 }
 \value{
 Combined genomic_regions

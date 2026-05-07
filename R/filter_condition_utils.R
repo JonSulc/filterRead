@@ -481,7 +481,6 @@ is_single_genomic_block <- function(
 #'
 #' @param fcondition A filter_condition call
 #' @param finterface File interface for column detection
-#' @param env Environment for evaluating expressions
 #'
 #' @return filter_condition with non-column values evaluated
 #' @keywords internal

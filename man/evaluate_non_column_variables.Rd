@@ -10,8 +10,6 @@ evaluate_non_column_variables(fcondition, finterface)
 \item{fcondition}{A filter_condition call}
 
 \item{finterface}{File interface for column detection}
-
-\item{env}{Environment for evaluating expressions}
 }
 \value{
 filter_condition with non-column values evaluated

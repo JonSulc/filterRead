@@ -13,7 +13,6 @@
 #' @param fcondition A filter_condition object (call-like structure)
 #' @param finterface File interface for column mappings
 #' @param column_indices Named list mapping column names to awk refs
-#' @param env Environment for evaluating non-column variables
 #'
 #' @return List with components:
 #'   - condition: awk condition string (e.g., "$5 < 5e-8 && $1 == 1")
@@ -69,7 +68,6 @@ eval_fcondition_w_gregions <- function(
 #' @param fcondition A filter_condition object (excluding genomic parts)
 #' @param finterface File interface for column mappings
 #' @param column_indices Named list mapping column names to awk refs
-#' @param env Environment for evaluating non-column R variables
 #'
 #' @return List with condition string and optional variable_arrays/files
 #' @keywords internal
@@ -94,7 +92,7 @@ eval_fcondition <- function(
 #' `$1 == "chr1" && 1000 <= $2 && $2 <= 2000`, combined with OR for multiple
 #' regions.
 #'
-#' @param gregions A genomic_regions object (data.table with chr/start/end)
+#' @param fcondition A filter_condition with embedded genomic_regions
 #' @param finterface File interface (used to check RSID matching)
 #' @param column_indices Named list with chr and pos column refs
 #'

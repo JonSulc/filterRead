@@ -14,6 +14,9 @@ use column names, comparison operators (&lt;, &gt;, ==, !=, etc.),
 and logical operators (&, |). Examples: \code{pval < 5e-8},
 \code{chr == 1 & pos > 1000000}. If NULL, returns all rows.}
 
+\item{nlines}{Optional integer cap on the number of matching lines to
+return. NULL or `integer(0)` means no cap.}
+
 \item{...}{Additional arguments passed to data.table::fread().}
 
 \item{return_only_cmd}{Logical. If TRUE, returns the awk command

@@ -9,11 +9,9 @@
 \arguments{
 \item{x}{A genomic_regions object}
 
-\item{target}{Target genome build (e.g., "hg38")}
+\item{target}{Target genome build (e.g., "hg38") or a chain data.table}
 
 \item{...}{Ignored}
-
-\item{chain_dt}{Chain data.table}
 }
 \value{
 genomic_regions with coordinates in target build

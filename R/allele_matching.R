@@ -14,7 +14,7 @@
 #'
 #' @param column_info data.table with column metadata
 #'
-#' @param return data.table with modified data (invisible).
+#' @return data.table with modified data (invisible).
 #' @keywords internal
 add_allele_matching_to_column_info <- function(
   column_info

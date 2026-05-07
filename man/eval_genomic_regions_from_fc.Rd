@@ -7,11 +7,11 @@
 eval_genomic_regions_from_fc(fcondition, finterface, column_indices)
 }
 \arguments{
+\item{fcondition}{A filter_condition with embedded genomic_regions}
+
 \item{finterface}{File interface (used to check RSID matching)}
 
 \item{column_indices}{Named list with chr and pos column refs}
-
-\item{gregions}{A genomic_regions object (data.table with chr/start/end)}
 }
 \value{
 Character string with awk condition, or NULL if empty/RSID file

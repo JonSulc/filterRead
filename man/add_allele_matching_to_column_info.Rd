@@ -8,8 +8,9 @@ add_allele_matching_to_column_info(column_info)
 }
 \arguments{
 \item{column_info}{data.table with column metadata}
-
-\item{return}{data.table with modified data (invisible).}
+}
+\value{
+data.table with modified data (invisible).
 }
 \description{
 Modify the columns of column_info to include the relevant information for

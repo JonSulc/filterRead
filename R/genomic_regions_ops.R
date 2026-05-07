@@ -13,8 +13,7 @@ END_SENTINEL <- .Machine$integer.max - 1L
 #' by splitting them.
 #'
 #' @param x A genomic_regions object
-#' @param target Target genome build (e.g., "hg38")
-#' @param chain_dt Chain data.table
+#' @param target Target genome build (e.g., "hg38") or a chain data.table
 #' @param ... Ignored
 #'
 #' @return genomic_regions with coordinates in target build
@@ -301,6 +300,8 @@ expand_genomic_regions <- function(
 #' Combine genomic_regions by rows
 #'
 #' @param ... genomic_regions objects to combine
+#' @param merge_contiguous If TRUE, contiguous regions in the result are
+#'   merged into a single row.
 #' @return Combined genomic_regions
 #' @export
 rbind.genomic_regions <- function(
@@ -629,7 +630,22 @@ merge_contiguous_regions <- function(
     )
 }
 
+#' Return the smallest equivalent genomic_regions representation
+#'
+#' Compares the input against two expanded forms (the included regions
+#' expanded, and the complement of the expanded negation) and returns
+#' whichever has the fewest rows. Output is semantically equivalent to the
+#' input - it represents the same set of genomic positions.
+#'
+#' @param gregions A genomic_regions object
+#' @return A genomic_regions object with the same coverage as `gregions`
+#'   but with the minimum number of rows
 #' @export
+#' @examples
+#' \dontrun{
+#' gregions <- new_genomic_regions(chr = 1:20, build = "b38")
+#' compact(gregions)
+#' }
 compact <- function(gregions) {
   expanded_gregions <- expand_genomic_regions(gregions)
   expanded_ngregions <- !expand_genomic_regions(!gregions)

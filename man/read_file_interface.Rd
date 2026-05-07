@@ -7,7 +7,7 @@
 read_file_interface(file_interface)
 }
 \arguments{
-\item{x}{A file_interface object.}
+\item{file_interface}{A file_interface object.}
 }
 \value{
 A data.table with the loaded data.

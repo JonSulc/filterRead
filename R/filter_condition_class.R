@@ -235,7 +235,32 @@ has_finterface_column_names.quosure <- function(
     has_finterface_column_names(finterface)
 }
 
+#' Construct a filter_condition
+#'
+#' S3 generic that turns an R expression into a filter_condition - the
+#' package's internal representation of a row filter that is later compiled
+#' to awk. Methods are dispatched on the type of `x`; the most common entry
+#' point is the `[.file_interface` operator, which calls this with a
+#' quosure produced by `rlang::enquo()`. Pass a `genomic_regions` object
+#' to filter on chromosome/position ranges directly.
+#'
+#' @param x A quosure (typically produced by `rlang::enquo()` or
+#'   `rlang::quo()`) or a `genomic_regions` object.
+#' @param finterface The `file_interface` the filter applies to. Used for
+#'   column lookup and build inference.
+#' @param build Optional genome build (`"b36"`, `"b37"`, `"b38"`). Defaults
+#'   to inferring from `x` then `finterface`. The `quosure` method uses
+#'   `"auto"` as a sentinel for the same inference.
+#' @param ... Reserved for method-specific arguments.
+#' @return A `filter_condition` object with class identifying its type
+#'   (e.g. `lt_filter_condition`, `and_filter_condition`) and a `context`
+#'   attribute carrying the file_interface and capture environment.
 #' @export
+#' @examples
+#' \dontrun{
+#' finterface <- new_file_interface("gwas.txt.gz")
+#' new_filter_condition(rlang::quo(chr == 1 & pval < 5e-8), finterface)
+#' }
 new_filter_condition <- function(
   x,
   finterface,
@@ -531,23 +556,38 @@ format.filter_condition <- function(
   rlang::set_expr(x, fexpr)
 }
 
+#' Post-process a filter_condition before awk compilation
+#'
+#' S3 generic that walks a filter_condition tree and applies value
+#' transformations needed for awk: quoting string literals, prepending
+#' chromosome prefixes, and similar adjustments that depend on the
+#' file_interface's column metadata. Comparison atoms (`<`, `<=`, `>`, `>=`)
+#' pass through unchanged; equality (`==`, `!=`) and membership (`%in%`)
+#' atoms evaluate their right-hand side and run it through
+#' [check_post_processing()]. The `genomic_regions` method normalizes
+#' chromosome values (strips any `"chr"` prefix, then re-applies the file's
+#' actual prefix and quoting from `column_info`) so the awk pattern matches
+#' the file's format.
+#'
+#' @param x A `filter_condition` (any subclass) or a `genomic_regions`
+#'   object.
+#' @param finterface The associated file_interface. Defaults to the one
+#'   stored in the object's `context` attribute.
+#' @return The same kind of object, post-processed in place. Atomic and
+#'   composite filter_conditions retain their class and `context`
+#'   attribute; values inside comparison/membership atoms have been
+#'   evaluated and formatted for awk.
 #' @export
+#' @examples
+#' \dontrun{
+#' finterface <- new_file_interface("gwas.txt.gz")
+#' fcondition <- new_filter_condition(rlang::quo(chr == 1), finterface)
+#' post_process(fcondition)
+#' }
 post_process <- function(x, finterface) {
   UseMethod("post_process")
 }
-#' @export
-post_process.lp_filter_condition <- function(
-  x,
-  finterface = get_file_interface(x)
-) {
-  x[[2]] <- post_process(
-    x[[2]],
-    finterface = finterface
-  )
-  x
-}
-#' @export
-post_process.and_filter_condition <- function(
+post_process_composite <- function(
   x,
   finterface = get_file_interface(x)
 ) {
@@ -559,7 +599,11 @@ post_process.and_filter_condition <- function(
   x
 }
 #' @export
-post_process.or_filter_condition <- post_process.and_filter_condition
+post_process.or_filter_condition <- post_process_composite
+#' @export
+post_process.lp_filter_condition <- post_process_composite
+#' @export
+post_process.and_filter_condition <- post_process_composite
 
 # Comparison operators don't need post-processing - just return unchanged
 #' @export
