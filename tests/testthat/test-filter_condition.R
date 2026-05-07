@@ -1096,10 +1096,15 @@ test_that("Not-equal operator combines with other conditions", {
 })
 
 test_that("Not-equal operator works with genomic conditions", {
-  skip("Not yet implemented")
-  finterface <- local_summary_stats_interface()
-  fcondition <- new_filter_condition(
-    rlang::quo(chr != 1),
-    finterface
-  )
+  # The fcondition correctly produces a genomic_regions marked `Excluded`
+  # (is_included = FALSE), but awk codegen in eval_genomic_regions_from_fc
+  # does not honor that flag and emits the same awk condition as the
+  # included case - so `chr != 1` returns the same rows as `chr == 1`.
+  # See also the `# TODO Handle 'include'` at compute_intersection in
+  # R/genomic_regions_ops.R.
+  skip("awk codegen does not honor genomic_regions is_included flag")
+  finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
+  result <- finterface[chr != 1]
+  expect_false("chr1" %in% unique(result$chr))
+  expect_true(all(result$chr %in% paste0("chr", 2:22)))
 })

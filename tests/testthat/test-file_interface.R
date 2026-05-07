@@ -612,3 +612,30 @@ test_that("Header is consistently skipped regardless of filter condition", {
     1
   )
 })
+
+test_that("[.file_interface cleans up the awk script tempfile", {
+  finterface <- local_file_interface()
+  before <- list.files(tempdir(), full.names = TRUE)
+  result <- finterface[num < 3]
+  after <- list.files(tempdir(), full.names = TRUE)
+  new_files <- setdiff(after, before)
+  expect_length(new_files[grepl("\\.awk$", new_files)], 0)
+})
+
+test_that("[.file_interface cleans up %in% tempfiles", {
+  finterface <- local_file_interface()
+  before <- list.files(tempdir(), full.names = TRUE)
+  result <- finterface[char %in% c("a", "b", "c")]
+  after <- list.files(tempdir(), full.names = TRUE)
+  new_files <- setdiff(after, before)
+  expect_length(new_files, 0)
+})
+
+test_that("[.file_interface preserves tempfiles when return_only_cmd = TRUE", {
+  finterface <- local_file_interface()
+  cmd <- finterface[char %in% c("a", "b"), return_only_cmd = TRUE]
+  additional_files <- attr(cmd, "additional_files")
+  expect_true(length(additional_files) > 0)
+  expect_true(all(file.exists(additional_files)))
+  unlink(additional_files)
+})

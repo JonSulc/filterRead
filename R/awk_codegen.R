@@ -144,6 +144,7 @@ compile_awk_cmds <- function(
   )
 
   # Write to temp file for long scripts, or use inline
+  temp_awk_file <- NULL
   if (return_only_cmd) {
     awk_code <- sprintf("'%s'", awk_script)
   } else {
@@ -158,7 +159,9 @@ compile_awk_cmds <- function(
     fcondition_awk_dt,
     use_command_line_fs
   )
-  paste("awk", awk_code, awk_file_args)
+  cmd <- paste("awk", awk_code, awk_file_args)
+  attr(cmd, "additional_files") <- temp_awk_file
+  cmd
 }
 
 # =============================================================================

@@ -396,6 +396,11 @@ head.file_interface <- function(
     return(command_line)
   }
 
+  additional_files <- attr(command_line, "additional_files")
+  if (length(additional_files) > 0) {
+    on.exit(unlink(additional_files), add = TRUE)
+  }
+
   data.table::fread(
     cmd = paste("bash -c", shQuote(command_line)),
     ...,

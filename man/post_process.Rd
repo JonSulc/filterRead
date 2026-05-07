@@ -11,7 +11,7 @@ post_process(x, finterface)
 object.}
 
 \item{finterface}{The associated file_interface. Defaults to the one
-stored in the filter_condition's `context` attribute.}
+stored in the object's `context` attribute.}
 }
 \value{
 The same kind of object, post-processed in place. Atomic and

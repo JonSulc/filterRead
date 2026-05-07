@@ -21,7 +21,7 @@ input - it represents the same set of genomic positions.
 }
 \examples{
 \dontrun{
-gregions <- new_genomic_regions(chr = c(1, 2, 3, 4, 5), build = "b38")
+gregions <- new_genomic_regions(chr = 1:20, build = "b38")
 compact(gregions)
 }
 }
