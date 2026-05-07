@@ -866,7 +866,7 @@ test_that("%in% parsing works", {
         "      print \\$0\n",
         "    \\}\n",
         "  \\}\n",
-        "\\}' [^[:space:]]+/file\\1 data\\.csv"
+        "\\}' '[^']+/file\\1' 'data\\.csv'"
       ),
       new_filter_condition(
         rlang::quo(char %in% letters[1:5]),

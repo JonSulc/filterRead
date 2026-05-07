@@ -17,7 +17,7 @@ test_that("build_read_only_awk_script with no prefixes or nlines", {
 }
 {
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
   expect_equal(
     build_read_only_awk_script(finterface, skip_header = TRUE),
@@ -29,7 +29,7 @@ test_that("build_read_only_awk_script with no prefixes or nlines", {
 !header_skipped { header_skipped = 1; next }
 {
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -50,7 +50,7 @@ test_that("build_read_only_awk_script with comment prefix only", {
 /^##/ { next }
 {
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
   expect_equal(
     build_read_only_awk_script(finterface, skip_header = TRUE),
@@ -63,7 +63,7 @@ test_that("build_read_only_awk_script with comment prefix only", {
 !header_skipped { header_skipped = 1; next }
 {
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -84,7 +84,7 @@ test_that("build_read_only_awk_script with trim prefix only", {
 {
   gsub(/^#/, \"\", $0)
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -106,7 +106,7 @@ test_that("build_read_only_awk_script with both prefixes", {
 {
   gsub(/^#/, \"\", $0)
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -128,7 +128,7 @@ test_that("build_read_only_awk_script with nlines only", {
 }
 {
   if (++output_lines <= max_lines) print $0; else exit
-}' test.txt"
+}' 'test.txt'"
   )
   expect_equal(
     build_read_only_awk_script(finterface, nlines = 100),
@@ -142,7 +142,7 @@ test_that("build_read_only_awk_script with nlines only", {
 !header_skipped { header_skipped = 1; next }
 {
   if (++output_lines <= max_lines) print $0; else exit
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -166,7 +166,7 @@ test_that("build_read_only_awk_script with prefixes and nlines", {
 {
   gsub(/^#/, \"\", $0)
   if (++output_lines <= max_lines) print $0; else exit
-}' test.txt"
+}' 'test.txt'"
   )
   expect_equal(
     build_read_only_awk_script(finterface, nlines = 100, skip_header = TRUE),
@@ -182,7 +182,7 @@ test_that("build_read_only_awk_script with prefixes and nlines", {
 {
   gsub(/^#/, \"\", $0)
   if (++output_lines <= max_lines) print $0; else exit
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -202,7 +202,7 @@ test_that("build_read_only_awk_script handles different separators", {
 }
 {
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -224,7 +224,7 @@ test_that("build_read_only_awk_script with complex patterns", {
 {
   gsub(/^\\/\\//, \"\", $0)
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })
 

@@ -56,7 +56,7 @@ get_tabix_query <- function(
 ) {
   sprintf(
     "tabix %s %s",
-    ref_filename,
+    shQuote(ref_filename, type = "sh"),
     unique(summary_stats[, .(chr, pos)])[
       ,
       sprintf("%s:%s-%s", substring(chr, 4), pos, pos) |>

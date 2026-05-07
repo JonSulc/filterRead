@@ -52,7 +52,7 @@ test_that("get_tabix_query generates correct query format", {
 
   expect_equal(
     get_tabix_query(summary_stats, "/path/to/ref.vcf.gz"),
-    "tabix /path/to/ref.vcf.gz 1:12345-12345 2:67890-67890"
+    "tabix '/path/to/ref.vcf.gz' 1:12345-12345 2:67890-67890"
   )
 })
 

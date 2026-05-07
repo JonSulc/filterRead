@@ -652,6 +652,31 @@ test_that("head(finterface, 0) returns an empty data.table with full schema", {
   )
 })
 
+test_that("[.file_interface handles filenames with spaces", {
+  base_dir <- file.path(tempdir(), "dir with space")
+  dir.create(base_dir, showWarnings = FALSE)
+  withr::defer(unlink(base_dir, recursive = TRUE))
+  filename <- file.path(base_dir, "data.csv")
+  dt <- dummy_dt()
+  data.table::fwrite(dt, filename)
+  finterface <- new_file_interface(filename)
+  expect_equal(
+    nrow(finterface[num < 3]),
+    nrow(dt[num < 3])
+  )
+})
+
+test_that("head.file_interface handles filenames with spaces", {
+  base_dir <- file.path(tempdir(), "dir with space")
+  dir.create(base_dir, showWarnings = FALSE)
+  withr::defer(unlink(base_dir, recursive = TRUE))
+  filename <- file.path(base_dir, "data.csv")
+  dt <- dummy_dt()
+  data.table::fwrite(dt, filename)
+  finterface <- new_file_interface(filename)
+  expect_equal(nrow(head(finterface, 2)), 2)
+})
+
 test_that("[.file_interface short-circuits unsatisfiable conditions", {
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
   # The short-circuit must skip awk entirely. Mocking fcondition_to_awk

@@ -179,9 +179,9 @@ get_file_separator <- function(
 detect_prefix_from_first_line <- function(finterface, skip_prefix = NULL) {
   # Get file reading command based on compression
   if (finterface$gzipped) {
-    file_cmd <- sprintf("zcat %s", finterface$filename)
+    file_cmd <- sprintf("zcat %s", shQuote(finterface$filename, type = "sh"))
   } else {
-    file_cmd <- sprintf("cat %s", finterface$filename)
+    file_cmd <- sprintf("cat %s", shQuote(finterface$filename, type = "sh"))
   }
 
   # Build command to get the first line

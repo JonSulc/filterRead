@@ -469,7 +469,7 @@ get_tabix_process_substitution <- function(
   )
   sprintf(
     "<(tabix %s %s)",
-    dbsnp_filename,
+    shQuote(dbsnp_filename, type = "sh"),
     paste(regions, collapse = " ")
   )
 }

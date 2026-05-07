@@ -18,7 +18,7 @@ test_that("compile_awk_cmds: simple file interface with only_read", {
 }
 {
   if (++output_lines <= max_lines) print $0; else exit
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -53,7 +53,7 @@ test_that("compile_awk_cmds: complex case with nlines and prefixes", {
 {
   gsub(/^%/, \"\", $0)
   if (++output_lines <= max_lines) print $0; else exit
-}' data.csv"
+}' 'data.csv'"
   )
 })
 
@@ -75,7 +75,7 @@ test_that("compile_awk_cmds: case with empty nlines", {
 {
   gsub(/^%/, \"\", $0)
   print $0
-}' data.csv"
+}' 'data.csv'"
   )
 })
 

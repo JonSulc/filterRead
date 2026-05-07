@@ -11,7 +11,7 @@ test_that("awk_load_file_cmd: simple case, only_read=TRUE, no processing", {
   )
   # With skip_header=FALSE, returns simple cat command
   result <- awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE)
-  expect_equal(result, "cat test.txt")
+  expect_equal(result, "cat 'test.txt'")
 
   # Default skip_header=TRUE returns awk command with header skip
   result_skip <- awk_load_file_cmd(finterface, only_read = TRUE)
@@ -38,7 +38,7 @@ test_that("awk_load_file_cmd: gzipped, only_read=TRUE, no processing", {
   )
   # With skip_header=FALSE, returns simple zcat command
   result <- awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE)
-  expect_equal(result, "zcat test.txt.gz")
+  expect_equal(result, "zcat 'test.txt.gz'")
 
   # Default skip_header=TRUE returns awk command with header skip
   result_skip <- awk_load_file_cmd(finterface, only_read = TRUE)
@@ -73,7 +73,7 @@ test_that("awk_load_file_cmd: comment prefix, only_read=TRUE", {
 /^##/ { next }
 {
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -106,7 +106,7 @@ test_that("awk_load_file_cmd: trim prefix, only_read=TRUE", {
 {
   gsub(/^#/, \"\", $0)
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -128,7 +128,7 @@ test_that("awk_load_file_cmd: both prefixes, only_read=TRUE", {
 {
   gsub(/^#/, \"\", $0)
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -150,7 +150,7 @@ test_that("awk_load_file_cmd: gzipped with both prefixes, only_read=TRUE", {
 {
   gsub(/^#/, \"\", $0)
   print $0
-}' <(zcat test.txt.gz)"
+}' <(zcat 'test.txt.gz')"
   )
 })
 
@@ -174,7 +174,7 @@ test_that("awk_load_file_cmd: nlines only, only_read=TRUE", {
 }
 {
   if (++output_lines <= max_lines) print $0; else exit
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -212,7 +212,7 @@ test_that("awk_load_file_cmd: prefixes with nlines, only_read=TRUE", {
 {
   gsub(/^#/, \"\", $0)
   if (++output_lines <= max_lines) print $0; else exit
-}' test.txt"
+}' 'test.txt'"
   )
 })
 
@@ -238,7 +238,7 @@ test_that("awk_load_file_cmd: gzipped with prefixes and nlines, only_read=TRUE",
 {
   gsub(/^%/, \"\", $0)
   if (++output_lines <= max_lines) print $0; else exit
-}' <(zcat test.txt.gz)"
+}' <(zcat 'test.txt.gz')"
   )
 })
 
@@ -256,11 +256,11 @@ test_that("awk_load_file_cmd: complex patterns", {
   FS = \"|\"
   OFS = \"|\"
 }
-/\\*\\*/ { next }
+/\\\\*\\\\*/ { next }
 {
-  gsub(/\\*/, \"\", $0)
+  gsub(/\\\\*/, \"\", $0)
   print $0
-}' complex.txt"
+}' 'complex.txt'"
   )
 })
 
@@ -272,7 +272,7 @@ test_that("awk_load_file_cmd: special characters in filename", {
     trim_prefix = NULL
   )
   result <- awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE)
-  expect_equal(result, "zcat file with spaces.txt.gz")
+  expect_equal(result, "zcat 'file with spaces.txt.gz'")
 })
 
 test_that("awk_load_file_cmd: edge case with empty patterns", {
@@ -293,6 +293,6 @@ test_that("awk_load_file_cmd: edge case with empty patterns", {
 {
   gsub(//, \"\", $0)
   print $0
-}' test.txt"
+}' 'test.txt'"
   )
 })

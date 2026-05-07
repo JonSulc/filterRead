@@ -2,12 +2,24 @@
 
 test_that("build_file_read_cmd works with non-gzipped files", {
   result <- build_file_read_cmd(list(filename = "test.txt", gzipped = FALSE))
-  expect_equal(result, "cat test.txt")
+  expect_equal(result, "cat 'test.txt'")
 })
 
 test_that("build_file_read_cmd works with gzipped files", {
   result <- build_file_read_cmd(list(filename = "test.txt.gz", gzipped = TRUE))
-  expect_equal(result, "zcat test.txt.gz")
+  expect_equal(result, "zcat 'test.txt.gz'")
+})
+
+test_that("build_file_read_cmd quotes paths with shell-special chars", {
+  result <- build_file_read_cmd(list(filename = "with space.txt", gzipped = FALSE))
+  expect_equal(result, "cat 'with space.txt'")
+  # shQuote wraps in double quotes when input contains a single quote;
+  # $, \ and ` get backslash-escaped inside.
+  result_q <- build_file_read_cmd(list(filename = "weird'name.txt", gzipped = FALSE))
+  expect_equal(result_q, "cat \"weird'name.txt\"")
+  # $ alone (no single quote) stays in single-quoted form, so no expansion.
+  result_d <- build_file_read_cmd(list(filename = "weird$name.txt", gzipped = FALSE))
+  expect_equal(result_d, "cat 'weird$name.txt'")
 })
 
 test_that("build_comment_filter_pattern returns NULL for NULL input", {
@@ -22,7 +34,7 @@ test_that("build_comment_filter_pattern creates correct pattern", {
 
 test_that("build_comment_filter_pattern handles special characters", {
   result <- build_comment_filter_pattern("\\*\\*")
-  expect_equal(result, "/\\*\\*/ { next }")
+  expect_equal(result, "/\\\\*\\\\*/ { next }")
 })
 
 test_that("build_comment_filter_pattern escapes forward slashes", {
@@ -52,7 +64,7 @@ test_that("build_trim_prefix_code creates correct gsub command", {
 
 test_that("build_trim_prefix_code handles special regex characters", {
   result <- build_trim_prefix_code("\\*")
-  expect_equal(result, 'gsub(/\\*/, "", $0)')
+  expect_equal(result, 'gsub(/\\\\*/, "", $0)')
 })
 
 test_that("build_trim_prefix_code escapes forward slashes", {
@@ -68,7 +80,7 @@ test_that("build_trim_prefix_code escapes brackets", {
 test_that("build_trim_prefix_code handles complex patterns", {
   expect_equal(
     build_trim_prefix_code("^\\/\\/"),
-    'gsub(/^\\\\/\\\\//, "", $0)'
+    'gsub(/^\\\\\\/\\\\\\//, "", $0)'
   )
 })
 
@@ -165,7 +177,7 @@ test_that("escape_awk_regex escapes forward slashes", {
 
 test_that("escape_awk_regex escapes backslashes", {
   result <- escape_awk_regex("^\\")
-  expect_equal(result, "^\\")
+  expect_equal(result, "^\\\\")
 })
 
 test_that("escape_awk_regex escapes square brackets", {
@@ -195,10 +207,22 @@ test_that("escape_awk_regex escapes pipe character", {
 
 test_that("escape_awk_regex handles multiple special characters", {
   result <- escape_awk_regex("^[/\\]+?{test}")
-  expect_equal(result, "^\\[\\/\\\\]\\+\\?\\{test\\}")
+  expect_equal(result, "^\\[\\/\\\\\\]\\+\\?\\{test\\}")
 })
 
 test_that("escape_awk_regex preserves anchors and wildcards", {
   result <- escape_awk_regex("^test.*$")
   expect_equal(result, "^test.*$")
+})
+
+test_that("escape_awk_regex escapes literal backslashes", {
+  expect_equal(escape_awk_regex("a\\b"), "a\\\\b")
+  expect_equal(escape_awk_regex("\\"), "\\\\")
+})
+
+test_that("escape_awk_string escapes backslashes and double quotes", {
+  expect_equal(escape_awk_string("plain"), "plain")
+  expect_equal(escape_awk_string('a"b'), 'a\\"b')
+  expect_equal(escape_awk_string("a\\b"), "a\\\\b")
+  expect_equal(escape_awk_string('a"b\\c"d'), 'a\\"b\\\\c\\"d')
 })

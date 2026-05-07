@@ -52,7 +52,7 @@ build_awk_file_args <- function(
       )
     },
     # Additional temp files (%in% value arrays)
-    fcondition_awk_dt$additional_files,
+    shQuote(fcondition_awk_dt$additional_files, type = "sh"),
     # Reset FS to file's separator before reading main file
     if (use_command_line_fs) {
       sprintf("FS=\"%s\"", finterface$sep)
@@ -150,7 +150,7 @@ compile_awk_cmds <- function(
   } else {
     temp_awk_file <- tempfile(fileext = ".awk")
     writeLines(paste0(awk_script, "\n"), temp_awk_file)
-    awk_code <- sprintf("-f %s", temp_awk_file)
+    awk_code <- sprintf("-f %s", shQuote(temp_awk_file, type = "sh"))
   }
 
   # Build file arguments and assemble final command
@@ -383,7 +383,8 @@ wrap_full_code_block <- function(
 #' Escape special regex characters for awk patterns
 #'
 #' Escapes characters that have special meaning in awk regex patterns:
-#' /, [, ], (, ), \{, \}, +, ?, |
+#' /, [, ], (, ), \{, \}, +, ?, |. For escaping a value embedded inside an
+#' awk string literal (between `"..."`) use [escape_awk_string()] instead.
 #'
 #' @param pattern Character string to escape
 #' @return Escaped pattern safe for use in awk regex, or NULL if input is NULL
@@ -392,8 +393,7 @@ escape_awk_regex <- function(pattern) {
   if (is.null(pattern)) {
     return(NULL)
   }
-  # Characters that need escaping for awk regex: / [ ] ( ) { } + ? |
-  chars_to_escape <- c("/", "[", "]", "(", ")", "{", "}", "+", "?", "|")
+  chars_to_escape <- c("\\", "/", "[", "]", "(", ")", "{", "}", "+", "?", "|")
   for (char in chars_to_escape) {
     pattern <- gsub(char, paste0("\\", char), pattern, fixed = TRUE)
   }
@@ -407,9 +407,9 @@ escape_awk_regex <- function(pattern) {
 #' @keywords internal
 build_file_read_cmd <- function(finterface) {
   if (finterface$gzipped) {
-    sprintf("zcat %s", finterface$filename)
+    sprintf("zcat %s", shQuote(finterface$filename, type = "sh"))
   } else {
-    sprintf("cat %s", finterface$filename)
+    sprintf("cat %s", shQuote(finterface$filename, type = "sh"))
   }
 }
 
@@ -580,9 +580,9 @@ build_read_only_awk_script <- function(
 #' @keywords internal
 wrap_filename <- function(finterface) {
   if (!finterface$gzipped) {
-    return(finterface$filename)
+    return(shQuote(finterface$filename, type = "sh"))
   }
-  sprintf("<(zcat %s)", finterface$filename)
+  sprintf("<(zcat %s)", shQuote(finterface$filename, type = "sh"))
 }
 
 # =============================================================================

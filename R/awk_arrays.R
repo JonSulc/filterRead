@@ -100,6 +100,20 @@ awk_combine_split_for_output <- function(
 # These functions support the R %in% operator by writing values to a temp file
 # and generating awk code that loads them into an associative array.
 
+#' Escape a string for inclusion as an awk string literal
+#'
+#' Escapes backslashes and double quotes so the value can be safely embedded
+#' between awk's `"..."` delimiters. For escaping a value used as a regex
+#' pattern (between `/.../`) use [escape_awk_regex()] instead.
+#'
+#' @param x Character vector to escape
+#' @return Escaped character vector
+#' @keywords internal
+escape_awk_string <- function(x) {
+  x <- gsub("\\", "\\\\", x, fixed = TRUE)
+  gsub("\"", "\\\"", x, fixed = TRUE)
+}
+
 #' Generate awk code to load values from file into associative array
 #'
 #' For `%in%` operations, writes R values to a temp file and generates awk code
@@ -127,7 +141,7 @@ setup_variable_array <- function(
   # Write values to temp file (one per line)
   writeLines(as.character(values), filename)
   # Generate awk code: when reading this file, store each line in array
-  sprintf("if (FILENAME == \"%s\")", filename) |>
+  sprintf("if (FILENAME == \"%s\")", escape_awk_string(filename)) |>
     paste(as_block(sprintf("%s[$0] = 1\nnext", variable_handle)))
 }
 

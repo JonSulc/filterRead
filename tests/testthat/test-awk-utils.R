@@ -46,12 +46,19 @@ test_that("awk_combine_split_for_output combines array elements", {
   )
 })
 
-test_that("wrap_filename returns filename for non-gzipped", {
+test_that("wrap_filename returns shell-quoted filename for non-gzipped", {
   fi <- list(filename = "test.txt", gzipped = FALSE)
-  expect_equal(wrap_filename(fi), "test.txt")
+  expect_equal(wrap_filename(fi), "'test.txt'")
 })
 
 test_that("wrap_filename uses process substitution for gzipped", {
   fi <- list(filename = "test.txt.gz", gzipped = TRUE)
-  expect_equal(wrap_filename(fi), "<(zcat test.txt.gz)")
+  expect_equal(wrap_filename(fi), "<(zcat 'test.txt.gz')")
+})
+
+test_that("wrap_filename quotes paths with spaces", {
+  fi <- list(filename = "with space.txt", gzipped = FALSE)
+  expect_equal(wrap_filename(fi), "'with space.txt'")
+  fi_gz <- list(filename = "with space.txt.gz", gzipped = TRUE)
+  expect_equal(wrap_filename(fi_gz), "<(zcat 'with space.txt.gz')")
 })

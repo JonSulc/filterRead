@@ -41,15 +41,15 @@ test_that("tabix process substitution works", {
 
   expect_equal(
     get_tabix_process_substitution(1, 123, 234, "dbsnp_file.vcf.gz"),
-    "<(tabix dbsnp_file.vcf.gz 1:123-234)"
+    "<(tabix 'dbsnp_file.vcf.gz' 1:123-234)"
   )
   expect_equal(
     get_tabix_process_substitution(1, c(123, 456), c(234, 567), "dbsnp_file.vcf.gz"),
-    "<(tabix dbsnp_file.vcf.gz 1:123-234 1:456-567)"
+    "<(tabix 'dbsnp_file.vcf.gz' 1:123-234 1:456-567)"
   )
   expect_equal(
     get_tabix_process_substitution(1:2, c(123, 456), c(234, 567), "dbsnp_file.vcf.gz"),
-    "<(tabix dbsnp_file.vcf.gz 1:123-234 2:456-567)"
+    "<(tabix 'dbsnp_file.vcf.gz' 1:123-234 2:456-567)"
   )
 })
 
@@ -87,7 +87,7 @@ test_that("File reading works", {
       }
     }
   }
-}' FS=\"\\t\" <(tabix /home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz 1:123-12345) FS=\",\" data.csv"
+}' FS=\"\\t\" <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 1:123-12345) FS=\",\" 'data.csv'"
   )
 })
 
@@ -235,7 +235,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
       }
     }
   }
-}' FS=\"\\t\" <(tabix /home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz 1:124-233) <(tabix /home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz 2:22-41) FS=\",\" data.csv"
+}' FS=\"\\t\" <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 1:124-233) <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 2:22-41) FS=\",\" 'data.csv'"
   )
 })
 
