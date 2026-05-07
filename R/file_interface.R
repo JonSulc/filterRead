@@ -299,6 +299,13 @@ head.file_interface <- function(
   return_only_cmd = FALSE,
   ...
 ) {
+  # nlines = 0 cannot be served via awk: empty fread input warns and
+  # returns NULL. column_info does not record column types, so read one
+  # row to let fread infer them, then drop it.
+  if (nlines == 0 && !return_only_cmd) {
+    return(head(x, 1L, ...)[0])
+  }
+
   # When column_info does not exist, head() is called for data.table::fread()
   # to parse column names, in which case we need to return one additional row
   # (the header), otherwise the header is skipped
@@ -386,6 +393,18 @@ head.file_interface <- function(
     rlang::enquo(conditions),
     finterface = finterface
   )
+
+  # Short-circuit unsatisfiable conditions: an empty included
+  # genomic_regions cannot match any row regardless of non-genomic
+  # constraints, so skip awk entirely.
+  gregions <- genomic_regions(fcondition)
+  if (!return_only_cmd
+    && !is.null(gregions)
+    && nrow(gregions) == 0
+    && is_included(gregions)) {
+    return(head(finterface, 0))
+  }
+
   command_line <- fcondition_to_awk(
     fcondition,
     nlines = nlines,

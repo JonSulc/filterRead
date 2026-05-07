@@ -109,6 +109,13 @@ eval_genomic_regions_from_fc <- function(
   if (is.null(gregions) || needs_rsid_matching(finterface)) {
     return()
   }
+  # Empty regions are a degenerate case:
+  # - Included with 0 rows = match nothing (awk false constant "0")
+  # - Excluded with 0 rows = no constraint to apply (drop the condition)
+  if (nrow(gregions) == 0) {
+    if (is_included(gregions)) return("0")
+    return()
+  }
   # Convert each row to an awk condition, combine with ||
   gregions_fcs <- gregions[
     ,
@@ -119,16 +126,19 @@ eval_genomic_regions_from_fc <- function(
     by = .I # Could be improved if vectorized
   ][, -"I"] |>
     unlist()
-  if (!is.null(gregions_fcs)) {
-    gregions_fcs <- gregions_fcs |>
-      paste(collapse = " || ")
+  if (is.null(gregions_fcs)) {
+    return()
   }
+  gregions_fcs <- paste(gregions_fcs, collapse = " || ")
   # Wrap multiple regions in parentheses for correct precedence
   if (1 < nrow(gregions)) {
-    sprintf("(%s)", gregions_fcs)
-  } else {
-    gregions_fcs
+    gregions_fcs <- sprintf("(%s)", gregions_fcs)
   }
+  # Excluded regions invert the match: keep rows that fall outside them
+  if (!is_included(gregions)) {
+    gregions_fcs <- sprintf("!(%s)", gregions_fcs)
+  }
+  gregions_fcs
 }
 
 #' Convert single genomic region to awk condition

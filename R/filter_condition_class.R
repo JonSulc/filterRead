@@ -659,7 +659,7 @@ post_process.genomic_regions <- function(
     chr := drop_chr_prefix(chr) |>
       check_post_processing("chr", finterface)
   ][] |>
-    as_genomic_regions()
+    as_genomic_regions(include = is_included(x))
 }
 
 #' @export

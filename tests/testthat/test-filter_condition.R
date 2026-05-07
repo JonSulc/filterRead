@@ -1096,15 +1096,50 @@ test_that("Not-equal operator combines with other conditions", {
 })
 
 test_that("Not-equal operator works with genomic conditions", {
-  # The fcondition correctly produces a genomic_regions marked `Excluded`
-  # (is_included = FALSE), but awk codegen in eval_genomic_regions_from_fc
-  # does not honor that flag and emits the same awk condition as the
-  # included case - so `chr != 1` returns the same rows as `chr == 1`.
-  # See also the `# TODO Handle 'include'` at compute_intersection in
-  # R/genomic_regions_ops.R.
-  skip("awk codegen does not honor genomic_regions is_included flag")
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
-  result <- finterface[chr != 1]
+  expect_setequal(
+    unique(finterface[chr != 1]$chr),
+    paste0("chr", 2:22)
+  )
+})
+
+test_that("Excluded genomic_regions combine correctly with non-genomic", {
+  finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
+  result <- finterface[chr != 1 & 5000 < pos]
   expect_false("chr1" %in% unique(result$chr))
-  expect_true(all(result$chr %in% paste0("chr", 2:22)))
+  expect_true(all(5000 < result$pos))
+})
+
+test_that("Two excluded chromosome conditions combine via AND", {
+  finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
+  expect_setequal(
+    unique(finterface[chr != 1 & chr != 2]$chr),
+    paste0("chr", 3:22)
+  )
+})
+
+test_that("Mixing positive and negative chromosome conditions", {
+  finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
+  # Contradiction: dropping either side leaves a non-empty result.
+  expect_equal(nrow(finterface[chr == 1 & chr != 1]), 0)
+  # Tautology: dropping either side removes a chromosome from the set.
+  expect_setequal(
+    unique(finterface[chr == 1 | chr != 1]$chr),
+    paste0("chr", 1:22)
+  )
+})
+
+test_that("eval_genomic_regions_from_fc honors Excluded flag", {
+  finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
+  fc_excluded <- new_filter_condition(rlang::quo(chr != 1), finterface)
+  fc_included <- new_filter_condition(rlang::quo(chr == 1), finterface)
+  cond_excluded <- eval_fcondition_w_gregions(
+    fc_excluded,
+    finterface = finterface
+  )$condition
+  cond_included <- eval_fcondition_w_gregions(
+    fc_included,
+    finterface = finterface
+  )$condition
+  expect_equal(cond_excluded, sprintf("!(%s)", cond_included))
 })

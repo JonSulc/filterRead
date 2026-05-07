@@ -639,3 +639,29 @@ test_that("[.file_interface preserves tempfiles when return_only_cmd = TRUE", {
   expect_true(all(file.exists(additional_files)))
   unlink(additional_files)
 })
+
+test_that("head(finterface, 0) returns an empty data.table with full schema", {
+  finterface <- local_file_interface()
+  result <- head(finterface, 0)
+  expect_s3_class(result, "data.table")
+  expect_equal(nrow(result), 0)
+  expect_equal(names(result), names(head(finterface, 1)))
+  expect_equal(
+    sapply(result, class),
+    sapply(head(finterface, 1), class)
+  )
+})
+
+test_that("[.file_interface short-circuits unsatisfiable conditions", {
+  finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
+  # The short-circuit must skip awk entirely. Mocking fcondition_to_awk
+  # to error confirms it is never reached.
+  testthat::local_mocked_bindings(
+    fcondition_to_awk = function(...) {
+      stop("fcondition_to_awk should not be called for unsatisfiable conditions")
+    }
+  )
+  result <- finterface[chr == 1 & chr != 1]
+  expect_equal(nrow(result), 0)
+  expect_equal(names(result), names(head(finterface, 1)))
+})
