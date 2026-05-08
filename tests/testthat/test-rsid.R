@@ -265,6 +265,19 @@ test_that("OR of two RSID-indexed regions returns the union of both", {
   ))
 })
 
+test_that("OR of two RSID-indexed regions with no non-genomic conditions", {
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
+  result <- finterface[
+    (chr == 1 & 123 <= pos & pos <= 50000) |
+      (chr == 1 & 60000 <= pos & pos <= 99999)
+  ]
+  expect_true(0 < nrow(result))
+  expect_true(all(
+    (123 <= result$pos & result$pos <= 50000) |
+      (60000 <= result$pos & result$pos <= 99999)
+  ))
+})
+
 test_that("Genomic ranges are correctly identified", {
   finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_equal(

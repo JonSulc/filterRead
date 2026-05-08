@@ -51,10 +51,17 @@ eval_fcondition_w_gregions <- function(
       column_indices = column_indices
     )
   )
-  # Combine all conditions with &&
-  if (!is.null(awk_conditions$condition)) {
-    awk_conditions$condition <- awk_conditions$condition |>
-      paste(collapse = " && ")
+  # Drop empty fragments before combining: paste on a list containing
+  # zero-length elements emits the literal "character(0)" because R coerces
+  # each empty vector to a string. Empty conditions reduce to NULL so
+  # downstream codegen can omit the wrapping `if (...)`.
+  awk_conditions$condition <- unlist(awk_conditions$condition)
+  if (length(awk_conditions$condition) == 0) {
+    awk_conditions$condition <- NULL
+  } else {
+    awk_conditions$condition <- paste(awk_conditions$condition,
+      collapse = " && "
+    )
   }
   awk_conditions
 }
