@@ -37,4 +37,21 @@ A genomic_regions object (data.table with class attribute)
 Constructor for genomic_regions. Validates inputs, formats chromosome
 names, and optionally merges contiguous regions.
 }
+\section{NA semantics}{
+
+Each row's `chr`, `start`, and `end` may be NA, meaning "unconstrained on
+this axis":
+- `chr = NA` matches every chromosome.
+- `start = NA` extends to the beginning of the chromosome.
+- `end = NA` extends to the end of the chromosome.
+
+Set operations propagate this:
+- Intersection (`&`) of two regions where exactly one has `chr = NA`
+  expands the NA side to the explicit chromosomes from the other
+  (see [expand_na_chr()]); when both have `chr = NA` the NA is kept and
+  the position constraints are intersected directly.
+- Union (`+`/`|`) preserves NA chromosomes and rbinds the rows;
+  contiguous/overlapping ranges are merged when `merge_contiguous`.
+}
+
 \keyword{internal}
