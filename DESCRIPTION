@@ -39,7 +39,6 @@ Collate:
     'filter_condition_class.R'
     'filter_condition_ops.R'
     'filter_condition_utils.R'
-    'genomic_positions.R'
     'genomic_regions_class.R'
     'genomic_regions_convert.R'
     'genomic_regions_ops.R'
