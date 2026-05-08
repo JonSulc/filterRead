@@ -575,20 +575,18 @@ fcondition_and_rsid_to_awk <- function(
     ,
     .(
       index = index,
-      # awk code block loads RSID -> chr:pos mapping from dbSNP tabix output
-      # NR == FNR detects when reading the first file (dbSNP output)
-      awk_code_block = paste0(
-        "if (NR == FNR%s) {\n",
-        "  rsid%i[$3]=$1 OFS $2\n",  # rsid array: RSID -> "chr\tpos"
-        "}"
-      ) |>
-        sprintf(
-          ifelse(index == 0,
-            "",
-            paste0(" + ", index)
-          ),
-          index
+      # awk code block loads RSID -> chr:pos mapping from dbSNP tabix output.
+      # file_idx tracks which input file is currently being read (it is
+      # incremented at FNR == 1 by wrap_full_code_block).
+      awk_code_block = sprintf(
+        paste0(
+          "if (file_idx == %i) {\n",
+          "  rsid%i[$3]=$1 OFS $2\n",
+          "}"
         ),
+        index + 1L,
+        index
+      ),
       # Prefix to prepend chr/pos to output lines
       print_prefix = sprintf(
         "rsid%i[%s] OFS ",

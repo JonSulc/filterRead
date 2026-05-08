@@ -76,7 +76,8 @@ test_that("File reading works", {
   header_skipped = 0
 }
 {
-  if (NR == FNR) {
+  if (FNR == 1) file_idx++
+  if (file_idx == 1) {
     rsid0[$3]=$1 OFS $2
   }
   else {
@@ -216,10 +217,11 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
   header_skipped = 0
 }
 {
-  if (NR == FNR) {
+  if (FNR == 1) file_idx++
+  if (file_idx == 1) {
     rsid0[$3]=$1 OFS $2
   }
-  else if (NR == FNR + 1) {
+  else if (file_idx == 2) {
     rsid1[$3]=$1 OFS $2
   }
   else {
@@ -237,6 +239,30 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
   }
 }' FS=\"\\t\" <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 1:124-233) <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 2:22-41) FS=\",\" 'data.csv'"
   )
+})
+
+test_that("OR of two RSID-indexed regions returns the union of both", {
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
+  # Disjuncts carry their own non-genomic predicate so they survive as two
+  # separate tabix process substitutions rather than collapsing into a single
+  # genomic_regions with two ranges.
+  region_a <- finterface[chr == 1 & 123 <= pos & pos <= 50000 & pval <= 1]
+  region_b <- finterface[chr == 1 & 60000 <= pos & pos <= 99999 & pval <= 1]
+  union <- finterface[
+    (chr == 1 & 123 <= pos & pos <= 50000 & pval <= 1) |
+      (chr == 1 & 60000 <= pos & pos <= 99999 & pval <= 1)
+  ]
+  expect_true(0 < nrow(region_a))
+  expect_true(0 < nrow(region_b))
+  expect_equal(intersect(region_a$rsid, region_b$rsid), character(0))
+  expect_setequal(
+    union$rsid,
+    c(region_a$rsid, region_b$rsid)
+  )
+  expect_true(all(
+    (123 <= union$pos & union$pos <= 50000) |
+      (60000 <= union$pos & union$pos <= 99999)
+  ))
 })
 
 test_that("Genomic ranges are correctly identified", {

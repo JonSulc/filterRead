@@ -244,14 +244,15 @@ test_that("wrap_full_code_block works with complex data structures", {
   expect_equal(
     wrap_full_code_block(
       fcondition_awk_dt = data.table::data.table(
-        awk_code_block = "if (NR == FNR) {tabix stuff}",
+        awk_code_block = "if (file_idx == 1) {tabix stuff}",
         variable_arrays = "if (FILENAME == dont_read_42.txt) {oops}"
       ),
       main_file_code = "if (something) {print $0}"
     ),
     paste0(
       "{\n",
-      "  if (NR == FNR) {tabix stuff}\n",
+      "  if (FNR == 1) file_idx++\n",
+      "  if (file_idx == 1) {tabix stuff}\n",
       "  else if (FILENAME == dont_read_42.txt) {oops}\n",
       "  else if (something) {print $0}\n",
       "}"
@@ -262,7 +263,7 @@ test_that("wrap_full_code_block works with complex data structures", {
   expect_equal(
     wrap_full_code_block(
       fcondition_awk_dt = data.table::data.table(
-        awk_code_block = "if (NR == FNR) {tabix stuff}",
+        awk_code_block = "if (file_idx == 1) {tabix stuff}",
         variable_arrays = list(c(
           "if (FILENAME == dont_read_42.txt) {oops}",
           "if (FILENAME == read_this.txt) {good}"
@@ -272,7 +273,8 @@ test_that("wrap_full_code_block works with complex data structures", {
     ),
     paste0(
       "{\n",
-      "  if (NR == FNR) {tabix stuff}\n",
+      "  if (FNR == 1) file_idx++\n",
+      "  if (file_idx == 1) {tabix stuff}\n",
       "  else if (FILENAME == dont_read_42.txt) {oops}\n",
       "  else if (FILENAME == read_this.txt) {good}\n",
       "  else if (something) {print $0}\n",
@@ -285,8 +287,8 @@ test_that("wrap_full_code_block works with complex data structures", {
     wrap_full_code_block(
       fcondition_awk_dt = data.table::data.table(
         awk_code_block = c(
-          "if (NR == FNR) {rsid0[$3]=$1 OFS $2}",
-          "if (NR == FNR + 1) {rsid1[$3]=$1 OFS $2}"
+          "if (file_idx == 1) {rsid0[$3]=$1 OFS $2}",
+          "if (file_idx == 2) {rsid1[$3]=$1 OFS $2}"
         ),
         variable_arrays = list(
           "if (FILENAME == file1.txt) {var1[$0] = 1; next}",
@@ -297,8 +299,9 @@ test_that("wrap_full_code_block works with complex data structures", {
     ),
     paste0(
       "{\n",
-      "  if (NR == FNR) {rsid0[$3]=$1 OFS $2}\n",
-      "  else if (NR == FNR + 1) {rsid1[$3]=$1 OFS $2}\n",
+      "  if (FNR == 1) file_idx++\n",
+      "  if (file_idx == 1) {rsid0[$3]=$1 OFS $2}\n",
+      "  else if (file_idx == 2) {rsid1[$3]=$1 OFS $2}\n",
       "  else if (FILENAME == file1.txt) {var1[$0] = 1; next}\n",
       "  else if (FILENAME == file2.txt) {var2[$0] = 1; next}\n",
       "  else if ($3 in rsid0 || $3 in rsid1) {print rsid0[$3] OFS $0}\n",

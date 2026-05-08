@@ -364,13 +364,20 @@ wrap_full_code_block <- function(
 ) {
   # Order: RSID blocks -> variable arrays -> main file code
   # Connected with "else" for multi-file processing
-  c(
+  dispatch <- c(
     fcondition_awk_dt$awk_code_block,
     unlist(fcondition_awk_dt$variable_arrays),
     main_file_code
   ) |>
-    paste(collapse = "\nelse ") |>
-    as_block()
+    paste(collapse = "\nelse ")
+
+  # RSID blocks dispatch on file_idx, which is incremented at each file's
+  # first line so the right rsid array is populated regardless of how many
+  # records each tabix process substitution returns.
+  if (0 < length(fcondition_awk_dt$awk_code_block)) {
+    dispatch <- paste0("if (FNR == 1) file_idx++\n", dispatch)
+  }
+  as_block(dispatch)
 }
 
 
