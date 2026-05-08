@@ -345,15 +345,15 @@ make_single_chain_dt <- function(
 #' Parses chain files following the UCSC format specification.
 #' See https://genome.ucsc.edu/goldenPath/help/chain.html
 #'
-#' Chain files map FROM query TO target. For hg19ToHg38.over.chain:
-#' - query = hg19 (source, what we lift FROM)
-#' - target = hg38 (destination, what we lift TO)
+#' Chain files map FROM target TO query. For hg19ToHg38.over.chain:
+#' - target = hg19 (source, what we lift FROM)
+#' - query = hg38 (destination, what we lift TO)
 #'
 #' Output structure matches what the liftover function expects:
-#' - chr: source chromosome (qName)
+#' - chr: source chromosome (tName)
 #' - start/end: ranges in source coordinates
-#' - new_chr: target chromosome (tName)
-#' - offset: source_pos - target_pos (so target = source - offset)
+#' - new_chr: destination chromosome (qName)
+#' - offset: source_pos - destination_pos (so destination = source - offset)
 #' - rev: TRUE if query strand is reversed
 #'
 #' @param path Path to the chain file
