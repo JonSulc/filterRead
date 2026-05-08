@@ -1,9 +1,17 @@
 # Sentinel values for NA replacement during foverlaps operations
 # These must stay in sync between replace_na_with_sentinel and
-# replace_sentinel_with_na
+# replace_sentinel_with_na.
+#
+# END_SENTINEL is calibrated so that `END_SENTINEL + 1L` equals
+# .Machine$integer.max exactly — no overflow. Every arithmetic site that
+# adds to `end` uses `+ 1L`:
+# - data.table::foverlaps adds 1 internally to convert to half-open ranges
+# - merge_contiguous_regions: shift(end + 1L, fill = 0)
+# - expand_genomic_regions (negation): start = end + 1L
+# Any future code that adds more than 1 to `end` must lower this sentinel
+# accordingly, otherwise it will silently overflow to NA on sentinel rows.
 CHR_SENTINEL <- ""
 START_SENTINEL <- 0L
-# Need to subtract 1 because foverlaps adds 1
 END_SENTINEL <- .Machine$integer.max - 1L
 
 #' Liftover genomic_regions to a different genome build
