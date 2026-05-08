@@ -126,7 +126,6 @@ setup_chain_files <- function(
         to_build <- normalize_build(pair$to)
         chain_dt <- parse_chain_file(dest_file) |>
           data.table::setattr("from", from_build) |>
-          data.table::setattr("build", to_build) |>
           data.table::setattr("to", to_build)
         rds_file <- file.path(
           path,
@@ -200,7 +199,7 @@ clear_chain_cache <- function(path = get_chain_path(warn = FALSE)) {
 #' @param auto_download Logical, whether to automatically download chain
 #'   files if not found. Default TRUE.
 #' @return data.table with chain alignment data, keyed by (chr, start, end).
-#'   Has attributes: from, to, build (same as to).
+#'   Has attributes `from` and `to` recording the source and target builds.
 #' @keywords internal
 get_chain_dt <- function(
   from,
@@ -250,7 +249,6 @@ get_chain_dt <- function(
   chain_dt <- chain_file |>
     parse_chain_file() |>
     data.table::setattr("from", from) |>
-    data.table::setattr("build", to) |>
     data.table::setattr("to", to)
 
   tryCatch(

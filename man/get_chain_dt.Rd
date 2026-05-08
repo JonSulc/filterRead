@@ -16,7 +16,7 @@ files if not found. Default TRUE.}
 }
 \value{
 data.table with chain alignment data, keyed by (chr, start, end).
-  Has attributes: from, to, build (same as to).
+  Has attributes `from` and `to` recording the source and target builds.
 }
 \description{
 Loads or creates a chain data.table for coordinate conversion between
