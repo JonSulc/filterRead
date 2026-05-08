@@ -448,3 +448,184 @@ test_that("liftover() accepts build synonyms as target", {
   expect_equal(build(result_hg38), "b38")
   expect_equal(build(result_grch38), "b38")
 })
+
+# Tests for chain file primitives ----
+
+local_chain_path <- function(.local_envir = parent.frame()) {
+  tmp <- withr::local_tempdir(.local_envir = .local_envir)
+  prev <- get_chain_path(warn = FALSE)
+  set_chain_path(tmp)
+  withr::defer(set_chain_path(prev), envir = .local_envir)
+  tmp
+}
+
+test_that("clear_chain_cache removes cached RDS files", {
+  tmp <- withr::local_tempdir()
+  rds1 <- file.path(tmp, "b37_to_b38.chain_dt.rds")
+  rds2 <- file.path(tmp, "b38_to_b37.chain_dt.rds")
+  saveRDS(list(), rds1)
+  saveRDS(list(), rds2)
+
+  expect_message(
+    removed <- clear_chain_cache(tmp),
+    "Removed 2 cached"
+  )
+  expect_setequal(removed, c(rds1, rds2))
+  expect_false(file.exists(rds1))
+  expect_false(file.exists(rds2))
+})
+
+test_that("clear_chain_cache reports when no files exist", {
+  tmp <- withr::local_tempdir()
+  expect_message(
+    clear_chain_cache(tmp),
+    "No cached chain files"
+  )
+})
+
+test_that("parse_chain_file errors on a file with no chain headers", {
+  tmp <- withr::local_tempfile()
+  writeLines(c("not", "a", "chain", "file"), tmp)
+  expect_error(
+    parse_chain_file(tmp),
+    "No chain headers"
+  )
+})
+
+test_that("parse_chain_file produces a keyed data.table with expected columns", {
+  tmp <- withr::local_tempfile()
+  writeLines(
+    c(
+      "chain 1000 chr1 500 + 100 200 chr20 600 + 40 140 1",
+      "30\t10\t5",
+      "50\t5\t10",
+      "5"
+    ),
+    tmp
+  )
+  result <- parse_chain_file(tmp)
+
+  expect_s3_class(result, "data.table")
+  expect_setequal(
+    names(result),
+    c("chr", "start", "end", "width", "new_chr", "offset", "rev")
+  )
+  expect_equal(data.table::key(result), c("chr", "start", "end"))
+  expect_equal(nrow(result), 3)
+  expect_true(all(result$chr == "chr1"))
+  expect_true(all(result$new_chr == "chr20"))
+  expect_true(all(!result$rev))
+})
+
+test_that("parse_chain_file handles multiple chains separated by blank line", {
+  tmp <- withr::local_tempfile()
+  writeLines(
+    c(
+      "chain 1000 chr1 500 + 100 200 chr20 600 + 40 140 1",
+      "30\t10\t5",
+      "50\t5\t10",
+      "5",
+      "",
+      "chain 800 chr2 400 + 50 150 chr21 500 + 30 130 2",
+      "40\t5\t10",
+      "50\t5\t5",
+      "5"
+    ),
+    tmp
+  )
+  result <- parse_chain_file(tmp)
+  expect_equal(nrow(result), 6)
+  expect_setequal(unique(result$chr), c("chr1", "chr2"))
+  expect_setequal(unique(result$new_chr), c("chr20", "chr21"))
+})
+
+test_that("make_single_chain_dt handles a single-block chain on forward strand", {
+  result <- make_single_chain_dt(
+    chain_header = list(
+      tName = "chr1", tStart = "100",
+      qName = "chr20", qStart = "40",
+      qSize = "600", qStrand = "+"
+    ),
+    blocks = list(c("90"))
+  )
+  expect_equal(nrow(result), 1)
+  expect_equal(result$width, 90L)
+  expect_equal(result$start, 101L)
+  expect_equal(result$end, 190L)
+  expect_equal(result$offset, 60L)
+  expect_equal(result$chr, "chr1")
+  expect_equal(result$new_chr, "chr20")
+  expect_false(result$rev)
+})
+
+test_that("make_single_chain_dt handles a single-block chain on reverse strand", {
+  result <- make_single_chain_dt(
+    chain_header = list(
+      tName = "chr1", tStart = "100",
+      qName = "chr20", qStart = "200",
+      qSize = "1000", qStrand = "-"
+    ),
+    blocks = list(c("90"))
+  )
+  expect_equal(nrow(result), 1)
+  expect_equal(result$start, 101L)
+  expect_equal(result$end, 190L)
+  expect_true(result$rev)
+})
+
+test_that("get_chain_dt errors when auto_download=FALSE and no chain file", {
+  local_chain_path()
+  expect_error(
+    get_chain_dt(from = "b37", to = "b38", auto_download = FALSE),
+    "Chain file not found"
+  )
+})
+
+test_that("get_chain_dt parses chain file and writes RDS cache", {
+  tmp <- local_chain_path()
+  chain_file <- file.path(tmp, "hg19ToHg38.over.chain")
+  writeLines(
+    c(
+      "chain 1000 chr1 500 + 100 200 chr20 600 + 40 140 1",
+      "30\t10\t5",
+      "50\t5\t10",
+      "5"
+    ),
+    chain_file
+  )
+
+  rds_file <- file.path(tmp, "b37_to_b38.chain_dt.rds")
+  expect_false(file.exists(rds_file))
+
+  chain_dt <- get_chain_dt(from = "b37", to = "b38", auto_download = FALSE)
+
+  expect_s3_class(chain_dt, "data.table")
+  expect_equal(nrow(chain_dt), 3)
+  expect_equal(attr(chain_dt, "from"), "b37")
+  expect_equal(attr(chain_dt, "to"), "b38")
+  expect_true(file.exists(rds_file))
+})
+
+test_that("get_chain_dt regenerates from chain file when RDS cache is invalid", {
+  tmp <- local_chain_path()
+  chain_file <- file.path(tmp, "hg19ToHg38.over.chain")
+  writeLines(
+    c(
+      "chain 1000 chr1 500 + 100 200 chr20 600 + 40 140 1",
+      "30\t10\t5",
+      "50\t5\t10",
+      "5"
+    ),
+    chain_file
+  )
+
+  rds_file <- file.path(tmp, "b37_to_b38.chain_dt.rds")
+  saveRDS(list(invalid = TRUE), rds_file)
+
+  expect_warning(
+    chain_dt <- get_chain_dt(from = "b37", to = "b38", auto_download = FALSE),
+    "Invalid chain cache"
+  )
+  expect_s3_class(chain_dt, "data.table")
+  expect_true(file.exists(rds_file))
+})
