@@ -76,13 +76,17 @@ genomic_regions <- finterface[
 
 ### Standard column names
 
+- **variant_id**: Variant identifier
 - **chr**: Chromosome
 - **pos**: Position
 - **ref**: Reference (non-effect) allele
 - **alt**: Alternate (effect) allele
+- **allele1**, **allele2**: Unordered allele pair, resolved into
+  `ref`/`alt` via dbSNP matching
+- **rsid**: dbSNP reference SNP id
 - **effect**: Estimated effect of the allele
-- **pval**: P-value
 - **effect_se**: Standard error of the effect
+- **pval**: P-value
 - **log10p**: Negative log10 p-value
 - **zscore**: Z-score
 - **odds_ratio**: Odds ratio
