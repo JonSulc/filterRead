@@ -45,35 +45,6 @@ as_genomic_regions.data.frame <- function(
   merge_contiguous_regions(gregions)
 }
 #' @export
-as_genomic_regions.and_filter_condition <- function(
-  x,
-  build = NULL,
-  ...
-) {
-  build <- build %||% build(x)
-  as_genomic_regions(x[[2]], build = build, ...) &
-    as_genomic_regions(x[[3]], build = build, ...)
-}
-#' @export
-as_genomic_regions.or_filter_condition <- function(
-  x,
-  build = NULL,
-  ...
-) {
-  build <- build %||% build(x)
-  as_genomic_regions(x[[2]], build = build, ...) |
-    as_genomic_regions(x[[3]], build = build, ...)
-}
-#' @export
-as_genomic_regions.lp_filter_condition <- function(
-  x,
-  build = NULL,
-  ...
-) {
-  build <- build %||% build(x)
-  as_genomic_regions(x[[2]], build = build, ...)
-}
-#' @export
 as_genomic_regions.eq_filter_condition <- function(
   x,
   build = NULL,
