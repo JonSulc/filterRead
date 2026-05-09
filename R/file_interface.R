@@ -341,7 +341,8 @@ head.file_interface <- function(
       }
     },
     ...
-  )
+  ) |>
+    complete_missing_stats()
 }
 
 #' Subset a file interface with filtering conditions
@@ -431,7 +432,8 @@ head.file_interface <- function(
         column_names(finterface)
       }
     }
-  )
+  ) |>
+    complete_missing_stats()
 }
 
 #' Load a full file from the file_interface

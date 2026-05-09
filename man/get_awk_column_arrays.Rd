@@ -26,5 +26,7 @@ executed before and after condition evaluation.
 \details{
 Encoded columns are split into arrays before condition checks (if needed
 for filtering), then recombined after. Prefixes are added after filtering.
+Allele columns (ref/alt/allele1/allele2) are upper-cased before the if so
+filter conditions and the printed output both see canonical values.
 }
 \keyword{internal}

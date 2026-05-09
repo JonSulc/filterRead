@@ -177,7 +177,10 @@ test_that("Parsing allele1, allele2, alt works", {
   expect_equal(
     head(finterface) |>
       colnames(),
-    c("chr", "pos", "ref", "alt", "effect", "pval", "allele1", "allele2")
+    c(
+      "chr", "pos", "ref", "alt", "effect", "pval",
+      "allele1", "allele2", "effect_se"
+    )
   )
 })
 

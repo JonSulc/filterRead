@@ -491,7 +491,7 @@ test_that("Encoded columns are correctly parsed and loaded", {
   )
   expect_equal(
     names(head(finterface_enc)),
-    c("build", "chr", "pos", "ref", "alt", "effect", "pval")
+    c("build", "chr", "pos", "ref", "alt", "effect", "pval", "effect_se")
   )
   expect_true(
     finterface_enc[chr == 1][, all(chr == 1)]

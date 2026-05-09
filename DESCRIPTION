@@ -32,6 +32,7 @@ Collate:
     'awk_filter_eval.R'
     'column_metadata.R'
     'column_names.R'
+    'complete_missing_stats.R'
     'config.R'
     'file_interface.R'
     'filterRead-package.R'

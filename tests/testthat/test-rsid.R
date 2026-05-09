@@ -60,11 +60,11 @@ test_that("File reading works", {
   expect_true(all(finterface[pval < .05]$pval < .05))
   expect_equal(
     colnames(finterface[pval < .05]),
-    c("rsid", "ref", "alt", "effect", "pval")
+    c("rsid", "ref", "alt", "effect", "pval", "effect_se")
   )
   expect_equal(
     colnames(finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 123456]),
-    c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")
+    c("chr", "pos", "rsid", "ref", "alt", "effect", "pval", "effect_se")
   )
   expect_equal(
     finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345,
