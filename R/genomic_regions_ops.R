@@ -119,41 +119,11 @@ liftover.genomic_regions <- function(
     chr := paste0("chr", chr)
   ][]
 
-  data.table::foverlaps(
+  lift_chain_overlap(
     # foverlaps doesn't handle NAs
-    replace_na_with_sentinel(
-      expanded_x,
-      start_sentinel = 1L
-    ),
-    chain_dt,
-    nomatch = 0
-  )[
-    ,
-    .(
-      chr = new_chr,
-      start = start,
-      end = end,
-      offset = offset,
-      rev = rev,
-      i.start = pmax(start, i.start),
-      i.end = pmin(end, i.end)
-    )
-  ][
-    ,
-    .(
-      chr = chr,
-      start = data.table::fifelse(
-        rev,
-        end - offset - (i.end - start),
-        i.start - offset
-      ),
-      end = data.table::fifelse(
-        rev,
-        end - offset - (i.start - start),
-        i.end - offset
-      )
-    )
-  ] |>
+    replace_na_with_sentinel(expanded_x, start_sentinel = 1L),
+    chain_dt
+  ) |>
     as_genomic_regions(build = build(target))
 }
 
