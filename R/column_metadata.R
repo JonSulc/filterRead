@@ -14,6 +14,12 @@
 #   - delimiter: delimiter for encoded columns
 #   - etc.
 
+# Allele columns whose values are normalized to upper-case during read.
+# Some upstream summary-statistics files store alleles as lowercase, and
+# downstream allele harmonization compares case-sensitively, so the
+# values are uppered the moment they leave the awk pipeline.
+ALLELE_STANDARD_NAMES <- c("ref", "alt", "allele1", "allele2")
+
 #' Build complete column info for a file interface
 #'
 #' Main orchestrator that detects and configures all column metadata by

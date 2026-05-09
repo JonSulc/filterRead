@@ -377,7 +377,7 @@ test_that("Encoded columns are correctly detected", {
   expect_equal(
     get_awk_column_arrays(finterface_enc),
     list(
-      before_if = character(0),
+      before_if = c("$2 = toupper($2)", "$3 = toupper($3)"),
       after_if = c(
         "split($1, encoded1, \"-c|:|-\")",
         "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"
@@ -460,7 +460,7 @@ test_that("Encoded columns are correctly detected", {
   expect_equal(
     get_awk_column_arrays(finterface_enc),
     list(
-      before_if = character(0),
+      before_if = c("$2 = toupper($2)", "$3 = toupper($3)"),
       after_if = c(
         "split($1, encoded1, \"-c|:|-\")",
         "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"

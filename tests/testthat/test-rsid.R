@@ -82,6 +82,8 @@ test_that("File reading works", {
   }
   else {
     if (FNR == 1) next
+      $2 = toupper($2)
+      $3 = toupper($3)
       if ($1 in rsid0) {
       if ($5 < 0.05) {
         print rsid0[$1] OFS $0
@@ -226,6 +228,8 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
   }
   else {
     if (FNR == 1) next
+      $2 = toupper($2)
+      $3 = toupper($3)
       if ($1 in rsid0) {
       if (($5 < 0.05)) {
         print rsid0[$1] OFS $0

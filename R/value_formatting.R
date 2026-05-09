@@ -36,9 +36,15 @@ check_post_processing <- function(
   # Get column metadata for post-processing
   post_processing_to_check <- finterface$column_info[
     column_name,
-    .(quoted, prefix),
+    .(standard_name, quoted, prefix),
     on = "name"
   ]
+
+  # Allele columns are upper-cased in awk so RHS literals must match.
+  if (isTRUE(post_processing_to_check$standard_name %in%
+    ALLELE_STANDARD_NAMES) && is.character(values)) {
+    values <- toupper(values)
+  }
 
   # Apply prefix first, then quote handling
   values |>

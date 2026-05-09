@@ -74,9 +74,11 @@ test_that("awk script correctly generates chr prefix assignment", {
     sep = "\t",
     column_info = data.table::data.table(
       name = c("chr", "pos"),
+      standard_name = c("chr", "pos"),
       bash_index = c("$1", "$2"),
       add_prefix = c("chr", NA_character_),
-      encoded_names = list(NULL, NULL)
+      encoded_names = list(NULL, NULL),
+      encoding_column = NA_character_
     )
   )
 

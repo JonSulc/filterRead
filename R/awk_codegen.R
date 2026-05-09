@@ -639,6 +639,8 @@ awk_load_file_cmd <- function(
 #'
 #' Encoded columns are split into arrays before condition checks (if needed
 #' for filtering), then recombined after. Prefixes are added after filtering.
+#' Allele columns (ref/alt/allele1/allele2) are upper-cased before the if so
+#' filter conditions and the printed output both see canonical values.
 #'
 #' @param finterface File interface with column_info containing encoding info
 #' @param fcondition Optional filter condition (to determine which encoded
@@ -656,34 +658,45 @@ get_awk_column_arrays <- function(
   if (!"column_info" %in% names(finterface)) {
     return()
   }
+  column_info <- finterface$column_info
 
-  # Check if any columns need encoding or prefix handling
-  if (all(sapply(finterface$column_info$encoded_names, is.null))) {
-    # No encoded columns - only handle prefix addition if needed
-    if (all(sapply(finterface$column_info$add_prefix, is.na))) {
-      return()
-    }
-    # Generate prefix addition code: $1 = "chr"$1
+  has_encoded <- !all(sapply(column_info$encoded_names, is.null))
+  has_prefix <- !all(sapply(column_info$add_prefix, is.na))
+  has_alleles <- any(
+    column_info$standard_name %in% ALLELE_STANDARD_NAMES,
+    na.rm = TRUE
+  )
+
+  if (!has_encoded && !has_prefix && !has_alleles) {
+    return()
+  }
+
+  prefix_code <- column_info[
+    !is.na(add_prefix),
+    sprintf('%s = "%s"%s', bash_index, add_prefix, bash_index)
+  ]
+
+  if (!has_encoded) {
+    # No encoded columns: native allele toupper goes before the if so
+    # conditions see canonical values; prefix addition stays in after_if.
     return(
       list(
-        after_if = finterface$column_info[
-          !is.na(add_prefix),
-          sprintf('%s = "%s"%s', bash_index, add_prefix, bash_index)
-        ]
+        before_if = build_allele_uppercase_code(column_info)$before_if,
+        after_if = prefix_code
       )
     )
   }
 
   # Determine which encoded columns are used in conditions
   # These need to be split BEFORE condition evaluation
-  required_for_if <- finterface$column_info[
+  required_for_if <- column_info[
     get_used_columns(fcondition, finterface),
     encoding_column |> na.omit() |> c(),
     on = "name"
   ]
 
   # Split columns needed for condition evaluation BEFORE the if
-  before_if <- finterface$column_info[!sapply(encoded_names, is.null)][
+  before_if_splits <- column_info[!sapply(encoded_names, is.null)][
     required_for_if,
     {
       if (.N != 0) {
@@ -701,8 +714,7 @@ get_awk_column_arrays <- function(
   ]$V1
 
   # Split remaining encoded columns AFTER condition passes (for output)
-  # Also add column recoding and prefix addition
-  after_if <- finterface$column_info[!sapply(encoded_names, is.null)][
+  after_if_splits <- column_info[!sapply(encoded_names, is.null)][
     !required_for_if,
     {
       if (.N != 0) {
@@ -713,27 +725,79 @@ get_awk_column_arrays <- function(
     },
     by = bash_index,
     on = "name"
-  ]$V1 |>
-    c(
-      # Recode columns (rearrange array elements)
-      finterface$column_info[
-        !sapply(encoded_names, is.null),
-        {
-          if (.N != 0) {
-            recode_columns
-          }
-        },
-        by = bash_index
-      ]$V1,
-      # Add prefixes (e.g., "chr" to chromosome column)
-      finterface$column_info[
-        !is.na(add_prefix),
-        sprintf('%s = "%s"%s', bash_index, add_prefix, bash_index)
-      ]
-    )
+  ]$V1
+
+  recode_code <- column_info[
+    !sapply(encoded_names, is.null),
+    {
+      if (.N != 0) {
+        recode_columns
+      }
+    },
+    by = bash_index
+  ]$V1
+
+  allele_uppercase <- build_allele_uppercase_code(
+    column_info,
+    required_for_if = required_for_if
+  )
 
   list(
-    before_if = before_if,
-    after_if = after_if
+    before_if = c(before_if_splits, allele_uppercase$before_if),
+    after_if = c(
+      after_if_splits,
+      allele_uppercase$after_if,
+      recode_code,
+      prefix_code
+    )
+  )
+}
+
+#' Build awk uppercase transforms for allele columns
+#'
+#' For each row in `column_info` whose `standard_name` is `ref`, `alt`,
+#' `allele1`, or `allele2`, emit `<ref> = toupper(<ref>)` so values leave
+#' awk in canonical upper-case. Native `$N` columns are uppercased before
+#' the if-block (so filter conditions also see canonical values). Encoded
+#' virtual columns (bash_index `encodedX[i]`) are uppercased in whichever
+#' block already contains their split. The synthesized `nea` ref derived
+#' from `allele1`/`allele2` matching is skipped because its source columns
+#' are uppercased upstream.
+#'
+#' @param column_info column_info data.table
+#' @param required_for_if Character vector of encoded `input_name`s whose
+#'   split lives in the before_if block. NULL when there are no encoded
+#'   columns at all.
+#' @return List with `before_if` and `after_if` character vectors.
+#' @keywords internal
+build_allele_uppercase_code <- function(
+  column_info,
+  required_for_if = NULL
+) {
+  is_native <- grepl("^\\$[0-9]+$", column_info$bash_index)
+  is_encoded_virtual <- grepl(
+    "^encoded[0-9]+\\[[0-9]+\\]$",
+    column_info$bash_index
+  )
+  is_allele <- column_info$standard_name %in% ALLELE_STANDARD_NAMES
+
+  native <- column_info[
+    is_allele & is_native,
+    sprintf("%s = toupper(%s)", bash_index, bash_index)
+  ]
+
+  encoded_alleles <- column_info[is_allele & is_encoded_virtual]
+  in_before <- encoded_alleles[
+    encoding_column %in% required_for_if,
+    sprintf("%s = toupper(%s)", bash_index, bash_index)
+  ]
+  in_after <- encoded_alleles[
+    !encoding_column %in% required_for_if,
+    sprintf("%s = toupper(%s)", bash_index, bash_index)
+  ]
+
+  list(
+    before_if = c(native, in_before),
+    after_if = in_after
   )
 }
