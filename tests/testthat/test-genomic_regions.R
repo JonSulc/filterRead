@@ -772,6 +772,248 @@ test_that("as_genomic_regions.gt_filter_condition handles pos > value", {
   )
 })
 
+# Operand-swapped position comparisons (value <op> pos) ----
+
+test_that("as_genomic_regions.lt_filter_condition handles value < pos", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(1000 < pos),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(start = 1001, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.lte_filter_condition handles value <= pos", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(1000 <= pos),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(start = 1000, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.lte_filter_condition handles pos <= value", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(pos <= 1000),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(end = 1000, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.gt_filter_condition handles value > pos", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(1000 > pos),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(end = 999, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.gte_filter_condition handles pos >= value", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(pos >= 1000),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(start = 1000, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.gte_filter_condition handles value >= pos", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(1000 >= pos),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(end = 1000, build = "b38")
+  )
+})
+
+# Equality on position (operand-swapped) ----
+
+test_that("as_genomic_regions.eq_filter_condition handles value == pos", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(12345 == pos),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(start = 12345, end = 12345, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.eq_filter_condition handles value == chr", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(1 == chr),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 1, build = "b38")
+  )
+})
+
+# Chromosome ordering comparisons ----
+
+test_that("as_genomic_regions.lt_filter_condition handles chr < value", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(chr < 4),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 1:3, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.lt_filter_condition handles value < chr", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(20 < chr),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 21:22, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.lte_filter_condition handles chr <= value", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(chr <= 3),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 1:3, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.gt_filter_condition handles chr > value", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(chr > 19),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 20:22, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.gte_filter_condition handles chr >= value", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(chr >= 20),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 20:22, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.lte_filter_condition handles value <= chr", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(20 <= chr),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 20:22, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.gt_filter_condition handles value > chr", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(4 > chr),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 1:3, build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.gte_filter_condition handles value >= chr", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(3 >= chr),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    new_genomic_regions(chr = 1:3, build = "b38")
+  )
+})
+
+# Out-of-range chromosome falls back to full genome ----
+
+test_that("as_genomic_regions.lt_filter_condition falls back when chr value not in ordered_chr", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(chr < 100),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    full_genomic_regions(build = "b38")
+  )
+})
+
+test_that("as_genomic_regions.gt_filter_condition falls back when chr value not in ordered_chr", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(100 > chr),
+    finterface,
+    build = "b38"
+  )
+  expect_equal(
+    as_genomic_regions(fcondition),
+    full_genomic_regions(build = "b38")
+  )
+})
+
 # Tests for internal helper functions
 test_that("empty_genomic_regions creates valid empty regions", {
   empty <- empty_genomic_regions(build = "b38")
