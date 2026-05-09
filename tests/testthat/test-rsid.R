@@ -388,3 +388,77 @@ test_that("RSID-based position filtering uses the correct build reference", {
     data.table::data.table()
   )
 })
+
+# Tests for md5_matches ----
+
+local_md5_pair <- function(content = "hello\n",
+                           md5_filename = NULL,
+                           .local_envir = parent.frame()) {
+  tmp <- withr::local_tempdir(.local_envir = .local_envir)
+  file_path <- file.path(tmp, "data.bin")
+  writeBin(charToRaw(content), file_path)
+  md5_path <- file.path(
+    tmp,
+    md5_filename %||% paste0(basename(file_path), ".md5")
+  )
+  list(
+    file = file_path,
+    md5 = md5_path,
+    expected = unname(tools::md5sum(file_path))
+  )
+}
+
+test_that("md5_matches errors when the file does not exist", {
+  expect_error(
+    md5_matches(file.path(withr::local_tempdir(), "absent")),
+    "File does not exist"
+  )
+})
+
+test_that("md5_matches warns and returns FALSE when md5 file is missing", {
+  pair <- local_md5_pair()
+  expect_warning(
+    result <- md5_matches(pair$file, pair$md5),
+    "MD5 file does not exist"
+  )
+  expect_false(result)
+})
+
+test_that("md5_matches returns TRUE on a matching checksum", {
+  pair <- local_md5_pair()
+  writeLines(
+    sprintf("%s  %s", pair$expected, basename(pair$file)),
+    pair$md5
+  )
+  expect_message(
+    result <- md5_matches(pair$file, pair$md5),
+    "MD5 checksum verified"
+  )
+  expect_true(result)
+})
+
+test_that("md5_matches is case-insensitive on the expected hash", {
+  pair <- local_md5_pair()
+  writeLines(
+    sprintf("%s  %s", toupper(pair$expected), basename(pair$file)),
+    pair$md5
+  )
+  expect_message(
+    result <- md5_matches(pair$file, pair$md5),
+    "MD5 checksum verified"
+  )
+  expect_true(result)
+})
+
+test_that("md5_matches returns FALSE on a mismatched checksum", {
+  pair <- local_md5_pair()
+  writeLines(
+    sprintf("%s  %s", strrep("0", 32), basename(pair$file)),
+    pair$md5
+  )
+  expect_warning(
+    result <- md5_matches(pair$file, pair$md5),
+    "MD5 mismatch"
+  )
+  expect_false(result)
+})
