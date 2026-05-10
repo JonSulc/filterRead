@@ -34,6 +34,7 @@ Collate:
     'column_names.R'
     'complete_missing_stats.R'
     'config.R'
+    'estimate_effect_from_zscore.R'
     'file_interface.R'
     'filterRead-package.R'
     'filter_condition_conversion.R'
