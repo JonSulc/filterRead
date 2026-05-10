@@ -47,15 +47,23 @@ add_allele_matching_to_column_info <- function(
 
 #' Check if allele matching is needed
 #'
+#' Allele matching is needed when the file carries `allele1`, `allele2`,
+#' and `alt` but no source of `ref` — neither as a native column nor
+#' produced by an encoded column (e.g. SNPAlleles → ref + alt).
+#'
 #' @param column_info data.table with column metadata
 #'
-#' @return TRUE if file has allele1, allele2, alt but no ref
+#' @return TRUE if file has allele1, allele2, alt and no source of ref.
 #' @keywords internal
 needs_a1_a2_to_ref_matching <- function(
   column_info
 ) {
-  all(c("allele1", "allele2", "alt") %in% column_info$standard_name) &
-    !"ref" %in% column_info$standard_name
+  ref_sources <- c(
+    column_info$standard_name,
+    unlist(column_info$encoded_names)
+  )
+  all(c("allele1", "allele2", "alt") %in% column_info$standard_name) &&
+    !"ref" %in% ref_sources
 }
 
 #' Generate awk code for allele matching

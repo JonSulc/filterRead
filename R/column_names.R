@@ -192,6 +192,15 @@ summary_stats_encoded_columns <- list(
       encoded_names = list(c("chr", "pos")),
       delimiter = ":"
     )
+  ),
+  # MetaBrain
+  SNPAlleles = list(
+    list(
+      pattern       = "%s/%s",
+      regex         = "^([ACGTNacgtn]+)/([ACGTNacgtn]+)$",
+      encoded_names = list(c("ref", "alt")),
+      delimiter     = "/"
+    )
   )
 )
 summary_stats_standard_names_dt <- data.table::data.table(
