@@ -10,6 +10,7 @@
   from = build(x),
   drop_unlifted = TRUE,
   multi_match = c("first", "last", "all"),
+  retain_builds = FALSE,
   ...
 )
 }
@@ -35,6 +36,14 @@ per source row, `"last"` keeps the last, and `"all"` emits one
 row per match. Forwarded to [data.table::foverlaps]'s `mult`
 argument.}
 
+\item{retain_builds}{If TRUE, call [add_build_versioned_columns()]
+for both `from` and `target` so the result carries
+`chr_<from>`/`pos_<from>` (source-build snapshot) and
+`chr_<target>`/`pos_<target>` (target-build mirror). The same
+suffixed columns are inspected on entry, and if all are present
+their values are copied into the canonical `chr`/`pos` columns
+instead of re-running the chain lift.}
+
 \item{...}{Reserved for future arguments.}
 }
 \value{
@@ -51,5 +60,11 @@ for variant tables: `pos` for point variants, `start` and/or `end`
 for ranges. Whichever of those columns is present is updated in
 place; everything else (alleles, effects, p-values, ...) carries
 through unchanged. Source positions that overlap more than one
-chain block are resolved according to `multi_match`.
+chain block are resolved according to `multi_match`. If
+`retain_builds = TRUE`, both source-build and target-build
+suffixed copies of the standard coordinate columns are kept on the
+result so downstream merges across builds key on the same
+coordinate system; on a subsequent lift, those suffixed columns
+are reused instead of running a fresh chain conversion (avoiding
+round-trip drift).
 }

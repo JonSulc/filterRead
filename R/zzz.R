@@ -43,5 +43,6 @@ utils::globalVariables(c(
   "split_encoding_column",
   "standard_name",
   "start",
+  "variant_id",
   "width"
 ))

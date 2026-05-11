@@ -10,9 +10,11 @@ needs_a1_a2_to_ref_matching(column_info)
 \item{column_info}{data.table with column metadata}
 }
 \value{
-TRUE if file has allele1, allele2, alt but no ref
+TRUE if file has allele1, allele2, alt and no source of ref.
 }
 \description{
-Check if allele matching is needed
+Allele matching is needed when the file carries `allele1`, `allele2`,
+and `alt` but no source of `ref` — neither as a native column nor
+produced by an encoded column (e.g. SNPAlleles → ref + alt).
 }
 \keyword{internal}

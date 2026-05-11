@@ -477,7 +477,13 @@ lift_chain_overlap <- function(
 #' for ranges. Whichever of those columns is present is updated in
 #' place; everything else (alleles, effects, p-values, ...) carries
 #' through unchanged. Source positions that overlap more than one
-#' chain block are resolved according to `multi_match`.
+#' chain block are resolved according to `multi_match`. If
+#' `retain_builds = TRUE`, both source-build and target-build
+#' suffixed copies of the standard coordinate columns are kept on the
+#' result so downstream merges across builds key on the same
+#' coordinate system; on a subsequent lift, those suffixed columns
+#' are reused instead of running a fresh chain conversion (avoiding
+#' round-trip drift).
 #'
 #' @param x A data.table with `chr` plus one or more of `pos`, `start`,
 #'   `end` in the source build's coordinate system. The input is not
@@ -495,6 +501,13 @@ lift_chain_overlap <- function(
 #'   per source row, `"last"` keeps the last, and `"all"` emits one
 #'   row per match. Forwarded to [data.table::foverlaps]'s `mult`
 #'   argument.
+#' @param retain_builds If TRUE, call [add_build_versioned_columns()]
+#'   for both `from` and `target` so the result carries
+#'   `chr_<from>`/`pos_<from>` (source-build snapshot) and
+#'   `chr_<target>`/`pos_<target>` (target-build mirror). The same
+#'   suffixed columns are inspected on entry, and if all are present
+#'   their values are copied into the canonical `chr`/`pos` columns
+#'   instead of re-running the chain lift.
 #' @param ... Reserved for future arguments.
 #'
 #' @return A data.table with `chr` and the coordinate columns present
@@ -508,6 +521,7 @@ liftover.data.table <- function(
   from = build(x),
   drop_unlifted = TRUE,
   multi_match = c("first", "last", "all"),
+  retain_builds = FALSE,
   ...
 ) {
   if (is.null(from)) {
@@ -519,21 +533,45 @@ liftover.data.table <- function(
   from <- normalize_build(from, allow_null = FALSE)
   target <- normalize_build(target, allow_null = FALSE)
   multi_match <- match.arg(multi_match)
-  if (identical(from, target) || nrow(x) == 0) {
-    result <- data.table::copy(x)
-    build(result) <- target
-    return(result)
-  }
 
   coord_cols <- detect_coordinate_columns(x)
+
+  x_work <- data.table::copy(x)
+
+  # Source-build suffix columns must be added before the coordinate
+  # update, while the original values are still in chr/pos.
+  if (retain_builds) {
+    add_build_versioned_columns(x_work, build = from)
+  }
+
+  # Same-build short-circuit: the source-build suffix columns added
+  # above already double as the target-build mirror.
+  if (identical(from, target) || nrow(x_work) == 0) {
+    build(x_work) <- target
+    return(x_work)
+  }
+
+  # Round-trip cache: if all the target-build suffixed coordinate
+  # columns are already present, copy their values into the canonical
+  # columns instead of running a fresh chain lift. The presence of
+  # those suffixed columns also satisfies retain_builds for `target`,
+  # so no further add_build_versioned_columns call is needed here.
+  cache_cols <- paste0(c("chr", coord_cols$output), "_", target)
+  if (all(cache_cols %in% names(x_work))) {
+    for (col in c("chr", coord_cols$output)) {
+      x_work[, (col) := get(paste0(col, "_", target))]
+    }
+    build(x_work) <- target
+    return(x_work)
+  }
 
   chain_dt <- get_chain_dt(from, target)
 
   positions <- data.table::data.table(
-    I     = seq_len(nrow(x)),
-    chr   = format_chr(x$chr, prefix = "chr"),
-    start = x[[coord_cols$start]],
-    end   = x[[coord_cols$end]]
+    I     = seq_len(nrow(x_work)),
+    chr   = format_chr(x_work$chr, prefix = "chr"),
+    start = x_work[[coord_cols$start]],
+    end   = x_work[[coord_cols$end]]
   )[
     !is.na(chr) & !is.na(start) & !is.na(end)
   ]
@@ -541,9 +579,9 @@ liftover.data.table <- function(
 
   if (nrow(positions) == 0) {
     if (drop_unlifted) {
-      result <- data.table::copy(x[0])
+      result <- x_work[0]
     } else {
-      result <- data.table::copy(x)
+      result <- x_work
       na_assignment <- list(NA_character_)
       na_assignment <- c(
         na_assignment,
@@ -555,7 +593,8 @@ liftover.data.table <- function(
       ]
     }
     build(result) <- target
-    return(result)
+    if (!retain_builds) return(result)
+    return(add_build_versioned_columns(result, build = target))
   }
 
   lifted <- lift_chain_overlap(
@@ -566,14 +605,16 @@ liftover.data.table <- function(
   )
   data.table::setkey(lifted, I)
 
-  result <- data.table::copy(x[lifted$I])
+  result <- data.table::copy(x_work[lifted$I])
   result[, chr := lifted$chr]
   for (col in coord_cols$output) {
     lifted_col <- if (col == coord_cols$end) "end" else "start"
     result[, (col) := lifted[[lifted_col]]]
   }
   build(result) <- target
-  result
+
+  if (!retain_builds) return(result)
+  add_build_versioned_columns(result, build = target)
 }
 
 #' Determine which coordinate columns a data.table carries
