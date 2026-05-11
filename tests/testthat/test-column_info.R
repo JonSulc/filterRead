@@ -21,6 +21,7 @@ test_that("Base column_info works", {
       regex             = NA_character_,
       encoded_names     = list(),
       delimiter         = NA_character_,
+      class             = NA_character_,
       input_index       = 1:6,
       bash_index        = paste0("$", 1:6)
     )

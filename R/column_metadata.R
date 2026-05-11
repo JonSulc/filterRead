@@ -466,3 +466,31 @@ column_names <- function(
     data.table::fcoalesce(standard_name, input_name)
   ]
 }
+
+#' Pull fread `colClasses` overrides from column_info
+#'
+#' Returns a list keyed by R class, with each entry holding the
+#' positional indices of the output columns that should be read as
+#' that class (e.g. REGENIE `EXTRA` pinned to character). Uses
+#' positions because fread parses `colClasses` against the input
+#' stream's header, and awk strips the header before fread sees it.
+#' Returns NULL when no overrides apply.
+#'
+#' @param finterface File interface object.
+#' @return Named list of integer vectors, or NULL if no overrides
+#'   apply.
+#' @keywords internal
+column_class_overrides <- function(finterface) {
+  col_info <- finterface$column_info
+  if (is.null(col_info) || !"class" %in% names(col_info)) {
+    return(NULL)
+  }
+  output_cols <- col_info[sapply(encoded_names, is.null)]
+  if (!"class" %in% names(output_cols) ||
+    all(is.na(output_cols$class))) {
+    return(NULL)
+  }
+  output_cols[, idx := seq_len(.N)]
+  matches <- output_cols[!is.na(class), .(idx, class)]
+  split(matches$idx, matches$class)
+}

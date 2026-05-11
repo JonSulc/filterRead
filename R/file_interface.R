@@ -340,6 +340,7 @@ head.file_interface <- function(
         column_names(x)
       }
     },
+    colClasses = column_class_overrides(x),
     ...
   ) |>
     complete_missing_stats()
@@ -431,7 +432,8 @@ head.file_interface <- function(
       } else {
         column_names(finterface)
       }
-    }
+    },
+    colClasses = column_class_overrides(finterface)
   ) |>
     complete_missing_stats()
 }

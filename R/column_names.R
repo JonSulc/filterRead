@@ -231,10 +231,20 @@ summary_stats_rsid_dt <- data.table::data.table(
   regex         = "^(rs[0-9]+)$"
 )
 
+# Per-column type overrides for `fread`. REGENIE's optional `EXTRA`
+# column is NA on most rows, so data.table infers it as logical; that
+# breaks rbind across multiple REGENIE files. Pinning it as character
+# fixes the inference.
+summary_stats_column_classes_dt <- data.table::data.table(
+  input_name = "EXTRA",
+  class      = "character"
+)
+
 summary_stats_standard_names_dt <- list(
   summary_stats_standard_names_dt,
   summary_stats_encoded_columns_dt,
-  summary_stats_rsid_dt
+  summary_stats_rsid_dt,
+  summary_stats_column_classes_dt
 ) |>
   data.table::rbindlist(fill = TRUE, use.names = TRUE)
 
