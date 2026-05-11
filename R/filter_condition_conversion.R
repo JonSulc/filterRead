@@ -133,6 +133,43 @@ eq_filter_condition <- make_comparison_filter("==")
 #' @keywords internal
 neq_filter_condition <- make_comparison_filter("!=")
 
+#' Build awk regex-match condition for grepl
+#'
+#' Translates `grepl(pattern, column)` into `$N ~ /pattern/` for awk.
+#' The pattern must be a length-1 character string. Only `/` is
+#' escaped (it is the awk regex-literal delimiter); the rest of the
+#' pattern is passed through, so the caller writes awk-compatible
+#' POSIX regex syntax.
+#'
+#' @param pattern Length-1 character vector with the regex pattern.
+#' @param column_name Awk column reference (e.g. `"$3"`).
+#'
+#' @return List with `condition` element: `"$3 ~ /pattern/"`.
+#' @keywords internal
+grepl_filter_condition <- function(pattern, column_name) {
+  if (!is.character(pattern) || length(pattern) != 1) {
+    stop("`grepl` filter requires a single character pattern.")
+  }
+  escaped <- gsub("/", "\\/", pattern, fixed = TRUE)
+  list(
+    condition = sprintf("%s ~ /%s/", column_name, escaped)
+  )
+}
+
+#' Build awk regex-match condition for data.table's \%like\%
+#'
+#' Alias of [grepl_filter_condition()] with operand order flipped so
+#' the user can write `column %like% "pattern"` instead of
+#' `grepl("pattern", column)`.
+#'
+#' @param column_name Awk column reference (e.g. `"$3"`).
+#' @param pattern Length-1 character vector with the regex pattern.
+#' @return List with `condition` element: `"$3 ~ /pattern/"`.
+#' @keywords internal
+like_filter_condition <- function(column_name, pattern) {
+  grepl_filter_condition(pattern, column_name)
+}
+
 #' Build awk membership condition (for R \%in\% operator)
 #'
 #' Creates an awk condition that checks if a column value exists in a set

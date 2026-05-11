@@ -14,13 +14,45 @@ atomic_fc_operators <- list(
   "<=" = "lte_filter_condition",
   ">" = "gt_filter_condition",
   ">=" = "gte_filter_condition",
-  "%in%" = "in_filter_condition"
+  "%in%" = "in_filter_condition",
+  "grepl" = "grepl_filter_condition",
+  "%like%" = "like_filter_condition"
 )
 composite_fc_operators <- list(
   "&" = "and_filter_condition",
   "|" = "or_filter_condition",
   "(" = "lp_filter_condition"
 )
+
+# Filter conditions whose awk emit is a regex match (`~`). They behave
+# differently from comparison/membership atoms: they cannot be expressed
+# as a genomic_regions and always fall through to awk.
+regex_fc_names <- c("grepl_filter_condition", "like_filter_condition")
+
+#' Check whether a filter_condition expression is a regex match
+#'
+#' Returns TRUE iff the head of the expression is one of the regex
+#' filter conditions (`grepl_filter_condition`, `like_filter_condition`).
+#' Used to short-circuit genomic-region extraction so a regex on `chr`
+#' or `pos` falls through to awk instead of being treated as a tabix
+#' range. Currently only called on post-substitution quosures and raw
+#' calls; other inputs are a programmer error and raise.
+#'
+#' @param fcondition A filter_condition quosure or raw call.
+#' @return Logical scalar.
+#' @keywords internal
+is_regex_filter_condition <- function(fcondition) {
+  if (rlang::is_quosure(fcondition)) {
+    fcondition <- rlang::get_expr(fcondition)
+  }
+  if (!is.call(fcondition)) {
+    stop(
+      "`is_regex_filter_condition()` expects a quosure or call; got ",
+      class(fcondition)[1], "."
+    )
+  }
+  as.character(fcondition[[1]]) %in% regex_fc_names
+}
 
 #' Create an empty filter condition
 #'

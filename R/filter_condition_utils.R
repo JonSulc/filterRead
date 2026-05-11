@@ -148,6 +148,11 @@ has_chromosome_condition <- function(
     while (fcondition[[1]] == as.symbol("lp_filter_condition")) {
       fcondition <- fcondition[[2]]
     }
+    # grepl / %like% on chr cannot be enumerated into a tabix range, so
+    # they must fall through to awk as a non-genomic regex filter.
+    if (is_regex_filter_condition(fcondition)) {
+      return(FALSE)
+    }
     return(any(sapply(fcondition[-1], has_chromosome_condition) |> unlist()))
   }
   if (length(fcondition) == 0) {
@@ -172,6 +177,11 @@ has_position_condition <- function(
   if (rlang::is_quosure(fcondition)) {
     while (fcondition[[1]] == as.symbol("lp_filter_condition")) {
       fcondition <- fcondition[[2]]
+    }
+    # grepl / %like% on pos cannot be enumerated into a tabix range, so
+    # they must fall through to awk as a non-genomic regex filter.
+    if (is_regex_filter_condition(fcondition)) {
+      return(FALSE)
     }
     return(any(sapply(fcondition[-1], has_position_condition) |> unlist()))
   }
