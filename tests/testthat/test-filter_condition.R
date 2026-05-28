@@ -1143,3 +1143,39 @@ test_that("eval_genomic_regions_from_fc honors Excluded flag", {
   )$condition
   expect_equal(cond_excluded, sprintf("!(%s)", cond_included))
 })
+
+# Under library()/installed loading the internal *_filter_condition
+# constructors live in a sealed namespace, not on the user's search path, so
+# eval_fcondition must resolve them in filterRead's namespace rather than the
+# quosure's captured environment. Parenting the capture env at baseenv()
+# reproduces that condition under devtools::load_all() too, where everything
+# is otherwise reachable from the global environment.
+test_that("eval_fcondition resolves an atomic constructor in the namespace", {
+  finterface <- local_file_interface()
+  user_env <- new.env(parent = baseenv())
+  user_env$wanted <- c("a", "b")
+
+  test_in_fc(
+    rlang::new_quosure(quote(char %in% wanted), user_env),
+    finterface = finterface,
+    expected_condition = "($1 in var%s)",
+    file_contents = c("a", "b")
+  )
+})
+
+test_that("eval_fcondition resolves nested constructors in a composite", {
+  # The outer-quosure-only strip leaves nested quosures carrying the capture
+  # env, so composite conditions still fail to resolve their constructors
+  # there. This guards the whole tree, not just its head.
+  finterface <- local_file_interface()
+  user_env <- new.env(parent = baseenv())
+  user_env$wanted <- c("a", "b")
+  user_env$cutoff <- 3
+
+  test_in_fc(
+    rlang::new_quosure(quote(char %in% wanted & num <= cutoff), user_env),
+    finterface = finterface,
+    expected_condition = "($1 in var%s) && $2 <= 3",
+    file_contents = c("a", "b")
+  )
+})

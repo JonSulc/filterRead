@@ -86,10 +86,19 @@ eval_fcondition <- function(
   if (length(fcondition) == 0) {
     return()
   }
-  # Evaluate fcondition in environment where chr="$1", pos="$2", etc.
-  # post_process handles quote escaping and prefix handling
-  post_process(fcondition) |>
-    rlang::eval_tidy(data = column_indices)
+  # The atomic constructors (in_filter_condition, eq_filter_condition, ...)
+  # and the &/| combinators are unexported, so they only resolve in this
+  # package's namespace. quo_squash flattens the post-processed tree --
+  # including the nested quosures of composite conditions -- into a bare
+  # expression so eval_tidy honors `env` instead of each quosure's captured
+  # environment (which under library() cannot see the constructors). Column
+  # symbols still resolve through the `column_indices` data mask; all
+  # user-supplied values were reduced to literals during construction.
+  rlang::eval_tidy(
+    rlang::quo_squash(post_process(fcondition)),
+    data = column_indices,
+    env = asNamespace("filterRead")
+  )
 }
 
 #' Convert genomic_regions from filter_condition to awk
