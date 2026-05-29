@@ -143,7 +143,14 @@ get_file_separator <- function(
   dt_output <- head(finterface, nlines = 100L, verbose = TRUE) |>
     capture.output()
 
-  seps <- stringr::str_match(dt_output, "sep=([^ ]+)[ ]+with ([0-9]+) lines")
+  # The separator is reported either quoted (e.g. sep=',', or sep=' ' for a
+  # space, whose interior space must stay inside the capture) or as hex for
+  # tab (sep=0x9). Match a quoted value first, then any run of non-space
+  # characters.
+  seps <- stringr::str_match(
+    dt_output,
+    "sep=('[^']*'|[^ ]+)[ ]+with ([0-9]+) lines"
+  )
   seps <- seps[!is.na(seps[, 1L]), -1L, drop = FALSE]
   best_sep <- seps[
     which.max(as.numeric(seps[, 2L])),

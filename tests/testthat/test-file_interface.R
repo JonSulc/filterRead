@@ -303,6 +303,17 @@ test_that("sep is correctly detected in complicated files", {
   )
 })
 
+test_that("Space-separated files are read correctly", {
+  local_csv_file("data.txt", sep = " ")
+  finterface <- new_file_interface("data.txt") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_equal(get_file_separator(finterface), " ")
+  expect_equal(head(finterface, 2), head(dummy_dt(), 2))
+  expect_equal(finterface[num < 3], dummy_dt()[num < 3])
+})
+
 # Tests consolidated from test-comment.R
 test_that("Commented lines are correctly ignored", {
   local_file_with_comments(
