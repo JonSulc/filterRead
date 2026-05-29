@@ -45,6 +45,85 @@ add_allele_matching_to_column_info <- function(
     invisible()
 }
 
+#' Resolve ref/alt when both an encoded allele pair and effect allele exist
+#'
+#' MetaBrain-style files carry the unordered allele pair in one encoded
+#' column (`SNPAlleles` -> ref/alt) and the effect allele in a separate
+#' column (`SNPEffectAllele` -> alt). Both targeting `alt` would emit a
+#' duplicate column. The effect allele is authoritative and the order
+#' within the pair is not guaranteed, so `alt` is taken from the effect
+#' allele and `ref` from the other member. This appends an effect-allele
+#' normalization to the encoded column's split so the decoded array holds
+#' `(ref, alt) = (non-effect, effect)`, and clears the standalone
+#' effect-allele column's `alt` mapping so the value is not emitted twice.
+#'
+#' Applies only when there is exactly one encoded ref/alt column and exactly
+#' one standalone `alt` column; otherwise column_info is returned unchanged.
+#'
+#' @param column_info data.table with column metadata, before encoded-column
+#'   expansion.
+#' @return column_info (modified by reference), invisibly.
+#' @keywords internal
+add_effect_allele_to_encoded_pair <- function(
+  column_info
+) {
+  is_encoded_ref_alt <- sapply(
+    column_info$encoded_names,
+    \(names) setequal(names, c("ref", "alt"))
+  )
+  is_effect_alt <- column_info$standard_name == "alt" &
+    sapply(column_info$encoded_names, is.null)
+  is_effect_alt[is.na(is_effect_alt)] <- FALSE
+
+  if (sum(is_encoded_ref_alt) != 1 || sum(is_effect_alt) != 1) {
+    return(invisible(column_info))
+  }
+
+  effect_index <- column_info$bash_index[is_effect_alt]
+  array_name <- paste0(
+    "encoded",
+    column_info$encoded_column_index[is_encoded_ref_alt]
+  )
+
+  column_info[
+    is_encoded_ref_alt,
+    split_encoding_column := paste(
+      split_encoding_column,
+      order_alleles_by_effect(array_name, effect_index),
+      sep = "\n"
+    )
+  ]
+  column_info[is_effect_alt, standard_name := NA_character_]
+  invisible(column_info)
+}
+
+#' Generate awk to order a decoded allele pair as (ref, alt)
+#'
+#' Swaps the two elements of the decoded array when the first equals the
+#' effect allele, so element 1 is the non-effect (ref) allele and element 2
+#' the effect (alt) allele. Both sides are upper-cased so the comparison is
+#' case-insensitive.
+#'
+#' @param array_name Name of the awk array holding the split allele pair.
+#' @param effect_index Awk column reference for the effect allele.
+#' @return Awk code string.
+#' @keywords internal
+order_alleles_by_effect <- function(
+  array_name,
+  effect_index
+) {
+  sprintf(
+    "# Order decoded alleles as (ref, alt) using the effect allele
+if (toupper(%s[1]) == toupper(%s)) {
+  effect_tmp = %s[1]
+  %s[1] = %s[2]
+  %s[2] = effect_tmp
+}",
+    array_name, effect_index,
+    array_name, array_name, array_name, array_name
+  )
+}
+
 #' Check if allele matching is needed
 #'
 #' Allele matching is needed when the file carries `allele1`, `allele2`,

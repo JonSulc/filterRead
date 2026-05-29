@@ -51,6 +51,7 @@ get_column_info <- function(
   add_prefix_column(column_info, data_to_check)
   add_chr_prefix(column_info, data_to_check)
   add_encoding_columns(column_info)
+  add_effect_allele_to_encoded_pair(column_info)
   add_allele_matching_to_column_info(column_info)
   column_info <- expand_encoded_columns(column_info)
 

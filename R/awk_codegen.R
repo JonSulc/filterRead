@@ -695,16 +695,16 @@ get_awk_column_arrays <- function(
     on = "name"
   ]
 
-  # Split columns needed for condition evaluation BEFORE the if
+  # Split columns needed for condition evaluation BEFORE the if. Use the
+  # column's split_encoding_column so any post-split normalization (e.g. the
+  # effect-allele ordering for SNPAlleles) is applied before the condition,
+  # not only on output. For plain encoded columns this is the same split()
+  # call awk_split_column would emit.
   before_if_splits <- column_info[!sapply(encoded_names, is.null)][
     required_for_if,
     {
       if (.N != 0) {
-        awk_split_column(
-          bash_index = bash_index,
-          array_name = paste0("encoded", encoded_column_index),
-          delimiter = delimiter
-        )
+        split_encoding_column
       } else {
         character(0)
       }
