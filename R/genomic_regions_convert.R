@@ -87,6 +87,32 @@ as_genomic_regions.neq_filter_condition <- function(
   !as_genomic_regions.eq_filter_condition(...)
 }
 #' @export
+as_genomic_regions.in_filter_condition <- function(
+  x,
+  build = NULL,
+  ...
+) {
+  build <- build %||% build(x)
+  if (length(x) == 0) {
+    NextMethod()
+  }
+  # `%in%` always has the column on the left: in_filter_condition(col, set).
+  # Each member becomes a region: a chromosome for `chr`, a single-position
+  # interval for `pos`. Combined with the rest of the condition through the
+  # usual genomic-regions set operations.
+  if (x[[2]] == as.symbol("chr")) {
+    return(new_genomic_regions(chr = x[[3]], build = build))
+  }
+  if (x[[2]] == as.symbol("pos")) {
+    return(new_genomic_regions(
+      start = x[[3]],
+      end = x[[3]],
+      build = build
+    ))
+  }
+  full_genomic_regions(build = build)
+}
+#' @export
 as_genomic_regions.lt_filter_condition <- function(
   x,
   build = NULL,

@@ -1110,6 +1110,33 @@ test_that("Excluded genomic_regions combine correctly with non-genomic", {
   expect_true(all(5000 < result$pos))
 })
 
+test_that("pos %in% set keeps exactly the listed positions", {
+  dt <- data.table::data.table(
+    chr  = paste0("chr", c(1L, 1L, 1L, 2L)),
+    pos  = c(12345L, 23456L, 88888L, 12345L),
+    ref  = c("A", "C", "A", "A"),
+    alt  = c("G", "T", "T", "C"),
+    pval = c(1e-9, 4e-7, 2e-3, 1e-5)
+  )
+  local_csv_file("data.csv", dt = dt)
+  finterface <- new_file_interface("data.csv", build = "b38") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_setequal(
+    finterface[pos %in% c(12345, 23456)]$pos,
+    c(12345L, 23456L)
+  )
+  # The chr2:12345 row matches pos but must be excluded by the chr term.
+  expect_equal(
+    finterface[chr == "chr1" & pos %in% c(12345, 23456)][, .(chr, pos)],
+    data.table::data.table(
+      chr = c("chr1", "chr1"),
+      pos = c(12345L, 23456L)
+    )
+  )
+})
+
 test_that("Two excluded chromosome conditions combine via AND", {
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
   expect_setequal(

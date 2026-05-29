@@ -1,7 +1,7 @@
 Package: filterRead
 Type: Package
 Title: Pre-filters files using awk for faster fread
-Version: 2.10.3
+Version: 2.10.4
 Authors@R: person("Jonathan", "Sulc",
                   email = "jonsulc@gmail.com",
                   role = c("aut", "cre"))
