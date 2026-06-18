@@ -430,6 +430,9 @@ liftover <- function(
 #'   desired source-to-target build pair, keyed on `(chr, start, end)`.
 #' @param mult Forwarded to [data.table::foverlaps].
 #' @param nomatch Forwarded to [data.table::foverlaps].
+#' @param allele_cols Character vector of `positions_dt` column names to
+#'   reverse-complement on reverse-strand (`rev = TRUE`) blocks. Default
+#'   `character()` (no reverse-complement).
 #'
 #' @return data.table with lifted `chr`, `start`, `end` (in the target
 #'   build) plus any extra columns from `positions_dt`.
@@ -438,10 +441,11 @@ lift_chain_overlap <- function(
   positions_dt,
   chain_dt,
   mult = "all",
-  nomatch = 0L
+  nomatch = 0L,
+  allele_cols = character()
 ) {
   extra_cols <- setdiff(names(positions_dt), c("chr", "start", "end"))
-  data.table::foverlaps(
+  lifted <- data.table::foverlaps(
     positions_dt,
     chain_dt,
     mult = mult,
@@ -460,12 +464,22 @@ lift_chain_overlap <- function(
           rev,
           end - offset - (pmax(start, i.start) - start),
           pmin(end, i.end) - offset
-        )
+        ),
+        .lift_rev = rev
       ),
       .SD
     ),
     .SDcols = extra_cols
   ]
+  # On reverse-strand blocks the lifted region is the reverse complement of
+  # the source, so allele columns are complemented there. The chain's `rev`
+  # flag drives this, which handles palindromic A/T and C/G SNVs. Unmatched
+  # rows (NA `.lift_rev`) keep their alleles.
+  for (col in intersect(allele_cols, names(lifted))) {
+    lifted[(.lift_rev), (col) := reverse_complement(get(col))]
+  }
+  lifted[, .lift_rev := NULL]
+  lifted[]
 }
 
 #' Lift variant coordinates between genome builds
@@ -535,6 +549,7 @@ liftover.data.table <- function(
   multi_match <- match.arg(multi_match)
 
   coord_cols <- detect_coordinate_columns(x)
+  allele_cols <- intersect(c("ref", "alt"), names(x))
 
   x_work <- data.table::copy(x)
 
@@ -572,7 +587,11 @@ liftover.data.table <- function(
     chr   = format_chr(x_work$chr, prefix = "chr"),
     start = x_work[[coord_cols$start]],
     end   = x_work[[coord_cols$end]]
-  )[
+  )
+  for (col in allele_cols) {
+    positions[, (col) := x_work[[col]]]
+  }
+  positions <- positions[
     !is.na(chr) & !is.na(start) & !is.na(end)
   ]
   data.table::setkey(positions, chr, start, end)
@@ -600,8 +619,9 @@ liftover.data.table <- function(
   lifted <- lift_chain_overlap(
     positions,
     chain_dt,
-    mult    = multi_match,
-    nomatch = if (drop_unlifted) 0L else NA
+    mult        = multi_match,
+    nomatch     = if (drop_unlifted) 0L else NA,
+    allele_cols = allele_cols
   )
   data.table::setkey(lifted, I)
 
@@ -610,6 +630,9 @@ liftover.data.table <- function(
   for (col in coord_cols$output) {
     lifted_col <- if (col == coord_cols$end) "end" else "start"
     result[, (col) := lifted[[lifted_col]]]
+  }
+  for (col in allele_cols) {
+    result[, (col) := lifted[[col]]]
   }
   build(result) <- target
 

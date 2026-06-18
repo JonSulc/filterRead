@@ -156,3 +156,62 @@ test_that("liftover.data.table preserves non-coordinate columns", {
   expect_equal(result$effect_se, dt$effect_se)
   expect_equal(result$pval, dt$pval)
 })
+
+test_that("lift_chain_overlap reverse-complements named allele columns on minus-strand blocks", {
+  # Two source blocks on chr1: [100,199] forward, [200,299] reverse.
+  chain_dt <- data.table::data.table(
+    start   = c(100L, 200L),
+    end     = c(199L, 299L),
+    width   = c(100L, 100L),
+    chr     = c("chr1", "chr1"),
+    offset  = c(-1000L, 5000L),
+    new_chr = c("chr1", "chr1"),
+    rev     = c(FALSE, TRUE)
+  )
+  data.table::setkey(chain_dt, chr, start, end)
+
+  positions <- data.table::data.table(
+    I     = 1:2,
+    chr   = c("chr1", "chr1"),
+    start = c(150L, 250L),
+    end   = c(150L, 250L),
+    ref   = c("A", "A"),
+    alt   = c("C", "T")
+  )
+  data.table::setkey(positions, chr, start, end)
+
+  lifted <- lift_chain_overlap(
+    positions, chain_dt, mult = "first", nomatch = 0L,
+    allele_cols = c("ref", "alt")
+  )
+  lifted <- lifted[order(I)]
+
+  # Forward block: alleles unchanged.
+  expect_equal(lifted[I == 1L, ref], "A")
+  expect_equal(lifted[I == 1L, alt], "C")
+  # Reverse block: alleles reverse-complemented (palindrome-safe; A/T swap).
+  expect_equal(lifted[I == 2L, ref], "T")
+  expect_equal(lifted[I == 2L, alt], "A")
+  # The internal rev marker must not leak into the result.
+  expect_false(".lift_rev" %in% names(lifted))
+})
+
+test_that("liftover.data.table reverse-complements alleles across a minus-strand chain", {
+  # Synthetic chain mapping chr1[100,300] (b37) onto chr1 reverse strand (b38).
+  rev_chain <- data.table::data.table(
+    start = 100L, end = 300L, width = 201L,
+    chr = "chr1", offset = 5000L, new_chr = "chr1", rev = TRUE
+  )
+  data.table::setkey(rev_chain, chr, start, end)
+  data.table::setattr(rev_chain, "from", "b37")
+  data.table::setattr(rev_chain, "to", "b38")
+  testthat::local_mocked_bindings(get_chain_dt = function(from, to) rev_chain)
+
+  dt <- data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C")
+  build(dt) <- "b37"
+
+  lifted <- liftover(dt, "b38")
+  expect_equal(lifted$ref, "T")  # reverse complement of A
+  expect_equal(lifted$alt, "G")  # reverse complement of C
+  expect_equal(build(lifted), "b38")
+})
