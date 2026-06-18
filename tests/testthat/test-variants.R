@@ -331,3 +331,23 @@ test_that("liftover.variants records the target build's provenance columns", {
   expect_equal(lifted$pos_b38, 5000L)
   expect_equal(lifted$variant_id, "chr1_5000_A_G_b38")
 })
+
+test_that("a file-interface read coerces to variants carrying its inferred build", {
+  dt <- data.table::data.table(
+    chr  = paste0("chr", c(1L, 1L)),
+    pos  = c(100L, 200L),
+    ref  = c("A", "C"),
+    alt  = c("G", "T"),
+    pval = c(1e-9, 1e-8)
+  )
+  local_csv_file("data.csv", dt = dt)
+  finterface <- new_file_interface("data.csv", build = "b38") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  result <- finterface[]
+  v <- as_variants(result, build = "b38")
+  expect_s3_class(v, "variants")
+  expect_equal(build(v), "b38")
+  expect_equal(v$variant_id, c("chr1_100_A_G_b38", "chr1_200_C_T_b38"))
+})
