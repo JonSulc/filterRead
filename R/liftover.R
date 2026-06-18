@@ -522,12 +522,21 @@ lift_chain_overlap <- function(
 #'   suffixed columns are inspected on entry, and if all are present
 #'   their values are copied into the canonical `chr`/`pos` columns
 #'   instead of re-running the chain lift.
+#' @param use_cache If TRUE (default), the round-trip short-circuit
+#'   described under `retain_builds` applies: when the target build's
+#'   suffixed columns are already present, their values are copied into
+#'   the canonical columns instead of running a chain lift. FALSE forces
+#'   a fresh chain lift even when those columns are present.
 #' @param ... Reserved for future arguments.
 #'
 #' @return A data.table with `chr` and the coordinate columns present
 #'   in `x` updated to the target build, with `build(result) == target`.
-#'   Row count matches the input when `multi_match` is `"first"` or
-#'   `"last"`; with `"all"` rows are duplicated for each chain match.
+#'   With `multi_match = "all"` each source position contributes one
+#'   output row per chain match. With `drop_unlifted = FALSE` every
+#'   input row is kept (unlifted rows carry NA coordinates); the default
+#'   `drop_unlifted = TRUE` removes them, so the row count equals the
+#'   input only when `multi_match` is not `"all"` and every position
+#'   lifts.
 #' @export
 liftover.data.table <- function(
   x,
@@ -536,6 +545,7 @@ liftover.data.table <- function(
   drop_unlifted = TRUE,
   multi_match = c("first", "last", "all"),
   retain_builds = FALSE,
+  use_cache = TRUE,
   ...
 ) {
   if (is.null(from)) {
@@ -571,7 +581,7 @@ liftover.data.table <- function(
   # so a build's recorded columns are its stable representation.
   cache_value_cols <- c("chr", coord_cols$output, allele_cols)
   cache_cols <- paste0(cache_value_cols, "_", target)
-  if (all(cache_cols %in% names(x_work))) {
+  if (use_cache && all(cache_cols %in% names(x_work))) {
     for (col in cache_value_cols) {
       x_work[, (col) := build_versioned_column(x_work, col, target)]
     }
@@ -619,11 +629,13 @@ liftover.data.table <- function(
     positions,
     chain_dt,
     mult        = multi_match,
-    nomatch     = if (drop_unlifted) 0L else NA,
+    nomatch     = NA,
     allele_cols = allele_cols
   )
-  data.table::setkey(lifted, I)
-
+  # Each position contributes its mapping(s): matched positions duplicate
+  # under multi_match = "all"; chain-gap positions come back with NA
+  # coordinates. `.ord`/`.sub` restore input order with fan-out rows grouped
+  # after their source row.
   result <- data.table::copy(x_work[lifted$I])
   result[, chr := lifted$chr]
   for (col in coord_cols$output) {
@@ -632,6 +644,28 @@ liftover.data.table <- function(
   }
   for (col in allele_cols) {
     result[, (col) := lifted[[col]]]
+  }
+  result[, c(".ord", ".sub") := .(lifted$I, data.table::rowid(lifted$I))]
+
+  # Rows with NA input coordinates were excluded from `positions`; re-add them
+  # with NA coordinates so every input row is represented.
+  missing <- setdiff(seq_len(nrow(x_work)), positions$I)
+  if (length(missing) > 0L) {
+    na_rows <- data.table::copy(x_work[missing])
+    na_rows[, chr := NA_character_]
+    for (col in coord_cols$output) {
+      na_rows[, (col) := NA_integer_]
+    }
+    na_rows[, c(".ord", ".sub") := .(missing, 0L)]
+    result <- data.table::rbindlist(
+      list(result, na_rows), use.names = TRUE
+    )
+  }
+  data.table::setorder(result, .ord, .sub)
+  result[, c(".ord", ".sub") := NULL]
+
+  if (drop_unlifted) {
+    result <- result[!is.na(chr)]
   }
   build(result) <- target
 

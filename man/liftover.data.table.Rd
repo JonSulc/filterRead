@@ -11,6 +11,7 @@
   drop_unlifted = TRUE,
   multi_match = c("first", "last", "all"),
   retain_builds = FALSE,
+  use_cache = TRUE,
   ...
 )
 }
@@ -44,13 +45,23 @@ suffixed columns are inspected on entry, and if all are present
 their values are copied into the canonical `chr`/`pos` columns
 instead of re-running the chain lift.}
 
+\item{use_cache}{If TRUE (default), the round-trip short-circuit
+described under `retain_builds` applies: when the target build's
+suffixed columns are already present, their values are copied into
+the canonical columns instead of running a chain lift. FALSE forces
+a fresh chain lift even when those columns are present.}
+
 \item{...}{Reserved for future arguments.}
 }
 \value{
 A data.table with `chr` and the coordinate columns present
   in `x` updated to the target build, with `build(result) == target`.
-  Row count matches the input when `multi_match` is `"first"` or
-  `"last"`; with `"all"` rows are duplicated for each chain match.
+  With `multi_match = "all"` each source position contributes one
+  output row per chain match. With `drop_unlifted = FALSE` every
+  input row is kept (unlifted rows carry NA coordinates); the default
+  `drop_unlifted = TRUE` removes them, so the row count equals the
+  input only when `multi_match` is not `"all"` and every position
+  lifts.
 }
 \description{
 Translates a data.table's genomic coordinates from one reference

@@ -48,6 +48,7 @@ Collate:
     'ieugwas_parsing.R'
     'infer_build.R'
     'liftover.R'
+    'reverse_complement.R'
     'rsid_matching.R'
     'value_formatting.R'
     'zzz.R'

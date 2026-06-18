@@ -237,3 +237,112 @@ test_that("the round-trip cache restores recorded ref/alt, not just chr/pos", {
   expect_equal(back$alt, "G")
   expect_equal(build(back), "b37")
 })
+
+test_that("multi_match = 'all' duplicates a variant that maps to two chain blocks", {
+  # Two chain blocks overlapping in source coordinates (as from two chains
+  # over a duplicated region) both cover pos 150, so one variant maps twice.
+  overlapping_blocks <- function() {
+    ch <- data.table::data.table(
+      start   = c(100L, 120L),
+      end     = c(200L, 180L),
+      width   = c(101L, 61L),
+      chr     = c("chr1", "chr1"),
+      offset  = c(50L, 30L),
+      new_chr = c("chr1", "chr1"),
+      rev     = c(FALSE, FALSE)
+    )
+    data.table::setkey(ch, chr, start, end)
+    data.table::setattr(ch, "from", "b37")
+    data.table::setattr(ch, "to", "b38")
+    ch
+  }
+  testthat::local_mocked_bindings(
+    get_chain_dt = function(from, to) overlapping_blocks()
+  )
+
+  dt <- data.table::data.table(chr = "chr1", pos = 150L, id = "x")
+  build(dt) <- "b37"
+
+  all_matches <- liftover(dt, "b38", multi_match = "all")
+  expect_equal(nrow(all_matches), 2L)              # one row per overlapping block
+  expect_setequal(all_matches$pos, c(100L, 120L))  # 150 - 50 and 150 - 30
+  expect_equal(all_matches$id, c("x", "x"))        # both are the same input variant
+
+  first_match <- liftover(dt, "b38", multi_match = "first")
+  expect_equal(nrow(first_match), 1L)
+})
+
+test_that("drop_unlifted = FALSE preserves NA-input rows, not just chain-gap rows", {
+  fwd_chain <- function() {
+    ch <- data.table::data.table(
+      start = 100L, end = 200L, width = 101L,
+      chr = "chr1", offset = 50L, new_chr = "chr1", rev = FALSE
+    )
+    data.table::setkey(ch, chr, start, end)
+    data.table::setattr(ch, "from", "b37")
+    data.table::setattr(ch, "to", "b38")
+    ch
+  }
+  testthat::local_mocked_bindings(get_chain_dt = function(from, to) fwd_chain())
+
+  dt <- data.table::data.table(
+    chr = c("chr1", "chr1", "chr1"),
+    pos = c(150L, 5000L, NA_integer_),   # liftable, chain-gap, NA-input
+    id  = c("a", "b", "c")
+  )
+  build(dt) <- "b37"
+
+  lifted <- liftover(dt, "b38", drop_unlifted = FALSE)
+  expect_equal(nrow(lifted), 3L)
+  expect_equal(lifted$id, c("a", "b", "c"))      # all rows, original order
+  expect_equal(lifted$pos, c(100L, NA, NA))      # lifted / gap NA / input NA
+})
+
+test_that("drop_unlifted = FALSE fans out multi-mappings and keeps unmapped rows", {
+  overlapping_blocks <- function() {
+    ch <- data.table::data.table(
+      start = c(100L, 120L), end = c(200L, 180L), width = c(101L, 61L),
+      chr = "chr1", offset = c(50L, 30L), new_chr = "chr1", rev = FALSE
+    )
+    data.table::setkey(ch, chr, start, end)
+    data.table::setattr(ch, "from", "b37")
+    data.table::setattr(ch, "to", "b38")
+    ch
+  }
+  testthat::local_mocked_bindings(
+    get_chain_dt = function(from, to) overlapping_blocks()
+  )
+
+  dt <- data.table::data.table(
+    chr = c("chr1", "chr1"), pos = c(150L, 5000L), id = c("x", "y")
+  )
+  build(dt) <- "b37"
+
+  lifted <- liftover(dt, "b38", drop_unlifted = FALSE, multi_match = "all")
+  expect_equal(lifted$id, c("x", "x", "y"))         # x fanned out, y kept
+  expect_setequal(lifted[id == "x", pos], c(100L, 120L))
+  expect_true(is.na(lifted[id == "y", pos]))        # chain gap kept as NA
+})
+
+test_that("use_cache = FALSE bypasses the round-trip cache and re-lifts", {
+  fwd_chain <- function() {
+    ch <- data.table::data.table(
+      start = 100L, end = 300L, width = 201L,
+      chr = "chr1", offset = 50L, new_chr = "chr1", rev = FALSE
+    )
+    data.table::setkey(ch, chr, start, end)
+    data.table::setattr(ch, "from", "b38")
+    data.table::setattr(ch, "to", "b37")
+    ch
+  }
+  testthat::local_mocked_bindings(get_chain_dt = function(from, to) fwd_chain())
+
+  # Bogus recorded b37 columns: the cache would return them verbatim.
+  dt <- data.table::data.table(
+    chr = "chr1", pos = 200L, chr_b37 = "chrXX", pos_b37 = 999999L
+  )
+  build(dt) <- "b38"
+
+  expect_equal(liftover(dt, "b37")$pos, 999999L)                 # cache hit (default)
+  expect_equal(liftover(dt, "b37", use_cache = FALSE)$pos, 150L) # chain lift (200 - 50)
+})
