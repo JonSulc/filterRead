@@ -1,4 +1,4 @@
-#' Add build-suffixed copies of standard coordinate columns
+#' Record the current coordinates under the current build
 #'
 #' Duplicates each column listed in `columns` into `<col>_<build>`,
 #' so downstream merges between data.tables in different builds can
@@ -13,7 +13,7 @@
 #'   Default `c("chr", "pos", "variant_id")`.
 #' @return `dt` (invisibly).
 #' @export
-add_build_versioned_columns <- function(
+record_build <- function(
   dt,
   build   = NULL,
   columns = c("chr", "pos", "variant_id")

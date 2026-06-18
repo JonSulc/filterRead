@@ -4,7 +4,13 @@
 \alias{lift_chain_overlap}
 \title{Translate genomic intervals through a UCSC chain}
 \usage{
-lift_chain_overlap(positions_dt, chain_dt, mult = "all", nomatch = 0L)
+lift_chain_overlap(
+  positions_dt,
+  chain_dt,
+  mult = "all",
+  nomatch = 0L,
+  allele_cols = character()
+)
 }
 \arguments{
 \item{positions_dt}{A keyed data.table with at least `chr`, `start`,
@@ -17,6 +23,10 @@ desired source-to-target build pair, keyed on `(chr, start, end)`.}
 \item{mult}{Forwarded to [data.table::foverlaps].}
 
 \item{nomatch}{Forwarded to [data.table::foverlaps].}
+
+\item{allele_cols}{Character vector of `positions_dt` column names to
+reverse-complement on reverse-strand (`rev = TRUE`) blocks. Default
+`character()` (no reverse-complement).}
 }
 \value{
 data.table with lifted `chr`, `start`, `end` (in the target

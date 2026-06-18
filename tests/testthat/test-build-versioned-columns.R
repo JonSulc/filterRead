@@ -1,37 +1,37 @@
-test_that("add_build_versioned_columns duplicates standard coord columns", {
+test_that("record_build duplicates standard coord columns", {
   dt <- data.table::data.table(
     chr = c("chr1", "chr2"),
     pos = c(100L, 200L)
   )
   build(dt) <- "b38"
 
-  add_build_versioned_columns(dt)
+  record_build(dt)
   expect_true(all(c("chr_b38", "pos_b38") %in% names(dt)))
   expect_equal(dt$chr_b38, dt$chr)
   expect_equal(dt$pos_b38, dt$pos)
 })
 
-test_that("add_build_versioned_columns is idempotent", {
+test_that("record_build is idempotent", {
   dt <- data.table::data.table(
     chr = c("chr1", "chr2"),
     pos = c(100L, 200L)
   )
   build(dt) <- "b38"
 
-  add_build_versioned_columns(dt)
+  record_build(dt)
   pre <- data.table::copy(dt)
-  add_build_versioned_columns(dt)
+  record_build(dt)
   expect_equal(dt, pre)
 })
 
-test_that("add_build_versioned_columns skips columns absent from dt", {
+test_that("record_build skips columns absent from dt", {
   dt <- data.table::data.table(
     chr = "chr1",
     pos = 100L
   )
   build(dt) <- "b38"
 
-  add_build_versioned_columns(dt)
+  record_build(dt)
   expect_setequal(
     names(dt),
     c("chr", "pos", "chr_b38", "pos_b38")

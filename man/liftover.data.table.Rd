@@ -36,7 +36,7 @@ per source row, `"last"` keeps the last, and `"all"` emits one
 row per match. Forwarded to [data.table::foverlaps]'s `mult`
 argument.}
 
-\item{retain_builds}{If TRUE, call [add_build_versioned_columns()]
+\item{retain_builds}{If TRUE, call [record_build()]
 for both `from` and `target` so the result carries
 `chr_<from>`/`pos_<from>` (source-build snapshot) and
 `chr_<target>`/`pos_<target>` (target-build mirror). The same

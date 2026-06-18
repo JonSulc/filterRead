@@ -515,7 +515,7 @@ lift_chain_overlap <- function(
 #'   per source row, `"last"` keeps the last, and `"all"` emits one
 #'   row per match. Forwarded to [data.table::foverlaps]'s `mult`
 #'   argument.
-#' @param retain_builds If TRUE, call [add_build_versioned_columns()]
+#' @param retain_builds If TRUE, call [record_build()]
 #'   for both `from` and `target` so the result carries
 #'   `chr_<from>`/`pos_<from>` (source-build snapshot) and
 #'   `chr_<target>`/`pos_<target>` (target-build mirror). The same
@@ -556,7 +556,7 @@ liftover.data.table <- function(
   # Source-build suffix columns must be added before the coordinate
   # update, while the original values are still in chr/pos.
   if (retain_builds) {
-    add_build_versioned_columns(x_work, build = from)
+    record_build(x_work, build = from)
   }
 
   # Same-build short-circuit: the source-build suffix columns added
@@ -570,7 +570,7 @@ liftover.data.table <- function(
   # columns are already present, copy their values into the canonical
   # columns instead of running a fresh chain lift. The presence of
   # those suffixed columns also satisfies retain_builds for `target`,
-  # so no further add_build_versioned_columns call is needed here.
+  # so no further record_build call is needed here.
   cache_cols <- paste0(c("chr", coord_cols$output), "_", target)
   if (all(cache_cols %in% names(x_work))) {
     for (col in c("chr", coord_cols$output)) {
@@ -613,7 +613,7 @@ liftover.data.table <- function(
     }
     build(result) <- target
     if (!retain_builds) return(result)
-    return(add_build_versioned_columns(result, build = target))
+    return(record_build(result, build = target))
   }
 
   lifted <- lift_chain_overlap(
@@ -637,7 +637,7 @@ liftover.data.table <- function(
   build(result) <- target
 
   if (!retain_builds) return(result)
-  add_build_versioned_columns(result, build = target)
+  record_build(result, build = target)
 }
 
 #' Determine which coordinate columns a data.table carries
