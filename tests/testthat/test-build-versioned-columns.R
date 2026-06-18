@@ -1,14 +1,20 @@
 test_that("record_build duplicates standard coord columns", {
   dt <- data.table::data.table(
     chr = c("chr1", "chr2"),
-    pos = c(100L, 200L)
+    pos = c(100L, 200L),
+    ref = c("A", "C"),
+    alt = c("G", "T")
   )
   build(dt) <- "b38"
 
   record_build(dt)
-  expect_true(all(c("chr_b38", "pos_b38") %in% names(dt)))
+  expect_true(all(
+    c("chr_b38", "pos_b38", "ref_b38", "alt_b38") %in% names(dt)
+  ))
   expect_equal(dt$chr_b38, dt$chr)
   expect_equal(dt$pos_b38, dt$pos)
+  expect_equal(dt$ref_b38, dt$ref)
+  expect_equal(dt$alt_b38, dt$alt)
 })
 
 test_that("record_build is idempotent", {

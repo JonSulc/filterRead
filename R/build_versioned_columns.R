@@ -10,13 +10,13 @@
 #' @param dt A data.table.
 #' @param build Build name used as the suffix. Defaults to `build(dt)`.
 #' @param columns Character vector of column names to duplicate.
-#'   Default `c("chr", "pos", "variant_id")`.
+#'   Default `c("chr", "pos", "variant_id", "ref", "alt")`.
 #' @return `dt` (invisibly).
 #' @export
 record_build <- function(
   dt,
   build   = NULL,
-  columns = c("chr", "pos", "variant_id")
+  columns = c("chr", "pos", "variant_id", "ref", "alt")
 ) {
   stopifnot(data.table::is.data.table(dt))
   if (is.null(build)) {
@@ -46,6 +46,28 @@ record_build <- function(
     dt[, (suffix_name) := get(col)]
   }
   invisible(dt)
+}
+
+#' Read a coordinate or allele column as recorded for a build
+#'
+#' Returns column `base` holding `build`'s values: the `<base>_<build>`
+#' suffixed column when present, the canonical `base` column when `build` is
+#' `dt`'s current build, else `NULL`. Read-side counterpart to [record_build()].
+#'
+#' @param dt A data.table.
+#' @param base Unsuffixed column name (e.g. "chr", "pos", "ref", "alt").
+#' @param build Build whose values to read.
+#' @return The column vector, or `NULL` if not recorded.
+#' @keywords internal
+build_versioned_column <- function(dt, base, build) {
+  suffixed <- paste0(base, "_", build)
+  if (suffixed %in% names(dt)) {
+    return(dt[[suffixed]])
+  }
+  if (identical(build, build(dt))) {
+    return(dt[[base]])
+  }
+  NULL
 }
 
 #' Construct variant_id from chr / pos / ref / alt

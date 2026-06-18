@@ -566,15 +566,14 @@ liftover.data.table <- function(
     return(x_work)
   }
 
-  # Round-trip cache: if all the target-build suffixed coordinate
-  # columns are already present, copy their values into the canonical
-  # columns instead of running a fresh chain lift. The presence of
-  # those suffixed columns also satisfies retain_builds for `target`,
-  # so no further record_build call is needed here.
-  cache_cols <- paste0(c("chr", coord_cols$output), "_", target)
+  # When the target build's coordinates (and alleles, when present) are
+  # already recorded, copy them back. Liftover is not coordinate-invertible,
+  # so a build's recorded columns are its stable representation.
+  cache_value_cols <- c("chr", coord_cols$output, allele_cols)
+  cache_cols <- paste0(cache_value_cols, "_", target)
   if (all(cache_cols %in% names(x_work))) {
-    for (col in c("chr", coord_cols$output)) {
-      x_work[, (col) := get(paste0(col, "_", target))]
+    for (col in cache_value_cols) {
+      x_work[, (col) := build_versioned_column(x_work, col, target)]
     }
     build(x_work) <- target
     return(x_work)

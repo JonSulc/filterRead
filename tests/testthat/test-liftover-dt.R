@@ -215,3 +215,25 @@ test_that("liftover.data.table reverse-complements alleles across a minus-strand
   expect_equal(lifted$alt, "G")  # reverse complement of C
   expect_equal(build(lifted), "b38")
 })
+
+test_that("the round-trip cache restores recorded ref/alt, not just chr/pos", {
+  # A variant in an inverted region: A/G in b37 is represented as its reverse
+  # complement T/C in b38. Both builds are recorded, so lifting b38 -> b37
+  # must restore the b37 representation (A/G at pos 100) from the cache.
+  dt <- data.table::data.table(
+    chr     = "chr1", pos     = 5000L,
+    ref     = "T",    alt     = "C",      # current view: b38 (RC of b37)
+    chr_b37 = "chr1", pos_b37 = 100L,
+    ref_b37 = "A",    alt_b37 = "G",      # recorded b37
+    chr_b38 = "chr1", pos_b38 = 5000L,
+    ref_b38 = "T",    alt_b38 = "C"
+  )
+  build(dt) <- "b38"
+
+  back <- liftover(dt, "b37")
+
+  expect_equal(back$pos, 100L)
+  expect_equal(back$ref, "A")
+  expect_equal(back$alt, "G")
+  expect_equal(build(back), "b37")
+})

@@ -4,7 +4,11 @@
 \alias{record_build}
 \title{Record the current coordinates under the current build}
 \usage{
-record_build(dt, build = NULL, columns = c("chr", "pos", "variant_id"))
+record_build(
+  dt,
+  build = NULL,
+  columns = c("chr", "pos", "variant_id", "ref", "alt")
+)
 }
 \arguments{
 \item{dt}{A data.table.}
@@ -12,7 +16,7 @@ record_build(dt, build = NULL, columns = c("chr", "pos", "variant_id"))
 \item{build}{Build name used as the suffix. Defaults to `build(dt)`.}
 
 \item{columns}{Character vector of column names to duplicate.
-Default `c("chr", "pos", "variant_id")`.}
+Default `c("chr", "pos", "variant_id", "ref", "alt")`.}
 }
 \value{
 `dt` (invisibly).
