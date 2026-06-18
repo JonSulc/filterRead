@@ -1,5 +1,10 @@
 utils::globalVariables(c(
   ".",
+  ".anchor",
+  ".lift_rev",
+  ".ord",
+  ".src",
+  ".sub",
   "add_prefix",
   "alt",
   "bash_index",
@@ -7,6 +12,7 @@ utils::globalVariables(c(
   "chr",
   "chr_is_na",
   "class",
+  "defining_build",
   "delimiter",
   "dq",
   "dt",
