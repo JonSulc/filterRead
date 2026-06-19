@@ -7,3 +7,6 @@ CLAUDE.md
 .claude/
 ..Rcheck/
 
+
+# Superpowers planning/working documents (not part of the package)
+docs/superpowers/
