@@ -117,6 +117,66 @@ variant_id_values <- function(chr, pos, ref, alt, build) {
   )
 }
 
+#' Validate a variant_id column against coordinates and build
+#'
+#' For every row whose `variant_id` parses (see [parse_variant_id()]), each
+#' non-NA `chr`/`pos`/`ref`/`alt` value must equal the decoded component and
+#' the embedded build must equal `build` (compared after canonicalizing known
+#' synonyms). NA coordinate cells and rows with an unparseable `variant_id`
+#' impose no constraint. Errors listing the offending rows; otherwise returns
+#' `x` invisibly.
+#'
+#' @param x A data.table with a `variant_id` column.
+#' @param build Build the ids are expected to embed. Defaults to `build(x)`.
+#' @return `x`, invisibly.
+#' @export
+check_variant_id <- function(x, build = NULL) {
+  stopifnot(data.table::is.data.table(x), "variant_id" %in% names(x))
+  if (is.null(build)) {
+    build <- build(x)
+  }
+  parsed <- parse_variant_id(x$variant_id)
+  parseable <- !is.na(parsed$build)
+  problems <- character(0)
+  if (!is.null(build)) {
+    build <- normalize_build(
+      build, allow_null = FALSE, allow_unsupported = TRUE
+    )
+    embedded <- normalize_build(
+      parsed$build[parseable],
+      allow_null = FALSE, allow_unsupported = TRUE
+    )
+    bad <- embedded != build
+    if (any(bad)) {
+      problems <- c(problems, sprintf(
+        "build: row(s) %s embed %s, expected %s",
+        paste(which(parseable)[bad], collapse = ", "),
+        paste(unique(embedded[bad]), collapse = "/"), build
+      ))
+    }
+  }
+  for (col in coordinate_columns()) {
+    if (!col %in% names(x)) {
+      next
+    }
+    present <- !is.na(x[[col]])
+    bad <- parseable & present & x[[col]] != parsed[[col]]
+    if (any(bad)) {
+      problems <- c(problems, sprintf(
+        "%s: row(s) %s disagree with variant_id",
+        col, paste(which(bad), collapse = ", ")
+      ))
+    }
+  }
+  if (length(problems) > 0) {
+    stop(
+      "variant_id inconsistent with coordinates:\n  ",
+      paste(problems, collapse = "\n  ")
+    )
+  }
+  invisible(x)
+}
+
 #' Construct variant_id from chr / pos / ref / alt
 #'
 #' Adds a `variant_id` column shaped as `chr_pos_ref_alt_<build>`

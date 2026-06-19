@@ -43,3 +43,61 @@ test_that("add_variant_id and record_build accept a non-native build", {
   record_build(dt, build = "dahu42")
   expect_true("chr_dahu42" %in% names(dt))
 })
+
+test_that("check_variant_id passes consistent rows and skips NA cells", {
+  dt <- data.table::data.table(
+    chr = c("chr5", NA), pos = c(49861645L, NA),
+    ref = c("A", NA), alt = c("G", NA),
+    variant_id = c("chr5_49861645_A_G_b38", "chr1_10_A_T_b38")
+  )
+  expect_invisible(check_variant_id(dt, "b38"))
+})
+
+test_that("check_variant_id treats synonyms and native builds as equal", {
+  dt <- data.table::data.table(
+    chr = "chr5", pos = 49861645L, ref = "A", alt = "G",
+    variant_id = "chr5_49861645_A_G_b38"
+  )
+  expect_invisible(check_variant_id(dt, "hg38"))
+})
+
+test_that("check_variant_id accepts a non-native build", {
+  dt <- data.table::data.table(
+    chr = "chr2", pos = 3000L, ref = "C", alt = "T",
+    variant_id = "chr2_3000_C_T_dahu42"
+  )
+  expect_invisible(check_variant_id(dt, "dahu42"))
+})
+
+test_that("check_variant_id errors on a coordinate mismatch", {
+  dt <- data.table::data.table(
+    chr = "chr6", pos = 49861645L, ref = "A", alt = "G",
+    variant_id = "chr5_49861645_A_G_b38"
+  )
+  expect_error(check_variant_id(dt, "b38"), "disagree")
+})
+
+test_that("check_variant_id reads the default build from the object", {
+  dt <- data.table::data.table(
+    chr = "chr5", pos = 49861645L, ref = "A", alt = "G",
+    variant_id = "chr5_49861645_A_G_b38"
+  )
+  data.table::setattr(dt, "build", "b38")
+  expect_invisible(check_variant_id(dt))
+})
+
+test_that("check_variant_id errors on a build mismatch", {
+  dt <- data.table::data.table(
+    chr = "chr5", pos = 49861645L, ref = "A", alt = "G",
+    variant_id = "chr5_49861645_A_G_b38"
+  )
+  expect_error(check_variant_id(dt, "b37"), "build")
+})
+
+test_that("check_variant_id imposes no constraint for unparseable ids", {
+  dt <- data.table::data.table(
+    chr = "chr5", pos = 49861645L, ref = "A", alt = "G",
+    variant_id = "rs999"
+  )
+  expect_invisible(check_variant_id(dt, "b38"))
+})
