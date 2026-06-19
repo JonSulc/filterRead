@@ -1,3 +1,12 @@
+test_that("new_variants/as_variants resolve default build without recursing", {
+  dt <- data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G")
+  data.table::setattr(dt, "build", "b38")
+  v <- as_variants(dt)
+  expect_s3_class(v, "variants")
+  expect_equal(build(v), "b38")
+  expect_equal(build(new_variants(dt)), "b38")
+})
+
 test_that("new_variants validates required columns and sets class + build", {
   dt <- data.table::data.table(
     chr = "chr1", pos = 100L, ref = "A", alt = "G"

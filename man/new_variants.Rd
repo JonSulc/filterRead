@@ -4,7 +4,7 @@
 \alias{new_variants}
 \title{Construct a build-aware variants table}
 \usage{
-new_variants(x, build = build(x))
+new_variants(x, build = NULL)
 }
 \arguments{
 \item{x}{A data.table with `chr`, `pos`, `ref`, `alt` columns.}

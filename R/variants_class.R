@@ -38,8 +38,11 @@ set_variants_class <- function(x) {
 #' @param build Genome build (`"b36"`, `"b37"`, `"b38"`).
 #' @return A `variants` object (S3-classed data.table).
 #' @export
-new_variants <- function(x, build = build(x)) {
+new_variants <- function(x, build = NULL) {
   stopifnot(data.table::is.data.table(x))
+  if (is.null(build)) {
+    build <- build(x)
+  }
   missing_cols <- setdiff(coordinate_columns(), names(x))
   if (length(missing_cols) > 0) {
     stop(
@@ -68,19 +71,19 @@ new_variants <- function(x, build = build(x)) {
 #' @param ... Unused.
 #' @return A `variants` object.
 #' @export
-as_variants <- function(x, build = build(x), ...) {
+as_variants <- function(x, build = NULL, ...) {
   UseMethod("as_variants")
 }
 
 #' @rdname as_variants
 #' @export
-as_variants.variants <- function(x, build = build(x), ...) {
+as_variants.variants <- function(x, build = NULL, ...) {
   x
 }
 
 #' @rdname as_variants
 #' @export
-as_variants.data.table <- function(x, build = build(x), ...) {
+as_variants.data.table <- function(x, build = NULL, ...) {
   new_variants(x, build = build)
 }
 

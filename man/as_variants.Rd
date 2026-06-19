@@ -6,11 +6,11 @@
 \alias{as_variants.data.table}
 \title{Coerce an object to variants}
 \usage{
-as_variants(x, build = build(x), ...)
+as_variants(x, build = NULL, ...)
 
-\method{as_variants}{variants}(x, build = build(x), ...)
+\method{as_variants}{variants}(x, build = NULL, ...)
 
-\method{as_variants}{data.table}(x, build = build(x), ...)
+\method{as_variants}{data.table}(x, build = NULL, ...)
 }
 \arguments{
 \item{x}{Object to coerce (currently a data.table).}
