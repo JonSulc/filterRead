@@ -7,6 +7,10 @@
 combine_by_embedded_build(x, parsed)
 }
 \description{
-Split a mixed-build variant_id table by build and recombine
+Each row is constructed in its embedded build (rows with an unparseable id
+default to the first parseable row's build), then the per-build groups are
+recombined through [rbindlist_variants()] targeting the first parseable
+row's build, preserving input row order. Each row keeps its embedded build
+as `defining_build`.
 }
 \keyword{internal}

@@ -534,3 +534,28 @@ test_that("new_variants errors when build conflicts with the id suffix", {
     "build"
   )
 })
+
+test_that("a multi-build variant_id table splits and lifts to the first build", {
+  fwd_chain <- function(lo, hi, offset, from, to) {
+    ch <- data.table::data.table(
+      start = lo, end = hi, width = hi - lo + 1L,
+      chr = "chr1", offset = offset, new_chr = "chr1", rev = FALSE
+    )
+    data.table::setkey(ch, chr, start, end)
+    data.table::setattr(ch, "from", from)
+    data.table::setattr(ch, "to", to)
+    ch
+  }
+  testthat::local_mocked_bindings(
+    get_chain_dt = function(from, to) fwd_chain(1L, 10000L, 50L, from, to)
+  )
+  v <- as_variants(data.table::data.table(
+    variant_id = c("chr1_1000_A_G_b37", "chr1_2000_C_T_b38")
+  ))
+  expect_s3_class(v, "variants")
+  expect_equal(build(v), "b37")
+  expect_equal(v$defining_build, c("b37", "b38"))
+  # row 1 already b37; row 2 lifts b38 -> b37 (new = old - offset = 1950)
+  expect_equal(v$pos, c(1000L, 1950L))
+  expect_equal(v$ref, c("A", "C"))
+})

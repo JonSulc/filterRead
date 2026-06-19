@@ -150,9 +150,24 @@ new_variants_from_variant_id <- function(x, build) {
 
 #' Split a mixed-build variant_id table by build and recombine
 #'
+#' Each row is constructed in its embedded build (rows with an unparseable id
+#' default to the first parseable row's build), then the per-build groups are
+#' recombined through [rbindlist_variants()] targeting the first parseable
+#' row's build, preserving input row order. Each row keeps its embedded build
+#' as `defining_build`.
+#'
 #' @keywords internal
 combine_by_embedded_build <- function(x, parsed) {
-  stop("Mixed-build variant_id construction not yet implemented.")
+  target <- parsed$build[!is.na(parsed$build)][1]
+  row_build <- parsed$build
+  row_build[is.na(row_build)] <- target
+  idx <- split(seq_len(nrow(x)), row_build)
+  parts <- lapply(names(idx), function(b) new_variants(x[idx[[b]]], build = b))
+  combined <- rbindlist_variants(parts, target = target)
+  # Restore input row order: split() sorts groups alphabetically, so combined
+  # has rows in the order of unlist(idx). Compute the inverse permutation.
+  original_order <- order(unlist(idx, use.names = FALSE))
+  combined[original_order]
 }
 
 #' Coerce an object to variants
