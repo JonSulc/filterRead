@@ -55,6 +55,9 @@ new_variants <- function(x, build = NULL) {
   } else {
     data.table::as.data.table(x)
   }
+  if ("variant_id" %in% names(x)) {
+    return(new_variants_from_variant_id(x, build))
+  }
   missing_cols <- setdiff(coordinate_columns(), names(x))
   if (length(missing_cols) > 0) {
     if (nrow(x) > 0) {
@@ -100,6 +103,56 @@ finalize_variants <- function(v, build) {
   v <- add_variant_id(v, build = build)
   v <- record_build(v, build = build)
   set_variants_class(v)
+}
+
+#' Construct variants from a table carrying a variant_id column
+#'
+#' Parses coordinates from `variant_id`, validates any present coordinates and
+#' the embedded build against it, backfills the rest, and fills NA ids. A
+#' supplied id is never clobbered. The build need not be native. `new_variants`
+#' has already coerced and copied `x`, so this mutates it in place.
+#'
+#' @keywords internal
+new_variants_from_variant_id <- function(x, build) {
+  parsed <- parse_variant_id(x$variant_id)
+  embedded <- unique(parsed$build[!is.na(parsed$build)])
+  if (is.null(build) && 1 < length(embedded)) {
+    return(combine_by_embedded_build(x, parsed))
+  }
+  resolved <- if (!is.null(build)) {
+    normalize_build(build, allow_null = FALSE, allow_unsupported = TRUE)
+  } else if (length(embedded) == 1) {
+    normalize_build(embedded, allow_null = FALSE, allow_unsupported = TRUE)
+  } else {
+    stop("Cannot construct variants without a build.")
+  }
+  check_variant_id(x, resolved, parsed = parsed)
+  for (col in coordinate_columns()) {
+    decoded <- parsed[[col]]
+    if (col %in% names(x)) {
+      # Coerce to the parsed column's canonical type (integer pos, else
+      # character) so fcoalesce -- which requires matching types -- accepts a
+      # double pos or a factor coordinate.
+      existing <- if (col == "pos") {
+        as.integer(x[[col]])
+      } else {
+        as.character(x[[col]])
+      }
+      x[, (col) := data.table::fcoalesce(decoded, existing)]
+    } else {
+      x[, (col) := decoded]
+    }
+  }
+  computed <- variant_id_values(x$chr, x$pos, x$ref, x$alt, resolved)
+  x[, variant_id := data.table::fcoalesce(variant_id, computed)]
+  finalize_variants(x, resolved)
+}
+
+#' Split a mixed-build variant_id table by build and recombine
+#'
+#' @keywords internal
+combine_by_embedded_build <- function(x, parsed) {
+  stop("Mixed-build variant_id construction not yet implemented.")
 }
 
 #' Coerce an object to variants

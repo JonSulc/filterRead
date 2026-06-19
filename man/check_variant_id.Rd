@@ -4,12 +4,15 @@
 \alias{check_variant_id}
 \title{Validate a variant_id column against coordinates and build}
 \usage{
-check_variant_id(x, build = NULL)
+check_variant_id(x, build = NULL, parsed = NULL)
 }
 \arguments{
 \item{x}{A data.table with a `variant_id` column.}
 
 \item{build}{Build the ids are expected to embed. Defaults to `build(x)`.}
+
+\item{parsed}{Optional pre-computed [parse_variant_id()] result for
+`x$variant_id`, to avoid re-parsing on a hot path.}
 }
 \value{
 `x`, invisibly.

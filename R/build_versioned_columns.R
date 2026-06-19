@@ -128,14 +128,18 @@ variant_id_values <- function(chr, pos, ref, alt, build) {
 #'
 #' @param x A data.table with a `variant_id` column.
 #' @param build Build the ids are expected to embed. Defaults to `build(x)`.
+#' @param parsed Optional pre-computed [parse_variant_id()] result for
+#'   `x$variant_id`, to avoid re-parsing on a hot path.
 #' @return `x`, invisibly.
 #' @export
-check_variant_id <- function(x, build = NULL) {
+check_variant_id <- function(x, build = NULL, parsed = NULL) {
   stopifnot(data.table::is.data.table(x), "variant_id" %in% names(x))
   if (is.null(build)) {
     build <- build(x)
   }
-  parsed <- parse_variant_id(x$variant_id)
+  if (is.null(parsed)) {
+    parsed <- parse_variant_id(x$variant_id)
+  }
   parseable <- !is.na(parsed$build)
   problems <- character(0)
   if (!is.null(build)) {

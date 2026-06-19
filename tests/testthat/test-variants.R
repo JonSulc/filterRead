@@ -458,3 +458,79 @@ test_that("as_variants accepts a data.frame", {
   expect_s3_class(v, "variants")
   expect_equal(build(v), "b38")
 })
+
+test_that("new_variants builds from a variant_id-only table", {
+  v <- as_variants(
+    data.table::data.table(variant_id = "chr5_49861645_A_G_b38")
+  )
+  expect_s3_class(v, "variants")
+  expect_equal(build(v), "b38")
+  expect_equal(v$chr, "chr5")
+  expect_equal(v$pos, 49861645L)
+  expect_equal(v$ref, "A")
+  expect_equal(v$alt, "G")
+  expect_equal(v$defining_build, "b38")
+})
+
+test_that("variant_id backfill coerces a double pos and factor chr", {
+  dt <- data.table::data.table(
+    chr = factor("chr1"), pos = 100, ref = "A", alt = "G",
+    variant_id = "chr1_100_A_G_b38"
+  )
+  v <- new_variants(dt, build = "b38")
+  expect_type(v$pos, "integer")
+  expect_equal(v$pos, 100L)
+  expect_equal(v$chr, "chr1")
+})
+
+test_that("new_variants builds from a non-native variant_id", {
+  v <- as_variants(
+    data.table::data.table(variant_id = "chr2_3000_C_T_dahu42")
+  )
+  expect_equal(build(v), "dahu42")
+  expect_equal(v$pos, 3000L)
+})
+
+test_that("new_variants backfills a mixed table and validates present values", {
+  dt <- data.table::data.table(
+    chr = c("chr1", NA, "chr3"),
+    pos = c(100L, NA, 300L),
+    ref = c("A", NA, "G"),
+    alt = c("G", NA, "A"),
+    variant_id = c(NA, "chr2_200_C_T_b38", "chr3_300_G_A_b38")
+  )
+  v <- new_variants(dt, build = "b38")
+  expect_equal(v$chr, c("chr1", "chr2", "chr3"))
+  expect_equal(v$pos, c(100L, 200L, 300L))
+  expect_equal(
+    v$variant_id,
+    c("chr1_100_A_G_b38", "chr2_200_C_T_b38", "chr3_300_G_A_b38")
+  )
+})
+
+test_that("new_variants preserves a non-canonical id and fills NA ids", {
+  dt <- data.table::data.table(
+    chr = c("chr1", "chr2"), pos = c(100L, 200L),
+    ref = c("A", "C"), alt = c("G", "T"),
+    variant_id = c("rs1", NA)
+  )
+  v <- new_variants(dt, build = "b38")
+  expect_equal(v$variant_id, c("rs1", "chr2_200_C_T_b38"))
+})
+
+test_that("new_variants derives build from the variant_id suffix", {
+  v <- new_variants(
+    data.table::data.table(variant_id = "chr1_10_A_T_b37")
+  )
+  expect_equal(build(v), "b37")
+})
+
+test_that("new_variants errors when build conflicts with the id suffix", {
+  expect_error(
+    new_variants(
+      data.table::data.table(variant_id = "chr5_49861645_A_G_b38"),
+      build = "b37"
+    ),
+    "build"
+  )
+})
