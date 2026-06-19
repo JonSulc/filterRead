@@ -20,13 +20,13 @@ set_variants_class <- function(x) {
     x, "class",
     c("variants", class(data.table::data.table())) |> unique()
   )
-  x
+  x[]
 }
 
 #' Construct a build-aware variants table
 #'
-#' Wraps a data.table of variants (`chr`, `pos`, `ref`, `alt`) as a
-#' `variants`: an S3-classed data.table carrying a `build` attribute, a
+#' Wraps a data.frame or data.table of variants (`chr`, `pos`, `ref`, `alt`)
+#' as a `variants`: an S3-classed data.table carrying a `build` attribute, a
 #' `chr_pos_ref_alt_<build>` `variant_id`, per-build provenance columns, and
 #' a `defining_build` column recording the build each variant was declared in.
 #' Liftover always sources from that defining build, so every target is
@@ -34,28 +34,66 @@ set_variants_class <- function(x) {
 #' existing `defining_build` column is preserved (e.g. when re-wrapping
 #' variants assembled from mixed builds).
 #'
-#' @param x A data.table with `chr`, `pos`, `ref`, `alt` columns.
-#' @param build Genome build (`"b36"`, `"b37"`, `"b38"`).
+#' A 0-row input that omits some or all coordinate columns has those columns
+#' scaffolded as empty typed vectors (`integer` for `pos`, `character`
+#' otherwise). A non-empty input with missing coordinate columns still errors.
+#'
+#' @param x A data.frame (or data.table) with `chr`, `pos`, `ref`, `alt`
+#'   columns, or a 0-row frame that may omit them.
+#' @param build Genome build string; native builds are `"b36"`, `"b37"`,
+#'   `"b38"` (and their synonyms). Non-native builds are accepted and
+#'   carried through, but cannot be lifted over.
 #' @return A `variants` object (S3-classed data.table).
 #' @export
 new_variants <- function(x, build = NULL) {
-  stopifnot(data.table::is.data.table(x))
+  stopifnot(is.data.frame(x))
   if (is.null(build)) {
     build <- build(x)
   }
+  x <- if (data.table::is.data.table(x)) {
+    data.table::copy(x)
+  } else {
+    data.table::as.data.table(x)
+  }
   missing_cols <- setdiff(coordinate_columns(), names(x))
   if (length(missing_cols) > 0) {
-    stop(
-      "`x` is missing column(s) required for a variants table: ",
-      paste(missing_cols, collapse = ", ")
-    )
+    if (nrow(x) > 0) {
+      stop(
+        "`x` is missing column(s) required for a variants table: ",
+        paste(missing_cols, collapse = ", ")
+      )
+    }
+    x <- scaffold_coordinate_columns(x, missing_cols)
   }
+  finalize_variants(x, build)
+}
+
+#' Add empty type-correct coordinate columns to a 0-row table
+#'
+#' @keywords internal
+scaffold_coordinate_columns <- function(x, cols) {
+  for (col in cols) {
+    x[, (col) := if (col == "pos") integer() else character()]
+  }
+  x
+}
+
+#' Stamp build, defining_build, variant_id, and provenance, then class
+#'
+#' Shared construction tail. `v` must already be a private copy with the
+#' coordinate columns present. The build need not be native (only liftover
+#' requires that), so it is canonicalized leniently.
+#'
+#' @keywords internal
+finalize_variants <- function(v, build) {
   if (is.null(build)) {
     stop("Cannot construct variants without a build.")
   }
-  build <- normalize_build(build, allow_null = FALSE)
-  v <- data.table::copy(x)
-  build(v) <- build
+  build <- normalize_build(build, allow_null = FALSE, allow_unsupported = TRUE)
+  # Use setattr, not `build(v) <- build`: the replacement-function assignment
+  # bumps the reference count, forcing a defensive shallow copy (and a warning)
+  # on the next `:=`. setattr modifies in place, as liftover.variants does.
+  data.table::setattr(v, "build", build)
   if (!"defining_build" %in% names(v)) {
     v[, defining_build := build]
   }
@@ -66,7 +104,7 @@ new_variants <- function(x, build = NULL) {
 
 #' Coerce an object to variants
 #'
-#' @param x Object to coerce (currently a data.table).
+#' @param x A data.frame, data.table, or tibble to coerce.
 #' @param build Genome build; defaults to `build(x)`.
 #' @param ... Unused.
 #' @return A `variants` object.
@@ -83,7 +121,7 @@ as_variants.variants <- function(x, build = NULL, ...) {
 
 #' @rdname as_variants
 #' @export
-as_variants.data.table <- function(x, build = NULL, ...) {
+as_variants.data.frame <- function(x, build = NULL, ...) {
   new_variants(x, build = build)
 }
 
@@ -94,7 +132,10 @@ build.variants <- function(x) {
 
 #' @export
 `build<-.variants` <- function(x, value) {
-  data.table::setattr(x, "build", normalize_build(value, allow_null = FALSE))
+  data.table::setattr(
+    x, "build",
+    normalize_build(value, allow_null = FALSE, allow_unsupported = TRUE)
+  )
   x
 }
 

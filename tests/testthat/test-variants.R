@@ -394,3 +394,67 @@ test_that("liftover.variants reverse-complements alleles on strand flip", {
   expect_equal(back$alt, "C")
   expect_equal(back$pos, 200L)
 })
+
+test_that("new_variants scaffolds an empty table into a 0-row variants", {
+  v <- as_variants(data.table::data.table(), build = "b38")
+  expect_s3_class(v, "variants")
+  expect_equal(nrow(v), 0L)
+  expect_equal(build(v), "b38")
+  expect_true(all(c("chr", "pos", "ref", "alt", "variant_id",
+                    "defining_build") %in% names(v)))
+  expect_type(v$chr, "character")
+  expect_type(v$pos, "integer")
+})
+
+test_that("new_variants scaffolds coordinates while keeping other columns", {
+  v <- as_variants(
+    data.table::data.table(gene_id = character(0)), build = "b38"
+  )
+  expect_equal(nrow(v), 0L)
+  expect_true("gene_id" %in% names(v))
+  expect_true(all(c("chr", "pos", "ref", "alt") %in% names(v)))
+})
+
+test_that("new_variants still errors on a non-empty input missing coordinates", {
+  expect_error(
+    new_variants(data.table::data.table(gene_id = "X"), build = "b38"),
+    "chr"
+  )
+})
+
+test_that("new_variants constructs with a non-native build", {
+  v <- as_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "dahu42"
+  )
+  expect_equal(build(v), "dahu42")
+  expect_equal(v$variant_id, "chr1_100_A_G_dahu42")
+  expect_true("chr_dahu42" %in% names(v))
+})
+
+test_that("liftover of a non-native build errors", {
+  v <- as_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "dahu42"
+  )
+  expect_error(liftover(v, "b38"), "[Uu]nknown build")
+})
+
+test_that("new_variants accepts a base data.frame", {
+  v <- new_variants(
+    data.frame(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  expect_s3_class(v, "variants")
+  expect_true(data.table::is.data.table(v))
+  expect_equal(v$variant_id, "chr1_100_A_G_b38")
+})
+
+test_that("as_variants accepts a data.frame", {
+  v <- as_variants(
+    data.frame(chr = "chr2", pos = 200L, ref = "C", alt = "T"),
+    build = "b38"
+  )
+  expect_s3_class(v, "variants")
+  expect_equal(build(v), "b38")
+})

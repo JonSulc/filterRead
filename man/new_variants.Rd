@@ -7,20 +7,28 @@
 new_variants(x, build = NULL)
 }
 \arguments{
-\item{x}{A data.table with `chr`, `pos`, `ref`, `alt` columns.}
+\item{x}{A data.frame (or data.table) with `chr`, `pos`, `ref`, `alt`
+columns, or a 0-row frame that may omit them.}
 
-\item{build}{Genome build (`"b36"`, `"b37"`, `"b38"`).}
+\item{build}{Genome build string; native builds are `"b36"`, `"b37"`,
+`"b38"` (and their synonyms). Non-native builds are accepted and
+carried through, but cannot be lifted over.}
 }
 \value{
 A `variants` object (S3-classed data.table).
 }
 \description{
-Wraps a data.table of variants (`chr`, `pos`, `ref`, `alt`) as a
-`variants`: an S3-classed data.table carrying a `build` attribute, a
+Wraps a data.frame or data.table of variants (`chr`, `pos`, `ref`, `alt`)
+as a `variants`: an S3-classed data.table carrying a `build` attribute, a
 `chr_pos_ref_alt_<build>` `variant_id`, per-build provenance columns, and
 a `defining_build` column recording the build each variant was declared in.
 Liftover always sources from that defining build, so every target is
 derived directly from it, independent of any intermediate lifts. An
 existing `defining_build` column is preserved (e.g. when re-wrapping
 variants assembled from mixed builds).
+}
+\details{
+A 0-row input that omits some or all coordinate columns has those columns
+scaffolded as empty typed vectors (`integer` for `pos`, `character`
+otherwise). A non-empty input with missing coordinate columns still errors.
 }

@@ -3,17 +3,17 @@
 \name{as_variants}
 \alias{as_variants}
 \alias{as_variants.variants}
-\alias{as_variants.data.table}
+\alias{as_variants.data.frame}
 \title{Coerce an object to variants}
 \usage{
 as_variants(x, build = NULL, ...)
 
 \method{as_variants}{variants}(x, build = NULL, ...)
 
-\method{as_variants}{data.table}(x, build = NULL, ...)
+\method{as_variants}{data.frame}(x, build = NULL, ...)
 }
 \arguments{
-\item{x}{Object to coerce (currently a data.table).}
+\item{x}{A data.frame, data.table, or tibble to coerce.}
 
 \item{build}{Genome build; defaults to `build(x)`.}
 

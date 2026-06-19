@@ -108,3 +108,19 @@ test_that("fill = FALSE on ragged inputs surfaces rbindlist's error", {
 test_that("rbindlist_variants on an empty list needs a target", {
   expect_error(rbindlist_variants(list()), "empty list")
 })
+
+test_that("rbindlist_variants binds non-native variants", {
+  out <- rbindlist_variants(list(
+    mk("chr1", 100L, "A", "G", "dahu42"),
+    mk("chr2", 200L, "C", "T", "dahu42")
+  ))
+  expect_equal(build(out), "dahu42")
+  expect_equal(out$pos, c(100L, 200L))
+})
+
+test_that("rbindlist_variants on an empty list with target is a 0-row variants", {
+  out <- rbindlist_variants(list(), target = "b38")
+  expect_s3_class(out, "variants")
+  expect_equal(nrow(out), 0L)
+  expect_equal(build(out), "b38")
+})
