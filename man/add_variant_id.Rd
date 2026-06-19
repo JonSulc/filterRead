@@ -19,6 +19,6 @@ leave it alone. If TRUE, recompute.}
 }
 \description{
 Adds a `variant_id` column shaped as `chr_pos_ref_alt_<build>`
-(e.g. `chr1_12345_A_G_b38`). Rows where `chr` or `pos` is NA get
-`NA` for `variant_id`. Modifies `dt` by reference.
+(e.g. `chr1_12345_A_G_b38`). Rows where any of `chr`, `pos`, `ref`, or `alt`
+is NA get `NA` for `variant_id`. Modifies `dt` by reference.
 }

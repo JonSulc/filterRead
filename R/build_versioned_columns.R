@@ -28,13 +28,12 @@ record_build <- function(
       "`build(dt) <- \"b37\"` first or pass `build` explicitly."
     )
   }
-  build <- normalize_build(build, allow_null = FALSE)
-  # Restore over-allocation so the column adds below land in place;
-  # upstream `build(dt) <- ...` calls can zero the truelength even
-  # when selfref stays valid, which otherwise forces a shallow copy
-  # and breaks the by-reference contract for callers that don't
-  # capture the return.
-  data.table::setalloccol(dt)
+  build <- normalize_build(build, allow_null = FALSE, allow_unsupported = TRUE)
+  # Add provenance columns by reference with set(). Do not setalloccol() first:
+  # on a table with spare slots it forces a reallocation, so the columns land on
+  # a copy a non-capturing caller never sees. set() adds in place when slots are
+  # free; at truelength 0 it reallocates (without the := shallow-copy warning),
+  # which is safe here because those callers capture the return value.
   for (col in columns) {
     if (!col %in% names(dt)) {
       next
@@ -43,7 +42,7 @@ record_build <- function(
     if (suffix_name %in% names(dt)) {
       next
     }
-    dt[, (suffix_name) := get(col)]
+    data.table::set(dt, j = suffix_name, value = dt[[col]])
   }
   invisible(dt)
 }
@@ -101,11 +100,28 @@ parse_variant_id <- function(x) {
   out[]
 }
 
+#' Build variant_id values from coordinate vectors
+#'
+#' Shared formatter for the `chr_pos_ref_alt_<build>` id. Rows where any
+#' component (`chr`, `pos`, `ref`, `alt`, `build`) is NA get `NA`.
+#'
+#' @param chr,pos,ref,alt Coordinate vectors of equal length.
+#' @param build Build suffix.
+#' @return Character vector of ids.
+#' @keywords internal
+variant_id_values <- function(chr, pos, ref, alt, build) {
+  data.table::fifelse(
+    is.na(chr) | is.na(pos) | is.na(ref) | is.na(alt) | is.na(build),
+    NA_character_,
+    sprintf("%s_%s_%s_%s_%s", chr, pos, ref, alt, build)
+  )
+}
+
 #' Construct variant_id from chr / pos / ref / alt
 #'
 #' Adds a `variant_id` column shaped as `chr_pos_ref_alt_<build>`
-#' (e.g. `chr1_12345_A_G_b38`). Rows where `chr` or `pos` is NA get
-#' `NA` for `variant_id`. Modifies `dt` by reference.
+#' (e.g. `chr1_12345_A_G_b38`). Rows where any of `chr`, `pos`, `ref`, or `alt`
+#' is NA get `NA` for `variant_id`. Modifies `dt` by reference.
 #'
 #' @param dt A data.table with `chr`, `pos`, `ref`, `alt` columns.
 #' @param build Build name used in the suffix. Defaults to `build(dt)`.
@@ -125,7 +141,7 @@ add_variant_id <- function(
   if (is.null(build)) {
     stop("Cannot construct variant_id without a build.")
   }
-  build <- normalize_build(build, allow_null = FALSE)
+  build <- normalize_build(build, allow_null = FALSE, allow_unsupported = TRUE)
   required <- c("chr", "pos", "ref", "alt")
   missing_cols <- setdiff(required, names(dt))
   if (length(missing_cols) > 0) {
@@ -139,11 +155,7 @@ add_variant_id <- function(
   }
   dt[
     ,
-    variant_id := data.table::fifelse(
-      is.na(chr) | is.na(pos),
-      NA_character_,
-      sprintf("%s_%s_%s_%s_%s", chr, pos, ref, alt, build)
-    )
+    variant_id := variant_id_values(chr, pos, ref, alt, build)
   ]
   invisible(dt)
 }
