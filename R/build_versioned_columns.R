@@ -70,6 +70,37 @@ build_versioned_column <- function(dt, base, build) {
   NULL
 }
 
+#' Decode variant_id strings into coordinate columns
+#'
+#' Inverse of [add_variant_id()]: decodes `chr_pos_ref_alt_<build>` strings
+#' into a table of `chr`, `pos`, `ref`, `alt`, and `build`. The build is any
+#' non-`_` tag (validity is enforced only at liftover). An element that does
+#' not match the structure yields an all-NA row.
+#'
+#' @param x Character vector of variant ids.
+#' @return A `data.table` with columns `chr`, `pos` (integer), `ref`, `alt`,
+#'   and `build`, one row per element of `x`.
+#' @export
+parse_variant_id <- function(x) {
+  x <- as.character(x)
+  pattern <- "^chr[0-9XYMTxymt]+_[0-9]+_[^_]+_[^_]+_[^_]+$"
+  out <- data.table::data.table(
+    chr   = rep(NA_character_, length(x)),
+    pos   = rep(NA_integer_,   length(x)),
+    ref   = rep(NA_character_, length(x)),
+    alt   = rep(NA_character_, length(x)),
+    build = rep(NA_character_, length(x))
+  )
+  valid <- !is.na(x) & grepl(pattern, x)
+  if (any(valid)) {
+    parts <- data.table::tstrsplit(x[valid], "_", fixed = TRUE)
+    out[valid, c("chr", "pos", "ref", "alt", "build") := .(
+      parts[[1]], as.integer(parts[[2]]), parts[[3]], parts[[4]], parts[[5]]
+    )]
+  }
+  out[]
+}
+
 #' Construct variant_id from chr / pos / ref / alt
 #'
 #' Adds a `variant_id` column shaped as `chr_pos_ref_alt_<build>`
