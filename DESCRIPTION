@@ -52,4 +52,5 @@ Collate:
     'rsid_matching.R'
     'value_formatting.R'
     'variants_class.R'
+    'variants_combine.R'
     'zzz.R'
