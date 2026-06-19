@@ -23,30 +23,38 @@
 #'
 #' Converts build name synonyms (hg38, GRCh38, etc.) to canonical form (b38).
 #'
-#' @param build Character string specifying genome build
+#' @param build Character vector of genome build names or synonyms.
 #' @param allow_null Logical, whether to allow NULL input (returns NULL)
-#' @return Canonical build name (b36, b37, or b38)
+#' @param allow_unsupported If FALSE (default), error on a build that is not a
+#'   known name or synonym. If TRUE, canonicalize known synonyms and pass
+#'   unsupported tags through unchanged (used off the liftover path).
+#' @return Canonical build name (b36, b37, or b38), or the original tag when it
+#'   is not a known synonym and \code{allow_unsupported = TRUE}.
 #' @export
 #' @examples
 #' normalize_build("hg38")
 #' normalize_build("GRCh37")
 #' normalize_build("b37")
-normalize_build <- function(build, allow_null = TRUE) {
+normalize_build <- function(build, allow_null = TRUE,
+                            allow_unsupported = FALSE) {
   if (is.null(build)) {
     if (allow_null) {
       return(NULL)
     }
     stop("Build cannot be NULL")
   }
-
-  canonical <- .build_synonyms[build]
-  if (is.na(canonical)) {
-    stop(
-      sprintf("Unknown build '%s'. ", build),
-      "Valid builds: ", paste(names(.build_synonyms), collapse = ", ")
-    )
+  canonical <- unname(.build_synonyms[build])
+  unknown <- is.na(canonical)
+  if (any(unknown)) {
+    if (!allow_unsupported) {
+      stop(
+        sprintf("Unknown build '%s'. ", build[unknown][1]),
+        "Valid builds: ", paste(names(.build_synonyms), collapse = ", ")
+      )
+    }
+    canonical[unknown] <- build[unknown]
   }
-  unname(canonical)
+  canonical
 }
 
 # Create an active binding: this function is run when filterread_env$config is

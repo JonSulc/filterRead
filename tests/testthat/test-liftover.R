@@ -629,3 +629,20 @@ test_that("get_chain_dt regenerates from chain file when RDS cache is invalid", 
   expect_s3_class(chain_dt, "data.table")
   expect_true(file.exists(rds_file))
 })
+
+test_that("normalize_build passes unknown tags through when not strict", {
+  expect_equal(normalize_build("dahu42", allow_unsupported = TRUE), "dahu42")
+  expect_equal(normalize_build("hg38", allow_unsupported = TRUE), "b38")
+  expect_equal(
+    normalize_build(c("hg38", "dahu42"), allow_unsupported = TRUE),
+    c("b38", "dahu42")
+  )
+  expect_equal(
+    normalize_build(c("hg38", "b37"), allow_unsupported = TRUE),
+    c("b38", "b37")
+  )
+})
+
+test_that("normalize_build is still strict by default", {
+  expect_error(normalize_build("dahu42"), "Unknown build")
+})

@@ -4,15 +4,20 @@
 \alias{normalize_build}
 \title{Normalize build name to canonical form}
 \usage{
-normalize_build(build, allow_null = TRUE)
+normalize_build(build, allow_null = TRUE, allow_unsupported = FALSE)
 }
 \arguments{
-\item{build}{Character string specifying genome build}
+\item{build}{Character vector of genome build names or synonyms.}
 
 \item{allow_null}{Logical, whether to allow NULL input (returns NULL)}
+
+\item{allow_unsupported}{If FALSE (default), error on a build that is not a
+known name or synonym. If TRUE, canonicalize known synonyms and pass
+unsupported tags through unchanged (used off the liftover path).}
 }
 \value{
-Canonical build name (b36, b37, or b38)
+Canonical build name (b36, b37, or b38), or the original tag when it
+  is not a known synonym and \code{allow_unsupported = TRUE}.
 }
 \description{
 Converts build name synonyms (hg38, GRCh38, etc.) to canonical form (b38).
