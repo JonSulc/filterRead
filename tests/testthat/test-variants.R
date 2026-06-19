@@ -351,3 +351,37 @@ test_that("a file-interface read coerces to variants carrying its inferred build
   expect_equal(build(v), "b38")
   expect_equal(v$variant_id, c("chr1_100_A_G_b38", "chr1_200_C_T_b38"))
 })
+
+test_that("liftover.variants reverse-complements alleles on strand flip", {
+  # A minus-strand (rev = TRUE) block: the b37 forward alleles are expressed
+  # as their reverse complement in b38. Strand-driven, so palindrome-safe.
+  rev_chain <- function() {
+    ch <- data.table::data.table(
+      start = 100L, end = 300L, width = 201L,
+      chr = "chr1", offset = 5000L, new_chr = "chr1", rev = TRUE
+    )
+    data.table::setkey(ch, chr, start, end)
+    data.table::setattr(ch, "from", "b37")
+    data.table::setattr(ch, "to", "b38")
+    ch
+  }
+  testthat::local_mocked_bindings(get_chain_dt = function(from, to) rev_chain())
+
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C"),
+    build = "b37"
+  )
+
+  lifted <- liftover(v, "b38")
+  expect_equal(build(lifted), "b38")
+  expect_equal(lifted$ref, "T")          # reverse complement of A
+  expect_equal(lifted$alt, "G")          # reverse complement of C
+  expect_false(is.na(lifted$pos))
+
+  # Round trip: lifting back to b37 restores the original alleles from the
+  # recorded b37 provenance.
+  back <- liftover(lifted, "b37")
+  expect_equal(back$ref, "A")
+  expect_equal(back$alt, "C")
+  expect_equal(back$pos, 200L)
+})
