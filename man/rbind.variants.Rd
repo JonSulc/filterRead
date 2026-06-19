@@ -17,5 +17,6 @@
 A `variants` in `target`.
 }
 \description{
-Row-bind variants (pairwise/variadic convenience)
+Binds with `fill = TRUE`; use [rbindlist_variants()] for control over `fill`
+and other [data.table::rbindlist()] options.
 }

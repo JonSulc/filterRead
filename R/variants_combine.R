@@ -65,6 +65,9 @@ rbindlist_variants <- function(x, target = NULL, source = "best",
 
 #' Row-bind variants (pairwise/variadic convenience)
 #'
+#' Binds with `fill = TRUE`; use [rbindlist_variants()] for control over `fill`
+#' and other [data.table::rbindlist()] options.
+#'
 #' @param ... `variants` to bind.
 #' @param target Build to express the result in; defaults to the first input's.
 #' @param source,multi_match Forwarded to [liftover.variants()].
