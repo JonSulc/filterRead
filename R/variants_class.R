@@ -93,10 +93,7 @@ finalize_variants <- function(v, build) {
     stop("Cannot construct variants without a build.")
   }
   build <- normalize_build(build, allow_null = FALSE, allow_unsupported = TRUE)
-  # Use setattr, not `build(v) <- build`: the replacement-function assignment
-  # bumps the reference count, forcing a defensive shallow copy (and a warning)
-  # on the next `:=`. setattr modifies in place, as liftover.variants does.
-  data.table::setattr(v, "build", build)
+  set_build(v, build)
   if (!"defining_build" %in% names(v)) {
     v[, defining_build := build]
   }
@@ -193,6 +190,26 @@ as_variants.data.frame <- function(x, build = NULL, ...) {
   new_variants(x, build = build)
 }
 
+#' Set a variants' genome build by reference
+#'
+#' Records the (normalized) genome build in the `build` attribute in place.
+#' Unlike `build(x) <- value`, this is a plain side-effecting setter, so it does
+#' not bump the object's reference count and is safe to call immediately before
+#' a `:=`. Use it to relabel an existing `variants` without lifting coordinates.
+#' It is the canonical in-place build setter for the variants core.
+#'
+#' @param x A variants (or data.table).
+#' @param value Build name or synonym (non-native tags pass through).
+#' @return `x`, invisibly.
+#' @export
+set_build <- function(x, value) {
+  data.table::setattr(
+    x, "build",
+    normalize_build(value, allow_null = FALSE, allow_unsupported = TRUE)
+  )
+  invisible(x)
+}
+
 #' @export
 build.variants <- function(x) {
   attr(x, "build")
@@ -200,10 +217,7 @@ build.variants <- function(x) {
 
 #' @export
 `build<-.variants` <- function(x, value) {
-  data.table::setattr(
-    x, "build",
-    normalize_build(value, allow_null = FALSE, allow_unsupported = TRUE)
-  )
+  set_build(x, value)
   x
 }
 
@@ -267,7 +281,7 @@ lift_one_source <- function(rows, from, target, multi_match) {
   for (col in coordinate_columns()) {
     rows[, (col) := build_column(rows, col, from)]
   }
-  build(rows) <- from
+  set_build(rows, from)
   liftover.data.table(
     rows,
     target        = target,
@@ -395,13 +409,7 @@ liftover.variants <- function(x, target, source = "best",
   data.table::setorder(result, .anchor)
   result[, c(".anchor", ".src") := NULL]
 
-  # Set the build via setattr rather than `build(result) <- target`: the
-  # replacement-function assignment bumps the reference count, which forces
-  # `record_build`'s column adds onto a shallow copy and drops the target
-  # provenance. Capture the helpers' returns for the same by-reference reason.
-  data.table::setattr(
-    result, "build", normalize_build(target, allow_null = FALSE)
-  )
+  set_build(result, target)
   result <- add_variant_id(result, build = target, overwrite = TRUE)
   result <- record_build(result, build = target)
   set_variants_class(result)
@@ -412,7 +420,7 @@ unique.variants <- function(x, ...) {
   result <- data.table::as.data.table(x)[
     !duplicated(x, by = coordinate_columns())
   ]
-  data.table::setattr(result, "build", attr(x, "build"))
+  set_build(result, build(x))
   set_variants_class(result)
 }
 

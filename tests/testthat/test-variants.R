@@ -559,3 +559,43 @@ test_that("a multi-build variant_id table splits and lifts to the first build", 
   expect_equal(v$pos, c(1000L, 1950L))
   expect_equal(v$ref, c("A", "C"))
 })
+
+test_that("set_build sets the build attribute by reference, normalized", {
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  expect_equal(build(v), "b38")          # sanity: initial build
+  ret <- set_build(v, "hg19")
+  expect_equal(build(v), "b37")          # normalized synonym, set by reference
+  expect_identical(ret, v)               # returns the same object (invisibly)
+})
+
+test_that("set_build avoids the shallow-copy warning that build<- triggers", {
+  # Control: `build(x) <- ` then a `:=` in the same frame warns, because the
+  # replacement-form rebind bumps the reference count. That is the hazard the
+  # variants core avoids by using set_build in finalize_variants /
+  # liftover.variants; the no-warning check below confirms set_build does not
+  # reintroduce it in that same-frame pattern.
+  v_replace <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  expect_warning(
+    {
+      build(v_replace) <- "b37"
+      v_replace[, scratch := 1L]
+    },
+    "shallow copy"
+  )
+  # set_build sets by reference (no rebind), so the same sequence is
+  # warning-free.
+  v_set <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  expect_no_warning({
+    set_build(v_set, "b37")
+    v_set[, scratch := 1L]
+  })
+})
