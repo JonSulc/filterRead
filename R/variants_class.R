@@ -189,6 +189,20 @@ as_variants <- function(x, build = NULL, ...) {
 #' @rdname as_variants
 #' @export
 as_variants.variants <- function(x, build = NULL, ...) {
+  if (!is.null(build)) {
+    build <- normalize_build(
+      build,
+      allow_null = FALSE,
+      allow_unsupported = TRUE
+    )
+    if (!identical(build, build(x))) {
+      stop(
+        "`build` (", build, ") conflicts with the variants' build (",
+        build(x), "). Use liftover() to convert coordinates to ", build,
+        ", or set_build()/`build<-` to relabel without converting."
+      )
+    }
+  }
   x
 }
 

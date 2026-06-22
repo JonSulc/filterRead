@@ -611,3 +611,14 @@ test_that("new_variants canonicalizes coordinate types (coordinate path)", {
   expect_equal(v$chr, "chr1")
   expect_equal(v$variant_id, "chr1_100_A_G_b38")
 })
+
+test_that("as_variants errors when build conflicts with a variants' build", {
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  expect_error(as_variants(v, build = "b37"), "conflict")
+  expect_s3_class(as_variants(v, build = "b38"), "variants")  # match
+  expect_s3_class(as_variants(v, build = "hg38"), "variants")  # synonym
+  expect_s3_class(as_variants(v), "variants")  # no build
+})
