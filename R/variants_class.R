@@ -47,9 +47,7 @@ set_variants_class <- function(x) {
 #' @export
 new_variants <- function(x, build = NULL) {
   stopifnot(is.data.frame(x))
-  if (is.null(build)) {
-    build <- build(x)
-  }
+  build <- build %||% build(x)
   x <- if (data.table::is.data.table(x)) {
     data.table::copy(x)
   } else {
@@ -116,13 +114,12 @@ new_variants_from_variant_id <- function(x, build) {
   if (is.null(build) && 1 < length(embedded)) {
     return(combine_by_embedded_build(x, parsed))
   }
-  resolved <- if (!is.null(build)) {
-    normalize_build(build, allow_null = FALSE, allow_unsupported = TRUE)
-  } else if (length(embedded) == 1) {
-    normalize_build(embedded, allow_null = FALSE, allow_unsupported = TRUE)
-  } else {
+  resolved <- build %||% (if (length(embedded) == 1) embedded)
+  if (is.null(resolved)) {
     stop("Cannot construct variants without a build.")
   }
+  resolved <- normalize_build(resolved, allow_null = FALSE,
+                              allow_unsupported = TRUE)
   check_variant_id(x, resolved, parsed = parsed)
   for (col in coordinate_columns()) {
     decoded <- parsed[[col]]

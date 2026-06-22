@@ -21,11 +21,10 @@ bind_variants_impl <- function(parts, target, source, multi_match, fill,
     return(new_variants(data.table::data.table(), build = target))
   }
   parts <- lapply(parts, as_variants)
-  target <- if (is.null(target)) {
-    build(parts[[1]])
-  } else {
-    normalize_build(target, allow_null = FALSE, allow_unsupported = TRUE)
-  }
+  target <- normalize_build(
+    target %||% build(parts[[1]]),
+    allow_null = FALSE, allow_unsupported = TRUE
+  )
   lifted <- lapply(parts, function(v) {
     if (identical(build(v), target)) {
       v

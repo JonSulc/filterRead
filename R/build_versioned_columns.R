@@ -19,9 +19,7 @@ record_build <- function(
   columns = c("chr", "pos", "variant_id", "ref", "alt")
 ) {
   stopifnot(data.table::is.data.table(dt))
-  if (is.null(build)) {
-    build <- build(dt)
-  }
+  build <- build %||% build(dt)
   if (is.null(build)) {
     stop(
       "Cannot add build-versioned columns without a build. Set ",
@@ -134,12 +132,8 @@ variant_id_values <- function(chr, pos, ref, alt, build) {
 #' @export
 check_variant_id <- function(x, build = NULL, parsed = NULL) {
   stopifnot(data.table::is.data.table(x), "variant_id" %in% names(x))
-  if (is.null(build)) {
-    build <- build(x)
-  }
-  if (is.null(parsed)) {
-    parsed <- parse_variant_id(x$variant_id)
-  }
+  build <- build %||% build(x)
+  parsed <- parsed %||% parse_variant_id(x$variant_id)
   parseable <- !is.na(parsed$build)
   problems <- character(0)
   if (!is.null(build)) {
@@ -199,9 +193,7 @@ add_variant_id <- function(
   overwrite = FALSE
 ) {
   stopifnot(data.table::is.data.table(dt))
-  if (is.null(build)) {
-    build <- build(dt)
-  }
+  build <- build %||% build(dt)
   if (is.null(build)) {
     stop("Cannot construct variant_id without a build.")
   }
