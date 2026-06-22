@@ -599,3 +599,15 @@ test_that("set_build avoids the shallow-copy warning that build<- triggers", {
     v_set[, scratch := 1L]
   })
 })
+
+test_that("new_variants canonicalizes coordinate types (coordinate path)", {
+  v <- new_variants(
+    data.frame(chr = factor("chr1"), pos = 100, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  expect_type(v$pos, "integer")
+  expect_type(v$chr, "character")
+  expect_equal(v$pos, 100L)
+  expect_equal(v$chr, "chr1")
+  expect_equal(v$variant_id, "chr1_100_A_G_b38")
+})

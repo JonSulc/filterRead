@@ -53,6 +53,7 @@ new_variants <- function(x, build = NULL) {
   } else {
     data.table::as.data.table(x)
   }
+  x <- coerce_coordinate_types(x)
   if ("variant_id" %in% names(x)) {
     return(new_variants_from_variant_id(x, build))
   }
@@ -75,6 +76,23 @@ new_variants <- function(x, build = NULL) {
 scaffold_coordinate_columns <- function(x, cols) {
   for (col in cols) {
     x[, (col) := if (col == "pos") integer() else character()]
+  }
+  x
+}
+
+#' Coerce present coordinate columns to their canonical types in place
+#'
+#' `pos` to integer, `chr`/`ref`/`alt` to character. Only columns that are
+#' present and not already canonical are touched.
+#'
+#' @keywords internal
+coerce_coordinate_types <- function(x) {
+  for (col in intersect(coordinate_columns(), names(x))) {
+    if (col == "pos") {
+      if (!is.integer(x[[col]])) x[, (col) := as.integer(x[[col]])]
+    } else if (!is.character(x[[col]])) {
+      x[, (col) := as.character(x[[col]])]
+    }
   }
   x
 }
@@ -124,14 +142,7 @@ new_variants_from_variant_id <- function(x, build) {
   for (col in coordinate_columns()) {
     decoded <- parsed[[col]]
     if (col %in% names(x)) {
-      # Coerce to the parsed column's canonical type (integer pos, else
-      # character) so fcoalesce -- which requires matching types -- accepts a
-      # double pos or a factor coordinate.
-      existing <- if (col == "pos") {
-        as.integer(x[[col]])
-      } else {
-        as.character(x[[col]])
-      }
+      existing <- x[[col]]
       x[, (col) := data.table::fcoalesce(decoded, existing)]
     } else {
       x[, (col) := decoded]
