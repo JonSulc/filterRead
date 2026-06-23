@@ -7,7 +7,9 @@
 coerce_coordinate_types(x)
 }
 \description{
-`pos` to integer, `chr`/`ref`/`alt` to character. Only columns that are
-present and not already canonical are touched.
+`pos` to integer, `ref`/`alt` to character, and `chr` to the "chr"-prefixed
+character form (e.g. `1` -> `"chr1"`), matching the `variant_id` format and
+what `file_interface` returns. NA `chr` values are preserved. Only present
+columns are touched.
 }
 \keyword{internal}
