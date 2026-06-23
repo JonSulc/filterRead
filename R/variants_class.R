@@ -82,16 +82,22 @@ scaffold_coordinate_columns <- function(x, cols) {
 
 #' Coerce present coordinate columns to their canonical types in place
 #'
-#' `pos` to integer, `chr`/`ref`/`alt` to character. Only columns that are
-#' present and not already canonical are touched.
+#' `pos` to integer, `ref`/`alt` to character, and `chr` to the "chr"-prefixed
+#' character form (e.g. `1` -> `"chr1"`), matching the `variant_id` format and
+#' what `file_interface` returns. NA `chr` values are preserved. Only present
+#' columns are touched.
 #'
 #' @keywords internal
 coerce_coordinate_types <- function(x) {
   for (col in intersect(coordinate_columns(), names(x))) {
     if (col == "pos") {
-      if (!is.integer(x[[col]])) x[, (col) := as.integer(x[[col]])]
+      if (!is.integer(x[[col]])) {
+        data.table::set(x, j = col, value = as.integer(x[[col]]))
+      }
+    } else if (col == "chr") {
+      data.table::set(x, j = col, value = format_chr(x[[col]], prefix = "chr"))
     } else if (!is.character(x[[col]])) {
-      x[, (col) := as.character(x[[col]])]
+      data.table::set(x, j = col, value = as.character(x[[col]]))
     }
   }
   x

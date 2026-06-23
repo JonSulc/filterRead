@@ -622,3 +622,42 @@ test_that("as_variants errors when build conflicts with a variants' build", {
   expect_s3_class(as_variants(v, build = "hg38"), "variants")  # synonym
   expect_s3_class(as_variants(v), "variants")  # no build
 })
+
+test_that("new_variants prefixes a bare integer chr", {
+  v <- new_variants(
+    data.table::data.table(chr = 1L, pos = 12345L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  expect_equal(v$chr, "chr1")
+  expect_equal(v$variant_id, "chr1_12345_A_G_b38")
+})
+
+test_that("new_variants prefixes only the chr values that lack the prefix", {
+  v <- new_variants(
+    data.table::data.table(chr = c(1, "chr2"), pos = c(10L, 20L),
+                           ref = c("A", "C"), alt = c("G", "T")),
+    build = "b38"
+  )
+  expect_equal(v$chr, c("chr1", "chr2"))
+})
+
+test_that("new_variants leaves an already-prefixed chr unchanged", {
+  v <- new_variants(
+    data.table::data.table(chr = c("chr1", "chrX"), pos = c(100L, 200L),
+                           ref = c("A", "C"), alt = c("G", "T")),
+    build = "b38"
+  )
+  expect_equal(v$chr, c("chr1", "chrX"))
+  expect_false(any(grepl("^chrchr", v$chr)))
+})
+
+test_that("new_variants prefixes bare chr while preserving NA", {
+  v <- new_variants(
+    data.table::data.table(
+      chr = c("2", NA_character_), pos = c(5L, NA_integer_),
+      ref = c("A", "C"), alt = c("G", "T")
+    ),
+    build = "b37"
+  )
+  expect_equal(v$chr, c("chr2", NA_character_))
+})
