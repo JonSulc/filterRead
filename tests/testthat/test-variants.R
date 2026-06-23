@@ -661,3 +661,46 @@ test_that("new_variants prefixes bare chr while preserving NA", {
   )
   expect_equal(v$chr, c("chr2", NA_character_))
 })
+
+test_that("liftover on a mixed-build variants returns integer pos", {
+  chain_via_parser <- function(from, to) {
+    header <- list(
+      chain = "chain", score = "1", tName = "chr1", tSize = "249000000",
+      tStrand = "+", tStart = "50", tEnd = "100050", qName = "chr1",
+      qSize = "248000000", qStrand = "+", qStart = "0", qEnd = "100000",
+      id = "1"
+    )
+    ch <- make_single_chain_dt(header, list("100000"))
+    data.table::setkey(ch, chr, start, end)
+    data.table::setattr(ch, "from", from)
+    data.table::setattr(ch, "to", to)
+    ch
+  }
+  testthat::local_mocked_bindings(
+    get_chain_dt = function(from, to) chain_via_parser(from, to)
+  )
+
+  # Two rows declared in different builds -> mixed defining_build. Binding to
+  # b37 lifts the b38 row, and lifting the result to b38 sub-lifts per build.
+  v <- rbindlist_variants(
+    list(
+      new_variants(
+        data.table::data.table(chr = "chr1", pos = 1000L, ref = "A", alt = "G"),
+        build = "b37"
+      ),
+      new_variants(
+        data.table::data.table(chr = "chr1", pos = 2000L, ref = "C", alt = "T"),
+        build = "b38"
+      )
+    ),
+    target = "b37"
+  )
+  expect_equal(v$defining_build, c("b37", "b38"))
+
+  lifted <- liftover(v, "b38")
+  expect_s3_class(lifted, "variants")
+  expect_type(lifted$pos, "integer")
+  # row1 lifts b37 -> b38 (1000 - 50); row2 sources its recorded b38 value
+  expect_equal(lifted$pos, c(950L, 2000L))
+  expect_equal(build(lifted), "b38")
+})

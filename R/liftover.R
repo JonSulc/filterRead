@@ -298,14 +298,14 @@ make_single_chain_dt <- function(
   chain_dt[
     ,
     start := as.integer(chain_header$tStart) +
-      cumsum(shift(dt, n = 1L, type = "lag", fill = 0)) +
-      cumsum(shift(width, n = 1L, type = "lag", fill = 0)) +
-      1
+      cumsum(shift(dt, n = 1L, type = "lag", fill = 0L)) +
+      cumsum(shift(width, n = 1L, type = "lag", fill = 0L)) +
+      1L
   ][
     ,
     end := as.integer(chain_header$tStart) +
       cumsum(width) +
-      cumsum(shift(dt, n = 1L, type = "lag", fill = 0))
+      cumsum(shift(dt, n = 1L, type = "lag", fill = 0L))
   ][
     ,
     chr := chain_header$tName
@@ -320,15 +320,15 @@ make_single_chain_dt <- function(
     offset := if (!rev[[1]]) {
       as.integer(chain_header$tStart) -
         as.integer(chain_header$qStart) +
-        cumsum(shift(dt, n = 1L, type = "lag", fill = 0)) -
-        cumsum(shift(dq, n = 1L, type = "lag", fill = 0))
+        cumsum(shift(dt, n = 1L, type = "lag", fill = 0L)) -
+        cumsum(shift(dq, n = 1L, type = "lag", fill = 0L))
     } else {
       as.integer(chain_header$tStart) -
         (as.integer(chain_header$qSize) - as.integer(chain_header$qStart)) +
         cumsum(width) +
-        cumsum(shift(width, n = 1L, type = "lag", fill = 0)) +
-        cumsum(shift(dt, n = 1L, type = "lag", fill = 0)) +
-        cumsum(shift(dq, n = 1L, type = "lag", fill = 0))
+        cumsum(shift(width, n = 1L, type = "lag", fill = 0L)) +
+        cumsum(shift(dt, n = 1L, type = "lag", fill = 0L)) +
+        cumsum(shift(dq, n = 1L, type = "lag", fill = 0L))
     }
   ][
     ,
