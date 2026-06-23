@@ -30,6 +30,11 @@ as_genomic_regions.data.frame <- function(
   gregions <- data.table::as.data.table(x) |>
     data.table::copy()
   validate_genomic_regions_dt(gregions)
+  for (col in intersect(c("start", "end"), names(gregions))) {
+    if (!is.integer(gregions[[col]])) {
+      data.table::set(gregions, j = col, value = as.integer(gregions[[col]]))
+    }
+  }
   build(gregions) <- build
   is_included(gregions) <- include
   data.table::setattr(

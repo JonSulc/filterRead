@@ -1987,3 +1987,9 @@ test_that("compact returns semantically equivalent region", {
   compacted <- compact(overlapping)
   expect_true(overlapping == compacted)
 })
+
+test_that("genomic_regions construction coerces coordinates to integer", {
+  gr <- new_genomic_regions(chr = "1", start = 1000, end = 2000, build = "b38")
+  expect_type(gr$start, "integer")
+  expect_type(gr$end, "integer")
+})
