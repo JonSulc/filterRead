@@ -457,8 +457,13 @@ new_filter_condition_impl.quosure <- function(
       )
     )
   } else {
-    fcondition <- as_filter_condition(x) |>
-      split_genomic_conditions(build = build)
+    stop(
+      "Cannot build a filter_condition from `",
+      paste(deparse(rlang::get_expr(x)), collapse = " "),
+      "`: a condition must compare, test membership (%in%, grepl, %like%), ",
+      "or logically combine file columns, or be a symbol bound to a ",
+      "genomic_regions object."
+    )
   }
 
   attr(fcondition, "context") <- context

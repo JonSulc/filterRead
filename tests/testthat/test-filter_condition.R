@@ -1,20 +1,25 @@
-test_that("Basic filter_condition initialization works with dummy variables", {
+test_that("Basic filter_condition initialization", {
   finterface <- local_file_interface()
-  expect_no_error(new_filter_condition(rlang::quo(x < 3),
-    finterface = finterface
-  ))
-  expect_no_error(new_filter_condition(rlang::quo(x > 3),
-    finterface = finterface
-  ))
-  expect_no_error(new_filter_condition(rlang::quo(x <= 3),
-    finterface = finterface
-  ))
-  expect_no_error(new_filter_condition(rlang::quo(x >= 3),
-    finterface = finterface
-  ))
-  expect_no_error(new_filter_condition(rlang::quo(x == 3),
-    finterface = finterface
-  ))
+  expect_error(
+    new_filter_condition(rlang::quo(x < 3), finterface = finterface),
+    "Cannot build a filter_condition from"
+  )
+  expect_error(
+    new_filter_condition(rlang::quo(x > 3), finterface = finterface),
+    "Cannot build a filter_condition from"
+  )
+  expect_error(
+    new_filter_condition(rlang::quo(x <= 3), finterface = finterface),
+    "Cannot build a filter_condition from"
+  )
+  expect_error(
+    new_filter_condition(rlang::quo(x >= 3), finterface = finterface),
+    "Cannot build a filter_condition from"
+  )
+  expect_error(
+    new_filter_condition(rlang::quo(x == 3), finterface = finterface),
+    "Cannot build a filter_condition from"
+  )
 
   context <- {
     env <- new.env(parent = emptyenv())
@@ -1310,4 +1315,32 @@ test_that("valid condition expressions all construct without error", {
     fcondition <- new_filter_condition(condition, finterface)
     expect_true(is.filter_condition(fcondition))
   }
+})
+
+test_that("a bare literal condition errors clearly", {
+  finterface <- local_file_interface()
+  expect_error(
+    finterface[42],
+    "Cannot build a filter_condition from"
+  )
+  expect_error(
+    new_filter_condition(rlang::quo("foo"), finterface),
+    "Cannot build a filter_condition from"
+  )
+})
+
+test_that("a call that is not a condition errors clearly", {
+  finterface <- local_file_interface()
+  expect_error(
+    new_filter_condition(rlang::quo(c(1, 2, 3)), finterface),
+    "Cannot build a filter_condition from"
+  )
+})
+
+test_that("a comparison referencing no file column errors clearly", {
+  finterface <- local_file_interface()
+  expect_error(
+    new_filter_condition(rlang::quo(not_a_col == 1), finterface),
+    "Cannot build a filter_condition from"
+  )
 })
