@@ -1206,3 +1206,49 @@ test_that("eval_fcondition resolves nested constructors in a composite", {
     file_contents = c("a", "b")
   )
 })
+
+test_that("new_filter_condition stores a {finterface, env} context", {
+  finterface <- local_file_interface(build = "b38")
+
+  quosure <- rlang::quo(num < 3)
+  quosure_fcondition <- new_filter_condition(quosure, finterface)
+  quosure_context <- attr(quosure_fcondition, "context")
+  expect_identical(quosure_context$finterface, finterface)
+  expect_identical(quosure_context$env, rlang::quo_get_env(quosure))
+
+  gregions <- new_genomic_regions(chr = "1", start = 100, end = 200,
+    build = "b38")
+  gregions_fcondition <- new_filter_condition(gregions, finterface)
+  gregions_context <- attr(gregions_fcondition, "context")
+  expect_identical(gregions_context$finterface, finterface)
+  expect_null(gregions_context$env)
+})
+
+test_that("build resolves from the interface without an explicit build", {
+  finterface <- local_file_interface(build = "b37")
+  fcondition <- new_filter_condition(rlang::quo(num < 3), finterface)
+  expect_equal(build(fcondition), "b37")
+})
+
+test_that("non-literal RHS is evaluated from the caller environment", {
+  finterface <- local_file_interface()
+  threshold <- 3
+  expect_equal(
+    new_filter_condition(rlang::quo(num == threshold), finterface) |>
+      eval_fcondition(finterface = finterface),
+    new_filter_condition(rlang::quo(num == 3), finterface) |>
+      eval_fcondition(finterface = finterface)
+  )
+})
+
+test_that("new_filter_condition evaluates a bare name in the caller frame", {
+  finterface <- local_summary_stats_interface()
+
+  gregions <- new_genomic_regions(chr = "1", start = 100, end = 200,
+    build = "b36")
+
+  fcondition <- new_filter_condition(as.name("gregions"), finterface)
+
+  expect_true(is.filter_condition(fcondition))
+  expect_equal(genomic_regions(fcondition), gregions)
+})
