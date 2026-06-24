@@ -267,6 +267,28 @@ has_finterface_column_names.quosure <- function(
     has_finterface_column_names(finterface)
 }
 
+#' Normalize a file_interface or context to a filter-condition context
+#'
+#' Builds the `{finterface, env}` context environment from a `file_interface`,
+#' or returns the value unchanged when it is already a context. Idempotent, so
+#' it is safe to call on every recursive entry. The context is an environment,
+#' constructed once and threaded by reference, so all child conditions in a
+#' composite share a single object.
+#'
+#' @param finterface A `file_interface` or an existing context environment.
+#' @param x The condition; its quosure environment is captured as `env`.
+#' @return A context environment with `$finterface` and `$env`.
+#' @keywords internal
+as_fc_context <- function(finterface, x) {
+  if (!is_file_interface(finterface)) {
+    return(finterface)
+  }
+  context <- new.env(parent = emptyenv())
+  context$finterface <- finterface
+  context$env <- if (rlang::is_quosure(x)) rlang::quo_get_env(x) else NULL
+  context
+}
+
 #' Construct a filter_condition
 #'
 #' S3 generic that turns an R expression into a filter_condition - the

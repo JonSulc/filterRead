@@ -1252,3 +1252,20 @@ test_that("new_filter_condition evaluates a bare name in the caller frame", {
   expect_true(is.filter_condition(fcondition))
   expect_equal(genomic_regions(fcondition), gregions)
 })
+
+test_that("as_fc_context normalizes an interface and is idempotent", {
+  finterface <- local_file_interface(build = "b38")
+  quosure <- rlang::quo(num < 3)
+
+  context <- as_fc_context(finterface, quosure)
+  expect_true(is.environment(context))
+  expect_identical(context$finterface, finterface)
+  expect_identical(context$env, rlang::quo_get_env(quosure))
+
+  gregions <- new_genomic_regions(chr = "1", start = 1, end = 2, build = "b38")
+  gregions_context <- as_fc_context(finterface, gregions)
+  expect_identical(gregions_context$finterface, finterface)
+  expect_null(gregions_context$env)
+
+  expect_identical(as_fc_context(context, quosure), context)
+})
