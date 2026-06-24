@@ -346,13 +346,26 @@ new_filter_condition_impl <- function(
   UseMethod("new_filter_condition_impl")
 }
 #' @export
-new_filter_condition_impl.default <- function(
+new_filter_condition_impl.filter_condition <- function(
   x,
   context,
   build = NULL,
   ...
 ) {
   x
+}
+
+#' @export
+new_filter_condition_impl.default <- function(
+  x,
+  context,
+  build = NULL,
+  ...
+) {
+  stop(
+    "Cannot build a filter_condition from an object of class ",
+    paste(class(x), collapse = "/")
+  )
 }
 #' @export
 new_filter_condition_impl.name <- function(

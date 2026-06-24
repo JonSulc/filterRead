@@ -1269,3 +1269,26 @@ test_that("as_fc_context normalizes an interface and is idempotent", {
 
   expect_identical(as_fc_context(context, quosure), context)
 })
+
+test_that("new_filter_condition errors on an unconvertible value", {
+  finterface <- local_file_interface()
+  expect_error(
+    new_filter_condition(42, finterface),
+    "Cannot build a filter_condition"
+  )
+})
+
+test_that("finterface[x] errors clearly when x holds an unconvertible value", {
+  finterface <- local_file_interface()
+  not_a_condition <- 42
+  expect_error(
+    finterface[not_a_condition],
+    "Cannot build a filter_condition"
+  )
+})
+
+test_that("new_filter_condition passes an existing filter_condition through", {
+  finterface <- local_file_interface()
+  fcondition <- new_filter_condition(rlang::quo(num < 3), finterface)
+  expect_identical(new_filter_condition(fcondition, finterface), fcondition)
+})
