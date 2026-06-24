@@ -302,9 +302,9 @@ as_fc_context <- function(finterface, x) {
 #'   `rlang::quo()`) or a `genomic_regions` object.
 #' @param finterface The `file_interface` the filter applies to. Used for
 #'   column lookup and build inference.
-#' @param build Optional genome build (`"b36"`, `"b37"`, `"b38"`). Defaults
-#'   to inferring from `x` then `finterface`. The `quosure` method uses
-#'   `"auto"` as a sentinel for the same inference.
+#' @param build Optional genome build (`"b36"`, `"b37"`, `"b38"`). When
+#'   `NULL` (the default), it is inferred from `finterface`, falling back to
+#'   the build of `x` itself for `genomic_regions`/`variants` inputs.
 #' @param ... Reserved for method-specific arguments.
 #' @return A `filter_condition` object with class identifying its type
 #'   (e.g. `lt_filter_condition`, `and_filter_condition`) and a `context`
@@ -319,54 +319,65 @@ new_filter_condition <- function(
   x,
   finterface,
   build = NULL,
+  ...,
+  env = parent.frame()
+) {
+  context <- as_fc_context(finterface, x)
+  new_filter_condition_impl(x, context, build, ..., env = env)
+}
+
+#' Internal generic backing [new_filter_condition()]
+#'
+#' Dispatches on a condition `x` with an already-normalized context. Not
+#' user-facing; the public entry point is [new_filter_condition()].
+#'
+#' @param x The condition to convert.
+#' @param context A context environment from [as_fc_context()].
+#' @param build Optional explicit build; resolved per method when `NULL`.
+#' @param ... Passed to methods.
+#' @return A `filter_condition`.
+#' @keywords internal
+new_filter_condition_impl <- function(
+  x,
+  context,
+  build = NULL,
   ...
 ) {
-  UseMethod("new_filter_condition")
+  UseMethod("new_filter_condition_impl")
 }
 #' @export
-new_filter_condition.default <- function(
+new_filter_condition_impl.default <- function(
   x,
-  finterface,
+  context,
   build = NULL,
   ...
 ) {
   x
 }
 #' @export
-new_filter_condition.name <- function(
+new_filter_condition_impl.name <- function(
   x,
-  finterface,
+  context,
   build = NULL,
   ...,
   env = parent.frame()
 ) {
   x <- eval(x, envir = env)
-  if (missing(build) || is.null(build)) {
-    build <- build(finterface) %||% build(x)
-  }
+  build <- build %||% build(context$finterface) %||% build(x)
   new_filter_condition(
     x,
-    finterface = finterface,
+    finterface = context,
     build = build
   )
 }
 #' @export
-new_filter_condition.genomic_regions <- function(
+new_filter_condition_impl.genomic_regions <- function(
   x,
-  finterface,
+  context,
   build = NULL,
   ...
 ) {
-  if (missing(build) || is.null(build)) {
-    build <- build(finterface) %||% build(x)
-  }
-  if (is_file_interface(finterface)) {
-    context <- new.env(parent = emptyenv())
-    context$finterface <- finterface
-    context$env <- NULL
-  } else {
-    context <- finterface
-  }
+  build <- build %||% build(context$finterface) %||% build(x)
   empty_filter_condition(
     build = build,
     genomic_regions = liftover(x, build),
@@ -374,22 +385,15 @@ new_filter_condition.genomic_regions <- function(
   )
 }
 #' @export
-new_filter_condition.quosure <- function(
+new_filter_condition_impl.quosure <- function(
   x,
-  finterface,
-  build = "auto",
+  context,
+  build = NULL,
   ...
 ) {
-  if (!is.null(build) && build == "auto") {
-    build <- build(x) %||% build(finterface)
-  }
-  if (is_file_interface(finterface)) {
-    context <- new.env(parent = emptyenv())
-    context$finterface <- finterface
-    context$env <- rlang::quo_get_env(x)
-  } else {
-    context <- finterface
-  }
+  # A quosure carries an environment, not a build attribute; the build comes
+  # from the interface.
+  build <- build %||% build(context$finterface)
 
   if (is.null(rlang::get_expr(x))) {
     # TODO Check this actually ever triggers
@@ -448,7 +452,7 @@ new_filter_condition.quosure <- function(
   fcondition
 }
 #' @export
-`new_filter_condition.(` <- new_filter_condition.quosure
+`new_filter_condition_impl.(` <- new_filter_condition_impl.quosure
 
 #' Get column names used in a filter_condition
 #'

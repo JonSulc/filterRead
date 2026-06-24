@@ -4,7 +4,7 @@
 \alias{new_filter_condition}
 \title{Construct a filter_condition}
 \usage{
-new_filter_condition(x, finterface, build = NULL, ...)
+new_filter_condition(x, finterface, build = NULL, ..., env = parent.frame())
 }
 \arguments{
 \item{x}{A quosure (typically produced by `rlang::enquo()` or
@@ -13,9 +13,9 @@ new_filter_condition(x, finterface, build = NULL, ...)
 \item{finterface}{The `file_interface` the filter applies to. Used for
 column lookup and build inference.}
 
-\item{build}{Optional genome build (`"b36"`, `"b37"`, `"b38"`). Defaults
-to inferring from `x` then `finterface`. The `quosure` method uses
-`"auto"` as a sentinel for the same inference.}
+\item{build}{Optional genome build (`"b36"`, `"b37"`, `"b38"`). When
+`NULL` (the default), it is inferred from `finterface`, falling back to
+the build of `x` itself for `genomic_regions`/`variants` inputs.}
 
 \item{...}{Reserved for method-specific arguments.}
 }
