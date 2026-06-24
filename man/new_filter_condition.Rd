@@ -18,6 +18,9 @@ column lookup and build inference.}
 the build of `x` itself for `genomic_regions`/`variants` inputs.}
 
 \item{...}{Reserved for method-specific arguments.}
+
+\item{env}{Environment in which to evaluate a bare-symbol condition `x`
+(used by the `name` method); defaults to the caller's frame.}
 }
 \value{
 A `filter_condition` object with class identifying its type

@@ -269,8 +269,9 @@ has_finterface_column_names.quosure <- function(
 
 #' Normalize a file_interface or context to a filter-condition context
 #'
-#' Builds the `{finterface, env}` context environment from a `file_interface`,
-#' or returns the value unchanged when it is already a context. Idempotent, so
+#' Builds the context environment (holding `finterface` and `env` entries)
+#' from a `file_interface`, or returns the value unchanged when it is already
+#' a context. Idempotent, so
 #' it is safe to call on every recursive entry. The context is an environment,
 #' constructed once and threaded by reference, so all child conditions in a
 #' composite share a single object.
@@ -306,6 +307,8 @@ as_fc_context <- function(finterface, x) {
 #'   `NULL` (the default), it is inferred from `finterface`, falling back to
 #'   the build of `x` itself for `genomic_regions`/`variants` inputs.
 #' @param ... Reserved for method-specific arguments.
+#' @param env Environment in which to evaluate a bare-symbol condition `x`
+#'   (used by the `name` method); defaults to the caller's frame.
 #' @return A `filter_condition` object with class identifying its type
 #'   (e.g. `lt_filter_condition`, `and_filter_condition`) and a `context`
 #'   attribute carrying the file_interface and capture environment.

@@ -15,8 +15,9 @@ as_fc_context(finterface, x)
 A context environment with `$finterface` and `$env`.
 }
 \description{
-Builds the `{finterface, env}` context environment from a `file_interface`,
-or returns the value unchanged when it is already a context. Idempotent, so
+Builds the context environment (holding `finterface` and `env` entries)
+from a `file_interface`, or returns the value unchanged when it is already
+a context. Idempotent, so
 it is safe to call on every recursive entry. The context is an environment,
 constructed once and threaded by reference, so all child conditions in a
 composite share a single object.
