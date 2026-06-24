@@ -1292,3 +1292,22 @@ test_that("new_filter_condition passes an existing filter_condition through", {
   fcondition <- new_filter_condition(rlang::quo(num < 3), finterface)
   expect_identical(new_filter_condition(fcondition, finterface), fcondition)
 })
+
+test_that("valid condition expressions all construct without error", {
+  finterface <- local_summary_stats_interface()
+  threshold <- 5e-8
+  valid_conditions <- list(
+    rlang::quo(chr == 1),
+    rlang::quo(pos != 100),
+    rlang::quo(5000 < pos),
+    rlang::quo(pos %in% c(1, 2, 3)),
+    rlang::quo(pval < threshold),
+    rlang::quo(chr == 1 & pval < threshold),
+    rlang::quo(chr == 1 | pos < 10),
+    rlang::quo((chr == 1 | pos < 10) & pval < threshold)
+  )
+  for (condition in valid_conditions) {
+    fcondition <- new_filter_condition(condition, finterface)
+    expect_true(is.filter_condition(fcondition))
+  }
+})
