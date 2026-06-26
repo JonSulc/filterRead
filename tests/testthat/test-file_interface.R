@@ -688,15 +688,13 @@ test_that("head.file_interface handles filenames with spaces", {
   expect_equal(nrow(head(finterface, 2)), 2)
 })
 
-test_that("[.file_interface short-circuits unsatisfiable conditions", {
-  finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
-  # The short-circuit must skip awk entirely. Mocking fcondition_to_awk
-  # to error confirms it is never reached.
+test_that("[.file_interface short-circuits empty genomic_regions without awk", {
   testthat::local_mocked_bindings(
     fcondition_to_awk = function(...) {
-      stop("fcondition_to_awk should not be called for unsatisfiable conditions")
+      stop("fcondition_to_awk should not be called for empty regions")
     }
   )
+  finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
   result <- finterface[chr == 1 & chr != 1]
   expect_equal(nrow(result), 0)
   expect_equal(names(result), names(head(finterface, 1)))
