@@ -699,3 +699,16 @@ test_that("[.file_interface short-circuits empty genomic_regions without awk", {
   expect_equal(nrow(result), 0)
   expect_equal(names(result), names(head(finterface, 1)))
 })
+
+test_that("Tilde in filename is expanded before shelling out", {
+  home <- withr::local_tempdir()
+  withr::local_envvar(HOME = home)
+  local_csv_file(file.path(home, "tilde_test.csv.gz"))
+
+  finterface <- new_file_interface("~/tilde_test.csv.gz") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_equal(finterface$filename, file.path(home, "tilde_test.csv.gz"))
+  expect_equal(nrow(head(finterface, nlines = 6L)), 6L)
+})

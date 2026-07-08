@@ -38,6 +38,7 @@ new_file_interface <- function(
   build = c("auto", "b36", "b37", "b38", "none")
 ) {
   stopifnot(is.character(filename))
+  filename <- path.expand(filename)
   stopifnot(file.exists(filename))
   if (!is.null(build)) {
     build <- match.arg(build)
