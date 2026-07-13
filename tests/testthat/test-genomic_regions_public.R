@@ -76,3 +76,27 @@ test_that("finterface[gregions] lifts the regions to the file build", {
   result <- fi[gregions]
   expect_equal(result$pos, 100L)
 })
+
+test_that("finterface[gregions] errors when the region has no build but the file does", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr = "chr1", pos = 100L, ref = "A", alt = "G", pval = 0.1
+    ),
+    build = "b38"
+  )
+  gregions <- genomic_regions(chr = "1", start = 90L, end = 110L)
+  expect_error(fi[gregions], "no build")
+})
+
+test_that("finterface[gregions] errors when the file has no build but the region does", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr = "chr1", pos = 100L, ref = "A", alt = "G", pval = 0.1
+    ),
+    build = NULL
+  )
+  gregions <- genomic_regions(
+    chr = "1", start = 90L, end = 110L, build = "b37"
+  )
+  expect_error(fi[gregions], "no declared build")
+})

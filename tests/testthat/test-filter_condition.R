@@ -952,7 +952,7 @@ test_that("Parentheses work as expected", {
 
 # Tests for new_filter_condition.genomic_regions constructor
 test_that("new_filter_condition.genomic_regions creates filter from regions", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface(build = "b36")
 
   gr <- new_genomic_regions(
     chr = "1",
@@ -988,7 +988,7 @@ test_that("new_filter_condition.genomic_regions handles build parameter", {
 })
 
 test_that("new_filter_condition.genomic_regions works with multiple regions", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface(build = "b36")
 
   gr <- new_genomic_regions(
     chr = c("1", "2"),
@@ -1015,7 +1015,7 @@ test_that("new_filter_condition.genomic_regions handles empty regions", {
 })
 
 test_that("new_filter_condition.name evaluates name to get value", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface(build = "b36")
 
   gr <- new_genomic_regions(
     chr = "1",
@@ -1247,7 +1247,7 @@ test_that("non-literal RHS is evaluated from the caller environment", {
 })
 
 test_that("new_filter_condition evaluates a bare name in the caller frame", {
-  finterface <- local_summary_stats_interface()
+  finterface <- local_summary_stats_interface(build = "b36")
 
   gregions <- new_genomic_regions(chr = "1", start = 100, end = 200,
     build = "b36")

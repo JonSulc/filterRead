@@ -393,7 +393,29 @@ new_filter_condition_impl.genomic_regions <- function(
   build = NULL,
   ...
 ) {
-  build <- build %||% build(context$finterface) %||% build(x)
+  file_build <- build(context$finterface)
+  region_build <- build(x)
+  # A non-empty region and the file must agree on whether a build is known;
+  # one side known and the other NULL cannot be positionally reconciled.
+  # Empty regions match nothing regardless of build, so they are exempt.
+  if (nrow(x) != 0L && xor(is.null(file_build), is.null(region_build))) {
+    stop(
+      if (is.null(region_build)) {
+        paste0(
+          "genomic_regions has no build but the file is ", file_build,
+          ". Set the regions' build so their coordinates can be ",
+          "reconciled with the file."
+        )
+      } else {
+        paste0(
+          "genomic_regions is ", region_build,
+          " but the file has no declared build. Set the file's build ",
+          "so the regions' coordinates can be reconciled with it."
+        )
+      }
+    )
+  }
+  build <- build %||% file_build
   empty_filter_condition(
     build = build,
     genomic_regions = liftover(x, build),
