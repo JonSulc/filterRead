@@ -53,12 +53,6 @@ new_genomic_regions <- function(
   merge_contiguous = TRUE,
   include = TRUE
 ) {
-  if (data.table::is.data.table(chr)) {
-    return(
-      as_genomic_regions(chr, build = build, include = include)
-    )
-  }
-
   argument_lengths <- list(chr, start, end) |>
     sapply(length)
   nrows <- max(argument_lengths)

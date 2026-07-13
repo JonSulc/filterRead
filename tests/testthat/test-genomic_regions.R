@@ -226,20 +226,6 @@ test_that("is_genomic_regions returns FALSE for non-genomic_regions", {
   expect_false(is_genomic_regions(NULL))
 })
 
-test_that("new_genomic_regions accepts data.table input", {
-  dt <- data.table::data.table(
-    chr = "chr1",
-    start = 100L,
-    end = 200L
-  )
-  gregions <- new_genomic_regions(dt, build = "b37")
-  expect_true(is_genomic_regions(gregions))
-  expect_equal(attr(gregions, "build"), "b37")
-  expect_equal(gregions$chr, "chr1")
-  expect_equal(gregions$start, 100L)
-  expect_equal(gregions$end, 200L)
-})
-
 test_that("as_genomic_regions converts data.table", {
   dt <- data.table::data.table(
     chr = "chr1",
@@ -411,9 +397,7 @@ test_that("addition handles partial chromosomes", {
   expect_equal(
     gregions1 + gregions2,
     new_genomic_regions(
-      new_genomic_regions(
-        chr = "chr1"
-      )
+      chr = "chr1"
     )
   )
 })
