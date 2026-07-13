@@ -100,3 +100,30 @@ test_that("finterface[gregions] errors when the file has no build but the region
   )
   expect_error(fi[gregions], "no declared build")
 })
+
+test_that("as_genomic_regions() reports each missing coordinate column", {
+  expect_error(
+    as_genomic_regions(
+      data.table::data.table(start = 1L, end = 2L), build = "b38"
+    ),
+    "missing: chr"
+  )
+  expect_error(
+    as_genomic_regions(
+      data.table::data.table(chr = "chr1", end = 2L), build = "b38"
+    ),
+    "missing: start"
+  )
+  expect_error(
+    as_genomic_regions(
+      data.table::data.table(chr = "chr1", start = 1L), build = "b38"
+    ),
+    "missing: end"
+  )
+  expect_error(
+    as_genomic_regions(
+      data.table::data.table(foo = 1L), build = "b38"
+    ),
+    "missing: chr, start, end"
+  )
+})

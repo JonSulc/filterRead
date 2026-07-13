@@ -25,6 +25,14 @@ as_genomic_regions.data.frame <- function(
   merge_contiguous = TRUE,
   ...
 ) {
+  missing_cols <- setdiff(c("chr", "start", "end"), names(x))
+  if (length(missing_cols) != 0L) {
+    stop(
+      "`as_genomic_regions()` requires columns `chr`, `start`, and `end`; ",
+      "missing: ", paste(missing_cols, collapse = ", "), ".\n",
+      "To build regions from vectors, use `genomic_regions()`."
+    )
+  }
   build <- build %||% build(x)
   include <- include %||% is_included(x) %||% TRUE
   gregions <- data.table::as.data.table(x) |>
