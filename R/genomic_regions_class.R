@@ -14,6 +14,62 @@
 # - Generate tabix queries for RSID-indexed files
 # - Combine multiple filtering regions efficiently
 
+#' Construct genomic regions for positional filtering
+#'
+#' Builds a `genomic_regions` object — a set of `(chr, start, end)`
+#' coordinate ranges in one reference build — from parallel vectors. Pass
+#' the result as a `[` subscript to a `file_interface` to filter its rows by
+#' position: `finterface[genomic_regions(...)]`. To build regions from an
+#' existing `data.table` of `chr`/`start`/`end`, use [as_genomic_regions()].
+#'
+#' @param chr Character vector of chromosome names (NA = any chromosome).
+#' @param start Integer vector of start positions (NA = from beginning).
+#' @param end Integer vector of end positions (NA = to end).
+#' @param build Reference build the coordinates are expressed in ("b36",
+#'   "b37", "b38", or a synonym). Optional at construction, but positional
+#'   filtering against a build-bearing file requires it (see
+#'   [as_genomic_regions()] and the file-interface `[` method).
+#' @param chr_prefix Prefix to ensure on chromosome names (default "chr").
+#' @param merge_contiguous If TRUE, merge overlapping/adjacent regions.
+#' @param include If TRUE the regions are included; if FALSE they are
+#'   excluded (the complement).
+#'
+#' @return A `genomic_regions` object.
+#' @seealso [as_genomic_regions()] to coerce an existing table.
+#' @examples
+#' genomic_regions(
+#'   chr = c("1", "2"),
+#'   start = c(1000L, 5000L),
+#'   end = c(2000L, 6000L),
+#'   build = "b38"
+#' )
+#' @export
+genomic_regions <- function(
+  chr = character(),
+  start = integer(),
+  end = integer(),
+  build = NULL,
+  chr_prefix = "chr",
+  merge_contiguous = TRUE,
+  include = TRUE
+) {
+  if (data.table::is.data.table(chr)) {
+    stop(
+      "`genomic_regions()` builds regions from `chr`/`start`/`end` vectors. ",
+      "To coerce a `data.table` of regions, use `as_genomic_regions()`."
+    )
+  }
+  new_genomic_regions(
+    chr = chr,
+    start = start,
+    end = end,
+    build = build,
+    chr_prefix = chr_prefix,
+    merge_contiguous = merge_contiguous,
+    include = include
+  )
+}
+
 #' Create a new genomic_regions object
 #'
 #' Constructor for genomic_regions. Validates inputs, formats chromosome

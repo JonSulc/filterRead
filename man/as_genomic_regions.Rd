@@ -29,4 +29,3 @@ A genomic_regions object
 Generic function to convert various objects (data.frames, filter_conditions)
 to genomic_regions format.
 }
-\keyword{internal}

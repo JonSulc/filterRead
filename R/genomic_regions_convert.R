@@ -7,7 +7,7 @@
 #' @param build Genome build (e.g., "hg19", "hg38")
 #' @param ... Additional arguments passed to methods
 #' @return A genomic_regions object
-#' @keywords internal
+#' @export
 as_genomic_regions <- function(
   x,
   build = NULL,

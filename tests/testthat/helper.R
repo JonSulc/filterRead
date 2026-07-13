@@ -393,6 +393,20 @@ switch_alt_ref_to_a1_a2 <- function(summary_stats) {
   summary_stats
 }
 
+# A synthetic single-block forward-strand chain covering chr1:lo-hi that
+# shifts positions by `-offset` (the convention liftover.data.table applies:
+# new = old - offset). Injected via local_mocked_bindings(get_chain_dt = ...).
+make_fwd_chain <- function(lo, hi, offset, from, to) {
+  ch <- data.table::data.table(
+    start = lo, end = hi, width = hi - lo + 1L,
+    chr = "chr1", offset = offset, new_chr = "chr1", rev = FALSE
+  )
+  data.table::setkey(ch, chr, start, end)
+  data.table::setattr(ch, "from", from)
+  data.table::setattr(ch, "to", to)
+  ch
+}
+
 # Used to test %in% conditions
 test_in_fc <- function(
   fcall,
