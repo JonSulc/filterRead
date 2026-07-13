@@ -18,9 +18,16 @@ as_genomic_regions(x, build = NULL, ...)
 \arguments{
 \item{x}{Object to convert}
 
-\item{build}{Genome build (e.g., "hg19", "hg38")}
+\item{build}{Reference build the coordinates are expressed in ("b36",
+"b37", "b38", or a synonym).}
 
 \item{...}{Additional arguments passed to methods}
+
+\item{include}{Whether the regions are included (TRUE) or excluded, i.e.
+the complement (FALSE). NULL inherits the input's include attribute,
+defaulting to TRUE.}
+
+\item{merge_contiguous}{If TRUE, merge overlapping or adjacent regions.}
 }
 \value{
 A genomic_regions object

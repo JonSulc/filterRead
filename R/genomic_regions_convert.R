@@ -4,7 +4,12 @@
 #' to genomic_regions format.
 #'
 #' @param x Object to convert
-#' @param build Genome build (e.g., "hg19", "hg38")
+#' @param build Reference build the coordinates are expressed in ("b36",
+#'   "b37", "b38", or a synonym).
+#' @param include Whether the regions are included (TRUE) or excluded, i.e.
+#'   the complement (FALSE). NULL inherits the input's include attribute,
+#'   defaulting to TRUE.
+#' @param merge_contiguous If TRUE, merge overlapping or adjacent regions.
 #' @param ... Additional arguments passed to methods
 #' @return A genomic_regions object
 #' @export
