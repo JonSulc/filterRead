@@ -488,11 +488,11 @@ get_used_columns <- function(
   fcondition,
   finterface = get_file_interface(fcondition)
 ) {
-  gregions <- genomic_regions(fcondition)
+  gregions <- fc_genomic_regions(fcondition)
   if (is.null(gregions)) {
     gregion_columns <- NULL
   } else {
-    gregion_columns <- genomic_regions(fcondition)[
+    gregion_columns <- fc_genomic_regions(fcondition)[
       ,
       .(
         chr = chr,
@@ -590,9 +590,9 @@ format.filter_condition <- function(
   paste(
     fcondition_str,
     ifelse(
-      is_full_genome(genomic_regions(x)),
+      is_full_genome(fc_genomic_regions(x)),
       "",
-      str(genomic_regions(x))
+      str(fc_genomic_regions(x))
     )
   )
 }

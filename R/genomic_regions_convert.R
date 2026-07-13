@@ -340,8 +340,8 @@ as_genomic_regions.filter_condition <- function(
   ordered_chr = 1:22,
   ...
 ) {
-  if (!is.null(genomic_regions(x))) {
-    return(genomic_regions(x))
+  if (!is.null(fc_genomic_regions(x))) {
+    return(fc_genomic_regions(x))
   }
   full_genomic_regions(build = build)
 }

@@ -4,13 +4,13 @@
   fcondition2
 ) {
   if (length(fcondition1) == 0) {
-    genomic_regions(fcondition2) <-
-      genomic_regions(fcondition1) & genomic_regions(fcondition2)
+    fc_genomic_regions(fcondition2) <-
+      fc_genomic_regions(fcondition1) & fc_genomic_regions(fcondition2)
     return(fcondition2)
   }
   if (length(fcondition2) == 0) {
-    genomic_regions(fcondition1) <-
-      genomic_regions(fcondition1) & genomic_regions(fcondition2)
+    fc_genomic_regions(fcondition1) <-
+      fc_genomic_regions(fcondition1) & fc_genomic_regions(fcondition2)
     return(fcondition1)
   }
 
@@ -30,7 +30,7 @@
     as_filter_condition()
   fcondition[2:3] <- list(fcondition1, fcondition2)
   attr(fcondition, "context") <- attr(fcondition1, "context")
-  genomic_regions(fcondition) <- genomic_regions(fcondition1) & genomic_regions(fcondition2)
+  fc_genomic_regions(fcondition) <- fc_genomic_regions(fcondition1) & fc_genomic_regions(fcondition2)
 
   if (!identical(build(fcondition1), build(fcondition2))) {
     warning(
@@ -58,8 +58,8 @@
   ))
 
   if (length(fcondition1) == 0 && length(fcondition2) == 0) {
-    genomic_regions(fcondition1) <- genomic_regions(fcondition1) |
-      genomic_regions(fcondition2)
+    fc_genomic_regions(fcondition1) <- fc_genomic_regions(fcondition1) |
+      fc_genomic_regions(fcondition2)
     return(fcondition1)
   }
 
@@ -73,12 +73,12 @@
     } else if (length(fcondition2) == 0) {
       fcondition <- fcondition1
     }
-    genomic_regions(fcondition) <- rbind(
-      genomic_regions(fcondition1),
-      genomic_regions(fcondition2)
+    fc_genomic_regions(fcondition) <- rbind(
+      fc_genomic_regions(fcondition1),
+      fc_genomic_regions(fcondition2)
     )
   } else {
-    genomic_regions(fcondition) <- full_genomic_regions(
+    fc_genomic_regions(fcondition) <- full_genomic_regions(
       build = build(fcondition1)
     )
   }

@@ -407,7 +407,7 @@ head.file_interface <- function(
   # Short-circuit unsatisfiable conditions: an empty included
   # genomic_regions cannot match any row regardless of non-genomic
   # constraints, so skip awk entirely.
-  gregions <- genomic_regions(fcondition)
+  gregions <- fc_genomic_regions(fcondition)
   if (!return_only_cmd
     && !is.null(gregions)
     && nrow(gregions) == 0

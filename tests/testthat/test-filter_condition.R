@@ -630,7 +630,7 @@ test_that("Getting genomic regions works", {
       finterface,
       build = NULL
     ) |>
-      genomic_regions(),
+      fc_genomic_regions(),
     new_genomic_regions(chr = "1", start = 123, end = 234)
   )
   expect_equal(
@@ -638,7 +638,7 @@ test_that("Getting genomic regions works", {
       rlang::quo(123 <= pos & pos <= 234),
       finterface
     ) |>
-      genomic_regions(),
+      fc_genomic_regions(),
     new_genomic_regions(start = 123, end = 234)
   )
   expect_equal(
@@ -646,7 +646,7 @@ test_that("Getting genomic regions works", {
       rlang::quo(chr == 1 & 123 < pos & pos < 234),
       finterface
     ) |>
-      genomic_regions(),
+      fc_genomic_regions(),
     new_genomic_regions(chr = "1", start = 124, end = 233)
   )
   expect_equal(
@@ -654,7 +654,7 @@ test_that("Getting genomic regions works", {
       rlang::quo(chr < 2 & 123 < pos & pos < 234),
       finterface
     ) |>
-      genomic_regions(),
+      fc_genomic_regions(),
     new_genomic_regions(chr = "1", start = 124, end = 233)
   )
   expect_equal(
@@ -663,7 +663,7 @@ test_that("Getting genomic regions works", {
         chr == "X" & 21 <= pos & pos <= 42),
       finterface
     ) |>
-      genomic_regions(),
+      fc_genomic_regions(),
     new_genomic_regions(
       chr = c("1", "X"),
       start = c(123, 21),
@@ -675,7 +675,7 @@ test_that("Getting genomic regions works", {
       rlang::quo((chr == 1 | chr == "X") & 123 <= pos & pos <= 234),
       finterface
     ) |>
-      genomic_regions(),
+      fc_genomic_regions(),
     new_genomic_regions(
       chr = c("1", "X"),
       start = 123,
@@ -687,7 +687,7 @@ test_that("Getting genomic regions works", {
       rlang::quo((chr == 1 & chr == "X") & 123 <= pos & pos <= 234),
       finterface
     ) |>
-      genomic_regions(),
+      fc_genomic_regions(),
     empty_genomic_regions()
   )
   expect_equal(
@@ -695,7 +695,7 @@ test_that("Getting genomic regions works", {
       rlang::quo((chr == 1 | chr == "X") & 234 <= pos & pos <= 123),
       finterface
     ) |>
-      genomic_regions(),
+      fc_genomic_regions(),
     empty_genomic_regions()
   )
   expect_equal(
@@ -705,7 +705,7 @@ test_that("Getting genomic regions works", {
         pos <= 234 & pos < 512),
       finterface
     ) |>
-      genomic_regions(),
+      fc_genomic_regions(),
     new_genomic_regions(
       chr = c("1", "X"),
       start = 123,
@@ -965,7 +965,7 @@ test_that("new_filter_condition.genomic_regions creates filter from regions", {
 
   expect_true(is.filter_condition(fc))
   expect_equal(build(fc), "b36")
-  expect_equal(genomic_regions(fc), gr)
+  expect_equal(fc_genomic_regions(fc), gr)
 })
 
 test_that("new_filter_condition.genomic_regions handles build parameter", {
@@ -1000,7 +1000,7 @@ test_that("new_filter_condition.genomic_regions works with multiple regions", {
   fc <- new_filter_condition(gr, finterface)
 
   expect_true(is.filter_condition(fc))
-  expect_equal(nrow(genomic_regions(fc)), 2)
+  expect_equal(nrow(fc_genomic_regions(fc)), 2)
 })
 
 test_that("new_filter_condition.genomic_regions handles empty regions", {
@@ -1011,7 +1011,7 @@ test_that("new_filter_condition.genomic_regions handles empty regions", {
   fc <- new_filter_condition(empty_gr, finterface)
 
   expect_true(is.filter_condition(fc))
-  expect_equal(nrow(genomic_regions(fc)), 0)
+  expect_equal(nrow(fc_genomic_regions(fc)), 0)
 })
 
 test_that("new_filter_condition.name evaluates name to get value", {
@@ -1027,7 +1027,7 @@ test_that("new_filter_condition.name evaluates name to get value", {
   fc <- new_filter_condition(rlang::quo(gr), finterface)
 
   expect_true(is.filter_condition(fc))
-  expect_equal(genomic_regions(fc), gr)
+  expect_equal(fc_genomic_regions(fc), gr)
 })
 
 test_that("get_used_columns fuctions within nested conditions", {
@@ -1255,7 +1255,7 @@ test_that("new_filter_condition evaluates a bare name in the caller frame", {
   fcondition <- new_filter_condition(as.name("gregions"), finterface)
 
   expect_true(is.filter_condition(fcondition))
-  expect_equal(genomic_regions(fcondition), gregions)
+  expect_equal(fc_genomic_regions(fcondition), gregions)
 })
 
 test_that("as_fc_context normalizes an interface and is idempotent", {

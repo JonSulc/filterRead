@@ -119,7 +119,7 @@ eval_genomic_regions_from_fc <- function(
   finterface,
   column_indices
 ) {
-  gregions <- genomic_regions(fcondition) |>
+  gregions <- fc_genomic_regions(fcondition) |>
     post_process(finterface = finterface)
   # Skip for NULL regions or RSID-indexed files (handled differently)
   if (is.null(gregions) || needs_rsid_matching(finterface)) {

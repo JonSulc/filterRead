@@ -537,7 +537,7 @@ fcondition_and_rsid_to_awk <- function(
   # if the file is RSID-indexed and there is a genomic condition applied
   rsid_indexed <- needs_rsid_matching(get_file_interface(fcondition))
   full_genome_condition <- is_full_genome(
-    genomic_regions(fcondition, recursive = TRUE)
+    fc_genomic_regions(fcondition, recursive = TRUE)
   )
   no_genome_condition <- has_no_gregions(fcondition)
 
@@ -571,7 +571,7 @@ fcondition_and_rsid_to_awk <- function(
   # 1. Query dbSNP via tabix for RSIDs in the region
   # 2. Generate awk code to load RSIDs into array
   # 3. Generate condition to filter by RSID membership
-  genomic_regions(fcondition)[
+  fc_genomic_regions(fcondition)[
     ,
     .(
       index = index,

@@ -10,12 +10,12 @@ is_and_block <- function(
   fcondition
 ) {
   if (!inherits(fcondition, "quosure") &&
-    is.null(genomic_regions(fcondition))) {
+    is.null(fc_genomic_regions(fcondition))) {
     return(TRUE)
   }
 
-  if (!is.null(genomic_regions(fcondition))) {
-    if (1 < nrow(genomic_regions(fcondition))) {
+  if (!is.null(fc_genomic_regions(fcondition))) {
+    if (1 < nrow(fc_genomic_regions(fcondition))) {
       return(FALSE)
     }
   }
@@ -67,7 +67,7 @@ non_genomic_is_and_block <- function(
 #' @param recursive Logical, whether to recursively combine nested regions
 #' @return A genomic_regions object, or NULL if not set
 #' @keywords internal
-genomic_regions <- function(
+fc_genomic_regions <- function(
   fcondition,
   recursive = FALSE
 ) {
@@ -78,20 +78,20 @@ genomic_regions <- function(
     # fcondition is (
     return(
       attr(fcondition, "genomic_regions") &
-        genomic_regions(fcondition[[2]], recursive = TRUE)
+        fc_genomic_regions(fcondition[[2]], recursive = TRUE)
     )
   } else if (fcondition[[1]] == as.symbol("and_filter_condition")) {
     # fcondition is & or |
     return(
       attr(fcondition, "genomic_regions") &
-        genomic_regions(fcondition[[2]], recursive = TRUE) &
-        genomic_regions(fcondition[[3]], recursive = TRUE)
+        fc_genomic_regions(fcondition[[2]], recursive = TRUE) &
+        fc_genomic_regions(fcondition[[3]], recursive = TRUE)
     )
   } else if (fcondition[[1]] == as.symbol("or_filter_condition")) {
     return(
       attr(fcondition, "genomic_regions") &
-        (genomic_regions(fcondition[[2]], recursive = TRUE) |
-          genomic_regions(fcondition[[3]], recursive = TRUE))
+        (fc_genomic_regions(fcondition[[2]], recursive = TRUE) |
+          fc_genomic_regions(fcondition[[3]], recursive = TRUE))
     )
   }
   stop(
@@ -102,7 +102,7 @@ genomic_regions <- function(
 has_no_gregions <- function(
   fcondition
 ) {
-  gregions <- genomic_regions(fcondition, recursive = TRUE)
+  gregions <- fc_genomic_regions(fcondition, recursive = TRUE)
   is.null(gregions) || is_full_genome(gregions)
 }
 
@@ -112,7 +112,7 @@ has_no_gregions <- function(
 #' @param value A genomic_regions object to set
 #' @return The modified filter_condition
 #' @keywords internal
-`genomic_regions<-` <- function(
+`fc_genomic_regions<-` <- function(
   fcondition,
   value
 ) {
@@ -139,8 +139,8 @@ has_genomic_condition <- function(
 has_chromosome_condition <- function(
   fcondition
 ) {
-  if (!is.null(genomic_regions(fcondition))) {
-    if (any(!is.na(genomic_regions(fcondition)$chr))) {
+  if (!is.null(fc_genomic_regions(fcondition))) {
+    if (any(!is.na(fc_genomic_regions(fcondition)$chr))) {
       return(TRUE)
     }
   }
@@ -169,8 +169,8 @@ has_chromosome_condition <- function(
 has_position_condition <- function(
   fcondition
 ) {
-  if (!is.null(genomic_regions(fcondition))) {
-    if (any(genomic_regions(fcondition)[, c(!is.na(start), !is.na(end))])) {
+  if (!is.null(fc_genomic_regions(fcondition))) {
+    if (any(fc_genomic_regions(fcondition)[, c(!is.na(start), !is.na(end))])) {
       return(TRUE)
     }
   }
@@ -254,7 +254,7 @@ split_genomic_conditions <- function(
   }
   fcondition <- strip_parentheses(fcondition)
   if (!has_genomic_condition(fcondition)) {
-    genomic_regions(fcondition) <- full_genomic_regions(
+    fc_genomic_regions(fcondition) <- full_genomic_regions(
       build = build
     )
     return(fcondition)
@@ -469,14 +469,14 @@ is_single_genomic_block <- function(
     !has_position_condition(fcondition)) {
     return(TRUE)
   }
-  # TODO: Handle when genomic_regions(fcondition) exists
+  # TODO: Handle when fc_genomic_regions(fcondition) exists
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
     return(
       is_single_genomic_block(fcondition[[2]]) &&
         is_single_genomic_block(fcondition[[3]]) &&
         identical(
-          genomic_regions(fcondition[[2]]),
-          genomic_regions(fcondition[[3]])
+          fc_genomic_regions(fcondition[[2]]),
+          fc_genomic_regions(fcondition[[3]])
         )
     )
   }
