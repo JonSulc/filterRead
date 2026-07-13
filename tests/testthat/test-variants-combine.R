@@ -5,19 +5,6 @@ mk <- function(chr, pos, ref, alt, build, ...) {
   )
 }
 
-# A synthetic chain covering chr1:lo-hi that shifts positions by `-offset`
-# (the convention liftover.data.table applies: new = old - offset).
-fwd_chain <- function(lo, hi, offset, from, to) {
-  ch <- data.table::data.table(
-    start = lo, end = hi, width = hi - lo + 1L,
-    chr = "chr1", offset = offset, new_chr = "chr1", rev = FALSE
-  )
-  data.table::setkey(ch, chr, start, end)
-  data.table::setattr(ch, "from", from)
-  data.table::setattr(ch, "to", to)
-  ch
-}
-
 test_that("rbindlist_variants binds same-build variants, preserving class", {
   out <- rbindlist_variants(list(
     mk("chr1", 100L, "A", "G", "b38"),
@@ -40,7 +27,7 @@ test_that("rbind.variants is the pairwise convenience", {
 
 test_that("rbindlist_variants lifts inputs to the first input's build", {
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) fwd_chain(1L, 10000L, 50L, from, to)
+    get_chain_dt = function(from, to) make_fwd_chain(1L, 10000L, 50L, from, to)
   )
   out <- rbindlist_variants(list(
     mk("chr1", 1000L, "A", "G", "b37"),
@@ -54,7 +41,7 @@ test_that("rbindlist_variants lifts inputs to the first input's build", {
 
 test_that("target overrides the first input's build", {
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) fwd_chain(1L, 10000L, 50L, from, to)
+    get_chain_dt = function(from, to) make_fwd_chain(1L, 10000L, 50L, from, to)
   )
   out <- rbindlist_variants(
     list(mk("chr1", 1000L, "A", "G", "b37")),

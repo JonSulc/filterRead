@@ -64,19 +64,9 @@ test_that("unique.variants dedups on identity, ignoring provenance columns", {
 })
 
 test_that("best-source liftover recovers rows NA in the current build via a newer build", {
-  fwd_chain <- function(lo, hi, offset, from, to) {
-    ch <- data.table::data.table(
-      start = lo, end = hi, width = hi - lo + 1L,
-      chr = "chr1", offset = offset, new_chr = "chr1", rev = FALSE
-    )
-    data.table::setkey(ch, chr, start, end)
-    data.table::setattr(ch, "from", from)
-    data.table::setattr(ch, "to", to)
-    ch
-  }
   chains <- list(
-    b37_b36 = fwd_chain(800L, 1000L, 100L, "b37", "b36"),  # covers row A (b37 900)
-    b38_b36 = fwd_chain(500L, 2500L, 200L, "b38", "b36")   # covers row B (b38 2000)
+    b37_b36 = make_fwd_chain(800L, 1000L, 100L, "b37", "b36"),  # covers row A (b37 900)
+    b38_b36 = make_fwd_chain(500L, 2500L, 200L, "b38", "b36")   # covers row B (b38 2000)
   )
   testthat::local_mocked_bindings(
     get_chain_dt = function(from, to) chains[[paste(from, to, sep = "_")]]
@@ -128,18 +118,8 @@ test_that("select_source_build picks the defining build then falls back", {
 })
 
 test_that("source = 'current' does not recover NA-at-current rows", {
-  fwd_chain <- function(lo, hi, offset, from, to) {
-    ch <- data.table::data.table(
-      start = lo, end = hi, width = hi - lo + 1L,
-      chr = "chr1", offset = offset, new_chr = "chr1", rev = FALSE
-    )
-    data.table::setkey(ch, chr, start, end)
-    data.table::setattr(ch, "from", from)
-    data.table::setattr(ch, "to", to)
-    ch
-  }
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) fwd_chain(800L, 1000L, 100L, "b37", "b36")
+    get_chain_dt = function(from, to) make_fwd_chain(800L, 1000L, 100L, "b37", "b36")
   )
   v <- new_variants(
     data.table::data.table(
@@ -311,18 +291,9 @@ test_that("liftover.variants rejects forwarded liftover.data.table arguments", {
 })
 
 test_that("liftover.variants records the target build's provenance columns", {
-  fwd_chain <- function(from, to) {
-    ch <- data.table::data.table(
-      start = 1L, end = 1000L, width = 1000L, chr = "chr1",
-      offset = -4900L, new_chr = "chr1", rev = FALSE   # 100 -> 5000
-    )
-    data.table::setkey(ch, chr, start, end)
-    data.table::setattr(ch, "from", from)
-    data.table::setattr(ch, "to", to)
-    ch
-  }
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) fwd_chain(from, to)
+    get_chain_dt = function(from, to)
+      make_fwd_chain(1L, 1000L, -4900L, from, to)   # 100 -> 5000
   )
 
   v <- new_variants(
@@ -536,18 +507,8 @@ test_that("new_variants errors when build conflicts with the id suffix", {
 })
 
 test_that("a multi-build variant_id table splits and lifts to the first build", {
-  fwd_chain <- function(lo, hi, offset, from, to) {
-    ch <- data.table::data.table(
-      start = lo, end = hi, width = hi - lo + 1L,
-      chr = "chr1", offset = offset, new_chr = "chr1", rev = FALSE
-    )
-    data.table::setkey(ch, chr, start, end)
-    data.table::setattr(ch, "from", from)
-    data.table::setattr(ch, "to", to)
-    ch
-  }
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) fwd_chain(1L, 10000L, 50L, from, to)
+    get_chain_dt = function(from, to) make_fwd_chain(1L, 10000L, 50L, from, to)
   )
   v <- as_variants(data.table::data.table(
     variant_id = c("chr1_1000_A_G_b37", "chr1_2000_C_T_b38")
