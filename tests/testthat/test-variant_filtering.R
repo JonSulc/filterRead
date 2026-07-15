@@ -116,3 +116,107 @@ test_that("variant_keyset drops incomplete rows with a warning", {
   expect_setequal(ks$keys, c("chr1_100_A_G", "chr1_100_G_A"))
   expect_equal(ks$positions, 100L)
 })
+
+test_that("finterface[v] matches on chr/pos/ref/alt", {
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  result <- fi[v]
+  expect_equal(nrow(result), 1)
+  expect_equal(result$pos, 100L)
+  expect_equal(result$alt, "G")
+})
+
+test_that("finterface[v] excludes a different allele at the same position", {
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  # file row chr1:200 is C/T; ask for chr1:200 A/G -> no match
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  expect_equal(nrow(fi[v]), 0)
+})
+
+test_that("finterface[v] includes a swapped allele order", {
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  # file row chr2:300 is G/A; ask for chr2:300 A/G (swapped) -> match
+  v <- new_variants(
+    data.table::data.table(chr = "chr2", pos = 300L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  result <- fi[v]
+  expect_equal(nrow(result), 1)
+  expect_equal(result$pos, 300L)
+})
+
+test_that("finterface[v] with empty v matches nothing without awk", {
+  testthat::local_mocked_bindings(
+    fcondition_to_awk = function(...) {
+      stop("fcondition_to_awk should not be called for an empty variants set")
+    }
+  )
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  v <- new_variants(
+    data.table::data.table(
+      chr = character(), pos = integer(),
+      ref = character(), alt = character()
+    ),
+    build = "b38"
+  )
+  expect_equal(nrow(fi[v]), 0)
+})
+
+test_that("finterface[v] with all rows dropped matches nothing, no awk", {
+  # A non-empty v whose rows all carry an unmappable (NA) pos: variant_keyset
+  # drops them all (with a warning), leaving an empty keyset that takes the
+  # same empty-genomic_regions short-circuit as the 0-row case.
+  testthat::local_mocked_bindings(
+    fcondition_to_awk = function(...) {
+      stop("fcondition_to_awk should not be called when every variant drops")
+    }
+  )
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  v <- new_variants(
+    data.table::data.table(
+      chr = c("chr1", "chr2"),
+      pos = c(NA_integer_, NA_integer_),
+      ref = c("A", "G"),
+      alt = c("G", "A")
+    ),
+    build = "b38"
+  )
+  expect_warning(result <- fi[v], "dropped")
+  expect_equal(nrow(result), 0)
+})
+
+test_that("finterface[v] errors on a ref-absent file", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(chr = "chr1", pos = 100L, pval = 0.1),
+    build = "b38"
+  )
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  expect_error(fi[v], "ref")
+})
+
+test_that("finterface[v] composes with a column condition", {
+  # `v & pval < X` is a composite: the pval arm references a file column, the v
+  # arm dispatches to new_filter_condition_impl.variants, and the two are ANDed.
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  v <- new_variants(
+    data.table::data.table(
+      chr = c("chr1", "chr2"), pos = c(100L, 300L),
+      ref = c("A", "A"), alt = c("G", "G")
+    ),
+    build = "b38"
+  )
+  # v matches chr1:100 (pval .1) and chr2:300 (swap order; pval .3).
+  # Adding pval < 0.15 keeps only chr1:100.
+  result <- fi[v & pval < 0.15]
+  expect_equal(nrow(result), 1)
+  expect_equal(result$pos, 100L)
+})

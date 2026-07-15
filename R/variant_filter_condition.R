@@ -92,3 +92,53 @@ variant_keyset <- function(variants, finterface, build) {
     ))
   )
 }
+
+#' Awk expression that builds a row's composite variant key
+#'
+#' @param finterface A file_interface object.
+#' @return A string like `$1 "_" $2 "_" $3 "_" $4`.
+#' @keywords internal
+variant_key_expr <- function(finterface) {
+  finterface$column_info[
+    c("chr", "pos", "ref", "alt"),
+    paste(bash_index, collapse = ' "_" '),
+    on = "standard_name"
+  ]
+}
+
+#' `new_filter_condition_impl` method for variant-identity filtering
+#'
+#' Lowers `v` to a position-membership pre-filter AND a composite-key
+#' membership test (both allele orderings), matching file rows on
+#' `(chr, pos, {ref, alt})` after lifting `v` to the file's build. `context` is
+#' the normalized context env built by `as_fc_context()` in the public
+#' `new_filter_condition()` wrapper, so the interface is read from
+#' `context$finterface`, mirroring `new_filter_condition_impl.genomic_regions`.
+#'
+#' @keywords internal
+#' @export
+new_filter_condition_impl.variants <- function(x, context, build = NULL, ...) {
+  finterface <- context$finterface
+  build <- build %||% build(finterface) %||% build(x)
+
+  require_variant_columns(finterface)
+  keyset <- variant_keyset(x, finterface, build)
+
+  if (length(keyset$keys) == 0) {
+    return(empty_filter_condition(
+      build = build,
+      genomic_regions = empty_genomic_regions(build = build),
+      context = context
+    ))
+  }
+
+  pos_expr <- finterface$column_info[standard_name == "pos", bash_index]
+  key_expr <- variant_key_expr(finterface)
+
+  # The position pre-filter is an optimization: awk `&&` short-circuits, so the
+  # per-row `$1 "_" $2 "_" $3 "_" $4` key string is built only for rows whose
+  # position is in `posset`, skipping the string concatenation for rows at no
+  # candidate position.
+  in_membership_atom(pos_expr, keyset$positions, context, build) &
+    in_membership_atom(key_expr, keyset$keys, context, build)
+}

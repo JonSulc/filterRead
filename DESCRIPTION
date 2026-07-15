@@ -51,6 +51,7 @@ Collate:
     'reverse_complement.R'
     'rsid_matching.R'
     'value_formatting.R'
+    'variant_filter_condition.R'
     'variants_class.R'
     'variants_combine.R'
     'zzz.R'
