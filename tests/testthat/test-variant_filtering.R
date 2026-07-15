@@ -271,3 +271,97 @@ test_that("finterface[v] equals variant_id %in% both orderings", {
   expect_equal(by_variant$pos, ref_rows$pos)
   expect_equal(by_variant$alt, ref_rows$alt)
 })
+
+test_that("finterface[v] matches on a bare-chr file", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr = c("1", "2"), pos = c(100L, 300L),
+      ref = c("A", "G"), alt = c("G", "A"), pval = c(0.1, 0.3)
+    ),
+    build = "b38"
+  )
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  result <- fi[v]
+  expect_equal(nrow(result), 1)
+  expect_equal(result$pos, 100L)
+  expect_equal(result$alt, "G")
+})
+
+test_that("finterface[v] matches on a quoted-value file", {
+  fi <- local_file_interface(dt = ss_dt(), build = "b38", quote = TRUE)
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  result <- fi[v]
+  expect_equal(nrow(result), 1)
+  expect_equal(result$pos, 100L)
+  expect_equal(result$alt, "G")
+})
+
+test_that("finterface[v] matches with an encoded parent beside real chr/pos", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr = c("chr1", "chr2"), pos = c(100L, 300L),
+      chr_colon_pos = c("1:100", "2:300"),
+      ref = c("A", "G"), alt = c("G", "A"), pval = c(0.1, 0.3)
+    ),
+    build = "b38"
+  )
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  result <- fi[v]
+  expect_equal(nrow(result), 1)
+  expect_equal(result$pos, 100L)
+  expect_equal(result$alt, "G")
+
+  cmd <- fi[v, return_only_cmd = TRUE]
+  expect_match(cmd, '$1 "_" $2 "_" $4 "_" $5', fixed = TRUE)
+})
+
+test_that("finterface[v] keeps positions on the right chromosome", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr = c("chr1", "chr2"), pos = c(100L, 100L),
+      ref = c("C", "C"), alt = c("T", "T"), pval = c(0.1, 0.2)
+    ),
+    build = "b38"
+  )
+  v <- new_variants(
+    data.table::data.table(chr = "chr2", pos = 100L, ref = "C", alt = "T"),
+    build = "b38"
+  )
+  result <- fi[v]
+  expect_equal(nrow(result), 1)
+  expect_equal(result$chr, "chr2")
+})
+
+test_that("finterface[v] matches on a tab-separated file", {
+  fi <- local_file_interface(
+    dt = ss_dt(), build = "b38",
+    filename = "data.tsv", sep = "\t"
+  )
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  result <- fi[v]
+  expect_equal(nrow(result), 1)
+  expect_equal(result$pos, 100L)
+})
+
+test_that("finterface[v] compiles the position filter to a hash membership", {
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  cmd <- fi[v, return_only_cmd = TRUE]
+  expect_match(cmd, "($2 in var", fixed = TRUE)
+  expect_match(cmd, '$1 "_" $2 "_" $3 "_" $4 in var', fixed = TRUE)
+})
