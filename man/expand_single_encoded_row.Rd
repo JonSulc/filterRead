@@ -4,16 +4,19 @@
 \alias{expand_single_encoded_row}
 \title{Expand a single encoded column row}
 \usage{
-expand_single_encoded_row(row_info)
+expand_single_encoded_row(row_info, exclude = character(0))
 }
 \arguments{
 \item{row_info}{Single-row data.table with encoded column info}
+
+\item{exclude}{Decoded names whose virtual child rows to drop (those a real
+column already supplies).}
 }
 \value{
 data.table with virtual column rows, or NULL if not encoded
 }
 \description{
 Creates virtual column rows for each value in an encoded column.
-Uses array syntax (encoded1[1], encoded1[2]) for bash_index.
+Reads each child's awk reference from the parent's `encoded_refs`.
 }
 \keyword{internal}

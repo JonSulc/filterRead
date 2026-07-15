@@ -508,6 +508,8 @@ expand_encoded_columns <- function(
 #' Reads each child's awk reference from the parent's `encoded_refs`.
 #'
 #' @param row_info Single-row data.table with encoded column info
+#' @param exclude Decoded names whose virtual child rows to drop (those a real
+#'   column already supplies).
 #'
 #' @return data.table with virtual column rows, or NULL if not encoded
 #' @keywords internal
