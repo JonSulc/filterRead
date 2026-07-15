@@ -69,3 +69,50 @@ test_that("require_variant_columns rejects rsid-indexed files", {
   fi <- local_rsid_summary_stats_interface(build = "b38")
   expect_error(require_variant_columns(fi), "rsid-indexed")
 })
+
+test_that("variant_keyset builds both allele orderings, upper-cased", {
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  v <- new_variants(
+    data.table::data.table(
+      chr = "chr1", pos = 100L, ref = "a", alt = "g"
+    ),
+    build = "b38"
+  )
+  ks <- variant_keyset(v, fi, "b38")
+  expect_setequal(ks$keys, c("chr1_100_A_G", "chr1_100_G_A"))
+  expect_equal(ks$positions, 100L)
+})
+
+test_that("variant_keyset matches a bare-chr file's representation", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr = c("1", "2"), pos = c(100L, 300L),
+      ref = c("A", "G"), alt = c("G", "A"), pval = c(0.1, 0.3)
+    ),
+    build = "b38"
+  )
+  v <- new_variants(
+    data.table::data.table(
+      chr = "chr1", pos = 100L, ref = "A", alt = "G"
+    ),
+    build = "b38"
+  )
+  ks <- variant_keyset(v, fi, "b38")
+  expect_setequal(ks$keys, c("1_100_A_G", "1_100_G_A"))
+})
+
+test_that("variant_keyset drops incomplete rows with a warning", {
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  v <- new_variants(
+    data.table::data.table(
+      chr = c("chr1", "chr2"),
+      pos = c(100L, NA_integer_),
+      ref = c("A", "G"),
+      alt = c("G", "A")
+    ),
+    build = "b38"
+  )
+  expect_warning(ks <- variant_keyset(v, fi, "b38"), "dropped")
+  expect_setequal(ks$keys, c("chr1_100_A_G", "chr1_100_G_A"))
+  expect_equal(ks$positions, 100L)
+})
