@@ -55,3 +55,41 @@ test_that("the demoted parent is read through raw with no per-row split", {
   result <- fi[chr == 1 & pos < 500]
   expect_equal(result$chr_colon_pos, "1:100")
 })
+
+test_that("a partially-redundant parent keeps only the surviving child", {
+  dt <- data.table::data.table(
+    chr = c("chr1", "chr2"),
+    chr_colon_pos = c("1:100", "2:300"),
+    ref = c("A", "G"), alt = c("G", "A"), pval = c(0.1, 0.3)
+  )
+  fi <- local_file_interface(dt = dt, build = "b38")
+  expect_equal(
+    column_names(fi),
+    c("chr", "chr_colon_pos", "pos", "ref", "alt", "pval")
+  )
+  expect_false(any(duplicated(column_names(fi))))
+  pos_row <- fi$column_info[standard_name == "pos"]
+  expect_equal(nrow(pos_row), 1L)
+  expect_equal(pos_row$bash_index, "encoded1[2]")
+  parent <- fi$column_info[input_name == "chr_colon_pos"]
+  expect_equal(parent$recode_columns, "$2 = $2 OFS encoded1[2]")
+  result <- fi[pos < 250]
+  expect_equal(nrow(result), 1L)
+  expect_equal(result$chr, "chr1")
+})
+
+test_that("a build-encoded parent beside real chr/pos keeps only build", {
+  dt <- data.table::data.table(
+    chr = c("chr1", "chr2"), pos = c(100L, 300L),
+    MarkerName = c("b37-c1:100-123", "b37-c2:300-123"),
+    ref = c("A", "G"), alt = c("G", "A"), pval = c(0.1, 0.3)
+  )
+  fi <- local_file_interface(dt = dt, build = "b38")
+  expect_true("build" %in% column_names(fi))
+  expect_false(any(duplicated(column_names(fi))))
+  expect_equal(fi$column_info[standard_name == "chr", bash_index], "$1")
+  expect_equal(fi$column_info[standard_name == "pos", bash_index], "$2")
+  expect_equal(
+    fi$column_info[standard_name == "build", bash_index], "encoded1[1]"
+  )
+})

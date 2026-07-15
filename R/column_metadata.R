@@ -58,6 +58,26 @@ encoded_array_refs <- function(encoded_column_index, positions) {
   sprintf("encoded%i[%i]", encoded_column_index, positions)
 }
 
+#' Decoded names of an encoded column that a real column already supplies
+#'
+#' Returns the decoded names to drop for a non-allele encoded column (those a
+#' real column provides); empty for any other row.
+#'
+#' @param encoded_names Character vector of decoded names, or NULL.
+#' @param real_standard_names Standard names supplied by real columns.
+#' @return Character vector of redundant decoded names.
+#' @keywords internal
+redundant_decoded_names <- function(
+  encoded_names,
+  real_standard_names
+) {
+  if (is_non_allele_encoded_column(encoded_names)) {
+    intersect(encoded_names, real_standard_names)
+  } else {
+    character(0)
+  }
+}
+
 #' Build complete column info for a file interface
 #'
 #' Main orchestrator that detects and configures all column metadata by
@@ -423,6 +443,11 @@ expand_encoded_columns <- function(
       c(column_info$standard_name, unlist(column_info$encoded_names))
   ]
 
+  real_standard_names <- column_info[
+    !is.na(input_name) & !is.na(standard_name),
+    standard_name
+  ]
+
   column_info[
     ,
     {
@@ -449,7 +474,13 @@ expand_encoded_columns <- function(
         # Regular encoded column: expand into virtual columns
         list(
           .SD,
-          expand_single_encoded_row(.SD)
+          expand_single_encoded_row(
+            .SD,
+            exclude = redundant_decoded_names(
+              encoded_names[[1]],
+              real_standard_names
+            )
+          )
         ) |>
           data.table::rbindlist(fill = TRUE, use.names = TRUE)
       }
@@ -471,7 +502,8 @@ expand_encoded_columns <- function(
 #' @return data.table with virtual column rows, or NULL if not encoded
 #' @keywords internal
 expand_single_encoded_row <- function(
-  row_info
+  row_info,
+  exclude = character(0)
 ) {
   stopifnot(nrow(row_info) == 1)
   if (is.null(row_info$encoded_names[[1]])) {
@@ -503,7 +535,7 @@ expand_single_encoded_row <- function(
       split_encoding_column = split_encoding_column,
       recode_columns = recode_columns
     )
-  ]
+  ][!exclude, on = "standard_name"]
 }
 
 
