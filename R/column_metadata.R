@@ -20,6 +20,44 @@
 # values are uppered the moment they leave the awk pipeline.
 ALLELE_STANDARD_NAMES <- c("ref", "alt", "allele1", "allele2")
 
+#' Test whether a column is a non-allele encoded column
+#'
+#' Identifies the encoded columns handled by the coordinate/build passthrough
+#' and survivor logic: those with decoded names, none of which are alleles
+#' (`chr:pos`, build-encoded). Allele encodings (`SNPAlleles`, and the `alt`
+#' column repurposed for `allele1`/`allele2` matching) are excluded; they are
+#' handled by the effect-allele machinery. This exclusion is provisional — the
+#' gate is expected to be removed once allele-encoded redundancy is supported.
+#'
+#' The predicate keys only on the decoded names. The only encoded column that
+#' ever carries its own `standard_name` is the repurposed `alt` (an allele
+#' encoding already excluded here), so a `standard_name` test would be
+#' redundant.
+#'
+#' @param encoded_names Character vector of decoded names, or NULL for a
+#'   non-encoded column.
+#' @return TRUE for a non-allele encoded column.
+#' @keywords internal
+is_non_allele_encoded_column <- function(encoded_names) {
+  !is.null(encoded_names) &&
+    !any(encoded_names %in% ALLELE_STANDARD_NAMES)
+}
+
+#' Awk references to elements of an encoded column's split array
+#'
+#' Builds the `encoded<index>[<position>]` references used in the split/recode
+#' awk and stored in the parent's `encoded_refs` column. Returns one reference
+#' per position; recode callers join them with `OFS`.
+#'
+#' @param encoded_column_index Integer identifying the awk array
+#'   (`encoded<index>`).
+#' @param positions Integer positions within the array.
+#' @return Character vector of awk array references.
+#' @keywords internal
+encoded_array_refs <- function(encoded_column_index, positions) {
+  sprintf("encoded%i[%i]", encoded_column_index, positions)
+}
+
 #' Build complete column info for a file interface
 #'
 #' Main orchestrator that detects and configures all column metadata by
