@@ -757,8 +757,7 @@ post_process.genomic_regions <- function(
 ) {
   copy_genomic_regions(x)[
     !is.na(chr),
-    chr := drop_chr_prefix(chr) |>
-      check_post_processing("chr", finterface)
+    chr := check_post_processing(chr, "chr", finterface)
   ][] |>
     as_genomic_regions(include = is_included(x))
 }

@@ -46,6 +46,10 @@ check_post_processing <- function(
     values <- toupper(values)
   }
 
+  if (isTRUE(post_processing_to_check$standard_name == "chr")) {
+    values <- drop_chr_prefix(values)
+  }
+
   # Apply prefix first, then quote handling
   values |>
     check_prefix(post_processing_to_check$prefix) |>
