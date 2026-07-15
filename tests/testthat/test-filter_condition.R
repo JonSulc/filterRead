@@ -1344,3 +1344,22 @@ test_that("a comparison referencing no file column errors clearly", {
     "Cannot build a filter_condition from"
   )
 })
+
+test_that("dispatch recognizes an in_filter_condition atom over a literal field", {
+  finterface <- local_summary_stats_interface()
+  context <- as_fc_context(finterface, rlang::quo())
+  atom <- new_filter_condition(
+    rlang::new_quosure(
+      rlang::call2("in_filter_condition", "$2", c("100", "200"))
+    ),
+    finterface = context,
+    build = "b38"
+  )
+
+  compiled <- eval_fcondition(atom, finterface = finterface)
+  random_code <- sub("^file", "", basename(compiled$additional_files))
+  expect_equal(compiled$condition, sprintf("($2 in var%s)", random_code))
+  # A literal field expression stays a membership test, never a positional
+  # range: the atom carries the full genome (no OR-chain extraction).
+  expect_equal(fc_genomic_regions(atom), full_genomic_regions(build = "b38"))
+})

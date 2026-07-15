@@ -15,6 +15,11 @@ atomic_fc_operators <- list(
   ">" = "gt_filter_condition",
   ">=" = "gte_filter_condition",
   "%in%" = "in_filter_condition",
+  # in_membership_atom builds membership atoms carrying the internal
+  # in_filter_condition operator; this self-entry lets the operator
+  # normalization in new_filter_condition_impl.quosure resolve it to its
+  # fc-name.
+  "in_filter_condition" = "in_filter_condition",
   "grepl" = "grepl_filter_condition",
   "%like%" = "like_filter_condition"
 )
@@ -160,7 +165,16 @@ is_atomic_filter_condition.quosure <- function(
     return(FALSE)
   }
   as.character(fexpr[[1]]) %in% atomic_operators &&
-    has_finterface_column_names(fexpr, finterface)
+    (has_finterface_column_names(fexpr, finterface) ||
+      is_prerendered_field_membership(fexpr))
+}
+
+# A membership atom whose left operand is a literal awk field expression
+# (e.g. "$2" or a composite key), built internally by in_membership_atom.
+# Matches an in_filter_condition call carrying a character left operand.
+is_prerendered_field_membership <- function(fexpr) {
+  identical(as.character(fexpr[[1]]), "in_filter_condition") &&
+    is.character(fexpr[[2]])
 }
 #' @rdname is_atomic_filter_condition
 #' @keywords internal
