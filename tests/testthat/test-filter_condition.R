@@ -1363,3 +1363,21 @@ test_that("dispatch recognizes an in_filter_condition atom over a literal field"
   # range: the atom carries the full genome (no OR-chain extraction).
   expect_equal(fc_genomic_regions(atom), full_genomic_regions(build = "b38"))
 })
+
+test_that("in_membership_atom builds a membership atom over a literal field", {
+  finterface <- local_summary_stats_interface()
+  context <- as_fc_context(finterface, rlang::quo())
+  atom <- in_membership_atom("$2", c("100", "200"), context, build = "b38")
+
+  compiled <- eval_fcondition(atom, finterface = finterface)
+  random_code <- sub("^file", "", basename(compiled$additional_files))
+  expect_equal(compiled$condition, sprintf("($2 in var%s)", random_code))
+  expect_equal(readLines(compiled$additional_files), c("100", "200"))
+
+  # A literal field expression must stay an awk membership test, never become a
+  # positional range: the atom carries the full genome (no OR-chain extraction).
+  expect_equal(
+    fc_genomic_regions(atom),
+    full_genomic_regions(build = "b38")
+  )
+})

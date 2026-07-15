@@ -84,6 +84,34 @@ empty_filter_condition <- function(
 }
 
 
+#' Membership atom over a literal awk field expression
+#'
+#' Builds an `in_filter_condition` atom testing whether a literal awk expression
+#' (e.g. `"$2"`, or a composite key like `$1 "_" $2 "_" $3 "_" $4`) is a member
+#' of `values`, with the build, context, and a full-genome `genomic_regions`
+#' set so the atom adds no positional range condition. A literal field
+#' expression is not a `chr`/`pos` column symbol, so the genomic-condition
+#' extraction leaves it in place and it compiles to an awk associative-array
+#' membership test. `column_expr` and `values` are evaluated here and spliced
+#' into the call as literal values.
+#'
+#' @param column_expr Literal awk expression for the left operand of `in`.
+#' @param values Vector staged into the awk associative array.
+#' @param context Context environment carrying `$finterface`.
+#' @param build Genome build string.
+#' @return A filter_condition atom.
+#' @keywords internal
+in_membership_atom <- function(column_expr, values, context, build) {
+  new_filter_condition(
+    rlang::new_quosure(
+      rlang::call2("in_filter_condition", column_expr, values)
+    ),
+    finterface = context,
+    build = build
+  )
+}
+
+
 #' Coerce an object to a filter_condition
 #'
 #' Adds the filter_condition class to an object while preserving existing
