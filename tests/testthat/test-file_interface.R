@@ -382,7 +382,7 @@ test_that("Encoded columns are correctly detected", {
       bash_index = sprintf("encoded1[%i]", 1:3),
       encoding_column = "MarkerName",
       split_encoding_column = "split($1, encoded1, \"-c|:|-\")",
-      recode_columns = "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"
+      recode_columns = "$1 = $1 OFS encoded1[1] OFS encoded1[2] OFS encoded1[3]"
     )
   )
   expect_equal(
@@ -391,7 +391,7 @@ test_that("Encoded columns are correctly detected", {
       before_if = c("$2 = toupper($2)", "$3 = toupper($3)"),
       after_if = c(
         "split($1, encoded1, \"-c|:|-\")",
-        "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"
+        "$1 = $1 OFS encoded1[1] OFS encoded1[2] OFS encoded1[3]"
       )
     )
   )
@@ -447,7 +447,8 @@ test_that("Encoded columns are correctly detected", {
       delimiter             = "-c|:|-",
       encoded_column_index  = 1,
       split_encoding_column = "split($1, encoded1, \"-c|:|-\")",
-      recode_columns        = "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"
+      recode_columns        =
+        "$1 = $1 OFS encoded1[1] OFS encoded1[2] OFS encoded1[3]"
     )
   )
   expect_equal(
@@ -465,7 +466,7 @@ test_that("Encoded columns are correctly detected", {
       bash_index = sprintf("encoded1[%i]", 1:3),
       encoding_column = "MarkerName",
       split_encoding_column = "split($1, encoded1, \"-c|:|-\")",
-      recode_columns = "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"
+      recode_columns = "$1 = $1 OFS encoded1[1] OFS encoded1[2] OFS encoded1[3]"
     )
   )
   expect_equal(
@@ -474,7 +475,7 @@ test_that("Encoded columns are correctly detected", {
       before_if = c("$2 = toupper($2)", "$3 = toupper($3)"),
       after_if = c(
         "split($1, encoded1, \"-c|:|-\")",
-        "$1 = encoded1[1] OFS encoded1[2] OFS encoded1[3]"
+        "$1 = $1 OFS encoded1[1] OFS encoded1[2] OFS encoded1[3]"
       )
     )
   )
@@ -498,11 +499,14 @@ test_that("Encoded columns are correctly parsed and loaded", {
 
   expect_equal(
     column_names(finterface_enc),
-    c("build", "chr", "pos", "ref", "alt", "effect", "pval")
+    c("MarkerName", "build", "chr", "pos", "ref", "alt", "effect", "pval")
   )
   expect_equal(
     names(head(finterface_enc)),
-    c("build", "chr", "pos", "ref", "alt", "effect", "pval", "effect_se")
+    c(
+      "MarkerName", "build", "chr", "pos", "ref", "alt", "effect", "pval",
+      "effect_se"
+    )
   )
   expect_true(
     finterface_enc[chr == 1][, all(chr == 1)]

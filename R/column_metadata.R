@@ -382,17 +382,21 @@ add_encoding_columns <- function(
       )
     ][
       !sapply(delimiter, is.na),
-      # Recombine array elements with OFS
-      recode_columns := sprintf(
-        "%s = %s",
-        bash_index,
-        sprintf(
-          "encoded%i[%i]",
-          encoded_column_index,
+      # Keep the raw parent and append its decoded values
+      recode_columns := {
+        positions <- if (is_non_allele_encoded_column(encoded_names[[1]])) {
+          which(!encoded_names[[1]] %in% real_standard_names)
+        } else {
           seq_along(encoded_names[[1]])
-        ) |>
-          paste(collapse = " OFS ")
-      ),
+        }
+        sprintf(
+          "%s = %s OFS %s",
+          bash_index,
+          bash_index,
+          encoded_array_refs(encoded_column_index, positions) |>
+            paste(collapse = " OFS ")
+        )
+      },
       by = bash_index
     ][]
   }
@@ -520,9 +524,10 @@ column_names <- function(
     return(col_info[!is.na(input_name), input_name])
   }
 
-  # Return standardized names, excluding encoded parent columns
+  # Return standardized names, plus kept encoded parents (rows that map
+  # to no standard name of their own)
   col_info[
-    sapply(encoded_names, is.null),
+    sapply(encoded_names, is.null) | is.na(standard_name),
     data.table::fcoalesce(standard_name, input_name)
   ]
 }
@@ -545,7 +550,7 @@ column_class_overrides <- function(finterface) {
   if (is.null(col_info) || !"class" %in% names(col_info)) {
     return(NULL)
   }
-  output_cols <- col_info[sapply(encoded_names, is.null)]
+  output_cols <- col_info[sapply(encoded_names, is.null) | is.na(standard_name)]
   if (!"class" %in% names(output_cols) ||
     all(is.na(output_cols$class))) {
     return(NULL)
