@@ -249,7 +249,7 @@ test_that("Allele1/Allele2 to NEA deduction generates correct awk", {
   # Verify NEA deduction logic is present
   expect_match(cmd, "# Deduce NEA based on EA vs Allele1/Allele2")
   expect_match(cmd, "nea = ")
-  expect_match(cmd, "nea OFS")
+  expect_match(cmd, "OFS nea")
 })
 
 test_that("Prefixes are handled correctly", {

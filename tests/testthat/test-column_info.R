@@ -173,13 +173,13 @@ test_that("Parsing allele1, allele2, alt works", {
     withr::with_output_sink(new = "/dev/null")
   expect_equal(
     column_names(finterface),
-    c("chr", "pos", "ref", "alt", "effect", "pval", "allele1", "allele2")
+    c("chr", "pos", "alt", "ref", "effect", "pval", "allele1", "allele2")
   )
   expect_equal(
     head(finterface) |>
       colnames(),
     c(
-      "chr", "pos", "ref", "alt", "effect", "pval",
+      "chr", "pos", "alt", "ref", "effect", "pval",
       "allele1", "allele2", "effect_se"
     )
   )

@@ -350,12 +350,14 @@ add_encoding_columns <- function(
   # - split_encoding_column: awk code to split delimited values
   # - recode_columns: awk code to recode split values
   # - encoded_column_index: unique index for encoded columns
+  # - encoded_refs: awk references to each child's decoded value
   #
   # These columns are consumed by:
   # - awk_codegen.R: get_awk_column_arrays() uses encoding_column,
   #   split_encoding_column, recode_columns, add_prefix, bash_index,
   #   encoded_names
   # - awk_arrays.R: uses bash_index for column array setup
+  # - expand_single_encoded_row(): reads encoded_refs for child bash_index
   #
   # If renaming these columns, update the consuming functions!
 
@@ -389,6 +391,7 @@ add_encoding_columns <- function(
     c("encoding_column", "split_encoding_column", "recode_columns") :=
       NA_character_
   ][]
+  column_info[, encoded_refs := vector("list", .N)][]
 
   # Generate split/recode awk code for columns with delimiters
   if (any(!sapply(column_info$delimiter, is.na))) {
@@ -418,6 +421,13 @@ add_encoding_columns <- function(
         )
       },
       by = bash_index
+    ][
+      !sapply(delimiter, is.na),
+      encoded_refs := Map(
+        encoded_array_refs,
+        encoded_column_index,
+        lapply(encoded_names, seq_along)
+      )
     ][]
   }
   invisible(column_info)
@@ -495,7 +505,7 @@ expand_encoded_columns <- function(
 #' Expand a single encoded column row
 #'
 #' Creates virtual column rows for each value in an encoded column.
-#' Uses array syntax (encoded1[1], encoded1[2]) for bash_index.
+#' Reads each child's awk reference from the parent's `encoded_refs`.
 #'
 #' @param row_info Single-row data.table with encoded column info
 #'
@@ -516,20 +526,7 @@ expand_single_encoded_row <- function(
       regex = regex,
       delimiter = delimiter,
       input_index = input_index,
-      bash_index = {
-        if (is.na(encoded_column_index)) {
-          # Special case: alt column without encoding index
-          stopifnot(row_info$standard_name == "alt")
-          "nea"
-        } else {
-          # Normal case: array element references
-          sprintf(
-            "encoded%i[%i]",
-            encoded_column_index,
-            seq_along(encoded_names[[1]])
-          )
-        }
-      },
+      bash_index = encoded_refs[[1]],
       quoted = FALSE,
       encoding_column = input_name,
       split_encoding_column = split_encoding_column,
@@ -556,12 +553,9 @@ column_names <- function(
     return(col_info[!is.na(input_name), input_name])
   }
 
-  # Return standardized names, plus kept encoded parents (rows that map
-  # to no standard name of their own)
-  col_info[
-    sapply(encoded_names, is.null) | is.na(standard_name),
-    data.table::fcoalesce(standard_name, input_name)
-  ]
+  # Return standardized names, preferring standard_name over input_name.
+  # Every encoded parent is kept, so all rows contribute a column.
+  col_info[, data.table::fcoalesce(standard_name, input_name)]
 }
 
 #' Pull fread `colClasses` overrides from column_info
@@ -582,7 +576,7 @@ column_class_overrides <- function(finterface) {
   if (is.null(col_info) || !"class" %in% names(col_info)) {
     return(NULL)
   }
-  output_cols <- col_info[sapply(encoded_names, is.null) | is.na(standard_name)]
+  output_cols <- data.table::copy(col_info)
   if (!"class" %in% names(output_cols) ||
     all(is.na(output_cols$class))) {
     return(NULL)

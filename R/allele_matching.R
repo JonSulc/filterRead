@@ -23,10 +23,15 @@ add_allele_matching_to_column_info <- function(
     return(column_info)
   }
 
-  # Set up ref/alt derivation from allele1/allele2
+  # Set up ref derivation from allele1/allele2. The alt column is kept as the
+  # alt output column; a single ref child (the deduced non-effect allele) is
+  # appended after it, referencing the nea variable computed by the split.
   column_info[
     standard_name == "alt",
-    encoded_names := .(c("ref", "alt"))
+    encoded_names := .(c("ref"))
+  ][
+    standard_name == "alt",
+    encoded_refs := .(c("nea"))
   ][
     standard_name == "alt",
     split_encoding_column := match_a1_a2_to_ref(
@@ -37,7 +42,7 @@ add_allele_matching_to_column_info <- function(
   ][
     standard_name == "alt",
     recode_columns := sprintf(
-      "%s = nea OFS %s",
+      "%s = %s OFS nea",
       column_info[standard_name == "alt", bash_index],
       column_info[standard_name == "alt", bash_index]
     )

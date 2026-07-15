@@ -106,3 +106,22 @@ test_that("allele matching still triggers without an encoded ref source", {
   )
   expect_true(needs_a1_a2_to_ref_matching(column_info))
 })
+
+test_that("filtering works when ref is deduced from allele1/allele2", {
+  dt <- data.table::data.table(
+    chr = "chr1", pos = c(100L, 200L),
+    allele1 = c("A", "C"), allele2 = c("G", "T"),
+    alt = c("G", "T"), pval = c(0.1, 0.2)
+  )
+  local_csv_file("data.csv", dt = dt)
+  finterface <- new_file_interface("data.csv", build = "b38") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_true(all(c("alt", "ref") %in% column_names(finterface)))
+  result <- finterface[]
+  expect_equal(result$alt, c("G", "T"))
+  expect_equal(result$ref, c("A", "C"))
+  expect_equal(finterface[ref == "A"]$pos, 100L)
+  expect_equal(finterface[alt == "T"]$pos, 200L)
+})
