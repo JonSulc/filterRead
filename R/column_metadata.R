@@ -339,6 +339,27 @@ add_encoding_columns <- function(
   #
   # If renaming these columns, update the consuming functions!
 
+  real_standard_names <- column_info[
+    !is.na(input_name) & !is.na(standard_name),
+    standard_name
+  ]
+
+  # Dropping the encoding of a column already covered by real columns lets it
+  # pass through plainly, avoiding the per-row split.
+  fully_redundant <- sapply(
+    column_info$encoded_names,
+    function(encoded) {
+      is_non_allele_encoded_column(encoded) &&
+        all(encoded %in% real_standard_names)
+    }
+  )
+  if (any(fully_redundant)) {
+    column_info[fully_redundant, delimiter := NA_character_][
+      fully_redundant,
+      encoded_names := list(list(NULL))
+    ][]
+  }
+
   # Assign unique indices to encoded columns
   column_info[
     !sapply(encoded_names, is.null),
