@@ -231,16 +231,12 @@ or_filter_condition <- function(
   combine_filter_condition(fcondition1, fcondition2, "||")
 }
 
-#' Combine two conditions for RSID-indexed files
+#' Generic condition combiner
 #'
-#' Special OR handling for RSID-based files. Instead of combining into a
-#' single awk condition, keeps conditions separate for multi-file processing
-#' where each condition corresponds to a different tabix query.
+#' Combines two condition lists with a specified operator, merging their
+#' variable_arrays and additional_files.
 #'
-#' @param fcondition1 First condition (or condition list)
-#' @param fcondition2 Second condition (or condition list)
-#' @return List with `condition` as unnamed vector of conditions
-#' @keywords internal
+#' @param fcondition1 First condition list
 #' @param fcondition2 Second condition list
 #' @param operation Awk operator string ("&&" or "||")
 #'

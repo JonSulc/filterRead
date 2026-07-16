@@ -2,28 +2,25 @@
 % Please edit documentation in R/filter_condition_conversion.R
 \name{combine_filter_condition}
 \alias{combine_filter_condition}
-\title{Combine two conditions for RSID-indexed files}
+\title{Generic condition combiner}
 \usage{
 combine_filter_condition(fcondition1, fcondition2, operation)
 }
 \arguments{
-\item{fcondition1}{First condition (or condition list)}
+\item{fcondition1}{First condition list}
 
 \item{fcondition2}{Second condition list}
 
 \item{operation}{Awk operator string ("&&" or "||")}
 }
 \value{
-List with `condition` as unnamed vector of conditions
-
 Combined condition list with:
   - condition: combined condition string
   - variable_arrays: merged from both conditions
   - additional_files: merged from both conditions
 }
 \description{
-Special OR handling for RSID-based files. Instead of combining into a
-single awk condition, keeps conditions separate for multi-file processing
-where each condition corresponds to a different tabix query.
+Combines two condition lists with a specified operator, merging their
+variable_arrays and additional_files.
 }
 \keyword{internal}

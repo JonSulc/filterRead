@@ -2,7 +2,7 @@
 % Please edit documentation in R/rsid_matching.R
 \name{fcondition_and_rsid_to_awk}
 \alias{fcondition_and_rsid_to_awk}
-\title{Generic condition combiner}
+\title{Convert filter condition with RSID matching to awk data.table}
 \usage{
 fcondition_and_rsid_to_awk(
   fcondition,
@@ -29,12 +29,6 @@ data.table with columns:
   - variable_arrays, additional_files: from eval_fcondition_w_gregions
 }
 \description{
-Combines two condition lists with a specified operator, merging their
-variable_arrays and additional_files.
-}
-\details{
-Convert filter condition with RSID matching to awk data.table
-
 Handles files that use RSID-based indexing (files without chr/pos columns
 that require dbSNP lookup). For RSID files with genomic conditions, uses
 tabix to query dbSNP and creates awk code to match RSIDs.

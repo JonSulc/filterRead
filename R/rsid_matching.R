@@ -500,11 +500,6 @@ lp_filter_condition <- function(
   fcondition
 }
 
-#' Generic condition combiner
-#'
-#' Combines two condition lists with a specified operator, merging their
-#' variable_arrays and additional_files.
-#'
 #' Convert filter condition with RSID matching to awk data.table
 #'
 #' Handles files that use RSID-based indexing (files without chr/pos columns
