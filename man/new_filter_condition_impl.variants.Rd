@@ -9,7 +9,7 @@
 \description{
 Lowers `v` to a position-membership pre-filter AND a composite-key
 membership test (both allele orderings), matching file rows on
-`(chr, pos, {ref, alt})` after lifting `v` to the file's build. `context` is
+`(chr, pos, \{ref, alt\})` after lifting `v` to the file's build. `context` is
 the normalized context env built by `as_fc_context()` in the public
 `new_filter_condition()` wrapper, so the interface is read from
 `context$finterface`, mirroring `new_filter_condition_impl.genomic_regions`.
