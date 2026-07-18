@@ -12,7 +12,7 @@ Description: Creates an easy-to-use interface for loading tab/comma-separated
 License: GPL (>= 3)
 Encoding: UTF-8
 Depends:
-    R (>= 4.1.0),
+    R (>= 4.4.0),
     data.table (>= 1.16.0)
 Imports:
     curl,
