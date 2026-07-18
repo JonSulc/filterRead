@@ -500,6 +500,27 @@ lp_filter_condition <- function(
   fcondition
 }
 
+#' Build the array-load table for a filter condition's awk output
+#'
+#' @param awk_conditions List from `eval_fcondition_w_gregions()`, carrying
+#'   `variable_arrays` (awk code loading each `\%in\%` array) and
+#'   `additional_files` (their temp-file paths).
+#' @return A two-column `data.table` (`array_load_code`, `temp_file`) with one
+#'   row per `\%in\%` membership array; zero rows when the condition has no
+#'   membership atoms.
+#' @keywords internal
+array_loads_from_awk_conditions <- function(awk_conditions) {
+  stopifnot(
+    "variable_arrays and additional_files must have equal lengths" =
+      length(awk_conditions$variable_arrays) ==
+        length(awk_conditions$additional_files)
+  )
+  data.table::data.table(
+    array_load_code = awk_conditions$variable_arrays %||% character(),
+    temp_file = awk_conditions$additional_files %||% character()
+  )
+}
+
 #' Convert filter condition with RSID matching to awk data.table
 #'
 #' Handles files that use RSID-based indexing (files without chr/pos columns

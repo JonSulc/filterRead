@@ -309,3 +309,39 @@ test_that("wrap_full_code_block works with complex data structures", {
     )
   )
 })
+
+test_that("array_loads_from_awk_conditions builds one row per array", {
+  awk_conditions <- list(
+    condition = "x",
+    variable_arrays = c("loaderA", "loaderB"),
+    additional_files = c("fileA", "fileB")
+  )
+  expect_equal(
+    array_loads_from_awk_conditions(awk_conditions),
+    data.table::data.table(
+      array_load_code = c("loaderA", "loaderB"),
+      temp_file = c("fileA", "fileB")
+    )
+  )
+})
+
+test_that("array_loads_from_awk_conditions returns zero rows with no arrays", {
+  expect_equal(
+    array_loads_from_awk_conditions(list(condition = "x")),
+    data.table::data.table(
+      array_load_code = character(),
+      temp_file = character()
+    )
+  )
+})
+
+test_that("array_loads_from_awk_conditions rejects unequal lengths", {
+  expect_error(
+    array_loads_from_awk_conditions(list(
+      condition = "x",
+      variable_arrays = c("loaderA", "loaderB"),
+      additional_files = "fileA"
+    )),
+    "equal lengths"
+  )
+})
