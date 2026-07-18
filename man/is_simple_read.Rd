@@ -5,13 +5,16 @@
 \title{Check if this is a simple read with no filtering/processing}
 \usage{
 is_simple_read(
-  fcondition_awk_dt,
+  branches,
+  array_loads,
   column_arrays_before_conditions,
   column_arrays_after_conditions
 )
 }
 \arguments{
-\item{fcondition_awk_dt}{data.table from fcondition_and_rsid_to_awk}
+\item{branches}{Branch data.table from fcondition_and_rsid_to_awk (or NULL)}
+
+\item{array_loads}{Array-load data.table (may have zero rows)}
 
 \item{column_arrays_before_conditions}{Awk code for pre-condition splits}
 

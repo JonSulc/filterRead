@@ -531,14 +531,16 @@ array_loads_from_awk_conditions <- function(awk_conditions) {
 #' @param rsid_bash_index Awk column ref for RSID column (e.g., "$3")
 #' @param index Counter for multiple genomic blocks (for unique array names)
 #'
-#' @return data.table with columns:
-#'   - index: block index for unique naming
-#'   - awk_code_block: awk code to load RSID array from dbSNP
-#'   - print_prefix: awk code to prepend chr/pos to output
-#'   - process_substitution: tabix query command
-#'   - rsid_condition: awk condition to check RSID membership
-#'   - condition: additional non-genomic conditions
-#'   - variable_arrays, additional_files: from eval_fcondition_w_gregions
+#' @return A named list of two `data.table`s whose row counts are independent:
+#'   - branches: one row per condition branch. Always carries `condition` (the
+#'     non-genomic awk guard). On the RSID path it also carries `index` (block
+#'     index for unique array naming), `awk_code_block` (awk loading the RSID
+#'     array from dbSNP), `print_prefix` (awk prepending chr/pos to output),
+#'     `process_substitution` (the tabix query), and `rsid_condition` (the RSID
+#'     membership check) — each 1:1 with its branch. Zero rows when the
+#'     condition has no predicate at all.
+#'   - array_loads: one row per `\%in\%` membership array, from
+#'     `array_loads_from_awk_conditions()`; zero rows when there are none.
 #' @keywords internal
 fcondition_and_rsid_to_awk <- function(
   fcondition,
@@ -559,27 +561,32 @@ fcondition_and_rsid_to_awk <- function(
 
   # Standard path: no RSID matching needed
   if (!rsid_indexed || full_genome_condition || no_genome_condition) {
-    return(eval_fcondition_w_gregions(
+    awk_conditions <- eval_fcondition_w_gregions(
       fcondition,
       finterface = get_file_interface(fcondition)
-    ) |>
-      data.table::as.data.table())
+    )
+    return(list(
+      branches = data.table::data.table(condition = awk_conditions$condition),
+      array_loads = array_loads_from_awk_conditions(awk_conditions)
+    ))
   }
 
   # Recursive case: handle OR of multiple genomic blocks
   if (!is_single_genomic_block(fcondition)) {
     stopifnot(fcondition[[1]] == as.symbol("or_filter_condition"))
-    return(rbind(
-      fcondition_and_rsid_to_awk(
-        fcondition[[2]],
-        rsid_bash_index,
-        index = index
-      ),
-      fcondition_and_rsid_to_awk(
-        fcondition[[3]],
-        rsid_bash_index,
-        index = index + 1
-      )
+    left <- fcondition_and_rsid_to_awk(
+      fcondition[[2]],
+      rsid_bash_index,
+      index = index
+    )
+    right <- fcondition_and_rsid_to_awk(
+      fcondition[[3]],
+      rsid_bash_index,
+      index = index + 1
+    )
+    return(list(
+      branches = rbind(left$branches, right$branches),
+      array_loads = rbind(left$array_loads, right$array_loads)
     ))
   }
 
@@ -587,7 +594,11 @@ fcondition_and_rsid_to_awk <- function(
   # 1. Query dbSNP via tabix for RSIDs in the region
   # 2. Generate awk code to load RSIDs into array
   # 3. Generate condition to filter by RSID membership
-  fc_genomic_regions(fcondition)[
+  awk_conditions <- eval_fcondition_w_gregions(
+    fcondition,
+    finterface = get_file_interface(fcondition)
+  )
+  branch <- fc_genomic_regions(fcondition)[
     ,
     .(
       index = index,
@@ -622,11 +633,12 @@ fcondition_and_rsid_to_awk <- function(
       # Condition: only print if RSID exists in loaded array
       rsid_condition = sprintf("%s in rsid%i", rsid_bash_index, index)
     )
-  ] |>
-    cbind(data.table::as.data.table(
-      eval_fcondition_w_gregions(
-        fcondition,
-        finterface = get_file_interface(fcondition)
-      )
-    ))
+  ]
+  list(
+    branches = cbind(
+      branch,
+      data.table::data.table(condition = awk_conditions$condition)
+    ),
+    array_loads = array_loads_from_awk_conditions(awk_conditions)
+  )
 }

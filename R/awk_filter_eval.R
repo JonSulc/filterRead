@@ -216,20 +216,20 @@ fcondition_to_awk <- function(
     fcondition = fcondition
   )
 
-  # Convert condition to awk and assemble full command. The awk dt also
-  # carries any tempfiles created for %in% matching; expose them on the
-  # returned command so callers can clean up after fread consumes them.
-  fcondition_awk_dt <- fcondition_and_rsid_to_awk(fcondition)
+  # Convert condition to awk and assemble full command. The bundle's array_loads
+  # carry any tempfiles created for %in% matching; expose them on the returned
+  # command so callers can clean up after fread consumes them.
+  fcondition_awk <- fcondition_and_rsid_to_awk(fcondition)
   cmd <- compile_awk_cmds(
     finterface = get_file_interface(fcondition),
-    fcondition_awk_dt = fcondition_awk_dt,
+    fcondition_awk = fcondition_awk,
     column_arrays_before_conditions = column_arrays$before_if,
     column_arrays_after_conditions = column_arrays$after_if,
     nlines = nlines,
     return_only_cmd = return_only_cmd
   )
   attr(cmd, "additional_files") <- c(
-    unlist(fcondition_awk_dt$additional_files),
+    fcondition_awk$array_loads$temp_file,
     attr(cmd, "additional_files")
   )
   cmd

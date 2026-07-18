@@ -365,3 +365,25 @@ test_that("finterface[v] compiles the position filter to a hash membership", {
   expect_match(cmd, "($2 in var", fixed = TRUE)
   expect_match(cmd, '$1 "_" $2 "_" $3 "_" $4 in var', fixed = TRUE)
 })
+
+test_that("finterface[v] emits the match branch exactly once", {
+  fi <- local_file_interface(dt = ss_dt(), build = "b38")
+  v <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b38"
+  )
+  cmd <- fi[v, return_only_cmd = TRUE]
+  expect_equal(
+    lengths(regmatches(cmd, gregexpr("print $0", cmd, fixed = TRUE))),
+    1L
+  )
+  expect_equal(
+    lengths(regmatches(cmd, gregexpr("if (FILENAME == ", cmd, fixed = TRUE))),
+    2L
+  )
+  expect_equal(
+    lengths(regmatches(cmd, gregexpr("[$0] = 1", cmd, fixed = TRUE))),
+    2L
+  )
+  expect_equal(length(attr(cmd, "additional_files")), 2L)
+})

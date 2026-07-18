@@ -6,53 +6,57 @@
 
 #' Check if this is a simple read with no filtering/processing
 #'
-#' @param fcondition_awk_dt data.table from fcondition_and_rsid_to_awk
+#' @param branches Branch data.table from fcondition_and_rsid_to_awk (or NULL)
+#' @param array_loads Array-load data.table (may have zero rows)
 #' @param column_arrays_before_conditions Awk code for pre-condition splits
 #' @param column_arrays_after_conditions Awk code for post-condition processing
 #' @return TRUE if no filtering needed, FALSE otherwise
 #' @keywords internal
 is_simple_read <- function(
-  fcondition_awk_dt,
+  branches,
+  array_loads,
   column_arrays_before_conditions,
   column_arrays_after_conditions
 ) {
-  if (is.null(fcondition_awk_dt) &&
+  if (is.null(branches) &&
     is.null(column_arrays_before_conditions) &&
     is.null(column_arrays_after_conditions)) {
     return(TRUE)
   }
-  is.null(fcondition_awk_dt$condition) &&
-    is.null(fcondition_awk_dt$variable_arrays) &&
+  is.null(branches$condition) &&
+    (is.null(array_loads) || nrow(array_loads) == 0L) &&
     is.null(column_arrays_before_conditions) &&
     is.null(column_arrays_after_conditions) &&
-    is.null(fcondition_awk_dt$awk_code_block)
+    is.null(branches$awk_code_block)
 }
 
 #' Build awk file arguments string
 #'
-#' Assembles file arguments: process substitutions (tabix), additional files
-#' (%in% arrays), and main data file with appropriate separators.
+#' Assembles file arguments: process substitutions (tabix), array-load temp
+#' files (\%in\% arrays), and main data file with appropriate separators.
 #'
 #' @param finterface File interface
-#' @param fcondition_awk_dt data.table with process_substitution, additional_files
+#' @param branches Branch data.table with process_substitution
+#' @param array_loads Array-load data.table with temp_file
 #' @param use_command_line_fs Whether to set FS on command line
 #' @return File arguments string for awk command
 #' @keywords internal
 build_awk_file_args <- function(
   finterface,
-  fcondition_awk_dt,
+  branches,
+  array_loads,
   use_command_line_fs
 ) {
   c(
     # Process substitutions (tabix queries) with tab separator
-    if (!is.null(fcondition_awk_dt$process_substitution)) {
+    if (!is.null(branches$process_substitution)) {
       paste(
         "FS=\"\\t\"",
-        paste(fcondition_awk_dt$process_substitution, collapse = " ")
+        paste(branches$process_substitution, collapse = " ")
       )
     },
     # Additional temp files (%in% value arrays)
-    shQuote(fcondition_awk_dt$additional_files, type = "sh"),
+    shQuote(array_loads$temp_file, type = "sh"),
     # Reset FS to file's separator before reading main file
     if (use_command_line_fs) {
       sprintf("FS=\"%s\"", finterface$sep)
@@ -69,8 +73,9 @@ build_awk_file_args <- function(
 #' queries with RSID matching.
 #'
 #' @param finterface File interface with filename, separator, prefixes
-#' @param fcondition_awk_dt data.table from fcondition_and_rsid_to_awk with
-#'   condition, variable_arrays, awk_code_block, process_substitution, etc.
+#' @param fcondition_awk Named list from fcondition_and_rsid_to_awk with two
+#'   data.tables: branches (one row per condition branch) and array_loads
+#'   (one row per `\%in\%` membership array)
 #' @param column_arrays_before_conditions Awk code for column splits needed
 #'   before evaluating conditions
 #' @param column_arrays_after_conditions Awk code for column processing after
@@ -83,16 +88,26 @@ build_awk_file_args <- function(
 #' @keywords internal
 compile_awk_cmds <- function(
   finterface,
-  fcondition_awk_dt = NULL,
+  fcondition_awk = NULL,
   column_arrays_before_conditions = NULL,
   column_arrays_after_conditions = get_awk_column_arrays(finterface)$after_if,
   nlines = NULL,
   skip_header = TRUE,
   return_only_cmd = FALSE
 ) {
+  branches <- fcondition_awk$branches
+  array_loads <- fcondition_awk$array_loads
+  if (is.null(array_loads)) {
+    array_loads <- data.table::data.table(
+      array_load_code = character(),
+      temp_file = character()
+    )
+  }
+
   # Simple read: just cat/zcat the file (with optional prefix handling)
   if (is_simple_read(
-    fcondition_awk_dt,
+    branches,
+    array_loads,
     column_arrays_before_conditions,
     column_arrays_after_conditions
   )) {
@@ -107,29 +122,30 @@ compile_awk_cmds <- function(
   }
 
   # Detect multi-file processing (%in% with additional files, RSID matching)
-  is_multi_file <- !is.null(fcondition_awk_dt$additional_files) ||
-    !is.null(fcondition_awk_dt$variable_arrays) ||
-    !is.null(fcondition_awk_dt$process_substitution)
+  is_multi_file <- nrow(array_loads) != 0L ||
+    !is.null(branches$process_substitution)
 
   # Build main processing code (conditions, column transforms, output)
   main_file_code <- wrap_main_file_code(
     finterface                      = finterface,
-    fcondition_awk_dt               = fcondition_awk_dt,
+    branches                        = branches,
     column_arrays_before_conditions = column_arrays_before_conditions,
     column_arrays_after_conditions  = column_arrays_after_conditions,
     nlines                          = nlines,
-    skip_header                     = skip_header && is_multi_file
+    skip_header                     = skip_header && is_multi_file,
+    multi_file                      = is_multi_file
   )
 
   # Wrap with RSID loading blocks if needed
   full_code_block <- wrap_full_code_block(
-    fcondition_awk_dt,
+    branches,
+    array_loads,
     main_file_code = main_file_code
   )
 
   # Determine if we need command-line FS
   # (when reading multiple files with different separators, e.g., tabix + tsv)
-  use_command_line_fs <- !is.null(fcondition_awk_dt$process_substitution)
+  use_command_line_fs <- !is.null(branches$process_substitution)
 
   # Build BEGIN block and assemble complete awk script
   # For multi-file, header skip is handled inside wrap_main_file_code
@@ -156,7 +172,8 @@ compile_awk_cmds <- function(
   # Build file arguments and assemble final command
   awk_file_args <- build_awk_file_args(
     finterface,
-    fcondition_awk_dt,
+    branches,
+    array_loads,
     use_command_line_fs
   )
   cmd <- paste("awk", awk_code, awk_file_args)
@@ -283,24 +300,26 @@ increase_indent <- function(
 #' (RSID matching), wraps code in a block with else chains.
 #'
 #' @param finterface File interface with trim_prefix, etc.
-#' @param fcondition_awk_dt data.table with condition info per block
+#' @param branches data.table with condition info per block
 #' @param column_arrays_before_conditions Column splits before conditions
 #' @param column_arrays_after_conditions Column processing after conditions
 #' @param nlines Optional output line limit
 #' @param skip_header If TRUE and multi-file, add FNR == 1 skip inside block
+#' @param multi_file If TRUE, wrap the body in an awk block for the else chain
 #'
 #' @return Awk code string for main file processing
 #' @keywords internal
 wrap_main_file_code <- function(
   finterface,
-  fcondition_awk_dt,
+  branches,
   column_arrays_before_conditions,
   column_arrays_after_conditions,
   nlines = NULL,
-  skip_header = FALSE
+  skip_header = FALSE,
+  multi_file = FALSE
 ) {
-  # Build condition block(s) based on fcondition_awk_dt rows
-  if (is.null(fcondition_awk_dt) || nrow(fcondition_awk_dt) == 0) {
+  # Build condition block(s) based on branches rows
+  if (is.null(branches) || nrow(branches) == 0L) {
     condition_block <- wrap_condition_block(
       column_arrays_after_conditions = column_arrays_after_conditions,
       nlines = nlines
@@ -308,7 +327,7 @@ wrap_main_file_code <- function(
   } else {
     # Multiple condition blocks (e.g., from OR of genomic regions)
     # Each row becomes an else-if branch
-    condition_block <- fcondition_awk_dt[
+    condition_block <- branches[
       ,
       do.call(
         wrap_condition_block,
@@ -320,7 +339,7 @@ wrap_main_file_code <- function(
           )
         )
       ),
-      by = seq_len(nrow(fcondition_awk_dt))
+      by = seq_len(nrow(branches))
     ]$V1 |>
       paste(collapse = "\nelse ")
   }
@@ -339,9 +358,7 @@ wrap_main_file_code <- function(
     paste(collapse = "\n  ")
 
   # Wrap in block if multi-file processing (for else chain with RSID blocks)
-  if (!"additional_files" %in% names(fcondition_awk_dt) &
-    !"process_substitution" %in% names(fcondition_awk_dt) &
-    !"variable_arrays" %in% names(fcondition_awk_dt)) {
+  if (!multi_file) {
     return(full_code)
   }
 
@@ -350,23 +367,25 @@ wrap_main_file_code <- function(
 
 #' Combine all awk code blocks into final structure
 #'
-#' Assembles RSID loading blocks, variable array blocks, and main file
-#' processing into a single awk code block with else chain.
+#' Assembles RSID loading blocks, array-load blocks, and main file processing
+#' into a single awk code block with else chain.
 #'
-#' @param fcondition_awk_dt data.table with awk_code_block, variable_arrays
+#' @param branches data.table with awk_code_block (RSID loaders)
+#' @param array_loads data.table with array_load_code (\%in\% loaders)
 #' @param main_file_code Awk code for main file processing
 #'
 #' @return Complete awk code block wrapped in \{ \}
 #' @keywords internal
 wrap_full_code_block <- function(
-  fcondition_awk_dt,
+  branches,
+  array_loads,
   main_file_code
 ) {
-  # Order: RSID blocks -> variable arrays -> main file code
+  # Order: RSID blocks -> array loads -> main file code
   # Connected with "else" for multi-file processing
   dispatch <- c(
-    fcondition_awk_dt$awk_code_block,
-    unlist(fcondition_awk_dt$variable_arrays),
+    branches$awk_code_block,
+    array_loads$array_load_code,
     main_file_code
   ) |>
     paste(collapse = "\nelse ")
@@ -374,7 +393,7 @@ wrap_full_code_block <- function(
   # RSID blocks dispatch on file_idx, which is incremented at each file's
   # first line so the right rsid array is populated regardless of how many
   # records each tabix process substitution returns.
-  if (0 < length(fcondition_awk_dt$awk_code_block)) {
+  if (length(branches$awk_code_block) != 0L) {
     dispatch <- paste0("if (FNR == 1) file_idx++\n", dispatch)
   }
   as_block(dispatch)

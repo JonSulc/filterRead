@@ -4,12 +4,14 @@
 \alias{build_awk_file_args}
 \title{Build awk file arguments string}
 \usage{
-build_awk_file_args(finterface, fcondition_awk_dt, use_command_line_fs)
+build_awk_file_args(finterface, branches, array_loads, use_command_line_fs)
 }
 \arguments{
 \item{finterface}{File interface}
 
-\item{fcondition_awk_dt}{data.table with process_substitution, additional_files}
+\item{branches}{Branch data.table with process_substitution}
+
+\item{array_loads}{Array-load data.table with temp_file}
 
 \item{use_command_line_fs}{Whether to set FS on command line}
 }
@@ -17,7 +19,7 @@ build_awk_file_args(finterface, fcondition_awk_dt, use_command_line_fs)
 File arguments string for awk command
 }
 \description{
-Assembles file arguments: process substitutions (tabix), additional files
-(%in% arrays), and main data file with appropriate separators.
+Assembles file arguments: process substitutions (tabix), array-load temp
+files (\%in\% arrays), and main data file with appropriate separators.
 }
 \keyword{internal}

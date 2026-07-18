@@ -70,7 +70,7 @@ test_that("File reading works", {
     finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345,
       return_only_cmd = TRUE
     ],
-    "awk 'BEGIN{
+    structure("awk 'BEGIN{
   FS = \",\"
   OFS = \",\"
   header_skipped = 0
@@ -90,7 +90,7 @@ test_that("File reading works", {
       }
     }
   }
-}' FS=\"\\t\" <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 1:123-12345) FS=\",\" 'data.csv'"
+}' FS=\"\\t\" <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 1:123-12345) FS=\",\" 'data.csv'", additional_files = character())
   )
 })
 
@@ -213,7 +213,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
       finterface
     ) |>
       fcondition_to_awk(return_only_cmd = TRUE),
-    "awk 'BEGIN{
+    structure("awk 'BEGIN{
   FS = \",\"
   OFS = \",\"
   header_skipped = 0
@@ -241,7 +241,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
       }
     }
   }
-}' FS=\"\\t\" <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 1:124-233) <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 2:22-41) FS=\",\" 'data.csv'"
+}' FS=\"\\t\" <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 1:124-233) <(tabix '/home/sulc/rcp_storage/common/Users/sulc/data/dbsnp/00-common_all_b38.vcf.gz' 2:22-41) FS=\",\" 'data.csv'", additional_files = character())
   )
 })
 
@@ -465,4 +465,29 @@ test_that("md5_matches returns FALSE on a mismatched checksum", {
     "MD5 mismatch"
   )
   expect_false(result)
+})
+
+test_that("RSID single block with two memberships keeps one branch and tabix", {
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
+  cmd <- finterface[
+    chr == 1 & 123 < pos & pos < 234 &
+      pval %in% c(0.01, 0.02) & effect %in% c(0.1, 0.2),
+    return_only_cmd = TRUE
+  ]
+  expect_equal(
+    lengths(regmatches(cmd, gregexpr("print ", cmd, fixed = TRUE))),
+    1L
+  )
+  expect_equal(
+    lengths(regmatches(cmd, gregexpr("tabix ", cmd, fixed = TRUE))),
+    1L
+  )
+  expect_equal(
+    lengths(regmatches(cmd, gregexpr("if (file_idx == 1)", cmd, fixed = TRUE))),
+    1L
+  )
+  expect_equal(
+    lengths(regmatches(cmd, gregexpr("if (FILENAME == ", cmd, fixed = TRUE))),
+    2L
+  )
 })

@@ -78,3 +78,22 @@ test_that("compile_awk_cmds: case with empty nlines", {
 }' 'data.csv'"
   )
 })
+
+test_that("a two-membership condition emits the match branch once", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr = c("chr1", "chr1", "chr2"), pos = c(100L, 200L, 300L),
+      ref = c("A", "C", "G"), alt = c("G", "T", "A"), pval = c(0.1, 0.2, 0.3)
+    ),
+    build = "b38"
+  )
+  cmd <- fi[ref %in% c("A", "C") & alt %in% c("G", "T"), return_only_cmd = TRUE]
+  expect_equal(
+    lengths(regmatches(cmd, gregexpr("print $0", cmd, fixed = TRUE))),
+    1L
+  )
+  expect_equal(
+    lengths(regmatches(cmd, gregexpr("if (FILENAME == ", cmd, fixed = TRUE))),
+    2L
+  )
+})

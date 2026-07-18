@@ -4,10 +4,12 @@
 \alias{wrap_full_code_block}
 \title{Combine all awk code blocks into final structure}
 \usage{
-wrap_full_code_block(fcondition_awk_dt, main_file_code)
+wrap_full_code_block(branches, array_loads, main_file_code)
 }
 \arguments{
-\item{fcondition_awk_dt}{data.table with awk_code_block, variable_arrays}
+\item{branches}{data.table with awk_code_block (RSID loaders)}
+
+\item{array_loads}{data.table with array_load_code (\%in\% loaders)}
 
 \item{main_file_code}{Awk code for main file processing}
 }
@@ -15,7 +17,7 @@ wrap_full_code_block(fcondition_awk_dt, main_file_code)
 Complete awk code block wrapped in \{ \}
 }
 \description{
-Assembles RSID loading blocks, variable array blocks, and main file
-processing into a single awk code block with else chain.
+Assembles RSID loading blocks, array-load blocks, and main file processing
+into a single awk code block with else chain.
 }
 \keyword{internal}

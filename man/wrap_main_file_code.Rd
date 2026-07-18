@@ -6,17 +6,18 @@
 \usage{
 wrap_main_file_code(
   finterface,
-  fcondition_awk_dt,
+  branches,
   column_arrays_before_conditions,
   column_arrays_after_conditions,
   nlines = NULL,
-  skip_header = FALSE
+  skip_header = FALSE,
+  multi_file = FALSE
 )
 }
 \arguments{
 \item{finterface}{File interface with trim_prefix, etc.}
 
-\item{fcondition_awk_dt}{data.table with condition info per block}
+\item{branches}{data.table with condition info per block}
 
 \item{column_arrays_before_conditions}{Column splits before conditions}
 
@@ -25,6 +26,8 @@ wrap_main_file_code(
 \item{nlines}{Optional output line limit}
 
 \item{skip_header}{If TRUE and multi-file, add FNR == 1 skip inside block}
+
+\item{multi_file}{If TRUE, wrap the body in an awk block for the else chain}
 }
 \value{
 Awk code string for main file processing

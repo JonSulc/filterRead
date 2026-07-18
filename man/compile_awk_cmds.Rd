@@ -6,7 +6,7 @@
 \usage{
 compile_awk_cmds(
   finterface,
-  fcondition_awk_dt = NULL,
+  fcondition_awk = NULL,
   column_arrays_before_conditions = NULL,
   column_arrays_after_conditions = get_awk_column_arrays(finterface)$after_if,
   nlines = NULL,
@@ -17,8 +17,9 @@ compile_awk_cmds(
 \arguments{
 \item{finterface}{File interface with filename, separator, prefixes}
 
-\item{fcondition_awk_dt}{data.table from fcondition_and_rsid_to_awk with
-condition, variable_arrays, awk_code_block, process_substitution, etc.}
+\item{fcondition_awk}{Named list from fcondition_and_rsid_to_awk with two
+data.tables: branches (one row per condition branch) and array_loads
+(one row per `\%in\%` membership array)}
 
 \item{column_arrays_before_conditions}{Awk code for column splits needed
 before evaluating conditions}

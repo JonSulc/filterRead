@@ -161,9 +161,10 @@ test_that("wrap_main_file_code works with various parameter combinations", {
   expect_equal(
     wrap_main_file_code(
       finterface = list(comment_prefix = NULL, trim_prefix = NULL),
-      fcondition_awk_dt = data.table::data.table(index = integer()),
+      branches = data.table::data.table(index = integer()),
       column_arrays_before_conditions = NULL,
-      column_arrays_after_conditions = NULL
+      column_arrays_after_conditions = NULL,
+      multi_file = FALSE
     ),
     "print $0"
   )
@@ -172,9 +173,10 @@ test_that("wrap_main_file_code works with various parameter combinations", {
   expect_equal(
     wrap_main_file_code(
       finterface = list(comment_prefix = NULL, trim_prefix = NULL),
-      fcondition_awk_dt = data.table::data.table(index = integer()),
+      branches = data.table::data.table(index = integer()),
       column_arrays_before_conditions = "split($1, encoded1, \":\")",
-      column_arrays_after_conditions = NULL
+      column_arrays_after_conditions = NULL,
+      multi_file = FALSE
     ),
     "split($1, encoded1, \":\")\n  print $0"
   )
@@ -183,9 +185,10 @@ test_that("wrap_main_file_code works with various parameter combinations", {
   expect_equal(
     wrap_main_file_code(
       finterface = list(comment_prefix = "^##", trim_prefix = "^#"),
-      fcondition_awk_dt = data.table::data.table(index = integer()),
+      branches = data.table::data.table(index = integer()),
       column_arrays_before_conditions = NULL,
-      column_arrays_after_conditions = NULL
+      column_arrays_after_conditions = NULL,
+      multi_file = FALSE
     ),
     "gsub(/^#/, \"\", $0)\n  print $0"
   )
@@ -194,10 +197,11 @@ test_that("wrap_main_file_code works with various parameter combinations", {
   expect_equal(
     wrap_main_file_code(
       finterface = list(comment_prefix = NULL, trim_prefix = NULL),
-      fcondition_awk_dt = data.table::data.table(index = integer()),
+      branches = data.table::data.table(index = integer()),
       column_arrays_before_conditions = NULL,
       column_arrays_after_conditions = NULL,
-      nlines = 100
+      nlines = 100,
+      multi_file = FALSE
     ),
     "if (++output_lines <= max_lines) print $0; else exit"
   )
@@ -225,7 +229,11 @@ test_that("wrap_full_code_block works with complex data structures", {
   # Basic case with no conditions
   expect_equal(
     wrap_full_code_block(
-      fcondition_awk_dt = data.table::data.table(index = integer()),
+      branches = data.table::data.table(index = integer()),
+      array_loads = data.table::data.table(
+        array_load_code = character(),
+        temp_file = character()
+      ),
       main_file_code = NULL
     ),
     "{\n  \n}"
@@ -234,18 +242,25 @@ test_that("wrap_full_code_block works with complex data structures", {
   # Basic case with main file code
   expect_equal(
     wrap_full_code_block(
-      fcondition_awk_dt = data.table::data.table(index = integer()),
+      branches = data.table::data.table(index = integer()),
+      array_loads = data.table::data.table(
+        array_load_code = character(),
+        temp_file = character()
+      ),
       main_file_code = "print $0"
     ),
     "{\n  print $0\n}"
   )
 
-  # With awk_code_block and variable_arrays
+  # With awk_code_block and a single array load
   expect_equal(
     wrap_full_code_block(
-      fcondition_awk_dt = data.table::data.table(
-        awk_code_block = "if (file_idx == 1) {tabix stuff}",
-        variable_arrays = "if (FILENAME == dont_read_42.txt) {oops}"
+      branches = data.table::data.table(
+        awk_code_block = "if (file_idx == 1) {tabix stuff}"
+      ),
+      array_loads = data.table::data.table(
+        array_load_code = "if (FILENAME == dont_read_42.txt) {oops}",
+        temp_file = "dont_read_42.txt"
       ),
       main_file_code = "if (something) {print $0}"
     ),
@@ -259,15 +274,18 @@ test_that("wrap_full_code_block works with complex data structures", {
     )
   )
 
-  # With nested arrays in variable_arrays
+  # With two array loads
   expect_equal(
     wrap_full_code_block(
-      fcondition_awk_dt = data.table::data.table(
-        awk_code_block = "if (file_idx == 1) {tabix stuff}",
-        variable_arrays = list(c(
+      branches = data.table::data.table(
+        awk_code_block = "if (file_idx == 1) {tabix stuff}"
+      ),
+      array_loads = data.table::data.table(
+        array_load_code = c(
           "if (FILENAME == dont_read_42.txt) {oops}",
           "if (FILENAME == read_this.txt) {good}"
-        ))
+        ),
+        temp_file = c("dont_read_42.txt", "read_this.txt")
       ),
       main_file_code = "if (something) {print $0}"
     ),
@@ -282,18 +300,21 @@ test_that("wrap_full_code_block works with complex data structures", {
     )
   )
 
-  # Complex case with multiple rows in fcondition_awk_dt
+  # Complex case with multiple rsid branches and two array loads
   expect_equal(
     wrap_full_code_block(
-      fcondition_awk_dt = data.table::data.table(
+      branches = data.table::data.table(
         awk_code_block = c(
           "if (file_idx == 1) {rsid0[$3]=$1 OFS $2}",
           "if (file_idx == 2) {rsid1[$3]=$1 OFS $2}"
-        ),
-        variable_arrays = list(
+        )
+      ),
+      array_loads = data.table::data.table(
+        array_load_code = c(
           "if (FILENAME == file1.txt) {var1[$0] = 1; next}",
           "if (FILENAME == file2.txt) {var2[$0] = 1; next}"
-        )
+        ),
+        temp_file = c("file1.txt", "file2.txt")
       ),
       main_file_code = "if ($3 in rsid0 || $3 in rsid1) {print rsid0[$3] OFS $0}"
     ),
