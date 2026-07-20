@@ -71,9 +71,7 @@ test_that("File reading works", {
       return_only_cmd = TRUE
     ],
     structure("awk 'BEGIN{
-  FS = \",\"
   OFS = \",\"
-  header_skipped = 0
 }
 {
   if (FNR == 1) file_idx++
@@ -214,9 +212,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
     ) |>
       fcondition_to_awk(return_only_cmd = TRUE),
     structure("awk 'BEGIN{
-  FS = \",\"
   OFS = \",\"
-  header_skipped = 0
 }
 {
   if (FNR == 1) file_idx++

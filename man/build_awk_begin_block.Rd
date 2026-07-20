@@ -16,6 +16,8 @@ build_awk_begin_block(
 
 \item{nlines}{Optional output line limit}
 
+\item{skip_header}{If TRUE, initialize the `header_skipped` flag to 0}
+
 \item{use_command_line_fs}{If TRUE, FS is set on command line (for
 multi-file processing with different separators)}
 }

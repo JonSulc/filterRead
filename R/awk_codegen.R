@@ -147,13 +147,19 @@ compile_awk_cmds <- function(
   # (when reading multiple files with different separators, e.g., tabix + tsv)
   use_command_line_fs <- !is.null(branches$process_substitution)
 
-  # Build BEGIN block and assemble complete awk script
   # For multi-file, header skip is handled inside wrap_main_file_code
+  emit_header_skip <- skip_header && !is_multi_file
+
   awk_script <- paste(
     c(
-      build_awk_begin_block(finterface$sep, nlines, use_command_line_fs),
+      build_awk_begin_block(
+        finterface$sep,
+        nlines,
+        skip_header = emit_header_skip,
+        use_command_line_fs = use_command_line_fs
+      ),
       build_comment_filter_pattern(finterface$comment_prefix),
-      if (skip_header && !is_multi_file) build_header_skip_pattern(),
+      if (emit_header_skip) build_header_skip_pattern(),
       full_code_block
     ),
     collapse = "\n"
@@ -496,6 +502,7 @@ build_line_limit_code <- function(nlines) {
 #'
 #' @param sep Field separator character
 #' @param nlines Optional output line limit
+#' @param skip_header If TRUE, initialize the `header_skipped` flag to 0
 #' @param use_command_line_fs If TRUE, FS is set on command line (for
 #'   multi-file processing with different separators)
 #'

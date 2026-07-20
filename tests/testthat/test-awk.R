@@ -97,3 +97,23 @@ test_that("a two-membership condition emits the match branch once", {
     2L
   )
 })
+
+test_that("single-file filtered read initializes header_skipped in BEGIN", {
+  finterface <- local_summary_stats_interface()
+  cmd <- finterface[pval < 0.5, return_only_cmd = TRUE]
+  expect_match(cmd, "header_skipped = 0", fixed = TRUE)
+  expect_match(
+    cmd, "!header_skipped { header_skipped = 1; next }", fixed = TRUE
+  )
+})
+
+test_that("tabix path omits FS from BEGIN", {
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
+  cmd <- finterface[
+    pval < .05 & chr == 1 & 123 <= pos & pos <= 12345,
+    return_only_cmd = TRUE
+  ]
+  begin <- strsplit(cmd, "}", fixed = TRUE)[[1]][1]
+  expect_match(begin, "\n  OFS = ", fixed = TRUE)
+  expect_no_match(begin, "\n  FS = ", fixed = TRUE)
+})
