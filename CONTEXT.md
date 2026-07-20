@@ -14,9 +14,11 @@ _Avoid_: region filtering, range query (reserve "tabix query" for the indexed me
 **Variant-identity filtering**:
 Selecting file rows matching given variants on `(chr, pos)` and the
 unordered allele pair `{ref, alt}` — the same variant in either column
-order. Served by `finterface[variants]`. Not interchangeable with
-positional filtering: a `variants` constrains alleles, a `genomic_regions`
-does not.
+order. Served by `finterface[variants]`. Locates rows only: a matched row
+is returned in the file's own allele order, unchanged, even when it
+matched in swapped order — harmonizing alleles or effect direction is the
+caller's job. Not interchangeable with positional filtering: a `variants`
+constrains alleles, a `genomic_regions` does not.
 _Avoid_: variant filtering (ambiguous — name which)
 
 **Genomic regions**:
