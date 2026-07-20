@@ -665,3 +665,18 @@ test_that("liftover on a mixed-build variants returns integer pos", {
   expect_equal(lifted$pos, c(950L, 2000L))
   expect_equal(build(lifted), "b38")
 })
+
+test_that("liftover.variants lifts a zero-row table across builds", {
+  testthat::local_mocked_bindings(
+    get_chain_dt = function(from, to)
+      make_fwd_chain(1L, 1000L, -4900L, from, to)
+  )
+  populated <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b37"
+  )
+  lifted_populated <- liftover(populated, "b38")
+  lifted_empty <- liftover(populated[0], "b38")
+
+  expect_equal(lifted_empty, lifted_populated[0])
+})

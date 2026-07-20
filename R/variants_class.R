@@ -421,21 +421,25 @@ liftover.variants <- function(x, target, source = "best",
     return(x)
   }
 
-  # Tag each row with its input position and chosen source, then lift each
-  # source's rows together with `by = .src`; full rows carry all columns and
-  # fan-out through `liftover.data.table`. `.anchor` restores input order.
-  work <- data.table::copy(x)
-  work[, c(".anchor", ".src") := .(
-    seq_len(.N), select_source_build(x, target, source)
-  )]
+  if (nrow(x) == 0L) {
+    result <- data.table::copy(x)
+  } else {
+    # Tag each row with its input position and chosen source, then lift each
+    # source's rows together with `by = .src`; full rows carry all columns and
+    # fan-out through `liftover.data.table`. `.anchor` restores input order.
+    work <- data.table::copy(x)
+    work[, c(".anchor", ".src") := .(
+      seq_len(.N), select_source_build(x, target, source)
+    )]
 
-  result <- work[
-    ,
-    lift_one_source(.SD, .BY$.src, target, multi_match),
-    by = .src
-  ]
-  data.table::setorder(result, .anchor)
-  result[, c(".anchor", ".src") := NULL]
+    result <- work[
+      ,
+      lift_one_source(.SD, .BY$.src, target, multi_match),
+      by = .src
+    ]
+    data.table::setorder(result, .anchor)
+    result[, c(".anchor", ".src") := NULL]
+  }
 
   set_build(result, target)
   result <- add_variant_id(result, build = target, overwrite = TRUE)
