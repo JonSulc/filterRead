@@ -417,6 +417,9 @@ liftover.variants <- function(x, target, source = "best",
       "liftover options."
     )
   }
+  if (!source %in% c("best", "current")) {
+    source <- normalize_build(source, allow_null = FALSE)
+  }
   if (source %in% c("best", "current") && identical(build(x), target)) {
     return(x)
   }

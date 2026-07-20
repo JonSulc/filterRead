@@ -680,3 +680,12 @@ test_that("liftover.variants lifts a zero-row table across builds", {
 
   expect_equal(lifted_empty, lifted_populated[0])
 })
+
+test_that("liftover.variants validates source on a zero-row table", {
+  empty <- new_variants(
+    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+    build = "b37"
+  )[0]
+
+  expect_error(liftover(empty, "b38", source = "nonsense"), "[Uu]nknown build")
+})
