@@ -321,14 +321,8 @@ test_that("RSID-based position filtering uses the correct build reference", {
       alt = c("C", "T")
     )
   )
-  expect_warning(
-    rsid38_results <- rsid38[chr == 19 & 45e6 < pos],
-    "File .* has size 0[.]"
-  )
-  expect_equal(
-    rsid38_results,
-    data.table::data.table()
-  )
+  expect_no_warning(rsid38_results <- rsid38[chr == 19 & 45e6 < pos])
+  expect_equal(rsid38_results, head(rsid38, 0))
 
   expect_equal(
     rsid37[chr == 15 & pos == 28365618],
@@ -340,14 +334,8 @@ test_that("RSID-based position filtering uses the correct build reference", {
       alt = "G"
     )
   )
-  expect_warning(
-    rsid38_results <- rsid38[chr == 15 & pos == 28365618],
-    "File .* has size 0[.]"
-  )
-  expect_equal(
-    rsid38_results,
-    data.table::data.table()
-  )
+  expect_no_warning(rsid38_results <- rsid38[chr == 15 & pos == 28365618])
+  expect_equal(rsid38_results, head(rsid38, 0))
 
   # Filtering based on b38 coordinates
   expect_equal(
@@ -360,14 +348,8 @@ test_that("RSID-based position filtering uses the correct build reference", {
       alt = c("C", "T")
     )
   )
-  expect_warning(
-    rsid37_results <- rsid37[chr == 19 & pos < 45e6],
-    "File .* has size 0[.]"
-  )
-  expect_equal(
-    rsid37_results,
-    data.table::data.table()
-  )
+  expect_no_warning(rsid37_results <- rsid37[chr == 19 & pos < 45e6])
+  expect_equal(rsid37_results, head(rsid37, 0))
 
   expect_equal(
     rsid38[chr == 15 & pos == 28120472],
@@ -379,14 +361,8 @@ test_that("RSID-based position filtering uses the correct build reference", {
       alt = "G"
     )
   )
-  expect_warning(
-    rsid37_results <- rsid37[chr == 15 & pos == 28120472],
-    "File .* has size 0[.]"
-  )
-  expect_equal(
-    rsid37_results,
-    data.table::data.table()
-  )
+  expect_no_warning(rsid37_results <- rsid37[chr == 15 & pos == 28120472])
+  expect_equal(rsid37_results, head(rsid37, 0))
 })
 
 # Tests for md5_matches ----

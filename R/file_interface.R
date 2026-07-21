@@ -430,20 +430,33 @@ head.file_interface <- function(
     on.exit(unlink(additional_files), add = TRUE)
   }
 
-  data.table::fread(
-    cmd = paste("bash -c", shQuote(command_line)),
-    ...,
-    col.names = {
-      if (needs_rsid_matching(finterface) &
-        !has_genomic_condition(fcondition)) {
-        column_names(finterface, original = TRUE)
-      } else {
-        column_names(finterface)
+  result <- withCallingHandlers(
+    data.table::fread(
+      cmd = paste("bash -c", shQuote(command_line)),
+      ...,
+      col.names = {
+        if (needs_rsid_matching(finterface) &
+          !has_genomic_condition(fcondition)) {
+          column_names(finterface, original = TRUE)
+        } else {
+          column_names(finterface)
+        }
+      },
+      colClasses = column_class_overrides(finterface)
+    ),
+    warning = function(w) {
+      if (grepl("has size 0", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
       }
-    },
-    colClasses = column_class_overrides(finterface)
-  ) |>
-    complete_missing_stats()
+    }
+  )
+
+  # fread returns a 0-column table when awk emits no bytes; recover the schema
+  if (ncol(result) == 0L) {
+    return(head(finterface, 0))
+  }
+
+  complete_missing_stats(result)
 }
 
 #' Load a full file from the file_interface

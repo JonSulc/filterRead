@@ -716,3 +716,10 @@ test_that("Tilde in filename is expanded before shelling out", {
   expect_equal(finterface$filename, file.path(home, "tilde_test.csv.gz"))
   expect_equal(nrow(head(finterface, nlines = 6L)), 6L)
 })
+
+test_that("[.file_interface returns the full schema when nothing matches", {
+  finterface <- local_summary_stats_interface()
+
+  expect_no_warning(result <- finterface[pval < 0])
+  expect_equal(result, head(finterface, 0))
+})
