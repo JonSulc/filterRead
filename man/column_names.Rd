@@ -4,13 +4,17 @@
 \alias{column_names}
 \title{Get column names from file interface}
 \usage{
-column_names(finterface, original = FALSE)
+column_names(finterface, raw = FALSE, add_rsid_genomic_columns = TRUE)
 }
 \arguments{
 \item{finterface}{File interface object}
 
-\item{original}{If TRUE, return original input names; else return
-standardized names}
+\item{raw}{If TRUE, return the file's header text rather than the
+standardized names.}
+
+\item{add_rsid_genomic_columns}{If FALSE, drop the chr/pos columns an
+rsid-indexed file draws from the tabix index, leaving the columns the
+file itself carries.}
 }
 \value{
 Character vector of column names

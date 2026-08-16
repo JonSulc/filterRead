@@ -458,6 +458,10 @@ expand_encoded_columns <- function(
     standard_name
   ]
 
+  # The chr/pos rows synthesized below are the only output columns a read
+  # cannot obtain from the file itself.
+  column_info[, from_rsid_index := FALSE][]
+
   column_info[
     ,
     {
@@ -468,6 +472,7 @@ expand_encoded_columns <- function(
         list(
           data.table::data.table(
             standard_name         = missing_rsid_columns,
+            from_rsid_index       = TRUE,
             regex                 = regex,
             delimiter             = NA_character_,
             input_index           = input_index,
@@ -530,6 +535,7 @@ expand_single_encoded_row <- function(
       input_index = input_index,
       bash_index = encoded_refs[[1]],
       quoted = FALSE,
+      from_rsid_index = FALSE,
       encoding_column = input_name,
       split_encoding_column = split_encoding_column,
       recode_columns = recode_columns
@@ -541,17 +547,24 @@ expand_single_encoded_row <- function(
 #' Get column names from file interface
 #'
 #' @param finterface File interface object
-#' @param original If TRUE, return original input names; else return
-#'   standardized names
+#' @param raw If TRUE, return the file's header text rather than the
+#'   standardized names.
+#' @param add_rsid_genomic_columns If FALSE, drop the chr/pos columns an
+#'   rsid-indexed file draws from the tabix index, leaving the columns the
+#'   file itself carries.
 #'
 #' @return Character vector of column names
 #' @keywords internal
 column_names <- function(
   finterface,
-  original = FALSE
+  raw = FALSE,
+  add_rsid_genomic_columns = TRUE
 ) {
   col_info <- finterface$column_info %||% get_column_info(finterface)
-  if (original) {
+  if (!add_rsid_genomic_columns) {
+    col_info <- col_info[!(from_rsid_index)]
+  }
+  if (raw) {
     return(col_info[!is.na(input_name), input_name])
   }
 

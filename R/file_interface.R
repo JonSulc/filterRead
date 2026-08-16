@@ -341,13 +341,7 @@ head.file_interface <- function(
   }
   data.table::fread(
     cmd = paste("bash -c", shQuote(cmd)),
-    col.names = {
-      if (needs_rsid_matching(x)) {
-        column_names(x, original = TRUE)
-      } else {
-        column_names(x)
-      }
-    },
+    col.names = column_names(x, add_rsid_genomic_columns = FALSE),
     colClasses = column_class_overrides(x),
     ...
   )
@@ -433,14 +427,10 @@ head.file_interface <- function(
     data.table::fread(
       cmd = paste("bash -c", shQuote(command_line)),
       ...,
-      col.names = {
-        if (needs_rsid_matching(finterface) &
-          !has_genomic_condition(fcondition)) {
-          column_names(finterface, original = TRUE)
-        } else {
-          column_names(finterface)
-        }
-      },
+      col.names = column_names(
+        finterface,
+        add_rsid_genomic_columns = has_genomic_condition(fcondition)
+      ),
       colClasses = column_class_overrides(finterface)
     ),
     warning = function(w) {

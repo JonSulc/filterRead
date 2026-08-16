@@ -38,7 +38,7 @@ ieugwas_regexes <- c(
 is_ieugwas_file <- function(finterface) {
   fcolumn_names <- column_names(
     finterface,
-    original = TRUE
+    raw = TRUE
   )
   if (length(fcolumn_names) != 10) {
     return(FALSE)
@@ -76,7 +76,7 @@ get_ieugwas_column_parsing <- function(finterface) {
     strsplit(":") |>
     unlist()
   data.table::data.table(
-    input_name = column_names(finterface, original = TRUE)[10],
+    input_name = column_names(finterface, raw = TRUE)[10],
     regex = sprintf(
       "^%s$",
       paste(

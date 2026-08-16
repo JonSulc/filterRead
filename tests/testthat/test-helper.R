@@ -126,7 +126,7 @@ test_that("Creating RSID-coded summary stats works", {
     c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")
   )
   expect_equal(
-    column_names(finterface, original = TRUE),
+    column_names(finterface, raw = TRUE),
     c("rsid", "ref", "alt", "effect", "pval")
   )
 })

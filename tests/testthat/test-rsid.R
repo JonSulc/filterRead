@@ -463,3 +463,46 @@ test_that("RSID single block with two memberships keeps one branch and tabix", {
     2L
   )
 })
+
+test_that("A synonym-headed rsid file reads back standardized", {
+  local_csv_file(
+    "synonym_rsid.csv",
+    dt = data.table::data.table(
+      ID   = c("rs429358", "rs7412"),
+      A1   = c("T", "C"),
+      EA   = c("C", "T"),
+      BETA = c(0.1, -0.2),
+      P    = c(0.01, 0.2)
+    )
+  )
+  finterface <- new_file_interface("synonym_rsid.csv", build = "b38")
+
+  expect_true(needs_rsid_matching(finterface))
+  expect_equal(
+    names(head(finterface, 1)),
+    c("rsid", "allele1", "alt", "effect", "pval")
+  )
+  expect_equal(
+    colnames(finterface[pval < .5]),
+    c("rsid", "allele1", "alt", "effect", "pval")
+  )
+})
+
+test_that("head() of an rsid file with an encoded column decodes it", {
+  local_csv_file(
+    "rsid_encoded.csv",
+    dt = data.table::data.table(
+      ID         = c("rs429358", "rs7412"),
+      SNPAlleles = c("T/C", "C/T"),
+      BETA       = c(0.1, -0.2),
+      P          = c(0.01, 0.2)
+    )
+  )
+  finterface <- new_file_interface("rsid_encoded.csv", build = "b38")
+
+  expect_equal(
+    names(head(finterface, 1)),
+    c("rsid", "SNPAlleles", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(head(finterface, 1)$ref, "T")
+})
