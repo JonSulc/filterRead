@@ -503,10 +503,7 @@ test_that("Encoded columns are correctly parsed and loaded", {
   )
   expect_equal(
     names(head(finterface_enc)),
-    c(
-      "MarkerName", "build", "chr", "pos", "ref", "alt", "effect", "pval",
-      "effect_se"
-    )
+    c("MarkerName", "build", "chr", "pos", "ref", "alt", "effect", "pval")
   )
   expect_true(
     finterface_enc[chr == 1][, all(chr == 1)]
@@ -722,4 +719,15 @@ test_that("[.file_interface returns the full schema when nothing matches", {
 
   expect_no_warning(result <- finterface[pval < 0])
   expect_equal(result, head(finterface, 0))
+})
+
+test_that("dimnames agrees with what a read returns", {
+  finterface <- local_summary_stats_interface(build = "b38")
+
+  expect_equal(dimnames(finterface)[[2]], column_names(finterface))
+  expect_equal(names(head(finterface, 1)), column_names(finterface))
+  expect_equal(
+    names(read_file_interface(finterface)),
+    column_names(finterface)
+  )
 })

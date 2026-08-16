@@ -350,8 +350,7 @@ head.file_interface <- function(
     },
     colClasses = column_class_overrides(x),
     ...
-  ) |>
-    complete_missing_stats()
+  )
 }
 
 #' Subset a file interface with filtering conditions
@@ -456,7 +455,7 @@ head.file_interface <- function(
     return(head(finterface, 0))
   }
 
-  complete_missing_stats(result)
+  result
 }
 
 #' Load a full file from the file_interface
