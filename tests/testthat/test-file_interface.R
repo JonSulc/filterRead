@@ -731,3 +731,11 @@ test_that("dimnames agrees with what a read returns", {
     column_names(finterface)
   )
 })
+
+test_that("Reads of a header-only file are silent", {
+  finterface <- local_header_only_interface()
+
+  expect_silent(head(finterface, 1))
+  expect_silent(head(finterface, 0))
+  expect_silent(read_file_interface(finterface))
+})

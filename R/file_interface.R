@@ -279,6 +279,21 @@ validate_file_interface <- function(
   stopifnot(file.exists(finterface))
 }
 
+#' Muffle data.table's empty-input warning
+#'
+#' `fread` warns and returns a NULL data.table when awk emits no bytes;
+#' both read paths replace that result with the read's schema.
+#'
+#' @param w A warning condition.
+#'
+#' @return NULL, invoked for the `muffleWarning` restart.
+#' @keywords internal
+muffle_empty_read_warning <- function(w) {
+  if (grepl("has size 0", conditionMessage(w), fixed = TRUE)) {
+    invokeRestart("muffleWarning")
+  }
+}
+
 #' Return first rows of a file interface
 #'
 #' S3 method for head() that reads the first n rows from a file (in addition to
@@ -339,11 +354,15 @@ head.file_interface <- function(
       )
     )
   }
-  data.table::fread(
-    cmd = paste("bash -c", shQuote(cmd)),
-    col.names = column_names(x, add_rsid_genomic_columns = FALSE),
-    colClasses = column_class_overrides(x),
-    ...
+  read_columns <- column_names(x, add_rsid_genomic_columns = FALSE)
+  withCallingHandlers(
+    data.table::fread(
+      cmd = paste("bash -c", shQuote(cmd)),
+      col.names = read_columns,
+      colClasses = column_class_overrides(x),
+      ...
+    ),
+    warning = muffle_empty_read_warning
   )
 }
 
@@ -433,11 +452,7 @@ head.file_interface <- function(
       ),
       colClasses = column_class_overrides(finterface)
     ),
-    warning = function(w) {
-      if (grepl("has size 0", conditionMessage(w), fixed = TRUE)) {
-        invokeRestart("muffleWarning")
-      }
-    }
+    warning = muffle_empty_read_warning
   )
 
   # fread returns a 0-column table when awk emits no bytes; recover the schema

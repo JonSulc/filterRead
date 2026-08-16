@@ -262,6 +262,27 @@ local_summary_stats_interface <- function(
   new_file_interface(filename, build = build)
 }
 
+# A file with a valid header and no data rows.
+local_header_only_interface <- function(
+  filename = "empty.csv",
+  build = "b38",
+  standard_names_dt = summary_stats_standard_names_dt,
+  ...,
+  env = parent.frame()
+) {
+  dummy_summary_stats(nrows = 1, ...)[0] |>
+    local_csv_file(
+      filename = filename,
+      dt = _,
+      env = env
+    )
+  new_file_interface(
+    filename,
+    standard_names_dt = standard_names_dt,
+    build = build
+  )
+}
+
 encode_column <- function(
   summary_stats,
   pattern = summary_stats_standard_names_dt[
