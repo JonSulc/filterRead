@@ -182,6 +182,24 @@ test_that("Parsing allele1, allele2, alt works", {
   )
 })
 
+test_that("An encoded column with no rows to verify is left packed", {
+  patterns <- summary_stats_standard_names_dt[!sapply(delimiter, is.na)]
+
+  for (index in seq_len(nrow(patterns))) {
+    pattern <- patterns[index]
+    finterface <- local_header_only_interface(
+      sprintf("encoded_empty_%d.csv", index),
+      encode_columns = pattern
+    )
+    result <- read_file_interface(finterface)
+
+    expect_false(any(pattern$encoded_names[[1]] %in% column_names(finterface)))
+    expect_true(pattern$input_name %in% column_names(finterface))
+    expect_equal(names(result), column_names(finterface))
+    expect_equal(nrow(result), 0L)
+  }
+})
+
 test_that("Handling of Chr_Pos works", {
   column_info <- summary_stats_standard_names_dt[
     "Chr_Pos",

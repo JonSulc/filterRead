@@ -154,6 +154,22 @@ get_base_column_info <- function(
   ]
 }
 
+#' Make a column unencoded
+#'
+#' @param column_rows The `column_info` rows for one input name, one per
+#'   candidate encoding pattern.
+#' @return A single `column_info` row with the encoding fields
+#'   (`pattern`, `regex`, `encoded_names`, `delimiter`) cleared.
+#' @keywords internal
+make_column_unencoded <- function(column_rows) {
+  column_rows[1][
+    ,
+    c("pattern", "regex", "encoded_names", "delimiter") := .(
+      NA_character_, NA_character_, list(c()), NA_character_
+    )
+  ][]
+}
+
 #' Filter columns by regex pattern matching
 #'
 #' For columns with multiple possible patterns (e.g., encoded columns),
@@ -174,28 +190,27 @@ filter_regex_matches <- function(
       if (is.na(pattern[[1]])) {
         .SD
       } else {
-        # Check which regex patterns match all values in the column
-        row_match <- .SD[
-          check_single_column_regex(regex, data_to_check[[input_name]])
-        ]
-        if (nrow(row_match) == 0) {
-          # No pattern matches - clear encoding info
-          row_match <- .SD[1]
-          row_match[
-            ,
-            c("pattern", "regex", "encoded_names", "delimiter") := .(
-              NA_character_, NA_character_, list(c()), NA_character_
-            )
-          ]
-        } else if (1 < nrow(row_match)) {
-          warning(
-            "Column ", input_name, " matches multiple regex patterns:\n",
-            paste(row_match$regex, collapse = "\n"), "\n\n",
-            "Using first."
-          )
-          row_match <- row_match[1]
+        if (length(data_to_check[[input_name]]) == 0L) {
+          # No values to match a pattern against: decoding would be a
+          # guess, so the column is read as the file holds it.
+          make_column_unencoded(.SD)
         } else {
-          row_match
+          # Check which regex patterns match all values in the column
+          row_match <- .SD[
+            check_single_column_regex(regex, data_to_check[[input_name]])
+          ]
+          if (nrow(row_match) == 0) {
+            make_column_unencoded(.SD)
+          } else if (1 < nrow(row_match)) {
+            warning(
+              "Column ", input_name, " matches multiple regex patterns:\n",
+              paste(row_match$regex, collapse = "\n"), "\n\n",
+              "Using first."
+            )
+            row_match[1]
+          } else {
+            row_match
+          }
         }
       }
     },
