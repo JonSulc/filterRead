@@ -1,5 +1,5 @@
 ---
-status: accepted (not yet implemented)
+status: accepted
 ---
 
 # Reads return the file's columns; deriving summary statistics is the caller's step
