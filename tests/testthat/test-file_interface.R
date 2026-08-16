@@ -739,3 +739,48 @@ test_that("Reads of a header-only file are silent", {
   expect_silent(head(finterface, 0))
   expect_silent(read_file_interface(finterface))
 })
+
+test_that("A header-only file reads back as its standardized columns", {
+  finterface <- local_header_only_interface()
+
+  expect_equal(
+    names(head(finterface, 1)),
+    c("chr", "pos", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(names(head(finterface, 1)), column_names(finterface))
+  expect_equal(names(head(finterface, 0)), column_names(finterface))
+  expect_equal(
+    names(read_file_interface(finterface)),
+    column_names(finterface)
+  )
+  expect_equal(nrow(read_file_interface(finterface)), 0L)
+  expect_equal(
+    vapply(read_file_interface(finterface), class, character(1)),
+    c(
+      chr    = "logical",
+      pos    = "logical",
+      ref    = "logical",
+      alt    = "logical",
+      effect = "logical",
+      pval   = "logical"
+    )
+  )
+})
+
+test_that("A no-match read on a populated file keeps fread's types", {
+  finterface <- local_summary_stats_interface(build = "b38")
+
+  expect_no_warning(result <- finterface[pval < 0])
+  expect_equal(nrow(result), 0L)
+  expect_equal(
+    vapply(result, class, character(1)),
+    c(
+      chr    = "character",
+      pos    = "integer",
+      ref    = "character",
+      alt    = "character",
+      effect = "numeric",
+      pval   = "numeric"
+    )
+  )
+})

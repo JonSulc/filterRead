@@ -294,6 +294,22 @@ muffle_empty_read_warning <- function(w) {
   }
 }
 
+#' Build a zero-row result carrying a read's schema
+#'
+#' Stands in for the table a read returns when there is no data row to
+#' read. Every column is `logical`; the package declares no type per
+#' standard column.
+#'
+#' @param read_columns Character vector of the read's column names.
+#'
+#' @return A zero-row data.table with those columns.
+#' @keywords internal
+empty_read_result <- function(read_columns) {
+  rep(list(logical(0)), length(read_columns)) |>
+    stats::setNames(read_columns) |>
+    data.table::setDT()
+}
+
 #' Return first rows of a file interface
 #'
 #' S3 method for head() that reads the first n rows from a file (in addition to
@@ -355,7 +371,7 @@ head.file_interface <- function(
     )
   }
   read_columns <- column_names(x, add_rsid_genomic_columns = FALSE)
-  withCallingHandlers(
+  result <- withCallingHandlers(
     data.table::fread(
       cmd = paste("bash -c", shQuote(cmd)),
       col.names = read_columns,
@@ -364,6 +380,13 @@ head.file_interface <- function(
     ),
     warning = muffle_empty_read_warning
   )
+
+  # fread returns a 0-column table when the file holds no data rows,
+  # leaving no row for it to infer types from.
+  if (ncol(result) == 0L) {
+    return(empty_read_result(read_columns))
+  }
+  result
 }
 
 #' Subset a file interface with filtering conditions
