@@ -11,29 +11,26 @@
 #' - If `pval` is missing but `effect` and `effect_se` are present,
 #'   `pval = 2 * pnorm(-abs(effect / effect_se))`.
 #'
-#' Otherwise `dt` is returned unchanged. Modifies `dt` by reference and
-#' returns it invisibly. Callers that need none of these columns are not
-#' obligated to provide them; the function is silent when no derivation
-#' is possible so each loader can surface its own errors downstream.
+#' When no derivation is possible or none is needed, `dt` is returned
+#' unchanged and no message is emitted.
+#'
+#' Modifies `dt` by reference and returns it.
 #'
 #' @param dt A data.table with standardized column names.
 #'
-#' @return `dt` (invisibly), with derived columns added.
+#' @return `dt`, with derived columns added.
 #' @export
 complete_missing_stats <- function(dt) {
   if (!data.table::is.data.table(dt)) {
-    return(invisible(dt))
-  }
-  if (nrow(dt) == 0) {
-    return(invisible(dt))
+    stop("`dt` must be a data.table.")
   }
   cols <- names(dt)
   if (all(c("effect", "effect_se", "pval") %in% cols)) {
-    return(invisible(dt))
+    return(dt)
   }
   if (!"effect" %in% cols) {
     if (!all(c("odds_ratio", "pval") %in% cols)) {
-      return(invisible(dt))
+      return(dt)
     }
     message(
       "Approximating effect from odds_ratio (PMID: 11113947) and ",
@@ -43,15 +40,14 @@ complete_missing_stats <- function(dt) {
       ,
       effect_se := -effect / stats::qnorm(pval / 2)
     ][]
-    return(invisible(dt))
+    return(dt)
   }
   if (!"effect_se" %in% cols) {
     if (!"pval" %in% cols) {
-      return(invisible(dt))
+      return(dt)
     }
     dt[, effect_se := -abs(effect) / stats::qnorm(pval / 2)][]
-    return(invisible(dt))
+    return(dt)
   }
   dt[, pval := 2 * stats::pnorm(-abs(effect / effect_se))][]
-  invisible(dt)
 }

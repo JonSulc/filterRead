@@ -59,14 +59,42 @@ test_that("All three columns present is a no-op", {
   expect_equal(dt, before)
 })
 
-test_that("Empty data.table is unchanged", {
+test_that("A zero-row effect + pval table gains a typed effect_se", {
+  dt <- data.table::data.table(
+    effect = numeric(0),
+    pval   = numeric(0)
+  )
+  expect_silent(complete_missing_stats(dt))
+  expect_equal(names(dt), c("effect", "pval", "effect_se"))
+  expect_equal(dt$effect_se, numeric(0))
+})
+
+test_that("A zero-row effect + effect_se table gains pval", {
   dt <- data.table::data.table(
     effect    = numeric(0),
     effect_se = numeric(0)
   )
-  before <- data.table::copy(dt)
   expect_silent(complete_missing_stats(dt))
-  expect_equal(dt, before)
+  expect_equal(names(dt), c("effect", "effect_se", "pval"))
+  expect_equal(dt$pval, numeric(0))
+})
+
+test_that("A zero-row odds_ratio table derives, announcing the approximation", {
+  dt <- data.table::data.table(
+    odds_ratio = numeric(0),
+    pval       = numeric(0)
+  )
+  expect_message(complete_missing_stats(dt), "PMID: 11113947")
+  expect_equal(names(dt), c("odds_ratio", "pval", "effect", "effect_se"))
+  expect_equal(dt$effect, numeric(0))
+  expect_equal(dt$effect_se, numeric(0))
+})
+
+test_that("A non-data.table input is rejected", {
+  expect_error(
+    complete_missing_stats(data.frame(effect = 0.2, pval = 0.01)),
+    "must be a data.table"
+  )
 })
 
 test_that("Nothing deriveable is silent and a no-op", {
@@ -78,4 +106,3 @@ test_that("Nothing deriveable is silent and a no-op", {
   expect_silent(complete_missing_stats(dt))
   expect_equal(dt, before)
 })
-

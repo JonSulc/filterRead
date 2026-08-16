@@ -10,7 +10,7 @@ complete_missing_stats(dt)
 \item{dt}{A data.table with standardized column names.}
 }
 \value{
-`dt` (invisibly), with derived columns added.
+`dt`, with derived columns added.
 }
 \description{
 Adds the missing column among `effect`, `effect_se`, and `pval` when
@@ -25,8 +25,8 @@ it can be inferred from the others:
 - If `pval` is missing but `effect` and `effect_se` are present,
   `pval = 2 * pnorm(-abs(effect / effect_se))`.
 
-Otherwise `dt` is returned unchanged. Modifies `dt` by reference and
-returns it invisibly. Callers that need none of these columns are not
-obligated to provide them; the function is silent when no derivation
-is possible so each loader can surface its own errors downstream.
+When no derivation is possible or none is needed, `dt` is returned
+unchanged and no message is emitted.
+
+Modifies `dt` by reference and returns it.
 }
