@@ -67,6 +67,30 @@ test_that("File reading works", {
     c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")
   )
   expect_equal(
+    colnames(finterface[pval < 0]),
+    c("rsid", "ref", "alt", "effect", "pval")
+  )
+  empty_positional <- finterface[pval < 0 & chr == 1 & 123 <= pos &
+    pos <= 123456]
+  expect_equal(
+    colnames(empty_positional),
+    c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")
+  )
+  # The file's own columns keep the types fread inferred from a real
+  # row; only chr and pos, which come from the index, are best-guess.
+  expect_equal(
+    vapply(empty_positional, class, character(1)),
+    c(
+      chr    = "character",
+      pos    = "integer",
+      rsid   = "character",
+      ref    = "character",
+      alt    = "character",
+      effect = "numeric",
+      pval   = "numeric"
+    )
+  )
+  expect_equal(
     finterface[pval < .05 & chr == 1 & 123 <= pos & pos <= 12345,
       return_only_cmd = TRUE
     ],
@@ -322,7 +346,11 @@ test_that("RSID-based position filtering uses the correct build reference", {
     )
   )
   expect_no_warning(rsid38_results <- rsid38[chr == 19 & 45e6 < pos])
-  expect_equal(rsid38_results, head(rsid38, 0))
+  expect_equal(nrow(rsid38_results), 0L)
+  expect_equal(
+    colnames(rsid38_results),
+    c("chr", "pos", "rsid", "ref", "alt")
+  )
 
   expect_equal(
     rsid37[chr == 15 & pos == 28365618],
@@ -335,7 +363,11 @@ test_that("RSID-based position filtering uses the correct build reference", {
     )
   )
   expect_no_warning(rsid38_results <- rsid38[chr == 15 & pos == 28365618])
-  expect_equal(rsid38_results, head(rsid38, 0))
+  expect_equal(nrow(rsid38_results), 0L)
+  expect_equal(
+    colnames(rsid38_results),
+    c("chr", "pos", "rsid", "ref", "alt")
+  )
 
   # Filtering based on b38 coordinates
   expect_equal(
@@ -349,7 +381,11 @@ test_that("RSID-based position filtering uses the correct build reference", {
     )
   )
   expect_no_warning(rsid37_results <- rsid37[chr == 19 & pos < 45e6])
-  expect_equal(rsid37_results, head(rsid37, 0))
+  expect_equal(nrow(rsid37_results), 0L)
+  expect_equal(
+    colnames(rsid37_results),
+    c("chr", "pos", "rsid", "ref", "alt")
+  )
 
   expect_equal(
     rsid38[chr == 15 & pos == 28120472],
@@ -362,7 +398,11 @@ test_that("RSID-based position filtering uses the correct build reference", {
     )
   )
   expect_no_warning(rsid37_results <- rsid37[chr == 15 & pos == 28120472])
-  expect_equal(rsid37_results, head(rsid37, 0))
+  expect_equal(nrow(rsid37_results), 0L)
+  expect_equal(
+    colnames(rsid37_results),
+    c("chr", "pos", "rsid", "ref", "alt")
+  )
 })
 
 # Tests for md5_matches ----

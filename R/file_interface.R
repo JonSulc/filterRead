@@ -389,6 +389,41 @@ head.file_interface <- function(
   result
 }
 
+#' Build a zero-row result for a query that matched nothing
+#'
+#' Takes the file's own columns from `head(finterface, 0)`, which reads
+#' a real row so `fread` infers their types, and adds the columns a
+#' positional query on an rsid-indexed file draws from the tabix index.
+#'
+#' @param finterface File interface object.
+#' @param fcondition A filter_condition object.
+#'
+#' @return A zero-row data.table with the query's columns.
+#' @keywords internal
+empty_read_for_query <- function(
+  finterface,
+  fcondition
+) {
+  from_file <- head(finterface, 0)
+  read_columns <- column_names(
+    finterface,
+    add_rsid_genomic_columns = has_genomic_condition(fcondition)
+  )
+  index_columns <- setdiff(read_columns, names(from_file))
+  if (length(index_columns) == 0L) {
+    return(from_file)
+  }
+  # chr and pos reach a result from the tabix index rather than from
+  # the file, so no read of the file supplies their types. The index
+  # holds raw chromosome names, so chr is a character string; positions
+  # are always digits.
+  index_types <- list(chr = character(0), pos = integer(0))
+  cbind(
+    data.table::setDT(index_types[index_columns]),
+    from_file
+  )[, .SD, .SDcols = read_columns]
+}
+
 #' Subset a file interface with filtering conditions
 #'
 #' S3 method for `[` that reads and filters data from a file using
@@ -447,7 +482,7 @@ head.file_interface <- function(
     && !is.null(gregions)
     && nrow(gregions) == 0
     && is_included(gregions)) {
-    return(head(finterface, 0))
+    return(empty_read_for_query(finterface, fcondition))
   }
 
   command_line <- fcondition_to_awk(
@@ -480,7 +515,7 @@ head.file_interface <- function(
 
   # fread returns a 0-column table when awk emits no bytes; recover the schema
   if (ncol(result) == 0L) {
-    return(head(finterface, 0))
+    return(empty_read_for_query(finterface, fcondition))
   }
 
   result
