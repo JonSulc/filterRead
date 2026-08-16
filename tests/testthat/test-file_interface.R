@@ -784,3 +784,27 @@ test_that("A no-match read on a populated file keeps fread's types", {
     )
   )
 })
+
+test_that("A row of only character fields is read as data", {
+  dt <- data.table::data.table(
+    chr = c("chr1", "chr2"),
+    ref = c("A", "G"),
+    alt = c("G", "A")
+  )
+  local_csv_file("characters.csv", dt = dt)
+  finterface <- new_file_interface("characters.csv", build = "b38") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  first_row <- head(finterface, 1)
+  expect_equal(nrow(first_row), 1L)
+  expect_equal(first_row$chr, "chr1")
+  expect_equal(
+    vapply(first_row, class, character(1)),
+    c(chr = "character", ref = "character", alt = "character")
+  )
+
+  filtered <- finterface[ref == "A"]
+  expect_equal(nrow(filtered), 1L)
+  expect_equal(filtered$alt, "G")
+})

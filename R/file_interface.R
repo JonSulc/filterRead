@@ -374,6 +374,7 @@ head.file_interface <- function(
   result <- withCallingHandlers(
     data.table::fread(
       cmd = paste("bash -c", shQuote(cmd)),
+      header = FALSE,
       col.names = read_columns,
       colClasses = column_class_overrides(x),
       ...
@@ -503,6 +504,7 @@ empty_read_for_query <- function(
   result <- withCallingHandlers(
     data.table::fread(
       cmd = paste("bash -c", shQuote(command_line)),
+      header = FALSE,
       ...,
       col.names = column_names(
         finterface,
