@@ -1,15 +1,38 @@
 # filterRead
 
 filterRead loads and filters large tab/comma-separated genomic files by
-translating R-style conditions into awk (with tabix for indexed range
-queries). This glossary fixes the vocabulary of the filtering interface.
+translating R-style conditions into awk, reading a file by scan or by indexed
+read. This glossary fixes the vocabulary of the filtering interface.
 
 ## Language
 
 **Positional filtering**:
 Selecting file rows whose `(chr, pos)` fall within a set of coordinate ranges,
 with no allele constraint.
-_Avoid_: region filtering, range query (reserve "tabix query" for the indexed mechanism)
+_Avoid_: region filtering, range query
+
+**Scan**:
+Reading every row of a file and deciding each one against the condition. The
+way any file can be read, and the only way an unindexed one can.
+_Avoid_: full read, sequential read
+
+**Indexed read**:
+Reading only the parts of a file its index reports as able to match, in place
+of a scan. Returns what a scan returns; it selects no rows itself.
+_Avoid_: tabix query, index path, seek
+
+**Source regions**:
+The region set covering everything a condition can select, used to narrow what
+an indexed read reads. Never decides which rows match — that stays with the
+condition — so covering too much only costs speed, while covering too little
+loses rows.
+_Avoid_: query regions, filter regions
+
+**Reference lookup**:
+Querying an auxiliary indexed file, such as dbSNP, for information the file
+being read does not carry — the positions of its rsids. Adds information,
+where an indexed read only restricts what is read.
+_Avoid_: tabix query, dbSNP query
 
 **Variant-identity filtering**:
 Selecting file rows matching given variants on `(chr, pos)` and the unordered
