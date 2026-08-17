@@ -808,3 +808,106 @@ test_that("A row of only character fields is read as data", {
   expect_equal(nrow(filtered), 1L)
   expect_equal(filtered$alt, "G")
 })
+
+test_that("field_shapes_agree compares the dominant separator", {
+  expect_true(field_shapes_agree("chr\tpos\tref", "1\t100\tA"))
+  expect_false(field_shapes_agree("chr\tpos", "1\t100\tA"))
+  expect_true(field_shapes_agree("chr\tpos\tinfo", "1\t100\tAF=0.6;DP=10"))
+  expect_true(field_shapes_agree("chr,pos,ref", "1,100,A"))
+  expect_true(field_shapes_agree("chr pos ref", "1 100 A"))
+  expect_true(is.na(field_shapes_agree("ID", "rs1")))
+})
+
+character_summary_stats <- function() {
+  data.table::data.table(
+    chr    = c("1", "2"),
+    pos    = c("100", "200"),
+    ref    = c("A", "G"),
+    alt    = c("G", "A"),
+    effect = c("0.1", "-0.2"),
+    pval   = c("0.01", "0.2")
+  )
+}
+
+test_that("A prefixed header with no comment above it is a header", {
+  local_file_with_comments(
+    "prefixed_header.tsv",
+    comment_lines = character(0),
+    header_prefix = "#",
+    content_dt = character_summary_stats()
+  )
+  finterface <- new_file_interface("prefixed_header.tsv", build = "b38")
+
+  expect_null(finterface$comment_prefix)
+  expect_equal(finterface$trim_prefix, "^#")
+  expect_equal(
+    column_names(finterface),
+    c("chr", "pos", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(nrow(read_file_interface(finterface)), 2L)
+})
+
+test_that("Comments above an unprefixed header are dropped", {
+  local_file_with_comments(
+    "unprefixed_header.tsv",
+    header_prefix = "",
+    content_dt = character_summary_stats()
+  )
+  finterface <- new_file_interface("unprefixed_header.tsv", build = "b38")
+
+  expect_equal(finterface$comment_prefix, "^##")
+  expect_null(finterface$trim_prefix)
+  expect_equal(
+    column_names(finterface),
+    c("chr", "pos", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(nrow(read_file_interface(finterface)), 2L)
+})
+
+test_that("A header-only file whose header carries a prefix standardizes", {
+  local_file_with_comments(
+    "prefixed_empty.tsv",
+    comment_lines = character(0),
+    header_prefix = "#",
+    content_dt = character_summary_stats()[0]
+  )
+  finterface <- new_file_interface("prefixed_empty.tsv", build = "b38")
+
+  expect_null(finterface$comment_prefix)
+  expect_equal(finterface$trim_prefix, "^#")
+  expect_equal(
+    column_names(finterface),
+    c("chr", "pos", "ref", "alt", "effect", "pval")
+  )
+  expect_equal(nrow(read_file_interface(finterface)), 0L)
+})
+
+test_that("A prefixed header above a single-column file is rejected", {
+  local_file_with_comments(
+    "single_column.tsv",
+    comment_lines = character(0),
+    header_prefix = "#",
+    content_dt = data.table::data.table(ID = c("rs1", "rs2"))
+  )
+
+  expect_error(
+    new_file_interface("single_column.tsv", build = "b38"),
+    "is a header or a comment"
+  )
+})
+
+test_that("A file of nothing but comments is rejected", {
+  writeLines(
+    c(
+      "##fileformat=VCFv4.2",
+      "##INFO=<ID=AF,Number=A,Type=Float,Description=\"Allele Frequency\">"
+    ),
+    "comments_only.vcf"
+  )
+  withr::defer(file.remove("comments_only.vcf"))
+
+  expect_error(
+    new_file_interface("comments_only.vcf", build = "b38"),
+    "leaving no header to read"
+  )
+})

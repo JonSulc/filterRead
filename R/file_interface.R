@@ -57,9 +57,10 @@ new_file_interface <- function(
     class = c("file_interface", "character")
   )
 
-  # Detect comment and drop prefixes
-  finterface$comment_prefix <- detect_comment_prefix(finterface)
-  finterface$trim_prefix <- detect_trim_prefix(finterface)
+  # Decide which of the leading lines is the header
+  line_prefixes <- detect_line_prefixes(finterface)
+  finterface$comment_prefix <- line_prefixes$comment
+  finterface$trim_prefix <- line_prefixes$trim
 
   finterface$sep <- get_file_separator(finterface)
 
@@ -173,85 +174,125 @@ get_file_separator <- function(
   substr(best_sep, 2, nchar(best_sep) - 1)
 }
 
-#' Detect non-alphanumeric prefix from the first line of a file
-#'
-#' Extracts any non-alphanumeric characters at the start of the first line,
-#' which may indicate comment markers or other prefixes to skip.
+#' Read a file's leading lines, optionally skipping lines that match
 #'
 #' @param finterface A file_interface object
-#' @param skip_prefix Optional regex pattern for lines to skip when finding
-#'   the first line
-#' @return Character string with escaped regex pattern for the prefix, or NULL
-#'   if no prefix detected
+#' @param nlines Number of lines to read
+#' @param skip_pattern Optional anchored regex; lines matching it are skipped
+#'   before the leading lines are taken
+#' @return Character vector of at most `nlines` lines, shorter when the file
+#'   holds fewer
 #' @keywords internal
-detect_prefix_from_first_line <- function(finterface, skip_prefix = NULL) {
-  # Get file reading command based on compression
-  if (finterface$gzipped) {
-    file_cmd <- sprintf("zcat %s", shQuote(finterface$filename, type = "sh"))
-  } else {
-    file_cmd <- sprintf("cat %s", shQuote(finterface$filename, type = "sh"))
+read_leading_lines <- function(
+  finterface,
+  nlines = 1L,
+  skip_pattern = NULL
+) {
+  read_cmd <- build_file_read_cmd(finterface)
+  if (!is.null(skip_pattern)) {
+    read_cmd <- sprintf("%s | grep -v '%s'", read_cmd, skip_pattern)
   }
+  sprintf("%s | head -n %d", read_cmd, nlines) |>
+    system(intern = TRUE)
+}
 
-  # Build command to get the first line
-  if (!is.null(skip_prefix)) {
-    # Remove the ^ for grep pattern
-    grep_pattern <- ifelse(
-      grepl("^\\^", skip_prefix),
-      substr(skip_prefix, 2, nchar(skip_prefix)),
-      skip_prefix
-    )
-    first_line_cmd <- sprintf(
-      "%s | grep -v '%s' | head -n 1",
-      file_cmd,
-      grep_pattern
-    )
-  } else {
-    first_line_cmd <- paste(file_cmd, "| head -n 1")
-  }
-
-  first_line <- system(first_line_cmd, intern = TRUE)
-
-  if (length(first_line) == 0 || nchar(first_line) == 0) {
+#' Extract a line's leading punctuation run as a regex
+#'
+#' @param line Character string, or character(0)
+#' @return Anchored, escaped regex matching the line's leading run of
+#'   punctuation, or NULL when the line starts with none
+#' @keywords internal
+extract_prefix_pattern <- function(line) {
+  if (length(line) == 0 || nchar(line) == 0) {
     return(NULL)
   }
+  prefix_match <- regexpr("^[^A-Za-z0-9\" ]+", line)
+  if (prefix_match < 0) {
+    return(NULL)
+  }
+  escaped_prefix <- substr(line, 1, attr(prefix_match, "match.length")) |>
+    gsub("([.*+?^${}()|\\[\\]\\\\])", "\\\\\\1", x = _)
+  paste0("^", escaped_prefix)
+}
 
-  # Extract non-alphanumeric prefix
-  prefix_match <- regexpr("^[^A-Za-z0-9\" ]+", first_line)
-  if (prefix_match > 0) {
-    prefix <- substr(first_line, 1, attr(prefix_match, "match.length"))
-    escaped_prefix <- gsub("([.*+?^${}()|\\[\\]\\\\])", "\\\\\\1", prefix)
-    return(paste0("^", escaped_prefix))
+#' Compare the field shape of two lines
+#'
+#' Counts the separator occurring most often in `reference_line` and reports
+#' whether `line` holds it as many times. Comparing only the dominant
+#' separator, rather than all four candidates, keeps the comparison intact
+#' when a field value carries a stray delimiter the header does not.
+#'
+#' @param line Character string to test
+#' @param reference_line Character string supplying the reference shape
+#' @return TRUE when both lines hold the dominant separator the same number of
+#'   times, FALSE when they differ, and NA when `reference_line` holds no
+#'   candidate separator and there is no shape to compare against
+#' @keywords internal
+field_shapes_agree <- function(
+  line,
+  reference_line
+) {
+  candidate_separators <- c("\t", ",", ";", " ")
+  reference_counts <- stringr::str_count(
+    reference_line,
+    stringr::fixed(candidate_separators)
+  )
+  if (max(reference_counts) == 0L) {
+    return(NA)
+  }
+  dominant <- which.max(reference_counts)
+  stringr::str_count(
+    line,
+    stringr::fixed(candidate_separators[dominant])
+  ) == reference_counts[dominant]
+}
+
+#' Detect a file's comment and trim prefixes
+#'
+#' Decides which of a file's leading lines is the header, and reports the
+#' prefix carried by the lines above it and the prefix carried by the header
+#' itself. A prefixed first line is the header when no line follows it, or
+#' when stripping the prefix leaves it with the field shape of the first line
+#' below. Otherwise the prefix marks comments, and the header is the first
+#' line that does not carry it. The trim prefix is what awk strips from the
+#' header, e.g., '#CHROM' -> 'CHROM'.
+#'
+#' @param finterface A file_interface object
+#' @return List with elements `comment` and `trim`, each an anchored regex or
+#'   NULL
+#' @keywords internal
+detect_line_prefixes <- function(finterface) {
+  leading_lines <- read_leading_lines(finterface, nlines = 2L)
+  prefix <- head(leading_lines, 1) |>
+    extract_prefix_pattern()
+  if (is.null(prefix)) {
+    return(list(comment = NULL, trim = NULL))
   }
 
-  NULL
-}
+  below <- read_leading_lines(finterface, skip_pattern = prefix)
+  if (length(below) == 0) {
+    if (length(leading_lines) != 1L) {
+      stop(
+        "Every line of ", finterface$filename,
+        " carries the same prefix, leaving no header to read."
+      )
+    }
+    return(list(comment = NULL, trim = prefix))
+  }
 
-#' Detect comment prefix from a file
-#'
-#' Identifies the prefix of commented lines at the beginning of a file to drop
-#' them when parsing the file.
-#'
-#' @param finterface A file_interface object
-#' @return Character string with the comment prefix pattern, or NULL
-#' @keywords internal
-detect_comment_prefix <- function(finterface) {
-  detect_prefix_from_first_line(finterface, skip_prefix = NULL)
-}
+  shapes_agree <- field_shapes_agree(sub(prefix, "", leading_lines[1]), below)
+  if (is.na(shapes_agree)) {
+    stop(
+      "Cannot tell whether the first line of ", finterface$filename,
+      " is a header or a comment: the line below it carries none of the",
+      " separators this package reads (tab, comma, semicolon, space)."
+    )
+  }
+  if (shapes_agree) {
+    return(list(comment = NULL, trim = prefix))
+  }
 
-#' Detect prefix to trim from data lines
-#'
-#' Detects prefixes on data lines (excluding comment lines) that should be
-#' trimmed before parsing. Purpose is to trim prefixes on the header line,
-#' e.g., '#CHROM' -> 'CHROM'.
-#'
-#' @param finterface A file_interface object
-#' @return Character string with the trim prefix pattern, or NULL
-#' @keywords internal
-detect_trim_prefix <- function(finterface) {
-  detect_prefix_from_first_line(
-    finterface,
-    skip_prefix = finterface$comment_prefix
-  )
+  list(comment = prefix, trim = extract_prefix_pattern(below))
 }
 
 #' Validate a file_interface object
