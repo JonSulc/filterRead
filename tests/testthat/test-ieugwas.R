@@ -258,16 +258,18 @@ test_that("an uppercase sample identifier is still an IEUGWAS file", {
 test_that("a single-sample genotype VCF opens as a plain file", {
   genotype_data <- create_ieugwas_data(
     format_string = "GT:AD:DP",
-    trait_name = "NA12878",
+    trait_name = "na12878",
     trait_data = "0/1:10,5:15",
     nrows = 1
   )
   local_csv_file("genotype_vcf.csv", genotype_data, sep = "\t")
-  finterface <- new_file_interface("genotype_vcf.csv", build = "b37") |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
+  expect_no_warning(
+    finterface <- new_file_interface("genotype_vcf.csv", build = "b37") |>
+      suppressMessages() |>
+      withr::with_output_sink(new = "/dev/null")
+  )
 
   expect_null(get_ieugwas_parsing(finterface))
   expect_false("effect" %in% column_names(finterface))
-  expect_true("NA12878" %in% column_names(finterface))
+  expect_true("na12878" %in% column_names(finterface))
 })
