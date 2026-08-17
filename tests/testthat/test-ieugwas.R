@@ -379,3 +379,30 @@ test_that("IEUGWAS FORMAT validation regex works correctly", {
     expect_equal(length(parsing_info$encoded_names[[1]]), length(combo_parts))
   }
 })
+
+test_that("lists_ieugwas_keys accepts the IEUGWAS keys and combinations", {
+  for (key in names(ieugwas_formats)) {
+    expect_true(lists_ieugwas_keys(key))
+  }
+  expect_true(lists_ieugwas_keys("ES:SE"))
+  expect_true(lists_ieugwas_keys("ES:SE:LP:AF"))
+  expect_true(lists_ieugwas_keys("ID:AF:SS"))
+  expect_true(lists_ieugwas_keys("EZ:SI:NC"))
+  expect_true(lists_ieugwas_keys("ES:SE:LP:AF:SS:EZ:SI:NC:ID"))
+})
+
+test_that("lists_ieugwas_keys rejects keys it does not know", {
+  expect_false(lists_ieugwas_keys("GT:AD:DP:GQ:PL"))
+  expect_false(lists_ieugwas_keys("INVALID"))
+  expect_false(lists_ieugwas_keys("ES:INVALID:LP"))
+  expect_false(lists_ieugwas_keys("es:se:lp"))
+})
+
+test_that("lists_ieugwas_keys rejects malformed and missing FORMAT", {
+  expect_false(lists_ieugwas_keys("ES::LP"))
+  expect_false(lists_ieugwas_keys("ES:LP:"))
+  expect_false(lists_ieugwas_keys(":ES:LP"))
+  expect_false(lists_ieugwas_keys(""))
+  expect_false(lists_ieugwas_keys(NA_character_))
+  expect_false(lists_ieugwas_keys(NULL))
+})

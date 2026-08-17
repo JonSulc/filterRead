@@ -47,6 +47,22 @@ is_ieugwas_file <- function(finterface) {
     grepl("^[a-z0-9-]+$", fcolumn_names[10])
 }
 
+#' Check whether a FORMAT string lists only IEUGWAS keys
+#'
+#' The FORMAT field of an IEUGWAS VCF is a colon-separated list of the
+#' known IEUGWAS keys. Anything else — a genotype VCF's `GT:AD:DP:GQ:PL`,
+#' an empty or missing field, a file with no FORMAT column at all — is
+#' not one.
+#'
+#' @param format The file's FORMAT field value
+#' @return Logical indicating whether the value is an IEUGWAS FORMAT
+#'   string
+#' @keywords internal
+lists_ieugwas_keys <- function(format) {
+  keys <- paste(names(ieugwas_formats), collapse = "|")
+  isTRUE(grepl(sprintf("^(%s)(:(%s))*$", keys, keys), format))
+}
+
 #' Get column parsing specification for IEUGWAS files
 #'
 #' Parses the FORMAT field to determine how to extract values from the
@@ -61,14 +77,7 @@ get_ieugwas_column_parsing <- function(finterface) {
     return()
   }
   format <- head(finterface)$FORMAT
-  if (!grepl(
-    sprintf(
-      "^(%s)(:(%s))*$",
-      paste(names(ieugwas_formats), collapse = "|"),
-      paste(names(ieugwas_formats), collapse = "|")
-    ),
-    format
-  )) {
+  if (!lists_ieugwas_keys(format)) {
     warning("Unrecognized IEUGWAS FORMAT string, please report")
     return()
   }
