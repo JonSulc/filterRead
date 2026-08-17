@@ -150,3 +150,16 @@ test_that("switch_alt_ref_to_a1_a2 produces correct columns and values", {
   prop_allele1_is_alt <- mean(result$allele1 == result$alt)
   expect_true(0.3 < prop_allele1_is_alt && prop_allele1_is_alt < 0.7)
 })
+
+test_that("random_names draws synonyms of the standard names", {
+  headers <- replicate(
+    20,
+    names(dummy_summary_stats(nrows = 2, random_names = TRUE)),
+    simplify = FALSE
+  )
+
+  expect_true(all(
+    unlist(headers) %chin% summary_stats_standard_names_dt$input_name
+  ))
+  expect_true(1 < length(unique(headers)))
+})

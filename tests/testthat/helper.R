@@ -75,8 +75,7 @@ dummy_summary_stats <- function(
   alt = c("A", "C", "G", "T"),
   effect = NULL,
   pval = NULL,
-  ref_col_names = summary_stats_column_names,
-  random_names = TRUE,
+  random_names = FALSE,
   values_are_quoted = FALSE,
   prefixes = NULL,
   encode_columns = FALSE,
@@ -118,7 +117,7 @@ dummy_summary_stats <- function(
   }
 
   if (random_names) {
-    set_random_names(dt, ref_col_names = ref_col_names)
+    set_random_names(dt)
   }
 
   add_quotes_to_dt(dt, values_are_quoted)
@@ -126,19 +125,16 @@ dummy_summary_stats <- function(
   dt
 }
 
-set_random_names <- function(
-  dt,
-  ref_col_names = summary_stats_standard_names_dt
-) {
+set_random_names <- function(dt) {
   data.table::setnames(
     dt,
     new = sapply(
       names(dt),
       \(cname) {
-        if (!cname %in% ref_col_names$standard_name) {
+        if (!cname %in% summary_stats_standard_names_dt$standard_name) {
           return(cname)
         }
-        ref_col_names[
+        summary_stats_standard_names_dt[
           cname,
           sample(input_name, 1),
           on = "standard_name"
@@ -217,8 +213,7 @@ local_summary_stats <- function(
   alt = c("A", "C", "G", "T"),
   effect = NULL,
   pval = NULL,
-  ref_col_names = summary_stats_column_names,
-  random_names = TRUE,
+  random_names = FALSE,
   values_are_quoted = FALSE,
   prefixes = NULL,
   encode_columns = FALSE,
@@ -235,7 +230,6 @@ local_summary_stats <- function(
     alt = alt,
     effect = effect,
     pval = pval,
-    ref_col_names = ref_col_names,
     random_names = random_names,
     values_are_quoted = FALSE,
     prefixes = prefixes,
