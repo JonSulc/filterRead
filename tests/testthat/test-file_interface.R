@@ -911,3 +911,116 @@ test_that("A file of nothing but comments is rejected", {
     "leaving no header to read"
   )
 })
+
+test_that("A prose comment sharing the header's comma count is a comment", {
+  local_file_with_comments(
+    "prose_comment.csv",
+    comment_lines = "#see doi:10.1/x, table 2, note",
+    header_prefix = "",
+    content_dt = data.table::data.table(
+      chr = "1",
+      pos = "100",
+      ref = "A"
+    ),
+    sep = ","
+  )
+  finterface <- new_file_interface("prose_comment.csv", build = "b38")
+
+  expect_equal(finterface$comment_prefix, "^#")
+  expect_null(finterface$trim_prefix)
+  expect_equal(column_names(finterface), c("chr", "pos", "ref"))
+  expect_equal(nrow(read_file_interface(finterface)), 1L)
+})
+
+test_that("A prefixed header above a comma-rich data row is a header", {
+  local_file_with_comments(
+    "comma_rich_info.vcf",
+    comment_lines = character(0),
+    header_prefix = "#",
+    content_dt = data.table::data.table(
+      CHROM = c("1", "2"),
+      POS   = c("100", "200"),
+      ID    = c("rs1", "rs2"),
+      REF   = c("A", "C"),
+      ALT   = c("G", "T"),
+      INFO  = c("CSQ=a,b,c,d,e,f,g,h", "CSQ=i,j,k")
+    )
+  )
+  finterface <- new_file_interface("comma_rich_info.vcf", build = "b38")
+
+  expect_null(finterface$comment_prefix)
+  expect_equal(finterface$trim_prefix, "^#")
+  expect_equal(
+    column_names(finterface),
+    c("chr", "pos", "rsid", "ref", "alt", "INFO")
+  )
+  expect_equal(nrow(read_file_interface(finterface)), 2L)
+})
+
+test_that("read_leading_lines skips only lines starting with the pattern", {
+  writeLines(
+    c(
+      "##fileformat=VCFv4.2",
+      "chr,pos,note",
+      "1,100,see##here"
+    ),
+    "mid_line_prefix.csv"
+  )
+  withr::defer(file.remove("mid_line_prefix.csv"))
+  finterface <- new_file_interface("mid_line_prefix.csv", build = "b38")
+
+  expect_equal(
+    read_leading_lines(finterface, nlines = 3L, skip_pattern = "^##"),
+    c("chr,pos,note", "1,100,see##here")
+  )
+})
+
+test_that("extract_prefix_pattern anchors and escapes the leading run", {
+  expect_null(extract_prefix_pattern(character(0)))
+  expect_null(extract_prefix_pattern(""))
+  expect_null(extract_prefix_pattern("chr\tpos\tref"))
+  expect_equal(extract_prefix_pattern("#CHROM\tPOS"), "^#")
+  expect_equal(extract_prefix_pattern("##fileformat=VCFv4.2"), "^##")
+  expect_equal(extract_prefix_pattern("{chr,pos,ref"), "^\\{")
+  expect_equal(extract_prefix_pattern("$.*chr,pos"), "^\\$\\.\\*")
+})
+
+test_that("A header starting with a regex metacharacter is read", {
+  writeLines(
+    c(
+      "{chr,pos,ref",
+      "1,100,A"
+    ),
+    "metacharacter_header.csv"
+  )
+  withr::defer(file.remove("metacharacter_header.csv"))
+  finterface <- new_file_interface("metacharacter_header.csv", build = "b38")
+
+  expect_null(finterface$comment_prefix)
+  expect_equal(finterface$trim_prefix, "^\\{")
+  expect_equal(nrow(read_file_interface(finterface)), 1L)
+})
+
+test_that("A header starting with an apostrophe is detected", {
+  writeLines(
+    c(
+      "'chr,pos,ref",
+      "1,100,A"
+    ),
+    "apostrophe_header.csv"
+  )
+  withr::defer(file.remove("apostrophe_header.csv"))
+  finterface <- structure(
+    list(filename = "apostrophe_header.csv", gzipped = FALSE),
+    class = c("file_interface", "character")
+  )
+
+  expect_equal(
+    read_leading_lines(finterface, nlines = 2L, skip_pattern = "^'"),
+    "1,100,A"
+  )
+  expect_equal(
+    detect_line_prefixes(finterface),
+    list(comment = NULL, trim = "^'")
+  )
+})

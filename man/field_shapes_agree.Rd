@@ -4,22 +4,19 @@
 \alias{field_shapes_agree}
 \title{Compare the field shape of two lines}
 \usage{
-field_shapes_agree(line, reference_line)
+field_shapes_agree(candidate_header_line, candidate_data_line)
 }
 \arguments{
-\item{line}{Character string to test}
+\item{candidate_header_line}{Character string tested as the header}
 
-\item{reference_line}{Character string supplying the reference shape}
+\item{candidate_data_line}{Character string tested as the line below it}
 }
 \value{
-TRUE when both lines hold the dominant separator the same number of
-  times, FALSE when they differ, and NA when `reference_line` holds no
-  candidate separator and there is no shape to compare against
+TRUE when both lines carry the header candidate's dominant
+  separator the same number of times, FALSE when they differ, and NA when
+  neither line carries a candidate separator
 }
 \description{
-Counts the separator occurring most often in `reference_line` and reports
-whether `line` holds it as many times. Comparing only the dominant
-separator, rather than all four candidates, keeps the comparison intact
-when a field value carries a stray delimiter the header does not.
+The dominant separator of `candidate_header_line` decides the comparison.
 }
 \keyword{internal}

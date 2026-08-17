@@ -178,8 +178,8 @@ get_file_separator <- function(
 #'
 #' @param finterface A file_interface object
 #' @param nlines Number of lines to read
-#' @param skip_pattern Optional anchored regex; lines matching it are skipped
-#'   before the leading lines are taken
+#' @param skip_pattern Optional anchored extended regex; lines matching it are
+#'   skipped before the leading lines are taken
 #' @return Character vector of at most `nlines` lines, shorter when the file
 #'   holds fewer
 #' @keywords internal
@@ -190,7 +190,11 @@ read_leading_lines <- function(
 ) {
   read_cmd <- build_file_read_cmd(finterface)
   if (!is.null(skip_pattern)) {
-    read_cmd <- sprintf("%s | grep -v '%s'", read_cmd, skip_pattern)
+    read_cmd <- sprintf(
+      "%s | grep -E -v %s",
+      read_cmd,
+      shQuote(skip_pattern, type = "sh")
+    )
   }
   sprintf("%s | head -n %d", read_cmd, nlines) |>
     system(intern = TRUE)
@@ -198,8 +202,12 @@ read_leading_lines <- function(
 
 #' Extract a line's leading punctuation run as a regex
 #'
+#' Every metacharacter in the run is backslash-escaped, so the pattern matches
+#' the run literally. The escaping targets extended regular expressions, the
+#' dialect shared by R's `sub()` and `grep -E`.
+#'
 #' @param line Character string, or character(0)
-#' @return Anchored, escaped regex matching the line's leading run of
+#' @return Anchored, escaped extended regex matching the line's leading run of
 #'   punctuation, or NULL when the line starts with none
 #' @keywords internal
 extract_prefix_pattern <- function(line) {
@@ -210,41 +218,59 @@ extract_prefix_pattern <- function(line) {
   if (prefix_match < 0) {
     return(NULL)
   }
-  escaped_prefix <- substr(line, 1, attr(prefix_match, "match.length")) |>
-    gsub("([.*+?^${}()|\\[\\]\\\\])", "\\\\\\1", x = _)
-  paste0("^", escaped_prefix)
+  substr(line, 1, attr(prefix_match, "match.length")) |>
+    escape_extended_regex() |>
+    paste0("^", x = _)
+}
+
+#' Escape every extended-regex metacharacter in a string
+#'
+#' @param pattern Character string to escape
+#' @return The string with each metacharacter preceded by a backslash
+#' @keywords internal
+escape_extended_regex <- function(pattern) {
+  metacharacters <- c(
+    "\\", ".", "*", "+", "?", "^", "$", "(", ")", "[", "]", "{", "}", "|"
+  )
+  for (metacharacter in metacharacters) {
+    pattern <- gsub(
+      metacharacter,
+      paste0("\\", metacharacter),
+      pattern,
+      fixed = TRUE
+    )
+  }
+  pattern
 }
 
 #' Compare the field shape of two lines
 #'
-#' Counts the separator occurring most often in `reference_line` and reports
-#' whether `line` holds it as many times. Comparing only the dominant
-#' separator, rather than all four candidates, keeps the comparison intact
-#' when a field value carries a stray delimiter the header does not.
+#' The dominant separator of `candidate_header_line` decides the comparison.
 #'
-#' @param line Character string to test
-#' @param reference_line Character string supplying the reference shape
-#' @return TRUE when both lines hold the dominant separator the same number of
-#'   times, FALSE when they differ, and NA when `reference_line` holds no
-#'   candidate separator and there is no shape to compare against
+#' @param candidate_header_line Character string tested as the header
+#' @param candidate_data_line Character string tested as the line below it
+#' @return TRUE when both lines carry the header candidate's dominant
+#'   separator the same number of times, FALSE when they differ, and NA when
+#'   neither line carries a candidate separator
 #' @keywords internal
 field_shapes_agree <- function(
-  line,
-  reference_line
+  candidate_header_line,
+  candidate_data_line
 ) {
   candidate_separators <- c("\t", ",", ";", " ")
-  reference_counts <- stringr::str_count(
-    reference_line,
+  header_counts <- stringr::str_count(
+    candidate_header_line,
     stringr::fixed(candidate_separators)
   )
-  if (max(reference_counts) == 0L) {
-    return(NA)
+  data_counts <- stringr::str_count(
+    candidate_data_line,
+    stringr::fixed(candidate_separators)
+  )
+  if (max(header_counts) == 0L) {
+    return(if (max(data_counts) == 0L) NA else FALSE)
   }
-  dominant <- which.max(reference_counts)
-  stringr::str_count(
-    line,
-    stringr::fixed(candidate_separators[dominant])
-  ) == reference_counts[dominant]
+  dominant <- which.max(header_counts)
+  header_counts[dominant] == data_counts[dominant]
 }
 
 #' Detect a file's comment and trim prefixes
@@ -284,8 +310,8 @@ detect_line_prefixes <- function(finterface) {
   if (is.na(shapes_agree)) {
     stop(
       "Cannot tell whether the first line of ", finterface$filename,
-      " is a header or a comment: the line below it carries none of the",
-      " separators this package reads (tab, comma, semicolon, space)."
+      " is a header or a comment: neither it nor the line below carries any",
+      " of the separators this package reads (tab, comma, semicolon, space)."
     )
   }
   if (shapes_agree) {

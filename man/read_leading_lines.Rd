@@ -11,8 +11,8 @@ read_leading_lines(finterface, nlines = 1L, skip_pattern = NULL)
 
 \item{nlines}{Number of lines to read}
 
-\item{skip_pattern}{Optional anchored regex; lines matching it are skipped
-before the leading lines are taken}
+\item{skip_pattern}{Optional anchored extended regex; lines matching it are
+skipped before the leading lines are taken}
 }
 \value{
 Character vector of at most `nlines` lines, shorter when the file

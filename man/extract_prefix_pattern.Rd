@@ -10,10 +10,12 @@ extract_prefix_pattern(line)
 \item{line}{Character string, or character(0)}
 }
 \value{
-Anchored, escaped regex matching the line's leading run of
+Anchored, escaped extended regex matching the line's leading run of
   punctuation, or NULL when the line starts with none
 }
 \description{
-Extract a line's leading punctuation run as a regex
+Every metacharacter in the run is backslash-escaped, so the pattern matches
+the run literally. The escaping targets extended regular expressions, the
+dialect shared by R's `sub()` and `grep -E`.
 }
 \keyword{internal}
