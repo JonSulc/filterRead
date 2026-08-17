@@ -23,361 +23,46 @@ create_ieugwas_data <- function(
   data.table::as.data.table(base_data)
 }
 
-test_that("is_ieugwas_file correctly identifies IEUGWAS format", {
-  # Test valid IEUGWAS file
-  ieugwas_data <- create_ieugwas_data()
-  local_csv_file("ieugwas_valid.csv", ieugwas_data, sep = "\t")
-  finterface <- new_file_interface("ieugwas_valid.csv", ieugwas_parsing = FALSE) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  expect_true(is_ieugwas_file(finterface))
-})
-
-test_that("is_ieugwas_file rejects non-IEUGWAS format", {
-  # Test file with wrong number of columns
-  wrong_cols_data <- data.table::data.table(
-    CHROM = c(1, 1),
-    POS = c(100, 200),
-    ID = c(".", "."),
-    REF = c("A", "C")
-  )
-  local_csv_file("not_ieugwas_cols.csv", wrong_cols_data, sep = "\t")
-  finterface <- new_file_interface("not_ieugwas_cols.csv",
-    ieugwas_parsing = FALSE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  expect_false(is_ieugwas_file(finterface))
-
-  # Test file with wrong column names
-  wrong_names_data <- data.table::data.table(
-    CHR = c(1, 1),
-    POS = c(100, 200),
-    ID = c(".", "."),
-    REF = c("A", "C"),
-    ALT = c("T", "G"),
-    QUAL = c(".", "."),
-    FILTER = c("PASS", "PASS"),
-    INFO = c(".", "."),
-    FORMAT = c("ES:SE", "ES:SE"),
-    `trait-1` = c("0.1:0.05", "0.2:0.06")
-  )
-  local_csv_file("not_ieugwas_names.csv", wrong_names_data, sep = "\t")
-  finterface <- new_file_interface("not_ieugwas_names.csv",
-    ieugwas_parsing = FALSE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  expect_false(is_ieugwas_file(finterface))
-
-  # Test file with invalid trait column name
-  invalid_trait_data <- data.table::data.table(
-    CHROM = c(1, 1),
-    POS = c(100, 200),
-    ID = c(".", "."),
-    REF = c("A", "C"),
-    ALT = c("T", "G"),
-    QUAL = c(".", "."),
-    FILTER = c("PASS", "PASS"),
-    INFO = c(".", "."),
-    FORMAT = c("ES:SE", "ES:SE"),
-    `INVALID_TRAIT!` = c("0.1:0.05", "0.2:0.06")
-  )
-  local_csv_file("invalid_trait.csv", invalid_trait_data, sep = "\t")
-  finterface <- new_file_interface("invalid_trait.csv",
-    ieugwas_parsing = FALSE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  expect_false(is_ieugwas_file(finterface))
-})
-
-test_that("get_ieugwas_column_parsing handles various FORMAT combinations", {
-  # Test ES:SE:LP format
-  ieugwas_data_esl <- create_ieugwas_data(
-    format_string = "ES:SE:LP",
-    trait_name = "ukb-123",
-    trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8")
-  )
-  local_csv_file("ieugwas_esl.csv", ieugwas_data_esl, sep = "\t")
-  finterface <- new_file_interface("ieugwas_esl.csv", ieugwas_parsing = FALSE) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  parsing_info <- get_ieugwas_column_parsing(finterface)
-
-  expect_equal(parsing_info$input_name, "ukb-123")
-  expect_equal(parsing_info$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
-  expect_equal(
-    parsing_info$encoded_names[[1]],
-    c("effect", "effect_se", "log10p")
-  )
-  expect_equal(parsing_info$delimiter, ":")
-
-  # Test ES:SE:AF format
-  ieugwas_data_esa <- create_ieugwas_data(
-    format_string = "ES:SE:AF",
-    trait_name = "trait-456",
-    trait_data = c("0.1:0.05:0.3", "0.2:0.06:0.4")
-  )
-  local_csv_file("ieugwas_esa.csv", ieugwas_data_esa, sep = "\t")
-  finterface <- new_file_interface("ieugwas_esa.csv", ieugwas_parsing = FALSE) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  parsing_info <- get_ieugwas_column_parsing(finterface)
-
-  expect_equal(parsing_info$input_name, "trait-456")
-  expect_equal(parsing_info$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
-  expect_equal(parsing_info$encoded_names[[1]], c("effect", "effect_se", "af"))
-  expect_equal(parsing_info$delimiter, ":")
-})
-
-test_that("get_ieugwas_column_parsing handles complex FORMAT strings", {
-  # Test all available formats
-  ieugwas_data_all <- create_ieugwas_data(
-    format_string = "ES:SE:LP:AF:SS:EZ:SI:NC:ID",
-    trait_name = "full-trait",
-    trait_data = "0.1:0.05:2.3:0.3:1000:-1.5:0.9:500:rs123456",
-    nrows = 1
-  )
-  local_csv_file("ieugwas_all.csv", ieugwas_data_all, sep = "\t")
-  finterface <- new_file_interface("ieugwas_all.csv", ieugwas_parsing = FALSE) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  parsing_info <- get_ieugwas_column_parsing(finterface)
-
-  expected_regex <- paste(
-    "([-0-9.]+)", "([0-9.]+)", "([0-9.]+)", "([0-9.]+)", "([0-9]+)",
-    "([-0-9.]+)", "([0-9.]+)", "([0-9]+)", "(rs[0-9]+)",
-    sep = ":"
-  )
-
-  expect_equal(parsing_info$input_name, "full-trait")
-  expect_equal(parsing_info$regex, paste0("^", expected_regex, "$"))
-  expect_equal(
-    parsing_info$encoded_names[[1]],
-    c(
-      "effect", "effect_se", "log10p", "af", "sample_size", "zscore",
-      "imputation_accuracy", "n_cases", "rsid"
+test_that("matches_ieugwas_structure identifies an IEUGWAS file", {
+  expect_true(
+    matches_ieugwas_structure(
+      c(ieugwas_cols_1_9, "ieuGWAS-42"),
+      "ES:SE:LP:AF:ID"
     )
   )
-  expect_equal(parsing_info$delimiter, ":")
-
-  # Test single format
-  ieugwas_data_single <- create_ieugwas_data(
-    format_string = "ES",
-    trait_name = "simple-trait",
-    trait_data = "0.1",
-    nrows = 1
+  expect_true(
+    matches_ieugwas_structure(c(ieugwas_cols_1_9, "trait-1"), "ES:SE:LP")
   )
-  local_csv_file("ieugwas_single.csv", ieugwas_data_single, sep = "\t")
-  finterface <- new_file_interface("ieugwas_single.csv",
-    ieugwas_parsing = FALSE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  parsing_info <- get_ieugwas_column_parsing(finterface)
-
-  expect_equal(parsing_info$input_name, "simple-trait")
-  expect_equal(parsing_info$regex, "^([-0-9.]+)$")
-  expect_equal(parsing_info$encoded_names[[1]], "effect")
-  expect_equal(parsing_info$delimiter, ":")
+  expect_true(
+    matches_ieugwas_structure(
+      c(ieugwas_cols_1_9, "column,name_10 is-Ignored!"),
+      "ES:SE"
+    )
+  )
 })
 
-test_that("IEUGWAS integration with file_interface works correctly", {
-  # Test automatic parsing is enabled by default
-  ieugwas_data <- create_ieugwas_data(
-    trait_name = "ukbb-neale",
-    trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8", "-0.1:0.04:3.2")
+test_that("matches_ieugwas_structure rejects a single-sample genotype VCF", {
+  expect_false(
+    matches_ieugwas_structure(c(ieugwas_cols_1_9, "NA12878"), "GT:AD:DP:GQ:PL")
   )
-  local_csv_file("ieugwas_integration.csv", ieugwas_data, sep = "\t")
-
-  # Test with ieugwas_parsing = TRUE (default)
-  finterface_with_parsing <- new_file_interface(
-    "ieugwas_integration.csv",
-    ieugwas_parsing = TRUE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  column_info <- finterface_with_parsing$column_info
-  encoded_columns <- column_info[!sapply(encoded_names, is.null)]
-
-  expect_equal(nrow(encoded_columns), 1)
-  expect_equal(encoded_columns$input_name, "ukbb-neale")
-  expect_equal(encoded_columns$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
-  expect_equal(
-    encoded_columns$encoded_names[[1]],
-    c("effect", "effect_se", "log10p")
-  )
-  expect_equal(encoded_columns$delimiter, ":")
-
-  # Test with ieugwas_parsing = FALSE
-  finterface_no_parsing <- new_file_interface(
-    "ieugwas_integration.csv",
-    ieugwas_parsing = FALSE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  column_info_no_parsing <- finterface_no_parsing$column_info
-  encoded_columns_no_parsing <- column_info_no_parsing[
-    !sapply(encoded_names, is.null)
-  ]
-
-  expect_equal(nrow(encoded_columns_no_parsing), 0)
 })
 
-test_that("IEUGWAS parsing handles edge cases", {
-  # Test with missing values in FORMAT
-  ieugwas_data_na <- create_ieugwas_data(
-    format_string = NA,
-    trait_name = "trait-na",
-    trait_data = "0.1:0.05",
-    nrows = 1
+test_that("matches_ieugwas_structure rejects other column layouts", {
+  expect_false(
+    matches_ieugwas_structure(c("CHROM", "POS", "ID", "REF"), "ES:SE")
   )
-  local_csv_file("ieugwas_na.csv", ieugwas_data_na, sep = "\t")
-  finterface <- new_file_interface("ieugwas_na.csv", ieugwas_parsing = FALSE) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  expect_warning(get_ieugwas_column_parsing(finterface))
-  parsing_info <- get_ieugwas_column_parsing(finterface) |>
-    suppressWarnings()
-  expect_null(parsing_info)
-
-  # Test with empty FORMAT
-  ieugwas_data_empty <- create_ieugwas_data(
-    format_string = "",
-    trait_name = "trait-empty",
-    trait_data = "",
-    nrows = 1
-  )
-  local_csv_file("ieugwas_empty.csv", ieugwas_data_empty, sep = "\t")
-  finterface <- new_file_interface("ieugwas_empty.csv",
-    ieugwas_parsing = FALSE
-  ) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  expect_warning(
-    parsing_info <- get_ieugwas_column_parsing(finterface),
-    "Unrecognized IEUGWAS FORMAT string"
-  )
-  parsing_info <- get_ieugwas_column_parsing(finterface) |>
-    suppressWarnings()
-  expect_null(parsing_info)
-})
-
-test_that("get_ieugwas_column_parsing validates input correctly", {
-  # Test with non-IEUGWAS file
-  non_ieugwas_data <- data.table::data.table(
-    chr = c(1, 2),
-    pos = c(100, 200),
-    pval = c(0.01, 0.05)
-  )
-  local_csv_file("non_ieugwas.csv", non_ieugwas_data, sep = "\t")
-  finterface <- new_file_interface("non_ieugwas.csv", ieugwas_parsing = FALSE) |>
-    suppressMessages() |>
-    withr::with_output_sink(new = "/dev/null")
-
-  expect_warning(
-    parsing_info <- get_ieugwas_column_parsing(finterface),
-    "Attempting IEUGWAS parsing on non-IEUGWAS file"
-  )
-  parsing_info <- get_ieugwas_column_parsing(finterface) |>
-    suppressWarnings()
-  expect_null(parsing_info)
-
-  # Test with invalid FORMAT strings
-  invalid_formats <- c(
-    "INVALID", # Not a recognized format
-    "ES:INVALID:LP", # Mixed valid/invalid
-    "ES::LP", # Empty component
-    "ES:LP:", # Trailing colon
-    ":ES:LP", # Leading colon
-    "es:se:lp" # Wrong case
-  )
-
-  for (i in seq_along(invalid_formats)) {
-    invalid_data <- create_ieugwas_data(
-      format_string = invalid_formats[i],
-      trait_name = paste0("trait-", i),
-      trait_data = "0.1:0.05:2.3",
-      nrows = 1
+  expect_false(
+    matches_ieugwas_structure(
+      c("CHR", ieugwas_cols_1_9[2:9], "trait-1"),
+      "ES:SE"
     )
-    filename <- paste0("invalid_format_", i, ".csv")
-    local_csv_file(filename, invalid_data, sep = "\t")
-    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE) |>
-      suppressMessages() |>
-      withr::with_output_sink(new = "/dev/null")
-
-    expect_warning(
-      parsing_info <- get_ieugwas_column_parsing(finterface),
-      "Unrecognized IEUGWAS FORMAT string"
-    )
-    parsing_info <- get_ieugwas_column_parsing(finterface) |>
-      suppressWarnings()
-    expect_null(parsing_info)
-  }
-})
-
-test_that("IEUGWAS FORMAT validation regex works correctly", {
-  # Test valid single formats
-  valid_single_formats <- names(filterRead:::ieugwas_formats)
-
-  for (format_code in valid_single_formats) {
-    ieugwas_data <- create_ieugwas_data(
-      format_string = format_code,
-      trait_name = paste0("trait-", tolower(format_code)),
-      trait_data = "test_value",
-      nrows = 1
-    )
-    filename <- paste0("valid_single_", tolower(format_code), ".csv")
-    local_csv_file(filename, ieugwas_data, sep = "\t")
-    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE) |>
-      suppressMessages() |>
-      withr::with_output_sink(new = "/dev/null")
-
-    parsing_info <- get_ieugwas_column_parsing(finterface)
-    expect_false(is.null(parsing_info))
-    expect_equal(length(parsing_info$encoded_names[[1]]), 1)
-  }
-
-  # Test valid combination formats
-  valid_combinations <- c(
-    "ES:SE",
-    "ES:SE:LP",
-    "ES:SE:LP:AF",
-    "ID:AF:SS",
-    "EZ:SI:NC"
   )
-
-  for (combo in valid_combinations) {
-    combo_parts <- strsplit(combo, ":")[[1]]
-    ieugwas_data <- create_ieugwas_data(
-      format_string = combo,
-      trait_name = "combo-trait",
-      trait_data = paste(rep("test", length(combo_parts)), collapse = ":"),
-      nrows = 1
+  expect_false(
+    matches_ieugwas_structure(
+      c(ieugwas_cols_1_9, "trait-1", "trait-2"),
+      "ES:SE"
     )
-    filename <- paste0("valid_combo_", gsub(":", "_", combo), ".csv")
-    local_csv_file(filename, ieugwas_data, sep = "\t")
-    finterface <- new_file_interface(filename, ieugwas_parsing = FALSE) |>
-      suppressMessages() |>
-      withr::with_output_sink(new = "/dev/null")
-
-    parsing_info <- get_ieugwas_column_parsing(finterface)
-    expect_false(is.null(parsing_info))
-    expect_equal(length(parsing_info$encoded_names[[1]]), length(combo_parts))
-  }
+  )
 })
 
 test_that("lists_ieugwas_keys accepts the IEUGWAS keys and combinations", {
@@ -405,4 +90,184 @@ test_that("lists_ieugwas_keys rejects malformed and missing FORMAT", {
   expect_false(lists_ieugwas_keys(""))
   expect_false(lists_ieugwas_keys(NA_character_))
   expect_false(lists_ieugwas_keys(NULL))
+})
+
+test_that("ieugwas_encoded_column_parsing describes the sample column", {
+  parsing_info <- ieugwas_encoded_column_parsing(
+    c(ieugwas_cols_1_9, "ukb-123"),
+    "ES:SE:LP"
+  )
+
+  expect_equal(parsing_info$input_name, "ukb-123")
+  expect_equal(parsing_info$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
+  expect_equal(
+    parsing_info$encoded_names[[1]],
+    c("effect", "effect_se", "log10p")
+  )
+  expect_equal(parsing_info$delimiter, ":")
+
+  parsing_info <- ieugwas_encoded_column_parsing(
+    c(ieugwas_cols_1_9, "trait-456"),
+    "ES:SE:AF"
+  )
+
+  expect_equal(parsing_info$input_name, "trait-456")
+  expect_equal(parsing_info$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
+  expect_equal(parsing_info$encoded_names[[1]], c("effect", "effect_se", "af"))
+  expect_equal(parsing_info$delimiter, ":")
+})
+
+test_that("ieugwas_encoded_column_parsing describes every key at once", {
+  parsing_info <- ieugwas_encoded_column_parsing(
+    c(ieugwas_cols_1_9, "full-trait"),
+    "ES:SE:LP:AF:SS:EZ:SI:NC:ID"
+  )
+
+  expected_regex <- paste(
+    "([-0-9.]+)", "([0-9.]+)", "([0-9.]+)", "([0-9.]+)", "([0-9]+)",
+    "([-0-9.]+)", "([0-9.]+)", "([0-9]+)", "(rs[0-9]+)",
+    sep = ":"
+  )
+
+  expect_equal(parsing_info$input_name, "full-trait")
+  expect_equal(parsing_info$regex, paste0("^", expected_regex, "$"))
+  expect_equal(
+    parsing_info$encoded_names[[1]],
+    c(
+      "effect", "effect_se", "log10p", "af", "sample_size", "zscore",
+      "imputation_accuracy", "n_cases", "rsid"
+    )
+  )
+  expect_equal(parsing_info$delimiter, ":")
+})
+
+test_that("ieugwas_encoded_column_parsing covers every FORMAT key", {
+  parsing_info <- ieugwas_encoded_column_parsing(
+    c(ieugwas_cols_1_9, "simple-trait"),
+    "ES"
+  )
+
+  expect_equal(parsing_info$input_name, "simple-trait")
+  expect_equal(parsing_info$regex, "^([-0-9.]+)$")
+  expect_equal(parsing_info$encoded_names[[1]], "effect")
+  expect_equal(parsing_info$delimiter, ":")
+
+  for (key in names(ieugwas_formats)) {
+    parsing_info <- ieugwas_encoded_column_parsing(
+      c(ieugwas_cols_1_9, "trait-1"),
+      key
+    )
+    expect_equal(parsing_info$encoded_names[[1]], unname(ieugwas_formats[key]))
+  }
+
+  for (combo in c("ES:SE", "ES:SE:LP", "ES:SE:LP:AF", "ID:AF:SS", "EZ:SI:NC")) {
+    combo_parts <- strsplit(combo, ":")[[1]]
+    parsing_info <- ieugwas_encoded_column_parsing(
+      c(ieugwas_cols_1_9, "combo-trait"),
+      combo
+    )
+    expect_equal(
+      parsing_info$encoded_names[[1]],
+      unname(ieugwas_formats[combo_parts])
+    )
+  }
+})
+
+test_that("get_ieugwas_parsing returns NULL for a non-IEUGWAS file", {
+  non_ieugwas_data <- data.table::data.table(
+    chr = c(1, 2),
+    pos = c(100, 200),
+    pval = c(0.01, 0.05)
+  )
+  local_csv_file("non_ieugwas.csv", non_ieugwas_data, sep = "\t")
+  finterface <- new_file_interface(
+    "non_ieugwas.csv",
+    ieugwas_parsing = FALSE
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_null(get_ieugwas_parsing(finterface))
+})
+
+test_that("ieugwas_parsing = TRUE records the encoded column", {
+  ieugwas_data <- create_ieugwas_data(
+    trait_name = "ukbb-neale",
+    trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8", "-0.1:0.04:3.2")
+  )
+  local_csv_file("ieugwas_integration.csv", ieugwas_data, sep = "\t")
+  finterface <- new_file_interface(
+    "ieugwas_integration.csv",
+    ieugwas_parsing = TRUE
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  encoded_columns <- finterface$column_info[!sapply(encoded_names, is.null)]
+
+  expect_equal(nrow(encoded_columns), 1)
+  expect_equal(encoded_columns$input_name, "ukbb-neale")
+  expect_equal(encoded_columns$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
+  expect_equal(
+    encoded_columns$encoded_names[[1]],
+    c("effect", "effect_se", "log10p")
+  )
+  expect_equal(encoded_columns$delimiter, ":")
+})
+
+test_that("ieugwas_parsing = FALSE leaves the sample column packed", {
+  ieugwas_data <- create_ieugwas_data(
+    trait_name = "ukbb-neale",
+    trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8", "-0.1:0.04:3.2")
+  )
+  local_csv_file("ieugwas_integration.csv", ieugwas_data, sep = "\t")
+  finterface <- new_file_interface(
+    "ieugwas_integration.csv",
+    ieugwas_parsing = FALSE
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  encoded_columns <- finterface$column_info[!sapply(encoded_names, is.null)]
+
+  expect_equal(nrow(encoded_columns), 0)
+})
+
+test_that("an uppercase sample identifier is still an IEUGWAS file", {
+  ieugwas_data <- create_ieugwas_data(
+    format_string = "ES:SE:LP:AF",
+    trait_name = "ieuGWAS-42",
+    trait_data = c("0.1:0.05:2.3:0.3", "0.2:0.06:1.8:0.4", "-0.1:0.04:3.2:0.2")
+  )
+  local_csv_file("ieugwas_uppercase.csv", ieugwas_data, sep = "\t")
+  finterface <- new_file_interface("ieugwas_uppercase.csv", build = "b37") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_equal(
+    finterface[][, .(effect, effect_se, log10p, af)],
+    data.table::data.table(
+      effect = c(0.1, 0.2, -0.1),
+      effect_se = c(0.05, 0.06, 0.04),
+      log10p = c(2.3, 1.8, 3.2),
+      af = c(0.3, 0.4, 0.2)
+    )
+  )
+})
+
+test_that("a single-sample genotype VCF opens as a plain file", {
+  genotype_data <- create_ieugwas_data(
+    format_string = "GT:AD:DP",
+    trait_name = "NA12878",
+    trait_data = "0/1:10,5:15",
+    nrows = 1
+  )
+  local_csv_file("genotype_vcf.csv", genotype_data, sep = "\t")
+  finterface <- new_file_interface("genotype_vcf.csv", build = "b37") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_null(get_ieugwas_parsing(finterface))
+  expect_false("effect" %in% column_names(finterface))
+  expect_true("NA12878" %in% column_names(finterface))
 })

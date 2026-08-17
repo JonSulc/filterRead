@@ -65,10 +65,10 @@ new_file_interface <- function(
   finterface$sep <- get_file_separator(finterface)
 
   # Check if IEUGWAS format and add parsing info if so
-  if (ieugwas_parsing && is_ieugwas_file(finterface)) {
+  if (ieugwas_parsing) {
     standard_names_dt <- list(
       standard_names_dt,
-      get_ieugwas_column_parsing(finterface)
+      get_ieugwas_parsing(finterface)
     ) |>
       data.table::rbindlist(fill = TRUE, use.names = TRUE)
   }

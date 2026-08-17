@@ -28,23 +28,41 @@ ieugwas_regexes <- c(
   ID = "(rs[0-9]+)"
 )
 
-#' Check if a file interface points to an IEUGWAS file
+#' Parsing specification for an IEUGWAS file
 #'
-#' IEUGWAS files have 10 columns with specific names and format.
+#' Reads the file's raw column names and its FORMAT field once, and
+#' returns the encoded-column parsing specification when they describe an
+#' IEUGWAS file.
 #'
 #' @param finterface A file_interface object
+#' @return Column parsing specification, or NULL when the file is not
+#'   IEUGWAS
+#' @keywords internal
+get_ieugwas_parsing <- function(finterface) {
+  raw_names <- column_names(finterface, raw = TRUE)
+  format <- head(finterface)$FORMAT
+  if (!matches_ieugwas_structure(raw_names, format)) {
+    return()
+  }
+  ieugwas_encoded_column_parsing(raw_names, format)
+}
+
+#' Check whether column names and FORMAT describe an IEUGWAS file
+#'
+#' An IEUGWAS file carries the nine standard VCF columns followed by a
+#' single sample column, and a FORMAT string listing IEUGWAS keys. The
+#' sample column's name is the GWAS identifier, which is arbitrary and
+#' plays no part in the test.
+#'
+#' @param raw_names Character vector of the file's input column
+#'   names
+#' @param format The file's FORMAT field value
 #' @return Logical indicating whether the file is IEUGWAS format
 #' @keywords internal
-is_ieugwas_file <- function(finterface) {
-  fcolumn_names <- column_names(
-    finterface,
-    raw = TRUE
-  )
-  if (length(fcolumn_names) != 10) {
-    return(FALSE)
-  }
-  all(fcolumn_names[1:9] == ieugwas_cols_1_9) &&
-    grepl("^[a-z0-9-]+$", fcolumn_names[10])
+matches_ieugwas_structure <- function(raw_names, format) {
+  length(raw_names) == 10L &&
+    all(raw_names[1:9] == ieugwas_cols_1_9) &&
+    lists_ieugwas_keys(format)
 }
 
 #' Check whether a FORMAT string lists only IEUGWAS keys
@@ -66,26 +84,18 @@ lists_ieugwas_keys <- function(format) {
 #' Get column parsing specification for IEUGWAS files
 #'
 #' Parses the FORMAT field to determine how to extract values from the
-#' encoded GWAS column.
+#' encoded GWAS column, the tenth of the file.
 #'
-#' @param finterface A file_interface object
-#' @return Column parsing specification, or NULL if parsing fails
+#' @param raw_names Character vector of the file's input column
+#'   names
+#' @param format The file's FORMAT field value
+#' @return Column parsing specification
 #' @keywords internal
-get_ieugwas_column_parsing <- function(finterface) {
-  if (!is_ieugwas_file(finterface)) {
-    warning("Attempting IEUGWAS parsing on non-IEUGWAS file, please report")
-    return()
-  }
-  format <- head(finterface)$FORMAT
-  if (!lists_ieugwas_keys(format)) {
-    warning("Unrecognized IEUGWAS FORMAT string, please report")
-    return()
-  }
-  secondary_columns <- head(finterface)$FORMAT |>
-    strsplit(":") |>
+ieugwas_encoded_column_parsing <- function(raw_names, format) {
+  secondary_columns <- strsplit(format, ":") |>
     unlist()
   data.table::data.table(
-    input_name = column_names(finterface, raw = TRUE)[10],
+    input_name = raw_names[10],
     regex = sprintf(
       "^%s$",
       paste(
