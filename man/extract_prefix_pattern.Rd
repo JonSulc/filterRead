@@ -7,7 +7,7 @@
 extract_prefix_pattern(line)
 }
 \arguments{
-\item{line}{Character string, or character(0)}
+\item{line}{Character vector; only its first element is examined}
 }
 \value{
 Anchored, escaped extended regex matching the line's leading run of

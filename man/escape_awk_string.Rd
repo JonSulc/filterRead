@@ -14,7 +14,8 @@ Escaped character vector
 }
 \description{
 Escapes backslashes and double quotes so the value can be safely embedded
-between awk's `"..."` delimiters. For escaping a value used as a regex
-pattern (between `/.../`) use [escape_awk_regex()] instead.
+between awk's `"..."` delimiters. A value written between `/.../` is read
+as a regex instead, where the escaping has to answer to the regex dialect
+rather than to string quoting.
 }
 \keyword{internal}

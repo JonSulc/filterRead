@@ -818,6 +818,36 @@ test_that("field_shapes_agree compares the dominant separator", {
   expect_true(is.na(field_shapes_agree("ID", "rs1")))
 })
 
+test_that("field_shapes_agree takes the separator from its first argument", {
+  expect_false(
+    field_shapes_agree("see doi:10.1/x, table 2, note", "chr,pos,ref")
+  )
+  expect_true(
+    field_shapes_agree("chr,pos,ref", "see doi:10.1/x, table 2, note")
+  )
+  expect_false(field_shapes_agree("chr,pos,ref", "rs1"))
+  expect_false(field_shapes_agree("ID", "rs1,rs2"))
+})
+
+test_that("escape_extended_regex escapes every metacharacter", {
+  expect_equal(escape_extended_regex("#CHROM"), "#CHROM")
+  expect_equal(
+    escape_extended_regex(".*+?^$()[]{}|"),
+    "\\.\\*\\+\\?\\^\\$\\(\\)\\[\\]\\{\\}\\|"
+  )
+  expect_equal(escape_extended_regex("[test]"), "\\[test\\]")
+  expect_equal(escape_extended_regex("(a+b)?"), "\\(a\\+b\\)\\?")
+  expect_equal(escape_extended_regex("{1,2}"), "\\{1,2\\}")
+  expect_equal(escape_extended_regex("a|b"), "a\\|b")
+  expect_equal(escape_extended_regex("\\"), "\\\\")
+})
+
+test_that("escape_extended_regex escapes the backslash before the rest", {
+  expect_equal(escape_extended_regex("\\."), "\\\\\\.")
+  expect_equal(escape_extended_regex("\\$"), "\\\\\\$")
+  expect_true(grepl(escape_extended_regex("a\\b"), "a\\b"))
+})
+
 character_summary_stats <- function() {
   data.table::data.table(
     chr    = c("1", "2"),
@@ -983,6 +1013,7 @@ test_that("extract_prefix_pattern anchors and escapes the leading run", {
   expect_equal(extract_prefix_pattern("##fileformat=VCFv4.2"), "^##")
   expect_equal(extract_prefix_pattern("{chr,pos,ref"), "^\\{")
   expect_equal(extract_prefix_pattern("$.*chr,pos"), "^\\$\\.\\*")
+  expect_equal(extract_prefix_pattern(c("#CHROM\tPOS", "1\t100")), "^#")
 })
 
 test_that("A header starting with a regex metacharacter is read", {
@@ -1002,6 +1033,9 @@ test_that("A header starting with a regex metacharacter is read", {
 })
 
 test_that("A header starting with an apostrophe is detected", {
+  # Covers prefix detection only. Building a file_interface on this file
+  # fails further down: the read-only awk script is wrapped in single quotes
+  # for the shell, which an apostrophe in the trim prefix closes early.
   writeLines(
     c(
       "'chr,pos,ref",

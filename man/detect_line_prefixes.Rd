@@ -17,9 +17,10 @@ List with elements `comment` and `trim`, each an anchored regex or
 Decides which of a file's leading lines is the header, and reports the
 prefix carried by the lines above it and the prefix carried by the header
 itself. A prefixed first line is the header when no line follows it, or
-when stripping the prefix leaves it with the field shape of the first line
-below. Otherwise the prefix marks comments, and the header is the first
-line that does not carry it. The trim prefix is what awk strips from the
-header, e.g., '#CHROM' -> 'CHROM'.
+when [field_shapes_agree()] finds the first line below carrying the
+stripped line's dominant separator the same number of times. Otherwise the
+prefix marks comments, and the header is the first line that does not carry
+it. The trim prefix is what awk strips from the header, e.g., '#CHROM' ->
+'CHROM'.
 }
 \keyword{internal}

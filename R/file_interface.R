@@ -215,11 +215,12 @@ read_leading_lines <- function(
 #' the run literally. The escaping targets extended regular expressions, the
 #' dialect shared by R's `sub()` and `grep -E`.
 #'
-#' @param line Character string, or character(0)
+#' @param line Character vector; only its first element is examined
 #' @return Anchored, escaped extended regex matching the line's leading run of
 #'   punctuation, or NULL when the line starts with none
 #' @keywords internal
 extract_prefix_pattern <- function(line) {
+  line <- head(line, 1)
   if (length(line) == 0 || nchar(line) == 0) {
     return(NULL)
   }
@@ -287,10 +288,11 @@ field_shapes_agree <- function(
 #' Decides which of a file's leading lines is the header, and reports the
 #' prefix carried by the lines above it and the prefix carried by the header
 #' itself. A prefixed first line is the header when no line follows it, or
-#' when stripping the prefix leaves it with the field shape of the first line
-#' below. Otherwise the prefix marks comments, and the header is the first
-#' line that does not carry it. The trim prefix is what awk strips from the
-#' header, e.g., '#CHROM' -> 'CHROM'.
+#' when [field_shapes_agree()] finds the first line below carrying the
+#' stripped line's dominant separator the same number of times. Otherwise the
+#' prefix marks comments, and the header is the first line that does not carry
+#' it. The trim prefix is what awk strips from the header, e.g., '#CHROM' ->
+#' 'CHROM'.
 #'
 #' @param finterface A file_interface object
 #' @return List with elements `comment` and `trim`, each an anchored regex or
