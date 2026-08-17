@@ -1040,3 +1040,27 @@ test_that("A metacharacter header's prefix is stripped from the names", {
   expect_equal(column_names(finterface), c("chr", "pos", "ref"))
   expect_equal(nrow(read_file_interface(finterface)), 2L)
 })
+
+test_that("A single comma-rich data row reads with the detected separator", {
+  local_file_with_comments(
+    "single_comma_rich_row.vcf",
+    comment_lines = character(0),
+    header_prefix = "#",
+    content_dt = data.table::data.table(
+      CHROM = "1",
+      POS   = "100",
+      ID    = "rs1",
+      REF   = "A",
+      ALT   = "G",
+      INFO  = "CSQ=a,b,c,d,e,f,g,h"
+    )
+  )
+  finterface <- new_file_interface("single_comma_rich_row.vcf", build = "b38")
+
+  expect_equal(finterface$sep, "\t")
+  expect_equal(
+    column_names(finterface),
+    c("chr", "pos", "rsid", "ref", "alt", "INFO")
+  )
+  expect_equal(nrow(read_file_interface(finterface)), 1L)
+})

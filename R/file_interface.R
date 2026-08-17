@@ -572,6 +572,9 @@ empty_read_for_query <- function(
     data.table::fread(
       cmd = paste("bash -c", shQuote(command_line)),
       header = FALSE,
+      # awk preserves the file's separator, and the rows a filter matches are
+      # too small a sample to detect it from
+      sep = finterface$sep,
       ...,
       col.names = column_names(
         finterface,
