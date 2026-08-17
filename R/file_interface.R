@@ -134,7 +134,10 @@ is_gzipped <- function(
 #' Detect the field separator of a file
 #'
 #' Uses data.table's fread to detect the most likely field separator
-#' by analyzing the first 100 lines of the file.
+#' by analyzing the first 100 lines of the file. fread reports every
+#' candidate it weighs, so the winner is picked the way fread picks it:
+#' the candidate parsing the most lines, and among those, the one
+#' splitting them into the most fields.
 #'
 #' @param finterface A file_interface object
 #' @return Character string containing the detected separator
@@ -142,7 +145,13 @@ is_gzipped <- function(
 get_file_separator <- function(
   finterface
 ) {
-  dt_output <- head(finterface, nlines = 100L, verbose = TRUE) |>
+  # Detection needs fread to sniff, so ask for the automatic separator
+  dt_output <- head(
+    finterface,
+    nlines = 100L,
+    sep = "auto",
+    verbose = TRUE
+  ) |>
     capture.output()
 
   # The separator is reported either quoted (e.g. sep=',', or sep=' ' for a
@@ -151,11 +160,11 @@ get_file_separator <- function(
   # characters.
   seps <- stringr::str_match(
     dt_output,
-    "sep=('[^']*'|[^ ]+)[ ]+with ([0-9]+) lines"
+    "sep=('[^']*'|[^ ]+)[ ]+with ([0-9]+) lines of ([0-9]+) fields"
   )
   seps <- seps[!is.na(seps[, 1L]), -1L, drop = FALSE]
   best_sep <- seps[
-    which.max(as.numeric(seps[, 2L])),
+    order(-as.numeric(seps[, 2L]), -as.numeric(seps[, 3L]))[1L],
     1L
   ]
   # '\t' is reported in hex ('0x9')
@@ -389,6 +398,11 @@ empty_read_result <- function(read_columns) {
 #'   string instead of executing it. Useful for debugging or piping
 #'   to other commands. Default is FALSE.
 #' @param ... Additional arguments passed to data.table::fread().
+#' @param sep Field separator for the read. Defaults to the separator
+#'   detected for the file: awk preserves it, and the handful of rows a
+#'   read emits is too small a sample to detect it from, since a comma
+#'   inside a single field is enough to make fread split on the wrong
+#'   character.
 #'
 #' @return A data.table containing the first nrows of the file.
 #'
@@ -403,7 +417,8 @@ head.file_interface <- function(
   x,
   nlines = 1,
   return_only_cmd = FALSE,
-  ...
+  ...,
+  sep = x$sep
 ) {
   # nlines = 0 cannot be served via awk: empty fread input warns and
   # returns NULL. column_info does not record column types, so read one
@@ -433,6 +448,7 @@ head.file_interface <- function(
     return(
       data.table::fread(
         cmd = paste("bash -c", shQuote(cmd)),
+        sep = sep,
         ...
       )
     )
@@ -442,6 +458,7 @@ head.file_interface <- function(
     data.table::fread(
       cmd = paste("bash -c", shQuote(cmd)),
       header = FALSE,
+      sep = sep,
       col.names = read_columns,
       colClasses = column_class_overrides(x),
       ...
@@ -507,6 +524,11 @@ empty_read_for_query <- function(
 #' @param nlines Optional integer cap on the number of matching lines to
 #'   return. NULL or `integer(0)` means no cap.
 #' @param ... Additional arguments passed to data.table::fread().
+#' @param sep Field separator for the read. Defaults to the separator
+#'   detected for the file: awk preserves it, and the handful of rows a
+#'   read emits is too small a sample to detect it from, since a comma
+#'   inside a single field is enough to make fread split on the wrong
+#'   character.
 #' @param return_only_cmd Logical. If TRUE, returns the awk command
 #'   string instead of executing it. Useful for debugging or piping
 #'   to other commands. Default is FALSE.
@@ -535,6 +557,7 @@ empty_read_for_query <- function(
   conditions = NULL,
   nlines = NULL,
   ...,
+  sep = finterface$sep,
   return_only_cmd = FALSE
 ) {
   fcondition <- new_filter_condition(
@@ -572,9 +595,7 @@ empty_read_for_query <- function(
     data.table::fread(
       cmd = paste("bash -c", shQuote(command_line)),
       header = FALSE,
-      # awk preserves the file's separator, and the rows a filter matches are
-      # too small a sample to detect it from
-      sep = finterface$sep,
+      sep = sep,
       ...,
       col.names = column_names(
         finterface,

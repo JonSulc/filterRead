@@ -14,6 +14,9 @@ Character string containing the detected separator
 }
 \description{
 Uses data.table's fread to detect the most likely field separator
-by analyzing the first 100 lines of the file.
+by analyzing the first 100 lines of the file. fread reports every
+candidate it weighs, so the winner is picked the way fread picks it:
+the candidate parsing the most lines, and among those, the one
+splitting them into the most fields.
 }
 \keyword{internal}

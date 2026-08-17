@@ -4,7 +4,7 @@
 \alias{head.file_interface}
 \title{Return first rows of a file interface}
 \usage{
-\method{head}{file_interface}(x, nlines = 1, return_only_cmd = FALSE, ...)
+\method{head}{file_interface}(x, nlines = 1, return_only_cmd = FALSE, ..., sep = x$sep)
 }
 \arguments{
 \item{x}{A file_interface object.}
@@ -16,6 +16,12 @@ string instead of executing it. Useful for debugging or piping
 to other commands. Default is FALSE.}
 
 \item{...}{Additional arguments passed to data.table::fread().}
+
+\item{sep}{Field separator for the read. Defaults to the separator
+detected for the file: awk preserves it, and the handful of rows a
+read emits is too small a sample to detect it from, since a comma
+inside a single field is enough to make fread split on the wrong
+character.}
 }
 \value{
 A data.table containing the first nrows of the file.

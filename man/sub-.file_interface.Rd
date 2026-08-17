@@ -4,7 +4,14 @@
 \alias{[.file_interface}
 \title{Subset a file interface with filtering conditions}
 \usage{
-\method{[}{file_interface}(finterface, conditions = NULL, nlines = NULL, ..., return_only_cmd = FALSE)
+\method{[}{file_interface}(
+  finterface,
+  conditions = NULL,
+  nlines = NULL,
+  ...,
+  sep = finterface$sep,
+  return_only_cmd = FALSE
+)
 }
 \arguments{
 \item{finterface}{A file_interface object.}
@@ -18,6 +25,12 @@ and logical operators (&, |). Examples: \code{pval < 5e-8},
 return. NULL or `integer(0)` means no cap.}
 
 \item{...}{Additional arguments passed to data.table::fread().}
+
+\item{sep}{Field separator for the read. Defaults to the separator
+detected for the file: awk preserves it, and the handful of rows a
+read emits is too small a sample to detect it from, since a comma
+inside a single field is enough to make fread split on the wrong
+character.}
 
 \item{return_only_cmd}{Logical. If TRUE, returns the awk command
 string instead of executing it. Useful for debugging or piping

@@ -1063,4 +1063,73 @@ test_that("A single comma-rich data row reads with the detected separator", {
     c("chr", "pos", "rsid", "ref", "alt", "INFO")
   )
   expect_equal(nrow(read_file_interface(finterface)), 1L)
+  expect_equal(head(finterface, 1), read_file_interface(finterface))
 })
+
+test_that("Every read path agrees on a comma-rich file", {
+  local_file_with_comments(
+    "comma_rich_paths.vcf",
+    comment_lines = character(0),
+    header_prefix = "#",
+    content_dt = data.table::data.table(
+      CHROM = c("1", "1"),
+      POS   = c("1000", "2000"),
+      ID    = c("rs1", "rs2"),
+      REF   = c("A", "C"),
+      ALT   = c("G", "T"),
+      INFO  = c("CSQ=a,b,c,d,e,f,g,h", "CSQ=i,j,k,l,m,n,o,p")
+    )
+  )
+  finterface <- new_file_interface("comma_rich_paths.vcf", build = "b38")
+
+  expect_equal(
+    names(head(finterface, 1)),
+    c("chr", "pos", "rsid", "ref", "alt", "INFO")
+  )
+  expect_equal(nrow(head(finterface, 1)), 1L)
+  expect_equal(head(finterface, 1)$INFO, "CSQ=a,b,c,d,e,f,g,h")
+  expect_equal(
+    names(finterface[5000 < pos]),
+    c("chr", "pos", "rsid", "ref", "alt", "INFO")
+  )
+  expect_equal(nrow(finterface[5000 < pos]), 0L)
+})
+
+test_that("head does not split a row on a separator inside a field", {
+  local_file_with_comments(
+    "semicolon_field.tsv",
+    comment_lines = character(0),
+    header_prefix = "",
+    content_dt = data.table::data.table(
+      chr  = "1",
+      pos  = "1000",
+      rsid = "rs1",
+      ref  = "A",
+      alt  = "G",
+      INFO = "a;b;c;d;e;f"
+    )
+  )
+  finterface <- new_file_interface("semicolon_field.tsv", build = "b38")
+
+  expect_equal(head(finterface, 1), read_file_interface(finterface))
+  expect_equal(head(finterface, 1)$INFO, "a;b;c;d;e;f")
+})
+
+test_that("A caller's separator reaches both read paths", {
+  local_file_with_comments(
+    "caller_sep.csv",
+    comment_lines = character(0),
+    header_prefix = "",
+    content_dt = data.table::data.table(
+      chr = c("1", "2"),
+      pos = c("100", "200"),
+      ref = c("A", "G")
+    ),
+    sep = ","
+  )
+  finterface <- new_file_interface("caller_sep.csv", build = "b38")
+
+  expect_equal(finterface[, sep = ","], finterface[])
+  expect_equal(head(finterface, 1, sep = ","), head(finterface, 1))
+})
+
