@@ -256,9 +256,9 @@ test_that("awk_load_file_cmd: complex patterns", {
   FS = \"|\"
   OFS = \"|\"
 }
-/\\\\*\\\\*/ { next }
+/\\*\\*/ { next }
 {
-  gsub(/\\\\*/, \"\", $0)
+  gsub(/\\*/, \"\", $0)
   print $0
 }' 'complex.txt'"
   )

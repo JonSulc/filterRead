@@ -34,7 +34,7 @@ test_that("build_comment_filter_pattern creates correct pattern", {
 
 test_that("build_comment_filter_pattern handles special characters", {
   result <- build_comment_filter_pattern("\\*\\*")
-  expect_equal(result, "/\\\\*\\\\*/ { next }")
+  expect_equal(result, "/\\*\\*/ { next }")
 })
 
 test_that("build_comment_filter_pattern escapes forward slashes", {
@@ -42,9 +42,9 @@ test_that("build_comment_filter_pattern escapes forward slashes", {
   expect_equal(result, "/^\\/\\// { next }")
 })
 
-test_that("build_comment_filter_pattern escapes brackets", {
+test_that("build_comment_filter_pattern keeps a bracket expression", {
   result <- build_comment_filter_pattern("^[test]")
-  expect_equal(result, "/^\\[test\\]/ { next }")
+  expect_equal(result, "/^[test]/ { next }")
 })
 
 test_that("build_comment_filter_pattern handles complex patterns", {
@@ -64,7 +64,7 @@ test_that("build_trim_prefix_code creates correct gsub command", {
 
 test_that("build_trim_prefix_code handles special regex characters", {
   result <- build_trim_prefix_code("\\*")
-  expect_equal(result, 'gsub(/\\\\*/, "", $0)')
+  expect_equal(result, 'gsub(/\\*/, "", $0)')
 })
 
 test_that("build_trim_prefix_code escapes forward slashes", {
@@ -72,15 +72,43 @@ test_that("build_trim_prefix_code escapes forward slashes", {
   expect_equal(result, 'gsub(/^\\/\\//, "", $0)')
 })
 
-test_that("build_trim_prefix_code escapes brackets", {
+test_that("build_trim_prefix_code keeps a bracket expression", {
   result <- build_trim_prefix_code("^[prefix]")
-  expect_equal(result, 'gsub(/^\\[prefix\\]/, "", $0)')
+  expect_equal(result, 'gsub(/^[prefix]/, "", $0)')
 })
 
-test_that("build_trim_prefix_code handles complex patterns", {
+test_that("build_trim_prefix_code keeps an escaped backslash", {
   expect_equal(
-    build_trim_prefix_code("^\\/\\/"),
-    'gsub(/^\\\\\\/\\\\\\//, "", $0)'
+    build_trim_prefix_code("^\\\\"),
+    'gsub(/^\\\\/, "", $0)'
+  )
+})
+
+test_that("build_comment_filter_pattern keeps an escaped metacharacter", {
+  expect_equal(
+    build_comment_filter_pattern("^\\{"),
+    "/^\\{/ { next }"
+  )
+})
+
+test_that("build_comment_filter_pattern escapes the regex delimiter", {
+  expect_equal(
+    build_comment_filter_pattern("^\\{/"),
+    "/^\\{\\// { next }"
+  )
+})
+
+test_that("build_trim_prefix_code keeps an escaped metacharacter", {
+  expect_equal(
+    build_trim_prefix_code("^\\{"),
+    'gsub(/^\\{/, "", $0)'
+  )
+})
+
+test_that("build_trim_prefix_code escapes the regex delimiter", {
+  expect_equal(
+    build_trim_prefix_code("^\\{/"),
+    'gsub(/^\\{\\//, "", $0)'
   )
 })
 
@@ -164,61 +192,6 @@ test_that("build_awk_begin_block handles separator with special chars", {
   expect_equal(result, "BEGIN{\n  FS = \"|\"\n  OFS = \"|\"\n}")
 })
 
-# Tests for escape_awk_regex helper function
-test_that("escape_awk_regex handles NULL input", {
-  result <- escape_awk_regex(NULL)
-  expect_null(result)
-})
-
-test_that("escape_awk_regex escapes forward slashes", {
-  result <- escape_awk_regex("^//")
-  expect_equal(result, "^\\/\\/")
-})
-
-test_that("escape_awk_regex escapes backslashes", {
-  result <- escape_awk_regex("^\\")
-  expect_equal(result, "^\\\\")
-})
-
-test_that("escape_awk_regex escapes square brackets", {
-  result <- escape_awk_regex("^[test]")
-  expect_equal(result, "^\\[test\\]")
-})
-
-test_that("escape_awk_regex escapes parentheses", {
-  result <- escape_awk_regex("^(test)")
-  expect_equal(result, "^\\(test\\)")
-})
-
-test_that("escape_awk_regex escapes curly braces", {
-  result <- escape_awk_regex("^{3}")
-  expect_equal(result, "^\\{3\\}")
-})
-
-test_that("escape_awk_regex escapes quantifiers", {
-  result <- escape_awk_regex("^test+?")
-  expect_equal(result, "^test\\+\\?")
-})
-
-test_that("escape_awk_regex escapes pipe character", {
-  result <- escape_awk_regex("^test|alt")
-  expect_equal(result, "^test\\|alt")
-})
-
-test_that("escape_awk_regex handles multiple special characters", {
-  result <- escape_awk_regex("^[/\\]+?{test}")
-  expect_equal(result, "^\\[\\/\\\\\\]\\+\\?\\{test\\}")
-})
-
-test_that("escape_awk_regex preserves anchors and wildcards", {
-  result <- escape_awk_regex("^test.*$")
-  expect_equal(result, "^test.*$")
-})
-
-test_that("escape_awk_regex escapes literal backslashes", {
-  expect_equal(escape_awk_regex("a\\b"), "a\\\\b")
-  expect_equal(escape_awk_regex("\\"), "\\\\")
-})
 
 test_that("escape_awk_string escapes backslashes and double quotes", {
   expect_equal(escape_awk_string("plain"), "plain")

@@ -1,15 +1,3 @@
-test_that("escape_awk_regex handles NULL", {
-  expect_null(escape_awk_regex(NULL))
-})
-
-test_that("escape_awk_regex escapes special characters", {
-  expect_equal(escape_awk_regex("/"), "\\/")
-  expect_equal(escape_awk_regex("[test]"), "\\[test\\]")
-  expect_equal(escape_awk_regex("(a+b)?"), "\\(a\\+b\\)\\?")
-  expect_equal(escape_awk_regex("{1,2}"), "\\{1,2\\}")
-  expect_equal(escape_awk_regex("a|b"), "a\\|b")
-  expect_equal(escape_awk_regex("plain"), "plain")
-})
 
 test_that("increase_indent adds indentation after newlines", {
   expect_equal(increase_indent("line1"), "line1")

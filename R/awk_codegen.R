@@ -412,24 +412,21 @@ wrap_full_code_block <- function(
 # These functions generate individual awk code fragments for specific tasks.
 # They have no dependencies on other awk.R functions.
 
-#' Escape special regex characters for awk patterns
+#' Escape the delimiter of an awk regex literal
 #'
-#' Escapes characters that have special meaning in awk regex patterns:
-#' /, [, ], (, ), \{, \}, +, ?, |. For escaping a value embedded inside an
-#' awk string literal (between `"..."`) use [escape_awk_string()] instead.
+#' Awk regexes are extended regular expressions, so `pattern` reaches awk with
+#' its metacharacters intact. Only `/`, which closes an awk regex literal, is
+#' escaped.
 #'
-#' @param pattern Character string to escape
-#' @return Escaped pattern safe for use in awk regex, or NULL if input is NULL
+#' @param pattern Extended regex to escape
+#' @return Pattern safe to place between the `/` of an awk regex literal, or
+#'   NULL if input is NULL
 #' @keywords internal
-escape_awk_regex <- function(pattern) {
+escape_awk_regex_delimiter <- function(pattern) {
   if (is.null(pattern)) {
     return(NULL)
   }
-  chars_to_escape <- c("\\", "/", "[", "]", "(", ")", "{", "}", "+", "?", "|")
-  for (char in chars_to_escape) {
-    pattern <- gsub(char, paste0("\\", char), pattern, fixed = TRUE)
-  }
-  pattern
+  gsub("/", "\\/", pattern, fixed = TRUE)
 }
 
 #' Build shell command to read file (cat or zcat)
@@ -447,14 +444,15 @@ build_file_read_cmd <- function(finterface) {
 
 #' Build awk pattern to skip comment lines
 #'
-#' @param comment_prefix Prefix that marks comment lines (e.g., "#")
+#' @param comment_prefix Anchored extended regex matching comment lines
+#'   (e.g., "^#")
 #' @return Awk pattern like \code{/^#/ \{ next \}}, or NULL if no prefix
 #' @keywords internal
 build_comment_filter_pattern <- function(comment_prefix) {
   if (is.null(comment_prefix)) {
     return(NULL)
   }
-  escaped_prefix <- escape_awk_regex(comment_prefix)
+  escaped_prefix <- escape_awk_regex_delimiter(comment_prefix)
   sprintf("/%s/ { next }", escaped_prefix)
 }
 
@@ -472,14 +470,15 @@ build_header_skip_pattern <- function() {
 
 #' Build awk code to remove line prefix
 #'
-#' @param trim_prefix Prefix to remove from each line
+#' @param trim_prefix Anchored extended regex matching the prefix to remove
+#'   from each line
 #' @return Awk gsub() call to remove prefix, or NULL if no prefix
 #' @keywords internal
 build_trim_prefix_code <- function(trim_prefix) {
   if (is.null(trim_prefix)) {
     return(NULL)
   }
-  escaped_prefix <- escape_awk_regex(trim_prefix)
+  escaped_prefix <- escape_awk_regex_delimiter(trim_prefix)
   sprintf('gsub(/%s/, "", $0)', escaped_prefix)
 }
 

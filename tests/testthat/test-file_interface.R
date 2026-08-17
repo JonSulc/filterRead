@@ -1024,3 +1024,19 @@ test_that("A header starting with an apostrophe is detected", {
     list(comment = NULL, trim = "^'")
   )
 })
+
+test_that("A metacharacter header's prefix is stripped from the names", {
+  writeLines(
+    c(
+      "{chr,pos,ref",
+      "1,100,A",
+      "2,200,G"
+    ),
+    "metacharacter_names.csv"
+  )
+  withr::defer(file.remove("metacharacter_names.csv"))
+  finterface <- new_file_interface("metacharacter_names.csv", build = "b38")
+
+  expect_equal(column_names(finterface), c("chr", "pos", "ref"))
+  expect_equal(nrow(read_file_interface(finterface)), 2L)
+})

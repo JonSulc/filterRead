@@ -7,7 +7,8 @@
 build_comment_filter_pattern(comment_prefix)
 }
 \arguments{
-\item{comment_prefix}{Prefix that marks comment lines (e.g., "#")}
+\item{comment_prefix}{Anchored extended regex matching comment lines
+(e.g., "^#")}
 }
 \value{
 Awk pattern like \code{/^#/ \{ next \}}, or NULL if no prefix

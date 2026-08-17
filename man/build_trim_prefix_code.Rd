@@ -7,7 +7,8 @@
 build_trim_prefix_code(trim_prefix)
 }
 \arguments{
-\item{trim_prefix}{Prefix to remove from each line}
+\item{trim_prefix}{Anchored extended regex matching the prefix to remove
+from each line}
 }
 \value{
 Awk gsub() call to remove prefix, or NULL if no prefix
