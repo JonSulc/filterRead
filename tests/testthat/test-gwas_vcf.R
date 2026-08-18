@@ -65,6 +65,13 @@ test_that("matches_gwas_vcf_structure rejects other column layouts", {
   )
 })
 
+test_that("matches_gwas_vcf_structure yields FALSE for an NA name", {
+  raw_names <- c(vcf_cols_1_9, "trait-1")
+  raw_names[3] <- NA_character_
+
+  expect_false(matches_gwas_vcf_structure(raw_names, "ES:SE:LP"))
+})
+
 test_that("lists_gwas_vcf_keys accepts the GWAS-VCF keys and combinations", {
   for (key in names(gwas_vcf_formats)) {
     expect_true(lists_gwas_vcf_keys(key))
@@ -93,10 +100,7 @@ test_that("lists_gwas_vcf_keys rejects malformed and missing FORMAT", {
 })
 
 test_that("gwas_vcf_encoded_column_parsing describes the sample column", {
-  parsing_info <- gwas_vcf_encoded_column_parsing(
-    c(vcf_cols_1_9, "ukb-123"),
-    "ES:SE:LP"
-  )
+  parsing_info <- gwas_vcf_encoded_column_parsing("ukb-123", "ES:SE:LP")
 
   expect_equal(parsing_info$input_name, "ukb-123")
   expect_equal(parsing_info$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
@@ -106,10 +110,7 @@ test_that("gwas_vcf_encoded_column_parsing describes the sample column", {
   )
   expect_equal(parsing_info$delimiter, ":")
 
-  parsing_info <- gwas_vcf_encoded_column_parsing(
-    c(vcf_cols_1_9, "trait-456"),
-    "ES:SE:AF"
-  )
+  parsing_info <- gwas_vcf_encoded_column_parsing("trait-456", "ES:SE:AF")
 
   expect_equal(parsing_info$input_name, "trait-456")
   expect_equal(parsing_info$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
@@ -119,7 +120,7 @@ test_that("gwas_vcf_encoded_column_parsing describes the sample column", {
 
 test_that("gwas_vcf_encoded_column_parsing describes every key at once", {
   parsing_info <- gwas_vcf_encoded_column_parsing(
-    c(vcf_cols_1_9, "full-trait"),
+    "full-trait",
     "ES:SE:LP:AF:SS:EZ:SI:NC:ID"
   )
 
@@ -142,10 +143,7 @@ test_that("gwas_vcf_encoded_column_parsing describes every key at once", {
 })
 
 test_that("gwas_vcf_encoded_column_parsing covers every FORMAT key", {
-  parsing_info <- gwas_vcf_encoded_column_parsing(
-    c(vcf_cols_1_9, "simple-trait"),
-    "ES"
-  )
+  parsing_info <- gwas_vcf_encoded_column_parsing("simple-trait", "ES")
 
   expect_equal(parsing_info$input_name, "simple-trait")
   expect_equal(parsing_info$regex, "^([-0-9.]+)$")
@@ -153,19 +151,13 @@ test_that("gwas_vcf_encoded_column_parsing covers every FORMAT key", {
   expect_equal(parsing_info$delimiter, ":")
 
   for (key in names(gwas_vcf_formats)) {
-    parsing_info <- gwas_vcf_encoded_column_parsing(
-      c(vcf_cols_1_9, "trait-1"),
-      key
-    )
+    parsing_info <- gwas_vcf_encoded_column_parsing("trait-1", key)
     expect_equal(parsing_info$encoded_names[[1]], unname(gwas_vcf_formats[key]))
   }
 
   for (combo in c("ES:SE", "ES:SE:LP", "ES:SE:LP:AF", "ID:AF:SS", "EZ:SI:NC")) {
     combo_parts <- strsplit(combo, ":")[[1]]
-    parsing_info <- gwas_vcf_encoded_column_parsing(
-      c(vcf_cols_1_9, "combo-trait"),
-      combo
-    )
+    parsing_info <- gwas_vcf_encoded_column_parsing("combo-trait", combo)
     expect_equal(
       parsing_info$encoded_names[[1]],
       unname(gwas_vcf_formats[combo_parts])
@@ -173,7 +165,9 @@ test_that("gwas_vcf_encoded_column_parsing covers every FORMAT key", {
   }
 })
 
-test_that("get_gwas_vcf_parsing returns NULL for a non-GWAS-VCF file", {
+test_that("get_gwas_vcf_parsing rejects a constructed interface", {
+  # head() gives the file's own header only while column_info is
+  # absent, which is what the precondition guards.
   non_gwas_vcf_data <- data.table::data.table(
     chr = c(1, 2),
     pos = c(100, 200),
@@ -187,7 +181,7 @@ test_that("get_gwas_vcf_parsing returns NULL for a non-GWAS-VCF file", {
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
 
-  expect_null(get_gwas_vcf_parsing(finterface))
+  expect_error(get_gwas_vcf_parsing(finterface), "column_info")
 })
 
 test_that("gwas_vcf_parsing = TRUE records the encoded column", {
@@ -269,7 +263,44 @@ test_that("a single-sample genotype VCF opens as a plain file", {
       withr::with_output_sink(new = "/dev/null")
   )
 
-  expect_null(get_gwas_vcf_parsing(finterface))
   expect_false("effect" %in% column_names(finterface))
   expect_true("na12878" %in% column_names(finterface))
+})
+
+test_that("a GWAS-VCF with meta lines and a #CHROM header is detected", {
+  local_file_with_comments(
+    "gwas_vcf_commented.vcf.gz",
+    comment_lines = c(
+      "##fileformat=VCFv4.2",
+      "##FORMAT=<ID=ES,Number=A,Type=Float,Description=\"Effect size\">"
+    ),
+    header_prefix = "#",
+    content_dt = data.table::data.table(
+      CHROM = "1",
+      POS = 10177,
+      ID = ".",
+      REF = "AC",
+      ALT = "A",
+      QUAL = ".",
+      FILTER = "PASS",
+      INFO = ".",
+      FORMAT = "ES:SE:LP",
+      `UKB-b-19953` = "-0.0048:0.0031:0.9208"
+    )
+  )
+  finterface <- new_file_interface(
+    "gwas_vcf_commented.vcf.gz",
+    build = "b37"
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  encoded_columns <- finterface$column_info[!sapply(encoded_names, is.null)]
+
+  expect_equal(nrow(encoded_columns), 1)
+  expect_equal(encoded_columns$input_name, "UKB-b-19953")
+  expect_equal(
+    encoded_columns$encoded_names[[1]],
+    c("effect", "effect_se", "log10p")
+  )
 })

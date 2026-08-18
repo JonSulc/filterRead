@@ -4,19 +4,19 @@
 \alias{gwas_vcf_encoded_column_parsing}
 \title{Get column parsing specification for GWAS-VCF files}
 \usage{
-gwas_vcf_encoded_column_parsing(raw_names, format_string)
+gwas_vcf_encoded_column_parsing(sample_name, format_string)
 }
 \arguments{
-\item{raw_names}{Character vector of the file's input column
-names}
+\item{sample_name}{Name of the encoded sample column}
 
-\item{format_string}{The file's FORMAT field value}
+\item{format_string}{Colon-separated FORMAT keys naming the values
+packed into it}
 }
 \value{
 Column parsing specification
 }
 \description{
 Parses the FORMAT field to determine how to extract values from the
-encoded GWAS column, the tenth of the file.
+encoded sample column.
 }
 \keyword{internal}

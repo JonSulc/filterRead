@@ -7,15 +7,15 @@
 get_gwas_vcf_parsing(finterface)
 }
 \arguments{
-\item{finterface}{A file_interface object}
+\item{finterface}{A file_interface object whose `column_info` is not
+yet set}
 }
 \value{
-Column parsing specification, or NULL when the file is not
+Column parsing specification, or NULL when the file is not a
   GWAS-VCF
 }
 \description{
-Reads the file's raw column names and its FORMAT field once, and
-returns the encoded-column parsing specification when they describe a
-GWAS-VCF file.
+Returns the encoded-column parsing specification when the file's
+header and first row describe a GWAS-VCF file.
 }
 \keyword{internal}

@@ -7,18 +7,17 @@
 matches_gwas_vcf_structure(raw_names, format_string)
 }
 \arguments{
-\item{raw_names}{Character vector of the file's input column
-names}
+\item{raw_names}{Character vector of the file's input column names}
 
 \item{format_string}{The file's FORMAT field value}
 }
 \value{
-Logical indicating whether the file is GWAS-VCF format
+Logical indicating whether the file is a GWAS-VCF
 }
 \description{
 A GWAS-VCF file carries the nine standard VCF columns followed by a
-single sample column, and a FORMAT string listing GWAS-VCF keys. The
-sample column's name is the study identifier, which is arbitrary and
-plays no part in the test.
+single sample column, whose name is the study identifier. The last
+of the nine, FORMAT, lists the values packed into the sample
+column.
 }
 \keyword{internal}

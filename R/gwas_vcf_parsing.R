@@ -30,38 +30,41 @@ gwas_vcf_regexes <- c(
 
 #' Parsing specification for a GWAS-VCF file
 #'
-#' Reads the file's raw column names and its FORMAT field once, and
-#' returns the encoded-column parsing specification when they describe a
-#' GWAS-VCF file.
+#' Returns the encoded-column parsing specification when the file's
+#' header and first row describe a GWAS-VCF file.
 #'
-#' @param finterface A file_interface object
-#' @return Column parsing specification, or NULL when the file is not
+#' @param finterface A file_interface object whose `column_info` is not
+#'   yet set
+#' @return Column parsing specification, or NULL when the file is not a
 #'   GWAS-VCF
 #' @keywords internal
 get_gwas_vcf_parsing <- function(finterface) {
-  raw_names <- column_names(finterface, raw = TRUE)
-  format_string <- head(finterface)$FORMAT
-  if (!matches_gwas_vcf_structure(raw_names, format_string)) {
+  # head() gives the file's own header only until column_info exists;
+  # afterwards it names columns from column_names(), which standardizes
+  # them and includes the decoded ones.
+  stopifnot(is.null(finterface$column_info))
+  first_row <- head(finterface)
+  raw_names <- names(first_row)
+  if (!matches_gwas_vcf_structure(raw_names, first_row$FORMAT)) {
     return()
   }
-  gwas_vcf_encoded_column_parsing(raw_names, format_string)
+  gwas_vcf_encoded_column_parsing(raw_names[10], first_row$FORMAT)
 }
 
 #' Check whether column names and FORMAT describe a GWAS-VCF file
 #'
 #' A GWAS-VCF file carries the nine standard VCF columns followed by a
-#' single sample column, and a FORMAT string listing GWAS-VCF keys. The
-#' sample column's name is the study identifier, which is arbitrary and
-#' plays no part in the test.
+#' single sample column, whose name is the study identifier. The last
+#' of the nine, FORMAT, lists the values packed into the sample
+#' column.
 #'
-#' @param raw_names Character vector of the file's input column
-#'   names
+#' @param raw_names Character vector of the file's input column names
 #' @param format_string The file's FORMAT field value
-#' @return Logical indicating whether the file is GWAS-VCF format
+#' @return Logical indicating whether the file is a GWAS-VCF
 #' @keywords internal
 matches_gwas_vcf_structure <- function(raw_names, format_string) {
   length(raw_names) == 10L &&
-    all(raw_names[1:9] == vcf_cols_1_9) &&
+    identical(raw_names[1:9], vcf_cols_1_9) &&
     lists_gwas_vcf_keys(format_string)
 }
 
@@ -84,18 +87,18 @@ lists_gwas_vcf_keys <- function(format_string) {
 #' Get column parsing specification for GWAS-VCF files
 #'
 #' Parses the FORMAT field to determine how to extract values from the
-#' encoded GWAS column, the tenth of the file.
+#' encoded sample column.
 #'
-#' @param raw_names Character vector of the file's input column
-#'   names
-#' @param format_string The file's FORMAT field value
+#' @param sample_name Name of the encoded sample column
+#' @param format_string Colon-separated FORMAT keys naming the values
+#'   packed into it
 #' @return Column parsing specification
 #' @keywords internal
-gwas_vcf_encoded_column_parsing <- function(raw_names, format_string) {
+gwas_vcf_encoded_column_parsing <- function(sample_name, format_string) {
   secondary_columns <- strsplit(format_string, ":") |>
     unlist()
   data.table::data.table(
-    input_name = raw_names[10],
+    input_name = sample_name,
     regex = sprintf(
       "^%s$",
       paste(
