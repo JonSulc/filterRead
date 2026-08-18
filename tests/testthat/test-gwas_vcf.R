@@ -72,31 +72,48 @@ test_that("matches_gwas_vcf_structure yields FALSE for an NA name", {
   expect_false(matches_gwas_vcf_structure(raw_names, "ES:SE:LP"))
 })
 
-test_that("lists_gwas_vcf_keys accepts the GWAS-VCF keys and combinations", {
-  for (key in names(gwas_vcf_formats)) {
-    expect_true(lists_gwas_vcf_keys(key))
+test_that("carries_indicator_key admits one indicator key", {
+  for (key in gwas_vcf_indicator_keys) {
+    expect_true(carries_indicator_key(key))
   }
-  expect_true(lists_gwas_vcf_keys("ES:SE"))
-  expect_true(lists_gwas_vcf_keys("ES:SE:LP:AF"))
-  expect_true(lists_gwas_vcf_keys("ID:AF:SS"))
-  expect_true(lists_gwas_vcf_keys("EZ:SI:NC"))
-  expect_true(lists_gwas_vcf_keys("ES:SE:LP:AF:SS:EZ:SI:NC:ID"))
+  expect_true(carries_indicator_key("ES:SE"))
+  expect_true(carries_indicator_key("ES:SE:LP:AF"))
+  expect_true(carries_indicator_key("ES:SE:LP:AF:SS:EZ:SI:NC:ID"))
 })
 
-test_that("lists_gwas_vcf_keys rejects keys it does not know", {
-  expect_false(lists_gwas_vcf_keys("GT:AD:DP:GQ:PL"))
-  expect_false(lists_gwas_vcf_keys("INVALID"))
-  expect_false(lists_gwas_vcf_keys("ES:INVALID:LP"))
-  expect_false(lists_gwas_vcf_keys("es:se:lp"))
+test_that("carries_indicator_key admits a FORMAT with unknown keys", {
+  expect_true(carries_indicator_key("ES:SE:XX:LP"))
+  expect_true(carries_indicator_key("ES:SE:ADF"))
+  expect_true(carries_indicator_key("ES:GLE:AHAP"))
 })
 
-test_that("lists_gwas_vcf_keys rejects malformed and missing FORMAT", {
-  expect_false(lists_gwas_vcf_keys("ES::LP"))
-  expect_false(lists_gwas_vcf_keys("ES:LP:"))
-  expect_false(lists_gwas_vcf_keys(":ES:LP"))
-  expect_false(lists_gwas_vcf_keys(""))
-  expect_false(lists_gwas_vcf_keys(NA_character_))
-  expect_false(lists_gwas_vcf_keys(NULL))
+test_that("carries_indicator_key rejects a FORMAT of only shared keys", {
+  expect_false(carries_indicator_key("AF"))
+  expect_false(carries_indicator_key("SS"))
+  expect_false(carries_indicator_key("ID"))
+  expect_false(carries_indicator_key("AF:SS"))
+  expect_false(carries_indicator_key("ID:AF:SS"))
+})
+
+test_that("carries_indicator_key rejects a genotype VCF's FORMAT", {
+  expect_false(carries_indicator_key("GT:AD:DP:GQ:PL"))
+  expect_false(carries_indicator_key("GT:AD:DP:GQ:PL:AF"))
+  expect_false(carries_indicator_key("es:se:lp"))
+})
+
+test_that("carries_indicator_key rejects a FORMAT naming GT", {
+  expect_false(carries_indicator_key("GT:GQ:AD:DP:VF:NL:SB:NC"))
+  expect_false(carries_indicator_key("GT:PS:PQ:SE:NE:PR"))
+  expect_false(carries_indicator_key("GT:AD:DP:GQ:PL:ES"))
+})
+
+test_that("carries_indicator_key rejects malformed and missing FORMAT", {
+  expect_false(carries_indicator_key("ES::LP"))
+  expect_false(carries_indicator_key("ES:LP:"))
+  expect_false(carries_indicator_key(":ES:LP"))
+  expect_false(carries_indicator_key(""))
+  expect_false(carries_indicator_key(NA_character_))
+  expect_false(carries_indicator_key(NULL))
 })
 
 test_that("gwas_vcf_encoded_column_parsing describes the sample column", {
@@ -301,6 +318,25 @@ test_that("a single-sample genotype VCF opens as a plain file", {
   expect_true("na12878" %in% column_names(finterface))
 })
 
+test_that("a genotype VCF naming an indicator key opens as a plain VCF", {
+  no_call_data <- create_gwas_vcf_data(
+    format_string = "GT:GQ:AD:DP:VF:NL:SB:NC",
+    trait_name = "SampleA",
+    trait_data = "0/1:60:450,50:500:0.10:20:-15.5:0.0021",
+    nrows = 1
+  )
+  local_csv_file("genotype_no_call.csv", no_call_data, sep = "\t")
+  finterface <- new_file_interface("genotype_no_call.csv", build = "b37") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_false("n_cases" %in% column_names(finterface))
+  expect_equal(
+    finterface[]$SampleA,
+    "0/1:60:450,50:500:0.10:20:-15.5:0.0021"
+  )
+})
+
 test_that("a GWAS-VCF with meta lines and a #CHROM header is detected", {
   local_file_with_comments(
     "gwas_vcf_commented.vcf.gz",
@@ -337,4 +373,52 @@ test_that("a GWAS-VCF with meta lines and a #CHROM header is detected", {
     encoded_columns$encoded_names[[1]],
     c("effect", "effect_se", "log10p")
   )
+})
+
+test_that("an unrecognized FORMAT key reads back as its own column", {
+  passthrough_data <- create_gwas_vcf_data(
+    format_string = "ES:SE:XX:LP",
+    trait_name = "UKB-b-19953",
+    trait_data = c(
+      "0.1:0.05:500.5:2.3", "0.2:0.06:1500.5:1.8", "-0.1:0.04:2000.5:3.2"
+    )
+  )
+  local_csv_file("gwas_vcf_passthrough.csv", passthrough_data, sep = "\t")
+  finterface <- new_file_interface(
+    "gwas_vcf_passthrough.csv",
+    build = "b37"
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_equal(
+    finterface[][, .(effect, effect_se, XX, log10p)],
+    data.table::data.table(
+      effect = c(0.1, 0.2, -0.1),
+      effect_se = c(0.05, 0.06, 0.04),
+      XX = c(500.5, 1500.5, 2000.5),
+      log10p = c(2.3, 1.8, 3.2)
+    )
+  )
+  expect_equal(finterface[XX < 1000]$XX, 500.5)
+})
+
+test_that("a FORMAT of only shared keys opens as a plain VCF", {
+  shared_key_data <- create_gwas_vcf_data(
+    format_string = "AF:SS",
+    trait_name = "trait-1",
+    trait_data = "0.3:1000",
+    nrows = 1
+  )
+  local_csv_file("shared_keys.csv", shared_key_data, sep = "\t")
+  expect_no_warning(
+    finterface <- new_file_interface("shared_keys.csv", build = "b37") |>
+      suppressMessages() |>
+      withr::with_output_sink(new = "/dev/null")
+  )
+
+  encoded_columns <- finterface$column_info[!sapply(encoded_names, is.null)]
+
+  expect_equal(nrow(encoded_columns), 0)
+  expect_equal(finterface[]$`trait-1`, "0.3:1000")
 })

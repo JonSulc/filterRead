@@ -17,6 +17,9 @@ gwas_vcf_formats <- c(
   ID = "rsid"
 )
 
+# Keys marking the sample column as GWAS summary statistics.
+gwas_vcf_indicator_keys <- c("ES", "SE", "LP", "EZ", "SI", "NC")
+
 #' Parsing specification for a GWAS-VCF file
 #'
 #' Returns the encoded-column parsing specification when the file's
@@ -44,8 +47,9 @@ get_gwas_vcf_parsing <- function(finterface) {
 #'
 #' A GWAS-VCF file carries the nine standard VCF columns followed by a
 #' single sample column, whose name is the study identifier. The last
-#' of the nine, FORMAT, lists the values packed into the sample
-#' column.
+#' of the nine, FORMAT, lists the values packed into the sample column
+#' and carries at least one recognized indicator key, identifying it as
+#' GWAS-VCF.
 #'
 #' @param raw_names Character vector of the file's input column names
 #' @param format_string The file's FORMAT field value
@@ -54,23 +58,32 @@ get_gwas_vcf_parsing <- function(finterface) {
 matches_gwas_vcf_structure <- function(raw_names, format_string) {
   length(raw_names) == 10L &&
     identical(raw_names[1:9], vcf_cols_1_9) &&
-    lists_gwas_vcf_keys(format_string)
+    carries_indicator_key(format_string)
 }
 
-#' Check whether a FORMAT string lists only GWAS-VCF keys
+#' Check whether a FORMAT string carries an indicator key
 #'
-#' The FORMAT field of a GWAS-VCF file is a colon-separated list of the
-#' known GWAS-VCF keys. Anything else — a genotype VCF's `GT:AD:DP:GQ:PL`,
-#' an empty or missing field, a file with no FORMAT column at all — is
-#' not one.
+#' An indicator key marks the sample column as holding GWAS summary
+#' statistics, and any one of them admits the file as a GWAS-VCF.
+#' A FORMAT naming GT is rejected whatever else it carries: GT records
+#' genotypes, which a GWAS-VCF has none of.
 #'
 #' @param format_string The file's FORMAT field value
-#' @return Logical indicating whether the value is a GWAS-VCF FORMAT
-#'   string
+#' @return Logical indicating whether the value admits the file as a
+#'   GWAS-VCF
 #' @keywords internal
-lists_gwas_vcf_keys <- function(format_string) {
-  keys <- paste(names(gwas_vcf_formats), collapse = "|")
-  isTRUE(grepl(sprintf("^(%s)(:(%s))*$", keys, keys), format_string))
+carries_indicator_key <- function(format_string) {
+  # VCF's grammar for a FORMAT key, which rejects a malformed field: an
+  # empty key, a leading or trailing colon, an empty or missing value.
+  shape <- "^[A-Za-z_][0-9A-Za-z_.]*(:[A-Za-z_][0-9A-Za-z_.]*)*$"
+  if (!isTRUE(grepl(shape, format_string))) {
+    return(FALSE)
+  }
+  keys <- unlist(strsplit(format_string, ":"))
+  # GT records genotypes, which a GWAS-VCF has none of. A genotype
+  # caller may name a field after an indicator key, so a FORMAT naming
+  # GT is a genotype VCF whatever else it carries.
+  !"GT" %in% keys && any(keys %in% gwas_vcf_indicator_keys)
 }
 
 #' Get column parsing specification for GWAS-VCF files

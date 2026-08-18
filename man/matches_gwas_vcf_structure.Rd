@@ -17,7 +17,8 @@ Logical indicating whether the file is a GWAS-VCF
 \description{
 A GWAS-VCF file carries the nine standard VCF columns followed by a
 single sample column, whose name is the study identifier. The last
-of the nine, FORMAT, lists the values packed into the sample
-column.
+of the nine, FORMAT, lists the values packed into the sample column
+and carries at least one recognized indicator key, identifying it as
+GWAS-VCF.
 }
 \keyword{internal}

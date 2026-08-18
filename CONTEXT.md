@@ -56,6 +56,25 @@ holding `b37-c1:12345-A-G` does; its decoded columns are the components a read
 splits it into (`build`, `chr`, `pos`).
 _Avoid_: composite column, compound column, exploding
 
+**GWAS-VCF file**:
+A single-sample VCF whose sample column is an encoded column holding one
+variant's summary statistics, with the FORMAT field naming the values packed
+into it. Recognized by that shape together with a FORMAT carrying at least one
+indicator key, never by the sample column's name, which is an arbitrary study
+identifier. FORMAT is taken as the file's own account of what its sample column
+holds.
+_Avoid_: IEUGWAS file, IEU file (the format is not tied to one producer)
+
+**Indicator key**:
+A FORMAT key marking the column as holding GWAS summary statistics (`ES`,
+`SE`, `LP`, `EZ`, `SI`, `NC`), as against one a genotype VCF may also carry
+(`AF`, `SS`, `ID`). One indicator key is what admits a file as a GWAS-VCF,
+except that a FORMAT naming `GT` is rejected whatever else it carries: some
+genotype callers name a field after an indicator key. Producers other than IEU
+emit them, which is the point — an indicator key reports what the column
+holds, not who wrote the file.
+_Avoid_: IEUGWAS-only key (they are not tied to one producer)
+
 **Summary-statistic derivation**:
 Computing a missing summary statistic (`effect`, `effect_se`, `pval`) from the
 others — an analysis step applied to a loaded table, not part of reading.
