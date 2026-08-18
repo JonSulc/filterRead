@@ -1,5 +1,5 @@
-# Helper function to create IEUGWAS test data
-create_ieugwas_data <- function(
+# Helper function to create GWAS-VCF test data
+create_gwas_vcf_data <- function(
   format_string = "ES:SE:LP",
   trait_name = "trait-1",
   trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8", "-0.1:0.04:3.2"),
@@ -23,78 +23,78 @@ create_ieugwas_data <- function(
   data.table::as.data.table(base_data)
 }
 
-test_that("matches_ieugwas_structure identifies an IEUGWAS file", {
+test_that("matches_gwas_vcf_structure identifies a GWAS-VCF file", {
   expect_true(
-    matches_ieugwas_structure(
-      c(ieugwas_cols_1_9, "ieuGWAS-42"),
+    matches_gwas_vcf_structure(
+      c(vcf_cols_1_9, "ieuGWAS-42"),
       "ES:SE:LP:AF:ID"
     )
   )
   expect_true(
-    matches_ieugwas_structure(c(ieugwas_cols_1_9, "trait-1"), "ES:SE:LP")
+    matches_gwas_vcf_structure(c(vcf_cols_1_9, "trait-1"), "ES:SE:LP")
   )
   expect_true(
-    matches_ieugwas_structure(
-      c(ieugwas_cols_1_9, "column,name_10 is-Ignored!"),
+    matches_gwas_vcf_structure(
+      c(vcf_cols_1_9, "column,name_10 is-Ignored!"),
       "ES:SE"
     )
   )
 })
 
-test_that("matches_ieugwas_structure rejects a single-sample genotype VCF", {
+test_that("matches_gwas_vcf_structure rejects a single-sample genotype VCF", {
   expect_false(
-    matches_ieugwas_structure(c(ieugwas_cols_1_9, "NA12878"), "GT:AD:DP:GQ:PL")
+    matches_gwas_vcf_structure(c(vcf_cols_1_9, "NA12878"), "GT:AD:DP:GQ:PL")
   )
 })
 
-test_that("matches_ieugwas_structure rejects other column layouts", {
+test_that("matches_gwas_vcf_structure rejects other column layouts", {
   expect_false(
-    matches_ieugwas_structure(c("CHROM", "POS", "ID", "REF"), "ES:SE")
+    matches_gwas_vcf_structure(c("CHROM", "POS", "ID", "REF"), "ES:SE")
   )
   expect_false(
-    matches_ieugwas_structure(
-      c("CHR", ieugwas_cols_1_9[2:9], "trait-1"),
+    matches_gwas_vcf_structure(
+      c("CHR", vcf_cols_1_9[2:9], "trait-1"),
       "ES:SE"
     )
   )
   expect_false(
-    matches_ieugwas_structure(
-      c(ieugwas_cols_1_9, "trait-1", "trait-2"),
+    matches_gwas_vcf_structure(
+      c(vcf_cols_1_9, "trait-1", "trait-2"),
       "ES:SE"
     )
   )
 })
 
-test_that("lists_ieugwas_keys accepts the IEUGWAS keys and combinations", {
-  for (key in names(ieugwas_formats)) {
-    expect_true(lists_ieugwas_keys(key))
+test_that("lists_gwas_vcf_keys accepts the GWAS-VCF keys and combinations", {
+  for (key in names(gwas_vcf_formats)) {
+    expect_true(lists_gwas_vcf_keys(key))
   }
-  expect_true(lists_ieugwas_keys("ES:SE"))
-  expect_true(lists_ieugwas_keys("ES:SE:LP:AF"))
-  expect_true(lists_ieugwas_keys("ID:AF:SS"))
-  expect_true(lists_ieugwas_keys("EZ:SI:NC"))
-  expect_true(lists_ieugwas_keys("ES:SE:LP:AF:SS:EZ:SI:NC:ID"))
+  expect_true(lists_gwas_vcf_keys("ES:SE"))
+  expect_true(lists_gwas_vcf_keys("ES:SE:LP:AF"))
+  expect_true(lists_gwas_vcf_keys("ID:AF:SS"))
+  expect_true(lists_gwas_vcf_keys("EZ:SI:NC"))
+  expect_true(lists_gwas_vcf_keys("ES:SE:LP:AF:SS:EZ:SI:NC:ID"))
 })
 
-test_that("lists_ieugwas_keys rejects keys it does not know", {
-  expect_false(lists_ieugwas_keys("GT:AD:DP:GQ:PL"))
-  expect_false(lists_ieugwas_keys("INVALID"))
-  expect_false(lists_ieugwas_keys("ES:INVALID:LP"))
-  expect_false(lists_ieugwas_keys("es:se:lp"))
+test_that("lists_gwas_vcf_keys rejects keys it does not know", {
+  expect_false(lists_gwas_vcf_keys("GT:AD:DP:GQ:PL"))
+  expect_false(lists_gwas_vcf_keys("INVALID"))
+  expect_false(lists_gwas_vcf_keys("ES:INVALID:LP"))
+  expect_false(lists_gwas_vcf_keys("es:se:lp"))
 })
 
-test_that("lists_ieugwas_keys rejects malformed and missing FORMAT", {
-  expect_false(lists_ieugwas_keys("ES::LP"))
-  expect_false(lists_ieugwas_keys("ES:LP:"))
-  expect_false(lists_ieugwas_keys(":ES:LP"))
-  expect_false(lists_ieugwas_keys(""))
-  expect_false(lists_ieugwas_keys(NA_character_))
-  expect_false(lists_ieugwas_keys(NULL))
+test_that("lists_gwas_vcf_keys rejects malformed and missing FORMAT", {
+  expect_false(lists_gwas_vcf_keys("ES::LP"))
+  expect_false(lists_gwas_vcf_keys("ES:LP:"))
+  expect_false(lists_gwas_vcf_keys(":ES:LP"))
+  expect_false(lists_gwas_vcf_keys(""))
+  expect_false(lists_gwas_vcf_keys(NA_character_))
+  expect_false(lists_gwas_vcf_keys(NULL))
 })
 
-test_that("ieugwas_encoded_column_parsing describes the sample column", {
-  parsing_info <- ieugwas_encoded_column_parsing(
-    c(ieugwas_cols_1_9, "ukb-123"),
+test_that("gwas_vcf_encoded_column_parsing describes the sample column", {
+  parsing_info <- gwas_vcf_encoded_column_parsing(
+    c(vcf_cols_1_9, "ukb-123"),
     "ES:SE:LP"
   )
 
@@ -106,8 +106,8 @@ test_that("ieugwas_encoded_column_parsing describes the sample column", {
   )
   expect_equal(parsing_info$delimiter, ":")
 
-  parsing_info <- ieugwas_encoded_column_parsing(
-    c(ieugwas_cols_1_9, "trait-456"),
+  parsing_info <- gwas_vcf_encoded_column_parsing(
+    c(vcf_cols_1_9, "trait-456"),
     "ES:SE:AF"
   )
 
@@ -117,9 +117,9 @@ test_that("ieugwas_encoded_column_parsing describes the sample column", {
   expect_equal(parsing_info$delimiter, ":")
 })
 
-test_that("ieugwas_encoded_column_parsing describes every key at once", {
-  parsing_info <- ieugwas_encoded_column_parsing(
-    c(ieugwas_cols_1_9, "full-trait"),
+test_that("gwas_vcf_encoded_column_parsing describes every key at once", {
+  parsing_info <- gwas_vcf_encoded_column_parsing(
+    c(vcf_cols_1_9, "full-trait"),
     "ES:SE:LP:AF:SS:EZ:SI:NC:ID"
   )
 
@@ -141,9 +141,9 @@ test_that("ieugwas_encoded_column_parsing describes every key at once", {
   expect_equal(parsing_info$delimiter, ":")
 })
 
-test_that("ieugwas_encoded_column_parsing covers every FORMAT key", {
-  parsing_info <- ieugwas_encoded_column_parsing(
-    c(ieugwas_cols_1_9, "simple-trait"),
+test_that("gwas_vcf_encoded_column_parsing covers every FORMAT key", {
+  parsing_info <- gwas_vcf_encoded_column_parsing(
+    c(vcf_cols_1_9, "simple-trait"),
     "ES"
   )
 
@@ -152,53 +152,53 @@ test_that("ieugwas_encoded_column_parsing covers every FORMAT key", {
   expect_equal(parsing_info$encoded_names[[1]], "effect")
   expect_equal(parsing_info$delimiter, ":")
 
-  for (key in names(ieugwas_formats)) {
-    parsing_info <- ieugwas_encoded_column_parsing(
-      c(ieugwas_cols_1_9, "trait-1"),
+  for (key in names(gwas_vcf_formats)) {
+    parsing_info <- gwas_vcf_encoded_column_parsing(
+      c(vcf_cols_1_9, "trait-1"),
       key
     )
-    expect_equal(parsing_info$encoded_names[[1]], unname(ieugwas_formats[key]))
+    expect_equal(parsing_info$encoded_names[[1]], unname(gwas_vcf_formats[key]))
   }
 
   for (combo in c("ES:SE", "ES:SE:LP", "ES:SE:LP:AF", "ID:AF:SS", "EZ:SI:NC")) {
     combo_parts <- strsplit(combo, ":")[[1]]
-    parsing_info <- ieugwas_encoded_column_parsing(
-      c(ieugwas_cols_1_9, "combo-trait"),
+    parsing_info <- gwas_vcf_encoded_column_parsing(
+      c(vcf_cols_1_9, "combo-trait"),
       combo
     )
     expect_equal(
       parsing_info$encoded_names[[1]],
-      unname(ieugwas_formats[combo_parts])
+      unname(gwas_vcf_formats[combo_parts])
     )
   }
 })
 
-test_that("get_ieugwas_parsing returns NULL for a non-IEUGWAS file", {
-  non_ieugwas_data <- data.table::data.table(
+test_that("get_gwas_vcf_parsing returns NULL for a non-GWAS-VCF file", {
+  non_gwas_vcf_data <- data.table::data.table(
     chr = c(1, 2),
     pos = c(100, 200),
     pval = c(0.01, 0.05)
   )
-  local_csv_file("non_ieugwas.csv", non_ieugwas_data, sep = "\t")
+  local_csv_file("non_gwas_vcf.csv", non_gwas_vcf_data, sep = "\t")
   finterface <- new_file_interface(
-    "non_ieugwas.csv",
-    ieugwas_parsing = FALSE
+    "non_gwas_vcf.csv",
+    gwas_vcf_parsing = FALSE
   ) |>
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
 
-  expect_null(get_ieugwas_parsing(finterface))
+  expect_null(get_gwas_vcf_parsing(finterface))
 })
 
-test_that("ieugwas_parsing = TRUE records the encoded column", {
-  ieugwas_data <- create_ieugwas_data(
+test_that("gwas_vcf_parsing = TRUE records the encoded column", {
+  gwas_vcf_data <- create_gwas_vcf_data(
     trait_name = "ukbb-neale",
     trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8", "-0.1:0.04:3.2")
   )
-  local_csv_file("ieugwas_integration.csv", ieugwas_data, sep = "\t")
+  local_csv_file("gwas_vcf_integration.csv", gwas_vcf_data, sep = "\t")
   finterface <- new_file_interface(
-    "ieugwas_integration.csv",
-    ieugwas_parsing = TRUE
+    "gwas_vcf_integration.csv",
+    gwas_vcf_parsing = TRUE
   ) |>
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
@@ -215,15 +215,15 @@ test_that("ieugwas_parsing = TRUE records the encoded column", {
   expect_equal(encoded_columns$delimiter, ":")
 })
 
-test_that("ieugwas_parsing = FALSE leaves the sample column packed", {
-  ieugwas_data <- create_ieugwas_data(
+test_that("gwas_vcf_parsing = FALSE leaves the sample column packed", {
+  gwas_vcf_data <- create_gwas_vcf_data(
     trait_name = "ukbb-neale",
     trait_data = c("0.1:0.05:2.3", "0.2:0.06:1.8", "-0.1:0.04:3.2")
   )
-  local_csv_file("ieugwas_integration.csv", ieugwas_data, sep = "\t")
+  local_csv_file("gwas_vcf_integration.csv", gwas_vcf_data, sep = "\t")
   finterface <- new_file_interface(
-    "ieugwas_integration.csv",
-    ieugwas_parsing = FALSE
+    "gwas_vcf_integration.csv",
+    gwas_vcf_parsing = FALSE
   ) |>
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
@@ -233,14 +233,14 @@ test_that("ieugwas_parsing = FALSE leaves the sample column packed", {
   expect_equal(nrow(encoded_columns), 0)
 })
 
-test_that("an uppercase sample identifier is still an IEUGWAS file", {
-  ieugwas_data <- create_ieugwas_data(
+test_that("an uppercase sample identifier is still a GWAS-VCF file", {
+  gwas_vcf_data <- create_gwas_vcf_data(
     format_string = "ES:SE:LP:AF",
     trait_name = "ieuGWAS-42",
     trait_data = c("0.1:0.05:2.3:0.3", "0.2:0.06:1.8:0.4", "-0.1:0.04:3.2:0.2")
   )
-  local_csv_file("ieugwas_uppercase.csv", ieugwas_data, sep = "\t")
-  finterface <- new_file_interface("ieugwas_uppercase.csv", build = "b37") |>
+  local_csv_file("gwas_vcf_uppercase.csv", gwas_vcf_data, sep = "\t")
+  finterface <- new_file_interface("gwas_vcf_uppercase.csv", build = "b37") |>
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
 
@@ -256,7 +256,7 @@ test_that("an uppercase sample identifier is still an IEUGWAS file", {
 })
 
 test_that("a single-sample genotype VCF opens as a plain file", {
-  genotype_data <- create_ieugwas_data(
+  genotype_data <- create_gwas_vcf_data(
     format_string = "GT:AD:DP",
     trait_name = "na12878",
     trait_data = "0/1:10,5:15",
@@ -269,7 +269,7 @@ test_that("a single-sample genotype VCF opens as a plain file", {
       withr::with_output_sink(new = "/dev/null")
   )
 
-  expect_null(get_ieugwas_parsing(finterface))
+  expect_null(get_gwas_vcf_parsing(finterface))
   expect_false("effect" %in% column_names(finterface))
   expect_true("na12878" %in% column_names(finterface))
 })

@@ -11,8 +11,8 @@
 #'   of standard_names_dt. Default is NULL.
 #' @param standard_names_dt Data.table with standard column name
 #'   mappings. Default is summary_stats_standard_names_dt.
-#' @param ieugwas_parsing Logical. Whether to detect and parse
-#'   IEUGWAS-formatted files with special column encodings.
+#' @param gwas_vcf_parsing Logical. Whether to detect and parse
+#'   GWAS-VCF files with special column encodings.
 #'   Default is TRUE.
 #' @param build Character string specifying genome build (e.g., "b37",
 #'   "b38") for genomic data. If NULL (default), attempts to detect
@@ -34,7 +34,7 @@ new_file_interface <- function(
   filename,
   extra_column_names_dt = NULL,
   standard_names_dt = summary_stats_standard_names_dt,
-  ieugwas_parsing = TRUE,
+  gwas_vcf_parsing = TRUE,
   build = c("auto", "b36", "b37", "b38", "none")
 ) {
   stopifnot(is.character(filename))
@@ -64,11 +64,11 @@ new_file_interface <- function(
 
   finterface$sep <- get_file_separator(finterface)
 
-  # Check if IEUGWAS format and add parsing info if so
-  if (ieugwas_parsing) {
+  # Check if GWAS-VCF and add parsing info if so
+  if (gwas_vcf_parsing) {
     standard_names_dt <- list(
       standard_names_dt,
-      get_ieugwas_parsing(finterface)
+      get_gwas_vcf_parsing(finterface)
     ) |>
       data.table::rbindlist(fill = TRUE, use.names = TRUE)
   }

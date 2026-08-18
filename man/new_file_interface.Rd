@@ -8,7 +8,7 @@ new_file_interface(
   filename,
   extra_column_names_dt = NULL,
   standard_names_dt = summary_stats_standard_names_dt,
-  ieugwas_parsing = TRUE,
+  gwas_vcf_parsing = TRUE,
   build = c("auto", "b36", "b37", "b38", "none")
 )
 }
@@ -23,8 +23,8 @@ of standard_names_dt. Default is NULL.}
 \item{standard_names_dt}{Data.table with standard column name
 mappings. Default is summary_stats_standard_names_dt.}
 
-\item{ieugwas_parsing}{Logical. Whether to detect and parse
-IEUGWAS-formatted files with special column encodings.
+\item{gwas_vcf_parsing}{Logical. Whether to detect and parse
+GWAS-VCF files with special column encodings.
 Default is TRUE.}
 
 \item{build}{Character string specifying genome build (e.g., "b37",

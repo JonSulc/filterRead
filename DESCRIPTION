@@ -45,7 +45,7 @@ Collate:
     'genomic_regions_class.R'
     'genomic_regions_convert.R'
     'genomic_regions_ops.R'
-    'ieugwas_parsing.R'
+    'gwas_vcf_parsing.R'
     'infer_build.R'
     'liftover.R'
     'reverse_complement.R'

@@ -337,7 +337,7 @@ test_that("Commented lines are correctly ignored", {
     )
   )
 
-  result <- new_file_interface("commented.vcf.gz", ieugwas_parsing = FALSE) |>
+  result <- new_file_interface("commented.vcf.gz", gwas_vcf_parsing = FALSE) |>
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null") |>
     head()
