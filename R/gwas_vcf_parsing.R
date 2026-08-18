@@ -16,17 +16,6 @@ gwas_vcf_formats <- c(
   NC = "n_cases",
   ID = "rsid"
 )
-gwas_vcf_regexes <- c(
-  ES = "([-0-9.]+)",
-  SE = "([0-9.]+)",
-  LP = "([0-9.]+)",
-  AF = "([0-9.]+)",
-  SS = "([0-9]+)",
-  EZ = "([-0-9.]+)",
-  SI = "([0-9.]+)",
-  NC = "([0-9]+)",
-  ID = "(rs[0-9]+)"
-)
 
 #' Parsing specification for a GWAS-VCF file
 #'
@@ -86,8 +75,9 @@ lists_gwas_vcf_keys <- function(format_string) {
 
 #' Get column parsing specification for GWAS-VCF files
 #'
-#' Parses the FORMAT field to determine how to extract values from the
-#' encoded sample column.
+#' Builds the specification for splitting an encoded sample column into
+#' one output column per FORMAT key. A recognized key names its column
+#' through `gwas_vcf_formats`; any other key names its column itself.
 #'
 #' @param sample_name Name of the encoded sample column
 #' @param format_string Colon-separated FORMAT keys naming the values
@@ -95,18 +85,18 @@ lists_gwas_vcf_keys <- function(format_string) {
 #' @return Column parsing specification
 #' @keywords internal
 gwas_vcf_encoded_column_parsing <- function(sample_name, format_string) {
-  secondary_columns <- strsplit(format_string, ":") |>
-    unlist()
+  # One group per key, each matching anything but the delimiter.
+  keys <- strsplit(format_string, ":") |> unlist()
+  known <- keys %in% names(gwas_vcf_formats)
   data.table::data.table(
     input_name = sample_name,
     regex = sprintf(
       "^%s$",
-      paste(
-        gwas_vcf_regexes[secondary_columns],
-        collapse = ":"
-      )
+      paste(rep("([^:]*)", length(keys)), collapse = ":")
     ),
-    encoded_names = list(gwas_vcf_formats[secondary_columns] |> unname()),
+    encoded_names = list(
+      data.table::fifelse(known, gwas_vcf_formats[keys], keys) |> unname()
+    ),
     delimiter = ":"
   )
 }

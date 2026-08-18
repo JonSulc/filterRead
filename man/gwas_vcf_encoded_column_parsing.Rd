@@ -16,7 +16,8 @@ packed into it}
 Column parsing specification
 }
 \description{
-Parses the FORMAT field to determine how to extract values from the
-encoded sample column.
+Builds the specification for splitting an encoded sample column into
+one output column per FORMAT key. A recognized key names its column
+through `gwas_vcf_formats`; any other key names its column itself.
 }
 \keyword{internal}

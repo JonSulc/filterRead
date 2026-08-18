@@ -103,7 +103,7 @@ test_that("gwas_vcf_encoded_column_parsing describes the sample column", {
   parsing_info <- gwas_vcf_encoded_column_parsing("ukb-123", "ES:SE:LP")
 
   expect_equal(parsing_info$input_name, "ukb-123")
-  expect_equal(parsing_info$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
+  expect_equal(parsing_info$regex, "^([^:]*):([^:]*):([^:]*)$")
   expect_equal(
     parsing_info$encoded_names[[1]],
     c("effect", "effect_se", "log10p")
@@ -113,7 +113,7 @@ test_that("gwas_vcf_encoded_column_parsing describes the sample column", {
   parsing_info <- gwas_vcf_encoded_column_parsing("trait-456", "ES:SE:AF")
 
   expect_equal(parsing_info$input_name, "trait-456")
-  expect_equal(parsing_info$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
+  expect_equal(parsing_info$regex, "^([^:]*):([^:]*):([^:]*)$")
   expect_equal(parsing_info$encoded_names[[1]], c("effect", "effect_se", "af"))
   expect_equal(parsing_info$delimiter, ":")
 })
@@ -124,14 +124,11 @@ test_that("gwas_vcf_encoded_column_parsing describes every key at once", {
     "ES:SE:LP:AF:SS:EZ:SI:NC:ID"
   )
 
-  expected_regex <- paste(
-    "([-0-9.]+)", "([0-9.]+)", "([0-9.]+)", "([0-9.]+)", "([0-9]+)",
-    "([-0-9.]+)", "([0-9.]+)", "([0-9]+)", "(rs[0-9]+)",
-    sep = ":"
-  )
-
   expect_equal(parsing_info$input_name, "full-trait")
-  expect_equal(parsing_info$regex, paste0("^", expected_regex, "$"))
+  expect_equal(
+    parsing_info$regex,
+    paste0("^", paste(rep("([^:]*)", 9), collapse = ":"), "$")
+  )
   expect_equal(
     parsing_info$encoded_names[[1]],
     c(
@@ -146,7 +143,7 @@ test_that("gwas_vcf_encoded_column_parsing covers every FORMAT key", {
   parsing_info <- gwas_vcf_encoded_column_parsing("simple-trait", "ES")
 
   expect_equal(parsing_info$input_name, "simple-trait")
-  expect_equal(parsing_info$regex, "^([-0-9.]+)$")
+  expect_equal(parsing_info$regex, "^([^:]*)$")
   expect_equal(parsing_info$encoded_names[[1]], "effect")
   expect_equal(parsing_info$delimiter, ":")
 
@@ -163,6 +160,18 @@ test_that("gwas_vcf_encoded_column_parsing covers every FORMAT key", {
       unname(gwas_vcf_formats[combo_parts])
     )
   }
+})
+
+test_that("an unrecognized FORMAT key is named by the key itself", {
+  parsing_info <- gwas_vcf_encoded_column_parsing("ukb-123", "ES:SE:ADF:LP")
+
+  expect_equal(parsing_info$input_name, "ukb-123")
+  expect_equal(parsing_info$regex, "^([^:]*):([^:]*):([^:]*):([^:]*)$")
+  expect_equal(
+    parsing_info$encoded_names[[1]],
+    c("effect", "effect_se", "ADF", "log10p")
+  )
+  expect_equal(parsing_info$delimiter, ":")
 })
 
 test_that("get_gwas_vcf_parsing rejects a constructed interface", {
@@ -201,7 +210,7 @@ test_that("gwas_vcf_parsing = TRUE records the encoded column", {
 
   expect_equal(nrow(encoded_columns), 1)
   expect_equal(encoded_columns$input_name, "ukbb-neale")
-  expect_equal(encoded_columns$regex, "^([-0-9.]+):([0-9.]+):([0-9.]+)$")
+  expect_equal(encoded_columns$regex, "^([^:]*):([^:]*):([^:]*)$")
   expect_equal(
     encoded_columns$encoded_names[[1]],
     c("effect", "effect_se", "log10p")
@@ -245,6 +254,31 @@ test_that("an uppercase sample identifier is still a GWAS-VCF file", {
       effect_se = c(0.05, 0.06, 0.04),
       log10p = c(2.3, 1.8, 3.2),
       af = c(0.3, 0.4, 0.2)
+    )
+  )
+})
+
+test_that("a row omitting a trailing sub-field decodes it as NA", {
+  # VCF permits a sample value to drop trailing sub-fields, so a row
+  # naming fewer values than FORMAT does is well formed.
+  dropped_field_data <- create_gwas_vcf_data(
+    trait_name = "ukbb-neale",
+    trait_data = c("0.1:0.05:2.3", "0.2:0.06", "-0.1:0.04:3.2")
+  )
+  local_csv_file("gwas_vcf_dropped_field.csv", dropped_field_data, sep = "\t")
+  finterface <- new_file_interface(
+    "gwas_vcf_dropped_field.csv",
+    build = "b37"
+  ) |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_equal(
+    finterface[][, .(effect, effect_se, log10p)],
+    data.table::data.table(
+      effect = c(0.1, 0.2, -0.1),
+      effect_se = c(0.05, 0.06, 0.04),
+      log10p = c(2.3, NA, 3.2)
     )
   )
 })
