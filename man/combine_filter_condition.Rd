@@ -15,7 +15,8 @@ combine_filter_condition(fcondition1, fcondition2, operation)
 }
 \value{
 Combined condition list with:
-  - condition: combined condition string
+  - condition: combined condition string, or NULL when neither operand
+    carries one
   - variable_arrays: merged from both conditions
   - additional_files: merged from both conditions
 }

@@ -1381,3 +1381,70 @@ test_that("in_membership_atom builds a membership atom over a literal field", {
     full_genomic_regions(build = "b38")
   )
 })
+
+test_that("combine_filter_condition drops an empty right operand", {
+  expect_equal(
+    combine_filter_condition(
+      list(condition = "$1 == \"1\""),
+      list(condition = NULL),
+      "||"
+    )$condition,
+    "$1 == \"1\""
+  )
+})
+
+test_that("combine_filter_condition drops an empty left operand", {
+  expect_equal(
+    combine_filter_condition(
+      list(condition = NULL),
+      list(condition = "$2 <= 10"),
+      "&&"
+    )$condition,
+    "$2 <= 10"
+  )
+})
+
+test_that("combine_filter_condition reduces two empty operands to NULL", {
+  combined <- combine_filter_condition(
+    list(condition = NULL),
+    list(condition = NULL),
+    "||"
+  )
+  expect_null(combined$condition)
+  expect_equal(
+    combine_filter_condition(
+      list(
+        condition = NULL,
+        variable_arrays = "var1[$1]",
+        additional_files = "f1"
+      ),
+      list(
+        condition = NULL,
+        variable_arrays = "var2[$2]",
+        additional_files = "f2"
+      ),
+      "||"
+    )[c("variable_arrays", "additional_files")],
+    list(
+      variable_arrays = c("var1[$1]", "var2[$2]"),
+      additional_files = c("f1", "f2")
+    )
+  )
+})
+
+test_that("an OR of two purely positional branches runs", {
+  finterface <- local_file_interface(dt = data.table::data.table(
+    chr    = rep(1:2, each = 4),
+    pos    = rep(c(100, 200, 300, 400), times = 2),
+    ref    = rep(c("A", "T"), each = 4),
+    alt    = rep(c("T", "A"), each = 4),
+    effect = 0,
+    pval   = 0.5
+  ))
+  result <- finterface[
+    (chr == 1 & 150 <= pos & pos <= 350) | (chr == 2 & 250 <= pos & pos <= 450)
+  ]
+  expect_equal(nrow(result), 4)
+  expect_equal(result$chr, c("chr1", "chr1", "chr2", "chr2"))
+  expect_equal(result$pos, c(200, 300, 300, 400))
+})

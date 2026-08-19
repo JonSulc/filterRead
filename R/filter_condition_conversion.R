@@ -241,7 +241,8 @@ or_filter_condition <- function(
 #' @param operation Awk operator string ("&&" or "||")
 #'
 #' @return Combined condition list with:
-#'   - condition: combined condition string
+#'   - condition: combined condition string, or NULL when neither operand
+#'     carries one
 #'   - variable_arrays: merged from both conditions
 #'   - additional_files: merged from both conditions
 #' @keywords internal
@@ -250,16 +251,15 @@ combine_filter_condition <- function(
   fcondition2,
   operation
 ) {
+  conditions <- c(fcondition1$condition, fcondition2$condition)
   list(
     variable_arrays = c(
       fcondition1$variable_arrays,
       fcondition2$variable_arrays
     ),
-    condition = paste(
-      fcondition1$condition,
-      operation,
-      fcondition2$condition
-    ),
+    condition = if (length(conditions) != 0L) {
+      paste(conditions, collapse = paste0(" ", operation, " "))
+    },
     additional_files = c(
       fcondition1$additional_files,
       fcondition2$additional_files
