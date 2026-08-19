@@ -9,7 +9,9 @@
   file whose study identifier carries an uppercase letter, such as
   `ukb-b-19953.vcf.gz` naming its sample `UKB-b-19953`, now decodes its
   `ES:SE:LP:AF:ID` column to `effect`, `effect_se`, `log10p` and `af` where
-  it previously read back as a raw string.
+  it previously read back as a raw string. The `ID` sub-field decodes to
+  `rsid`, which the file's own `ID` column already supplies, so the decoded
+  copy is dropped and five keys yield four columns.
 
 * Files whose FORMAT carries an unrecognized key now return the recognized
   statistics plus a column per unrecognized key, where they previously

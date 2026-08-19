@@ -296,6 +296,43 @@ test_that("an uppercase sample identifier is still a GWAS-VCF file", {
   )
 })
 
+test_that("a FORMAT naming ID decodes four columns", {
+  # The sample column's ID sub-field decodes to rsid, which the file's
+  # own ID column already supplies, so only four decoded columns
+  # survive. The two carry different values here to pin which wins.
+  gwas_vcf_data <- create_gwas_vcf_data(
+    format_string = "ES:SE:LP:AF:ID",
+    trait_name = "UKB-b-19953",
+    trait_data = c(
+      "0.1:0.05:2.3:0.3:rs99",
+      "0.2:0.06:1.8:0.4:rs88",
+      "-0.1:0.04:3.2:0.2:rs77"
+    )
+  )
+  gwas_vcf_data[, ID := c("rs11", "rs22", "rs33")][]
+  local_csv_file("gwas_vcf_with_id.csv", gwas_vcf_data, sep = "\t")
+  finterface <- new_file_interface("gwas_vcf_with_id.csv", build = "b37") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+  result <- finterface[]
+
+  expect_equal(
+    result[, .(effect, effect_se, log10p, af)],
+    data.table::data.table(
+      effect = c(0.1, 0.2, -0.1),
+      effect_se = c(0.05, 0.06, 0.04),
+      log10p = c(2.3, 1.8, 3.2),
+      af = c(0.3, 0.4, 0.2)
+    )
+  )
+  expect_equal(result$rsid, c("rs11", "rs22", "rs33"))
+  expect_equal(
+    names(result),
+    c("chr", "pos", "rsid", "ref", "alt", "QUAL", "FILTER", "INFO",
+      "FORMAT", "UKB-b-19953", "effect", "effect_se", "log10p", "af")
+  )
+})
+
 test_that("a row omitting a trailing sub-field decodes it as NA", {
   # VCF permits a sample value to drop trailing sub-fields, so a row
   # naming fewer values than FORMAT does is well formed.
