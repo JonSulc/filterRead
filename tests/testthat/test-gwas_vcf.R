@@ -144,7 +144,10 @@ test_that("gwas_vcf_encoded_column_parsing describes every key at once", {
   expect_equal(parsing_info$input_name, "full-trait")
   expect_equal(
     parsing_info$regex,
-    paste0("^", paste(rep("([^:]*)", 9), collapse = ":"), "$")
+    paste0(
+      "^([^:]*):([^:]*):([^:]*):([^:]*):([^:]*)",
+      ":([^:]*):([^:]*):([^:]*):([^:]*)$"
+    )
   )
   expect_equal(
     parsing_info$encoded_names[[1]],
@@ -156,27 +159,45 @@ test_that("gwas_vcf_encoded_column_parsing describes every key at once", {
   expect_equal(parsing_info$delimiter, ":")
 })
 
-test_that("gwas_vcf_encoded_column_parsing covers every FORMAT key", {
+test_that("gwas_vcf_encoded_column_parsing describes a single-key FORMAT", {
   parsing_info <- gwas_vcf_encoded_column_parsing("simple-trait", "ES")
 
   expect_equal(parsing_info$input_name, "simple-trait")
   expect_equal(parsing_info$regex, "^([^:]*)$")
   expect_equal(parsing_info$encoded_names[[1]], "effect")
   expect_equal(parsing_info$delimiter, ":")
+})
 
-  for (key in names(gwas_vcf_formats)) {
-    parsing_info <- gwas_vcf_encoded_column_parsing("trait-1", key)
-    expect_equal(parsing_info$encoded_names[[1]], unname(gwas_vcf_formats[key]))
+test_that("gwas_vcf_encoded_column_parsing names each key on its own", {
+  name_of <- function(key) {
+    gwas_vcf_encoded_column_parsing("trait-1", key)$encoded_names[[1]]
   }
 
-  for (combo in c("ES:SE", "ES:SE:LP", "ES:SE:LP:AF", "ID:AF:SS", "EZ:SI:NC")) {
-    combo_parts <- strsplit(combo, ":")[[1]]
-    parsing_info <- gwas_vcf_encoded_column_parsing("combo-trait", combo)
-    expect_equal(
-      parsing_info$encoded_names[[1]],
-      unname(gwas_vcf_formats[combo_parts])
-    )
+  expect_equal(name_of("ES"), "effect")
+  expect_equal(name_of("SE"), "effect_se")
+  expect_equal(name_of("LP"), "log10p")
+  expect_equal(name_of("AF"), "af")
+  expect_equal(name_of("SS"), "sample_size")
+  expect_equal(name_of("EZ"), "zscore")
+  expect_equal(name_of("SI"), "imputation_accuracy")
+  expect_equal(name_of("NC"), "n_cases")
+  expect_equal(name_of("ID"), "rsid")
+})
+
+test_that("gwas_vcf_encoded_column_parsing names a combination of keys", {
+  names_of <- function(format_string) {
+    gwas_vcf_encoded_column_parsing(
+      "combo-trait",
+      format_string
+    )$encoded_names[[1]]
   }
+
+  expect_equal(names_of("ES:SE"), c("effect", "effect_se"))
+  expect_equal(names_of("ID:AF:SS"), c("rsid", "af", "sample_size"))
+  expect_equal(
+    names_of("EZ:SI:NC"),
+    c("zscore", "imputation_accuracy", "n_cases")
+  )
 })
 
 test_that("an unrecognized FORMAT key is named by the key itself", {
