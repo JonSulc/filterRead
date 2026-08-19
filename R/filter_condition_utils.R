@@ -42,7 +42,7 @@ is_and_block <- function(
 non_genomic_is_and_block <- function(
   fcondition
 ) {
-  if (!inherits(fcondition, "call")) {
+  if (!is.call(fcondition)) {
     return(TRUE)
   }
 

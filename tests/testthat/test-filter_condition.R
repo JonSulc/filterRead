@@ -1448,3 +1448,47 @@ test_that("an OR of two purely positional branches runs", {
   expect_equal(result$chr, c("chr1", "chr1", "chr2", "chr2"))
   expect_equal(result$pos, c(200, 300, 300, 400))
 })
+
+test_that("an OR of two branches keeps each branch's positions", {
+  finterface <- local_file_interface(dt = data.table::data.table(
+    chr    = rep(1:2, each = 4),
+    pos    = rep(c(100, 200, 300, 400), times = 2),
+    ref    = rep(c("A", "T"), each = 4),
+    alt    = rep(c("T", "A"), each = 4),
+    effect = 0,
+    pval   = 0.5
+  ))
+  result <- finterface[
+    (chr == 1 & pos <= 200 & ref == "A") | (chr == 2 & pos <= 200 & ref == "T")
+  ]
+  expect_equal(nrow(result), 4)
+  expect_equal(result$chr, c("chr1", "chr1", "chr2", "chr2"))
+  expect_equal(result$pos, c(100, 200, 100, 200))
+})
+
+test_that("non_genomic_is_and_block is FALSE for an OR of non-genomic tests", {
+  finterface <- local_summary_stats_interface()
+  expect_false(
+    new_filter_condition(
+      rlang::quo((chr == 1 & ref == "A") | (chr == 2 & alt == "T")),
+      finterface
+    ) |>
+      non_genomic_is_and_block()
+  )
+  expect_false(
+    new_filter_condition(rlang::quo(ref == "A" | alt == "T"), finterface) |>
+      non_genomic_is_and_block()
+  )
+})
+
+test_that("non_genomic_is_and_block is TRUE when no OR reaches those tests", {
+  finterface <- local_summary_stats_interface()
+  expect_true(
+    new_filter_condition(rlang::quo(chr == 1 & pval < .05), finterface) |>
+      non_genomic_is_and_block()
+  )
+  expect_true(
+    new_filter_condition(rlang::quo(chr == 1 | chr == 2), finterface) |>
+      non_genomic_is_and_block()
+  )
+})
