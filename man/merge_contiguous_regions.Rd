@@ -13,13 +13,9 @@ merge_contiguous_regions(gregions)
 genomic_regions with overlapping regions merged
 }
 \description{
-Combines regions that overlap or are adjacent (end+1 == start) into
-single regions. Compares each start with end of previous row.
-}
-\details{
-Algorithm:
-1. Sort by chr, start, end
-2. For each chromosome, identify groups where start > previous end + 1
-3. Merge each group to (min(start), max(end))
+Combines regions that overlap or are adjacent (end + 1 == start) into
+single regions. A region leaving a position unconstrained reaches the
+start or the end of its chromosome, so it merges with whatever it meets
+there.
 }
 \keyword{internal}

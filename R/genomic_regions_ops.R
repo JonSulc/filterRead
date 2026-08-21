@@ -552,6 +552,8 @@ replace_sentinel_with_na <- function(
     end == end_sentinel,
     end := NA_integer_
   ][] |>
+    # The comparisons above leave a secondary index on the result
+    data.table::setindexv(NULL) |>
     data.table::setkey("chr", "start", "end")
 }
 
@@ -559,13 +561,10 @@ replace_sentinel_with_na <- function(
 
 #' Merge overlapping and contiguous genomic regions
 #'
-#' Combines regions that overlap or are adjacent (end+1 == start) into
-#' single regions. Compares each start with end of previous row.
-#'
-#' Algorithm:
-#' 1. Sort by chr, start, end
-#' 2. For each chromosome, identify groups where start > previous end + 1
-#' 3. Merge each group to (min(start), max(end))
+#' Combines regions that overlap or are adjacent (end + 1 == start) into
+#' single regions. A region leaving a position unconstrained reaches the
+#' start or the end of its chromosome, so it merges with whatever it meets
+#' there.
 #'
 #' @param gregions A genomic_regions object
 #' @return genomic_regions with overlapping regions merged
@@ -576,33 +575,37 @@ merge_contiguous_regions <- function(
   if (nrow(gregions) == 0) {
     return(gregions)
   }
-  copy_genomic_regions(gregions)[
-    ,
-    c(
+  replace_na_with_sentinel(gregions) |>
+    # The merging below requires sorted rows
+    data.table::setkey(chr, start, end) |>
+    _[
+      ,
+      c(
+        .SD,
+        # Where the largest end so far + 1 is less than the start, the rows
+        # are disjoint and a new group begins; otherwise the row meets or
+        # overlaps that group and joins it, to be merged into one region
+        .(group = cumsum(
+          cummax(data.table::shift(end + 1L, fill = 0L)) < start
+        ))
+      ),
+      by = chr
+    ][
+      ,
+      .(
+        chr = chr,
+        start = min(start),
+        end = max(end)
+      ),
+      by = .(chr, group)
+    ][
+      ,
       .SD,
-      # Groups of overlapping regions are obtained by counting (cumsum)
-      # regions where the start is less than the end of the previous
-      # region + 1 (shift(end + 1))
-      .(group = cumsum(
-        cummax(data.table::shift(end + 1, fill = 0)) < start
-      ))
-    ),
-    by = chr
-  ][
-    ,
-    .(
-      chr = chr,
-      start = min(start),
-      end = max(end)
-    ),
-    by = .(chr, group)
-  ][
-    ,
-    .SD,
-    .SDcols = -"group"
-  ] |>
-    # 'build' is preserved but 'include' is not
+      .SDcols = -"group"
+    ] |>
+    replace_sentinel_with_na() |>
     as_genomic_regions(
+      build = build(gregions),
       include = is_included(gregions),
       merge_contiguous = FALSE
     )

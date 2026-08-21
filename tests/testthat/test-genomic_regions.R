@@ -198,6 +198,30 @@ test_that("merging preserves attributes", {
   )
 })
 
+test_that("merging keeps rows separated by an unconstrained position", {
+  gregions <- new_genomic_regions(
+    chr = c(1, 1),
+    start = c(NA, 200),
+    end = c(100, NA),
+    build = "b38"
+  )
+  expect_equal(nrow(gregions), 2)
+  expect_equal(gregions$start, c(NA_integer_, 200L))
+  expect_equal(gregions$end, c(100L, NA_integer_))
+})
+
+test_that("merging joins rows that meet across an unconstrained position", {
+  gregions <- new_genomic_regions(
+    chr = c(1, 1),
+    start = c(NA, 101),
+    end = c(100, NA),
+    build = "b38"
+  )
+  expect_equal(nrow(gregions), 1)
+  expect_true(is.na(gregions$start))
+  expect_true(is.na(gregions$end))
+})
+
 test_that("addition works", {
   gregions1 <- new_genomic_regions(
     chr = "chr1",
