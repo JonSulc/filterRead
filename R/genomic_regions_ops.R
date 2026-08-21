@@ -7,6 +7,7 @@
 # adds to `end` uses `+ 1L`:
 # - data.table::foverlaps adds 1 internally to convert to half-open ranges
 # - merge_contiguous_regions: shift(end + 1L, fill = 0)
+# - subtract_interval_coverage: pmax(start, cut_end + 1L)
 # - expand_genomic_regions (negation): start = end + 1L
 # Any future code that adds more than 1 to `end` must lower this sentinel
 # accordingly, otherwise it will silently overflow to NA on sentinel rows.
@@ -291,13 +292,13 @@ expand_genomic_regions <- function(
 #' Combine genomic_regions by rows
 #'
 #' @param ... genomic_regions objects to combine
-#' @param merge_contiguous If TRUE, contiguous regions in the result are
-#'   merged into a single row.
+#' @param normalize_regions If TRUE, reduce the regions to their canonical
+#'   form: sorted and pairwise disjoint.
 #' @return Combined genomic_regions
 #' @export
 rbind.genomic_regions <- function(
   ...,
-  merge_contiguous = TRUE
+  normalize_regions = TRUE
 ) {
   dots <- list(...)
   if (!all(sapply(dots, is_complement) == is_complement(dots[[1]]))) {
@@ -327,7 +328,7 @@ rbind.genomic_regions <- function(
     as_genomic_regions(
       build = build(dots[[1]]),
       complement = is_complement(dots[[1]]),
-      merge_contiguous = merge_contiguous
+      normalize_regions = normalize_regions
     )
 }
 
@@ -542,60 +543,6 @@ replace_sentinel_with_na <- function(
     # The comparisons above leave a secondary index on the result
     data.table::setindexv(NULL) |>
     data.table::setkey("chr", "start", "end")
-}
-
-# Region Merging
-
-#' Merge overlapping and contiguous genomic regions
-#'
-#' Combines regions that overlap or are adjacent (end + 1 == start) into
-#' single regions. A region leaving a position unconstrained reaches the
-#' start or the end of its chromosome, so it merges with whatever it meets
-#' there.
-#'
-#' @param gregions A genomic_regions object
-#' @return genomic_regions with overlapping regions merged
-#' @keywords internal
-merge_contiguous_regions <- function(
-  gregions
-) {
-  if (nrow(gregions) == 0) {
-    return(gregions)
-  }
-  replace_na_with_sentinel(gregions) |>
-    # The merging below requires sorted rows
-    data.table::setkey(chr, start, end) |>
-    _[
-      ,
-      c(
-        .SD,
-        # Where the largest end so far + 1 is less than the start, the rows
-        # are disjoint and a new group begins; otherwise the row meets or
-        # overlaps that group and joins it, to be merged into one region
-        .(group = cumsum(
-          cummax(data.table::shift(end + 1L, fill = 0L)) < start
-        ))
-      ),
-      by = chr
-    ][
-      ,
-      .(
-        chr = chr,
-        start = min(start),
-        end = max(end)
-      ),
-      by = .(chr, group)
-    ][
-      ,
-      .SD,
-      .SDcols = -"group"
-    ] |>
-    replace_sentinel_with_na() |>
-    as_genomic_regions(
-      build = build(gregions),
-      complement = is_complement(gregions),
-      merge_contiguous = FALSE
-    )
 }
 
 #' Return the smallest equivalent genomic_regions representation

@@ -4,13 +4,13 @@
 \alias{rbind.genomic_regions}
 \title{Combine genomic_regions by rows}
 \usage{
-\method{rbind}{genomic_regions}(..., merge_contiguous = TRUE)
+\method{rbind}{genomic_regions}(..., normalize_regions = TRUE)
 }
 \arguments{
 \item{...}{genomic_regions objects to combine}
 
-\item{merge_contiguous}{If TRUE, contiguous regions in the result are
-merged into a single row.}
+\item{normalize_regions}{If TRUE, reduce the regions to their canonical
+form: sorted and pairwise disjoint.}
 }
 \value{
 Combined genomic_regions

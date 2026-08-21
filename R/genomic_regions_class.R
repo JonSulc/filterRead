@@ -7,7 +7,7 @@
 # - Supports set operations: union (|/+), intersection (&)
 # - Handles full-genome queries (NA values mean "any")
 # - Liftover between genome builds (e.g., b37 -> b38)
-# - Automatically merges overlapping/contiguous regions
+# - Reduces regions to a canonical form on construction
 #
 # The genomic_regions class is used throughout filterRead to:
 # - Extract genomic constraints from filter conditions
@@ -30,7 +30,8 @@
 #'   filtering against a build-bearing file requires it (see
 #'   [as_genomic_regions()] and the file-interface `[` method).
 #' @param chr_prefix Prefix to ensure on chromosome names (default "chr").
-#' @param merge_contiguous If TRUE, merge overlapping/adjacent regions.
+#' @param normalize_regions If TRUE, reduce the regions to their canonical
+#'   form: sorted and pairwise disjoint.
 #' @param complement If TRUE the rows describe the coordinates the set
 #'   excludes rather than those it covers.
 #'
@@ -50,8 +51,8 @@ genomic_regions <- function(
   end = integer(),
   build = NULL,
   chr_prefix = "chr",
-  merge_contiguous = TRUE,
-  complement = FALSE
+  complement = FALSE,
+  normalize_regions = TRUE
 ) {
   if (data.table::is.data.table(chr)) {
     stop(
@@ -65,8 +66,8 @@ genomic_regions <- function(
     end = end,
     build = build,
     chr_prefix = chr_prefix,
-    merge_contiguous = merge_contiguous,
-    complement = complement
+    complement = complement,
+    normalize_regions = normalize_regions
   )
 }
 
@@ -90,8 +91,10 @@ genomic_regions <- function(
 #'   expands the NA side to the explicit chromosomes from the other
 #'   (see [expand_na_chr()]); when both have `chr = NA` the NA is kept and
 #'   the position constraints are intersected directly.
-#' - Union (`+`/`|`) preserves NA chromosomes and rbinds the rows;
-#'   contiguous/overlapping ranges are merged when `merge_contiguous`.
+#' - Union (`+`/`|`) combines the rows and reduces them to the canonical
+#'   form when `normalize_regions`: contiguous or overlapping ranges merge,
+#'   and a region with `chr = NA` absorbs the coverage of the regions it
+#'   spans.
 #' @keywords internal
 new_genomic_regions <- function(
   chr = character(),
@@ -99,8 +102,8 @@ new_genomic_regions <- function(
   end = integer(),
   build = NULL,
   chr_prefix = "chr",
-  merge_contiguous = TRUE,
-  complement = FALSE
+  complement = FALSE,
+  normalize_regions = TRUE
 ) {
   argument_lengths <- list(chr, start, end) |>
     sapply(length)
@@ -134,7 +137,7 @@ new_genomic_regions <- function(
     as_genomic_regions(
       build = build,
       complement = complement,
-      merge_contiguous = merge_contiguous
+      normalize_regions = normalize_regions
     )
 }
 
@@ -225,7 +228,7 @@ format_chr <- function(
 #' @keywords internal
 copy_genomic_regions <- function(gregions) {
   data.table::copy(gregions) |>
-    as_genomic_regions(merge_contiguous = FALSE)
+    as_genomic_regions(normalize_regions = FALSE)
 }
 
 #' Remove prefix from chromosome names

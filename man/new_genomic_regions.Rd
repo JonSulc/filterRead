@@ -10,8 +10,8 @@ new_genomic_regions(
   end = integer(),
   build = NULL,
   chr_prefix = "chr",
-  merge_contiguous = TRUE,
-  complement = FALSE
+  complement = FALSE,
+  normalize_regions = TRUE
 )
 }
 \arguments{
@@ -28,10 +28,11 @@ filtering against a build-bearing file requires it (see
 
 \item{chr_prefix}{Prefix to ensure on chromosome names (default "chr").}
 
-\item{merge_contiguous}{If TRUE, merge overlapping/adjacent regions.}
-
 \item{complement}{If TRUE the rows describe the coordinates the set
 excludes rather than those it covers.}
+
+\item{normalize_regions}{If TRUE, reduce the regions to their canonical
+form: sorted and pairwise disjoint.}
 }
 \value{
 A `genomic_regions` object.
@@ -53,8 +54,10 @@ Set operations propagate this:
   expands the NA side to the explicit chromosomes from the other
   (see [expand_na_chr()]); when both have `chr = NA` the NA is kept and
   the position constraints are intersected directly.
-- Union (`+`/`|`) preserves NA chromosomes and rbinds the rows;
-  contiguous/overlapping ranges are merged when `merge_contiguous`.
+- Union (`+`/`|`) combines the rows and reduces them to the canonical
+  form when `normalize_regions`: contiguous or overlapping ranges merge,
+  and a region with `chr = NA` absorbs the coverage of the regions it
+  spans.
 }
 
 \keyword{internal}

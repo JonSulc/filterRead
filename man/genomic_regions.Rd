@@ -10,8 +10,8 @@ genomic_regions(
   end = integer(),
   build = NULL,
   chr_prefix = "chr",
-  merge_contiguous = TRUE,
-  complement = FALSE
+  complement = FALSE,
+  normalize_regions = TRUE
 )
 }
 \arguments{
@@ -28,10 +28,11 @@ filtering against a build-bearing file requires it (see
 
 \item{chr_prefix}{Prefix to ensure on chromosome names (default "chr").}
 
-\item{merge_contiguous}{If TRUE, merge overlapping/adjacent regions.}
-
 \item{complement}{If TRUE the rows describe the coordinates the set
 excludes rather than those it covers.}
+
+\item{normalize_regions}{If TRUE, reduce the regions to their canonical
+form: sorted and pairwise disjoint.}
 }
 \value{
 A `genomic_regions` object.

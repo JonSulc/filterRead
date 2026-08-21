@@ -11,7 +11,7 @@ as_genomic_regions(x, build = NULL, ...)
   x,
   build = NULL,
   complement = NULL,
-  merge_contiguous = TRUE,
+  normalize_regions = TRUE,
   ...
 )
 }
@@ -27,7 +27,8 @@ as_genomic_regions(x, build = NULL, ...)
 excludes (TRUE) rather than those it covers (FALSE). NULL inherits the
 input's `complement` attribute, defaulting to FALSE.}
 
-\item{merge_contiguous}{If TRUE, merge overlapping or adjacent regions.}
+\item{normalize_regions}{If TRUE, reduce the regions to their canonical
+form: sorted and pairwise disjoint.}
 }
 \value{
 A genomic_regions object

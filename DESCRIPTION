@@ -44,6 +44,7 @@ Collate:
     'filter_condition_utils.R'
     'genomic_regions_class.R'
     'genomic_regions_convert.R'
+    'genomic_regions_normalize.R'
     'genomic_regions_ops.R'
     'gwas_vcf_parsing.R'
     'infer_build.R'

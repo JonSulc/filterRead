@@ -9,7 +9,8 @@
 #' @param complement Whether the rows describe the coordinates the set
 #'   excludes (TRUE) rather than those it covers (FALSE). NULL inherits the
 #'   input's `complement` attribute, defaulting to FALSE.
-#' @param merge_contiguous If TRUE, merge overlapping or adjacent regions.
+#' @param normalize_regions If TRUE, reduce the regions to their canonical
+#'   form: sorted and pairwise disjoint.
 #' @param ... Additional arguments passed to methods
 #' @return A genomic_regions object
 #' @export
@@ -27,7 +28,7 @@ as_genomic_regions.data.frame <- function(
   x,
   build = NULL,
   complement = NULL,
-  merge_contiguous = TRUE,
+  normalize_regions = TRUE,
   ...
 ) {
   missing_cols <- setdiff(c("chr", "start", "end"), names(x))
@@ -58,9 +59,9 @@ as_genomic_regions.data.frame <- function(
   )
   data.table::setkey(gregions, chr, start, end)
 
-  if (!merge_contiguous) return(gregions)
+  if (!normalize_regions) return(gregions)
 
-  merge_contiguous_regions(gregions)
+  normalize_genomic_regions(gregions)
 }
 #' @export
 as_genomic_regions.eq_filter_condition <- function(
