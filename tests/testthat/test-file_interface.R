@@ -1167,3 +1167,19 @@ test_that("A caller's separator reaches both read paths", {
   expect_equal(head(finterface, 1, sep = ","), head(finterface, 1))
 })
 
+
+test_that("A condition covering the whole genome reads every row", {
+  fixture <- data.table::data.table(
+    chr = rep(1:2, each = 4),
+    pos = rep(c(100L, 200L, 300L, 400L), times = 2),
+    ref = rep(c("A", "C"), times = 4),
+    alt = rep(c("T", "T", "G", "G"), times = 2),
+    effect = 0,
+    pval = c(0.01, 0.9, 0.01, 0.9, 0.01, 0.9, 0.01, 0.9)
+  )
+  finterface <- local_file_interface(dt = fixture)
+  expect_equal(
+    nrow(finterface[chr == 1 | 123 < pos | pos < 456]),
+    nrow(fixture)
+  )
+})

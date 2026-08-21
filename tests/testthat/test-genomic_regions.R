@@ -671,7 +671,7 @@ test_that("intersection with NA chr matches any chromosome", {
     gregions1 & gregions2,
     new_genomic_regions(
       chr = c(NA_character_, "chr1", "chr2"),
-      start = c(21, 1042, 42),
+      start = c(21, 1042, 43),
       end = c(42, 1100, 100)
     )
   )
@@ -2181,5 +2181,83 @@ test_that("subtract_regions_dt rejects an unrepresentable difference", {
       data.table::data.table(chr = "chr1", start = 150L, end = 160L)
     ),
     "enumerating the chromosomes"
+  )
+})
+
+# Absorption by an unconstrained chromosome ----------------------------------
+
+test_that("a region on every chromosome absorbs one it covers", {
+  expect_equal(
+    full_genomic_regions(build = "b38") |
+      new_genomic_regions(chr = 1, build = "b38"),
+    full_genomic_regions(build = "b38")
+  )
+  expect_equal(
+    new_genomic_regions(end = 200, build = "b38") |
+      new_genomic_regions(chr = 1, start = 1, end = 100, build = "b38"),
+    new_genomic_regions(end = 200, build = "b38")
+  )
+})
+
+test_that("a region on every chromosome trims one it overlaps", {
+  expect_equal(
+    new_genomic_regions(end = 200, build = "b38") |
+      new_genomic_regions(chr = 1, build = "b38"),
+    new_genomic_regions(
+      chr = c(NA_character_, "chr1"),
+      start = c(NA, 201),
+      end = c(200, NA),
+      build = "b38"
+    )
+  )
+  expect_equal(
+    new_genomic_regions(end = 200, build = "b38") |
+      new_genomic_regions(chr = 1, start = 150, end = 300, build = "b38"),
+    new_genomic_regions(
+      chr = c(NA_character_, "chr1"),
+      start = c(NA, 201),
+      end = c(200, 300),
+      build = "b38"
+    )
+  )
+})
+
+test_that("compact keeps the absorbed coverage", {
+  expect_true(
+    is_full_genome(
+      compact(
+        full_genomic_regions(build = "b38") |
+          new_genomic_regions(chr = 1, build = "b38")
+      )
+    )
+  )
+})
+
+test_that("construction leaves the rows canonical", {
+  expect_canonical(new_genomic_regions(
+    chr = c(1, 1),
+    start = c(NA, 200),
+    end = c(100, NA),
+    build = "b38"
+  ))
+  expect_canonical(new_genomic_regions(
+    chr = c(NA_character_, "chr1"),
+    start = c(NA, 150),
+    end = c(200, 300),
+    build = "b38"
+  ))
+  expect_canonical(new_genomic_regions(
+    chr = c(NA_character_, "chr1", "chr1"),
+    start = c(100, 1, 250),
+    end = c(200, 400, NA),
+    build = "b38"
+  ))
+  expect_canonical(
+    full_genomic_regions(build = "b38") |
+      new_genomic_regions(chr = 1, build = "b38")
+  )
+  expect_canonical(
+    new_genomic_regions(end = 200, build = "b38") |
+      new_genomic_regions(chr = 1, start = 150, end = 300, build = "b38")
   )
 })

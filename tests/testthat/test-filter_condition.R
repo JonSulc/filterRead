@@ -310,7 +310,8 @@ test_that("And-block detection works", {
       finterface
     ))
   )
-  expect_false(
+  # The position operands cover the whole genome, absorbing chr1
+  expect_true(
     is_and_block(new_filter_condition(
       rlang::quo(chr == 1 | 123 < pos | pos < 456),
       finterface

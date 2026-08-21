@@ -13,7 +13,8 @@
 normalize_genomic_regions <- function(
   gregions
 ) {
-  merge_contiguous_regions(gregions)
+  merge_contiguous_regions(gregions) |>
+    subtract_unconstrained_chr_coverage()
 }
 
 #' Merge overlapping and contiguous genomic regions
@@ -61,6 +62,43 @@ merge_contiguous_regions <- function(
       .SDcols = -"group"
     ] |>
     replace_sentinel_with_na() |>
+    as_genomic_regions(
+      build = build(gregions),
+      complement = is_complement(gregions),
+      normalize_regions = FALSE
+    )
+}
+
+#' Remove from the named rows what the unconstrained-chromosome rows cover
+#'
+#' A row whose `chr` is NA covers every chromosome, so a named row keeps only
+#' the positions that row leaves. Trimming can split a named row, so the
+#' result may carry more rows than the input.
+#'
+#' The complement bit does not enter into it. Reducing the rows as a set is
+#' right for a set stored as its complement too, since De Morgan makes the
+#' complement of a union the intersection of the complements.
+#'
+#' @param gregions A genomic_regions object with merged rows
+#' @return A genomic_regions with pairwise disjoint rows
+#' @keywords internal
+subtract_unconstrained_chr_coverage <- function(
+  gregions
+) {
+  if (!anyNA(gregions$chr)) {
+    return(gregions)
+  }
+  rows <- data.table::data.table(
+    chr = gregions$chr,
+    start = gregions$start,
+    end = gregions$end
+  )
+  unconstrained <- rows[is.na(chr)]
+  list(
+    unconstrained,
+    subtract_regions_dt(rows[!is.na(chr)], unconstrained)
+  ) |>
+    data.table::rbindlist() |>
     as_genomic_regions(
       build = build(gregions),
       complement = is_complement(gregions),
