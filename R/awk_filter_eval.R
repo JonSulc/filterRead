@@ -112,7 +112,9 @@ eval_fcondition <- function(
 #' @param finterface File interface (used to check RSID matching)
 #' @param column_indices Named list with chr and pos column refs
 #'
-#' @return Character string with awk condition, or NULL if empty/RSID file
+#' @return Character string with the awk condition, `"0"` when the regions
+#'   match nothing, or NULL when they impose no constraint: no regions, the
+#'   whole genome, or positions handled through an RSID index
 #' @keywords internal
 eval_genomic_regions_from_fc <- function(
   fcondition,

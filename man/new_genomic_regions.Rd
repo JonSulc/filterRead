@@ -39,7 +39,7 @@ A `genomic_regions` object.
 }
 \description{
 Constructor for genomic_regions. Validates inputs, formats chromosome
-names, and optionally merges contiguous regions.
+names, and optionally reduces the regions to their canonical form.
 }
 \section{NA semantics}{
 

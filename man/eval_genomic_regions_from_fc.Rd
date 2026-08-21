@@ -14,7 +14,9 @@ eval_genomic_regions_from_fc(fcondition, finterface, column_indices)
 \item{column_indices}{Named list with chr and pos column refs}
 }
 \value{
-Character string with awk condition, or NULL if empty/RSID file
+Character string with the awk condition, `"0"` when the regions
+  match nothing, or NULL when they impose no constraint: no regions, the
+  whole genome, or positions handled through an RSID index
 }
 \description{
 Translates a genomic_regions from the filter_condition into awk conditions.

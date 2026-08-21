@@ -74,7 +74,7 @@ genomic_regions <- function(
 #' Create a new genomic_regions object
 #'
 #' Constructor for genomic_regions. Validates inputs, formats chromosome
-#' names, and optionally merges contiguous regions.
+#' names, and optionally reduces the regions to their canonical form.
 #'
 #' @inheritParams genomic_regions
 #'
