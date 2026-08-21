@@ -1978,3 +1978,208 @@ test_that("genomic_regions construction coerces coordinates to integer", {
   expect_type(gr$start, "integer")
   expect_type(gr$end, "integer")
 })
+
+# subtract_regions_dt tests -------------------------------------------------
+
+test_that("subtract_regions_dt keeps a row outside everything it removes", {
+  expect_equal(
+    subtract_regions_dt(
+      data.table::data.table(chr = "chr1", start = 100L, end = 200L),
+      data.table::data.table(chr = "chr1", start = 300L, end = 400L)
+    ),
+    data.table::data.table(chr = "chr1", start = 100L, end = 200L)
+  )
+})
+
+test_that("subtract_regions_dt ignores a region to remove on another chr", {
+  expect_equal(
+    subtract_regions_dt(
+      data.table::data.table(chr = "chr1", start = 100L, end = 200L),
+      data.table::data.table(chr = "chr2", start = 100L, end = 200L)
+    ),
+    data.table::data.table(chr = "chr1", start = 100L, end = 200L)
+  )
+})
+
+test_that("subtract_regions_dt drops a row it removes entirely", {
+  expect_equal(
+    subtract_regions_dt(
+      data.table::data.table(chr = "chr1", start = 100L, end = 200L),
+      data.table::data.table(chr = "chr1", start = 50L, end = 250L)
+    ),
+    data.table::data.table(
+      chr = character(),
+      start = integer(),
+      end = integer()
+    )
+  )
+})
+
+test_that("subtract_regions_dt trims a row it removes part of", {
+  expect_equal(
+    subtract_regions_dt(
+      data.table::data.table(chr = "chr1", start = 100L, end = 300L),
+      data.table::data.table(chr = "chr1", start = 50L, end = 150L)
+    ),
+    data.table::data.table(chr = "chr1", start = 151L, end = 300L)
+  )
+  expect_equal(
+    subtract_regions_dt(
+      data.table::data.table(chr = "chr1", start = 100L, end = 300L),
+      data.table::data.table(chr = "chr1", start = 250L, end = 400L)
+    ),
+    data.table::data.table(chr = "chr1", start = 100L, end = 249L)
+  )
+})
+
+test_that("subtract_regions_dt splits a row it removes the middle of", {
+  expect_equal(
+    data.table::setorder(
+      subtract_regions_dt(
+        data.table::data.table(chr = "chr1", start = 100L, end = 300L),
+        data.table::data.table(chr = "chr1", start = 150L, end = 200L)
+      ),
+      chr, start, end
+    ),
+    data.table::data.table(
+      chr = c("chr1", "chr1"),
+      start = c(100L, 201L),
+      end = c(149L, 300L)
+    )
+  )
+})
+
+test_that("subtract_regions_dt applies an NA-chromosome row to every row", {
+  expect_equal(
+    data.table::setorder(
+      subtract_regions_dt(
+        data.table::data.table(
+          chr = c("chr1", "chr2"),
+          start = c(100L, 100L),
+          end = c(300L, 300L)
+        ),
+        data.table::data.table(
+          chr = NA_character_,
+          start = 150L,
+          end = 200L
+        )
+      ),
+      chr, start, end
+    ),
+    data.table::data.table(
+      chr = c("chr1", "chr1", "chr2", "chr2"),
+      start = c(100L, 201L, 100L, 201L),
+      end = c(149L, 300L, 149L, 300L)
+    )
+  )
+})
+
+test_that("subtract_regions_dt reads NA start and end as unconstrained", {
+  expect_equal(
+    subtract_regions_dt(
+      data.table::data.table(
+        chr = "chr1",
+        start = NA_integer_,
+        end = NA_integer_
+      ),
+      data.table::data.table(
+        chr = NA_character_,
+        start = NA_integer_,
+        end = 200L
+      )
+    ),
+    data.table::data.table(chr = "chr1", start = 201L, end = NA_integer_)
+  )
+})
+
+test_that("subtract_regions_dt removes each region in turn", {
+  expect_equal(
+    data.table::setorder(
+      subtract_regions_dt(
+        data.table::data.table(chr = "chr1", start = 100L, end = 500L),
+        data.table::data.table(
+          chr = "chr1",
+          start = c(150L, 300L),
+          end = c(200L, 350L)
+        )
+      ),
+      chr, start, end
+    ),
+    data.table::data.table(
+      chr = c("chr1", "chr1", "chr1"),
+      start = c(100L, 201L, 351L),
+      end = c(149L, 299L, 500L)
+    )
+  )
+})
+
+test_that("subtract_regions_dt keeps every row when nothing is removed", {
+  expect_equal(
+    subtract_regions_dt(
+      data.table::data.table(chr = "chr1", start = 100L, end = 200L),
+      data.table::data.table(
+        chr = character(),
+        start = integer(),
+        end = integer()
+      )
+    ),
+    data.table::data.table(chr = "chr1", start = 100L, end = 200L)
+  )
+})
+
+test_that("subtract_regions_dt returns no rows when given none", {
+  expect_equal(
+    subtract_regions_dt(
+      data.table::data.table(
+        chr = character(),
+        start = integer(),
+        end = integer()
+      ),
+      data.table::data.table(chr = "chr1", start = 100L, end = 200L)
+    ),
+    data.table::data.table(
+      chr = character(),
+      start = integer(),
+      end = integer()
+    )
+  )
+})
+
+test_that("subtract_regions_dt removes every unconstrained-chromosome region", {
+  expect_equal(
+    data.table::setorder(
+      subtract_regions_dt(
+        data.table::data.table(
+          chr = c("chr1", "chr2"),
+          start = c(1L, 1L),
+          end = c(1000L, 1000L)
+        ),
+        data.table::data.table(
+          chr = NA_character_,
+          start = c(NA_integer_, 200L),
+          end = c(100L, NA_integer_)
+        )
+      ),
+      chr, start, end
+    ),
+    data.table::data.table(
+      chr = c("chr1", "chr2"),
+      start = c(101L, 101L),
+      end = c(199L, 199L)
+    )
+  )
+})
+
+test_that("subtract_regions_dt rejects an unrepresentable difference", {
+  expect_error(
+    subtract_regions_dt(
+      data.table::data.table(
+        chr = NA_character_,
+        start = 100L,
+        end = 200L
+      ),
+      data.table::data.table(chr = "chr1", start = 150L, end = 160L)
+    ),
+    "enumerating the chromosomes"
+  )
+})

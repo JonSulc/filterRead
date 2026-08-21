@@ -67,3 +67,80 @@ merge_contiguous_regions <- function(
       normalize_regions = FALSE
     )
 }
+
+#' Subtract one set of region rows from another
+#'
+#' Removes the coverage of `to_remove` from the rows of `regions_dt`. A row
+#' is kept when `to_remove` does not reach it, dropped when `to_remove`
+#' covers it, trimmed when the two overlap at one end, and split into two
+#' when an interval of `to_remove` lands inside it. A row of `to_remove`
+#' whose `chr` is NA applies to every row.
+#'
+#' Both arguments are plain region tables of `chr`, `start` and `end`, read
+#' as the positions they cover — there is no complement bit — and the result
+#' is one too, with its rows in no particular order.
+#'
+#' @param regions_dt,to_remove data.tables of region rows
+#' @return The rows of `regions_dt` that `to_remove` does not cover
+#' @keywords internal
+subtract_regions_dt <- function(
+  regions_dt,
+  to_remove
+) {
+  if (nrow(regions_dt) == 0L || nrow(to_remove) == 0L) {
+    return(regions_dt[, .(chr, start, end)])
+  }
+  rows <- data.table::data.table(
+    chr = regions_dt$chr,
+    start = data.table::fcoalesce(regions_dt$start, START_SENTINEL),
+    end = data.table::fcoalesce(regions_dt$end, END_SENTINEL)
+  )
+  for (index in seq_len(nrow(to_remove))) {
+    rows <- subtract_interval_coverage(rows, to_remove[index])
+  }
+  rows[
+    start == START_SENTINEL,
+    start := NA_integer_
+  ][
+    end == END_SENTINEL,
+    end := NA_integer_
+  ][]
+}
+
+#' Remove one interval's coverage from a set of region rows
+#'
+#' Every row the interval reaches contributes the part of itself before the
+#' interval and the part after, and the empty ones are dropped. Rows the
+#' interval does not reach pass through untouched, so carving the intervals
+#' one at a time is correct even when they overlap each other.
+#'
+#' @param rows Region rows carrying sentinel values in place of NA
+#' @param interval A one-row data.table of `chr`, `start` and `end`
+#' @return The rows with the interval's coverage removed
+#' @keywords internal
+subtract_interval_coverage <- function(
+  rows,
+  interval
+) {
+  cut_start <- data.table::fcoalesce(interval$start, START_SENTINEL)
+  cut_end <- data.table::fcoalesce(interval$end, END_SENTINEL)
+  reaches <- cut_start <= rows$end & rows$start <= cut_end
+  if (is.na(interval$chr)) {
+    carved <- reaches
+  } else {
+    if (any(reaches & is.na(rows$chr))) {
+      stop(
+        "Cannot subtract a named chromosome from a region covering every ",
+        "chromosome without enumerating the chromosomes."
+      )
+    }
+    carved <- reaches & rows$chr == interval$chr
+  }
+  touched <- rows[carved]
+  list(
+    rows[!carved],
+    touched[, .(chr, start, end = pmin(end, cut_start - 1L))][start <= end],
+    touched[, .(chr, start = pmax(start, cut_end + 1L), end)][start <= end]
+  ) |>
+    data.table::rbindlist()
+}
