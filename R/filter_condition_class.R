@@ -801,7 +801,7 @@ post_process.genomic_regions <- function(
     !is.na(chr),
     chr := check_post_processing(chr, "chr", finterface)
   ][] |>
-    as_genomic_regions(include = is_included(x))
+    as_genomic_regions(complement = is_complement(x))
 }
 
 #' @export

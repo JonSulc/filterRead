@@ -89,7 +89,7 @@ test_that("initialization works", {
       row.names = 1,
       class = c("genomic_regions", "data.table", "data.frame"),
       sorted = c("chr", "start", "end"),
-      include = TRUE
+      complement = FALSE
     ),
     list_as_map = TRUE # Ignore order
   )
@@ -116,7 +116,7 @@ test_that("initialization works", {
       row.names = 1,
       class = c("genomic_regions", "data.table", "data.frame"),
       sorted = c("chr", "start", "end"),
-      include = TRUE
+      complement = FALSE
     ),
     list_as_map = TRUE # Ignore order
   )
@@ -186,15 +186,15 @@ test_that("merging preserves attributes", {
     end = c(1234, 2345),
     build = "b37",
     merge_contiguous = FALSE,
-    include = FALSE
+    complement = TRUE
   )
   merged <- merge_contiguous_regions(gregions)
   expect_equal(
     build(merged),
     "b37"
   )
-  expect_false(
-    is_included(merged)
+  expect_true(
+    is_complement(merged)
   )
 })
 
@@ -1185,12 +1185,12 @@ test_that("`+` handles negative genomic_regions", {
   gregions1 <- new_genomic_regions(
     chr = 1,
     start = 123,
-    include = FALSE
+    complement = TRUE
   )
   gregions2 <- new_genomic_regions(
     chr = 1,
     end = 234,
-    include = FALSE
+    complement = TRUE
   )
 
   expect_equal(
@@ -1199,7 +1199,7 @@ test_that("`+` handles negative genomic_regions", {
       chr = 1,
       start = 123,
       end = 234,
-      include = FALSE
+      complement = TRUE
     )
   )
 })
@@ -1208,34 +1208,34 @@ test_that("`+` handles negative genomic_regions", {
 
 # Basic `!` operator tests ---------------------------------------------------
 
-test_that("`!` flips is_included from TRUE to FALSE", {
+test_that("`!` marks a directly stored set as its complement", {
   gregions <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200,
     build = "b38"
   )
-  expect_true(is_included(gregions))
+  expect_false(is_complement(gregions))
 
   negated <- !gregions
-  expect_false(is_included(negated))
+  expect_true(is_complement(negated))
   expect_equal(nrow(negated), 1)
   expect_equal(negated$chr, "chr1")
   expect_equal(negated$start, 100)
   expect_equal(negated$end, 200)
 })
 
-test_that("`!` flips is_included from FALSE to TRUE", {
+test_that("`!` marks a complement-stored set as directly stored", {
   gregions <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200,
-    include = FALSE
+    complement = TRUE
   )
-  expect_false(is_included(gregions))
+  expect_true(is_complement(gregions))
 
   negated <- !gregions
-  expect_true(is_included(negated))
+  expect_false(is_complement(negated))
 })
 
 test_that("double negation returns equivalent to original", {
@@ -1247,7 +1247,7 @@ test_that("double negation returns equivalent to original", {
   )
   double_negated <- !!gregions
 
-  expect_equal(is_included(double_negated), is_included(gregions))
+  expect_equal(is_complement(double_negated), is_complement(gregions))
   expect_equal(double_negated$chr, gregions$chr)
   expect_equal(double_negated$start, gregions$start)
   expect_equal(double_negated$end, gregions$end)
@@ -1265,40 +1265,40 @@ test_that("`!` preserves build attribute", {
   expect_equal(build(negated), "b37")
 })
 
-# is_included accessor tests -------------------------------------------------
+# is_complement accessor tests -----------------------------------------------
 
-test_that("is_included returns TRUE for default positive regions", {
+test_that("is_complement returns FALSE for a directly stored set", {
   gregions <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200
   )
-  expect_true(is_included(gregions))
+  expect_false(is_complement(gregions))
 })
 
-test_that("is_included returns FALSE for negative regions", {
+test_that("is_complement returns TRUE for a complement-stored set", {
   gregions <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200,
-    include = FALSE
+    complement = TRUE
   )
-  expect_false(is_included(gregions))
+  expect_true(is_complement(gregions))
 })
 
-test_that("is_included<- can set the attribute", {
+test_that("is_complement<- can set the attribute", {
   gregions <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200
   )
-  expect_true(is_included(gregions))
+  expect_false(is_complement(gregions))
 
-  is_included(gregions) <- FALSE
-  expect_false(is_included(gregions))
+  is_complement(gregions) <- TRUE
+  expect_true(is_complement(gregions))
 
-  is_included(gregions) <- TRUE
-  expect_true(is_included(gregions))
+  is_complement(gregions) <- FALSE
+  expect_false(is_complement(gregions))
 })
 
 # Unary `-` operator tests ---------------------------------------------------
@@ -1311,7 +1311,7 @@ test_that("unary `-` is equivalent to `!`", {
     build = "b38"
   )
 
-  expect_equal(is_included(-gregions), is_included(!gregions))
+  expect_equal(is_complement(-gregions), is_complement(!gregions))
   expect_equal((-gregions)$chr, (!gregions)$chr)
   expect_equal((-gregions)$start, (!gregions)$start)
   expect_equal((-gregions)$end, (!gregions)$end)
@@ -1448,13 +1448,13 @@ test_that("positive + negative expands negative and unions", {
     start = 150,
     end = 250,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
 
   result <- positive + negative
   # The union of chr1:100-200 with !chr1:150-250
   # is everything except chr1:201-250
-  expect_true(is_included(result))
+  expect_false(is_complement(result))
   expect_equal(
     result,
     full_genomic_regions(build = "b38") - new_genomic_regions(
@@ -1477,14 +1477,14 @@ test_that("negative + positive is commutative with positive + negative", {
     chr = 1,
     start = 150,
     end = 250,
-    include = FALSE,
+    complement = TRUE,
     build = "b38"
   )
 
   result1 <- positive + negative
   result2 <- negative + positive
 
-  expect_equal(is_included(result1), is_included(result2))
+  expect_equal(is_complement(result1), is_complement(result2))
   expect_equal(result1$chr, result2$chr)
   expect_equal(result1$start, result2$start)
   expect_equal(result1$end, result2$end)
@@ -1500,14 +1500,14 @@ test_that("negative & negative combines underlying regions (still negative)", {
     start = 100,
     end = 200,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
   neg2 <- new_genomic_regions(
     chr = 1,
     start = 150,
     end = 250,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
 
   expect_equal(
@@ -1517,7 +1517,7 @@ test_that("negative & negative combines underlying regions (still negative)", {
       start = 100,
       end = 250,
       build = "b38",
-      include = FALSE
+      complement = TRUE
     )
   )
 })
@@ -1536,11 +1536,11 @@ test_that("positive & negative works correctly", {
     start = 150,
     end = 200,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
 
   result <- positive & negative
-  expect_true(is_included(result))
+  expect_false(is_complement(result))
   expect_equal(nrow(result), 2)
   expect_equal(result$start, c(100, 201))
   expect_equal(result$end, c(149, 300))
@@ -1558,13 +1558,13 @@ test_that("negative & positive is same as positive & negative", {
     start = 150,
     end = 200,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
 
   result1 <- positive & negative
   result2 <- negative & positive
 
-  expect_equal(is_included(result1), is_included(result2))
+  expect_equal(is_complement(result1), is_complement(result2))
   expect_equal(nrow(result1), nrow(result2))
   expect_equal(result1$start, result2$start)
   expect_equal(result1$end, result2$end)
@@ -1574,10 +1574,10 @@ test_that("negative & positive is same as positive & negative", {
 
 test_that("empty negative region expands to full genome", {
   empty_neg <- empty_genomic_regions(build = "b38")
-  is_included(empty_neg) <- FALSE
+  is_complement(empty_neg) <- TRUE
 
   expanded <- expand_genomic_regions(empty_neg)
-  expect_true(is_included(expanded))
+  expect_false(is_complement(expanded))
   expect_equal(nrow(expanded), 1)
   expect_true(is.na(expanded$chr))
   expect_true(is.na(expanded$start))
@@ -1594,11 +1594,11 @@ test_that("single-row negative region expands to complement", {
     start = 100,
     end = 200,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
 
   expanded <- expand_genomic_regions(negative)
-  expect_true(is_included(expanded))
+  expect_false(is_complement(expanded))
   # Should have rows for chr2-chr22 (21 rows) plus chr1:1-99 and chr1:201-end
   expect_true(nrow(expanded) >= 23)
   # Check chr1 portions exist
@@ -1621,7 +1621,7 @@ test_that("positive region returns unchanged from expand_genomic_regions", {
   expect_equal(result$chr, positive$chr)
   expect_equal(result$start, positive$start)
   expect_equal(result$end, positive$end)
-  expect_true(is_included(result))
+  expect_false(is_complement(result))
 })
 
 # String and print representation tests --------------------------------------
@@ -1631,7 +1631,7 @@ test_that("str() shows `!` prefix for negative regions", {
     chr = 1,
     start = 100,
     end = 200,
-    include = FALSE
+    complement = TRUE
   )
 
   str_output <- str(gregions)
@@ -1649,36 +1649,13 @@ test_that("str() shows no prefix for positive regions", {
   expect_false(grepl("^!", str_output))
 })
 
-test_that("print() shows Excluded for negative regions", {
-  gregions <- new_genomic_regions(
-    chr = 1,
-    start = 100,
-    end = 200,
-    include = FALSE
-  )
-
-  output <- capture.output(print(gregions))
-  expect_true(any(grepl("Excluded", output)))
-})
-
-test_that("print() shows Included for positive regions", {
-  gregions <- new_genomic_regions(
-    chr = 1,
-    start = 100,
-    end = 200
-  )
-
-  output <- capture.output(print(gregions))
-  expect_true(any(grepl("Included", output)))
-})
-
 # Edge cases -----------------------------------------------------------------
 
 test_that("negation of empty region", {
   empty <- empty_genomic_regions(build = "b38")
   negated <- !empty
 
-  expect_false(is_included(negated))
+  expect_true(is_complement(negated))
   expect_equal(nrow(negated), 0)
   expect_equal(build(negated), "b38")
 })
@@ -1687,7 +1664,7 @@ test_that("negation of full genome region", {
   full <- full_genomic_regions(build = "b38")
   negated <- !full
 
-  expect_false(is_included(negated))
+  expect_true(is_complement(negated))
   expect_equal(nrow(negated), 1)
   expect_true(is.na(negated$chr))
 })
@@ -1702,7 +1679,7 @@ test_that("negation with NA chromosome", {
   )
   negated <- !gregions
 
-  expect_false(is_included(negated))
+  expect_true(is_complement(negated))
   expect_true(is.na(negated$chr))
   expect_equal(negated$start, 100)
   expect_equal(negated$end, 200)
@@ -1715,11 +1692,11 @@ test_that("single-position negative region works", {
     start = 100,
     end = 100,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
 
   expanded <- expand_genomic_regions(gregions)
-  expect_true(is_included(expanded))
+  expect_false(is_complement(expanded))
   chr1_rows <- expanded[chr == "chr1"]
   expect_equal(nrow(chr1_rows), 2)
   expect_equal(chr1_rows$start, c(1, 101))
@@ -1734,11 +1711,11 @@ test_that("multi-row negative region expands correctly", {
     start = c(100, 300),
     end = c(200, 400),
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
 
   expanded <- expand_genomic_regions(negative)
-  expect_true(is_included(expanded))
+  expect_false(is_complement(expanded))
 
   # Should exclude both chr1:100-200 and chr2:300-400
   # Check chr1 doesn't include 100-200
@@ -1757,11 +1734,11 @@ test_that("negative region at start of chromosome expands correctly", {
     start = 1,
     end = 100,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
 
   expanded <- expand_genomic_regions(negative)
-  expect_true(is_included(expanded))
+  expect_false(is_complement(expanded))
   chr1_rows <- expanded[chr == "chr1"]
   # Should only have one row for chr1 (101 to end), no row for before
   expect_equal(nrow(chr1_rows), 1)
@@ -1776,11 +1753,11 @@ test_that("negative region at end of chromosome expands correctly", {
     start = 1000,
     end = NA_integer_,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
 
   expanded <- expand_genomic_regions(negative)
-  expect_true(is_included(expanded))
+  expect_false(is_complement(expanded))
   chr1_rows <- expanded[chr == "chr1"]
   # Should only have one row for chr1 (1 to 999), no row for after
   expect_equal(nrow(chr1_rows), 1)
@@ -1857,7 +1834,7 @@ test_that("`==` returns TRUE for equivalent positive and negative regions", {
     start = 100,
     end = 200,
     build = "b38",
-    include = FALSE
+    complement = TRUE
   )
   positive_expanded <- expand_genomic_regions(negative)
 
@@ -1949,10 +1926,10 @@ test_that("compact prefers negative representation when more compact", {
     nrow(compacted),
     1
   )
-  expect_false(is_included(compacted))
+  expect_true(is_complement(compacted))
   expect_equal(
     compacted,
-    new_genomic_regions(chr = 22, include = FALSE)
+    new_genomic_regions(chr = 22, complement = TRUE)
   )
 })
 

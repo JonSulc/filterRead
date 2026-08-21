@@ -129,7 +129,7 @@ eval_genomic_regions_from_fc <- function(
   # - Included with 0 rows = match nothing (awk false constant "0")
   # - Excluded with 0 rows = no constraint to apply (drop the condition)
   if (nrow(gregions) == 0) {
-    if (is_included(gregions)) return("0")
+    if (!is_complement(gregions)) return("0")
     return()
   }
   # Convert each row to an awk condition, combine with ||
@@ -150,8 +150,9 @@ eval_genomic_regions_from_fc <- function(
   if (1 < nrow(gregions)) {
     gregions_fcs <- sprintf("(%s)", gregions_fcs)
   }
-  # Excluded regions invert the match: keep rows that fall outside them
-  if (!is_included(gregions)) {
+  # A set stored as its complement inverts the match: keep the rows that
+  # fall outside its rows.
+  if (is_complement(gregions)) {
     gregions_fcs <- sprintf("!(%s)", gregions_fcs)
   }
   gregions_fcs

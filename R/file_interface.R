@@ -574,7 +574,7 @@ empty_read_for_query <- function(
   if (!return_only_cmd
     && !is.null(gregions)
     && nrow(gregions) == 0
-    && is_included(gregions)) {
+    && !is_complement(gregions)) {
     return(empty_read_for_query(finterface, fcondition))
   }
 

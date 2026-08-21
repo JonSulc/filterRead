@@ -31,8 +31,8 @@
 #'   [as_genomic_regions()] and the file-interface `[` method).
 #' @param chr_prefix Prefix to ensure on chromosome names (default "chr").
 #' @param merge_contiguous If TRUE, merge overlapping/adjacent regions.
-#' @param include If TRUE the regions are included; if FALSE they are
-#'   excluded (the complement).
+#' @param complement If TRUE the rows describe the coordinates the set
+#'   excludes rather than those it covers.
 #'
 #' @return A `genomic_regions` object.
 #' @seealso [as_genomic_regions()] to coerce an existing table.
@@ -51,7 +51,7 @@ genomic_regions <- function(
   build = NULL,
   chr_prefix = "chr",
   merge_contiguous = TRUE,
-  include = TRUE
+  complement = FALSE
 ) {
   if (data.table::is.data.table(chr)) {
     stop(
@@ -66,7 +66,7 @@ genomic_regions <- function(
     build = build,
     chr_prefix = chr_prefix,
     merge_contiguous = merge_contiguous,
-    include = include
+    complement = complement
   )
 }
 
@@ -100,7 +100,7 @@ new_genomic_regions <- function(
   build = NULL,
   chr_prefix = "chr",
   merge_contiguous = TRUE,
-  include = TRUE
+  complement = FALSE
 ) {
   argument_lengths <- list(chr, start, end) |>
     sapply(length)
@@ -133,7 +133,7 @@ new_genomic_regions <- function(
   ) |>
     as_genomic_regions(
       build = build,
-      include = include,
+      complement = complement,
       merge_contiguous = merge_contiguous
     )
 }
@@ -262,10 +262,10 @@ print.genomic_regions <- function(
   if (!is.null(build(x))) {
     cat("Build:", build(x), "\n")
   }
-  if (is_included(x)) {
-    cat("Included\n")
+  if (is_complement(x)) {
+    cat("Complement (excludes these regions)\n")
   } else {
-    cat("Excluded\n")
+    cat("Direct (includes these regions)\n")
   }
 }
 
@@ -276,7 +276,7 @@ str.genomic_regions <- function(
 ) {
   sprintf(
     "%s{%s}",
-    ifelse(is_included(object), "", "!"),
+    ifelse(is_complement(object), "!", ""),
     object[
       ,
       .(region_str = sprintf(

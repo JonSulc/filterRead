@@ -6,9 +6,9 @@
 #' @param x Object to convert
 #' @param build Reference build the coordinates are expressed in ("b36",
 #'   "b37", "b38", or a synonym).
-#' @param include Whether the regions are included (TRUE) or excluded, i.e.
-#'   the complement (FALSE). NULL inherits the input's include attribute,
-#'   defaulting to TRUE.
+#' @param complement Whether the rows describe the coordinates the set
+#'   excludes (TRUE) rather than those it covers (FALSE). NULL inherits the
+#'   input's `complement` attribute, defaulting to FALSE.
 #' @param merge_contiguous If TRUE, merge overlapping or adjacent regions.
 #' @param ... Additional arguments passed to methods
 #' @return A genomic_regions object
@@ -26,7 +26,7 @@ as_genomic_regions <- function(
 as_genomic_regions.data.frame <- function(
   x,
   build = NULL,
-  include = NULL,
+  complement = NULL,
   merge_contiguous = TRUE,
   ...
 ) {
@@ -39,7 +39,7 @@ as_genomic_regions.data.frame <- function(
     )
   }
   build <- build %||% build(x)
-  include <- include %||% is_included(x) %||% TRUE
+  complement <- complement %||% is_complement(x) %||% FALSE
   gregions <- data.table::as.data.table(x) |>
     data.table::copy()
   validate_genomic_regions_dt(gregions)
@@ -49,7 +49,7 @@ as_genomic_regions.data.frame <- function(
     }
   }
   build(gregions) <- build
-  is_included(gregions) <- include
+  is_complement(gregions) <- complement
   data.table::setattr(
     gregions,
     "class",

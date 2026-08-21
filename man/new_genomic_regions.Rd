@@ -11,7 +11,7 @@ new_genomic_regions(
   build = NULL,
   chr_prefix = "chr",
   merge_contiguous = TRUE,
-  include = TRUE
+  complement = FALSE
 )
 }
 \arguments{
@@ -30,8 +30,8 @@ filtering against a build-bearing file requires it (see
 
 \item{merge_contiguous}{If TRUE, merge overlapping/adjacent regions.}
 
-\item{include}{If TRUE the regions are included; if FALSE they are
-excluded (the complement).}
+\item{complement}{If TRUE the rows describe the coordinates the set
+excludes rather than those it covers.}
 }
 \value{
 A `genomic_regions` object.

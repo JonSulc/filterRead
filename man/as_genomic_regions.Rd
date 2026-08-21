@@ -10,7 +10,7 @@ as_genomic_regions(x, build = NULL, ...)
 \method{as_genomic_regions}{data.frame}(
   x,
   build = NULL,
-  include = NULL,
+  complement = NULL,
   merge_contiguous = TRUE,
   ...
 )
@@ -23,9 +23,9 @@ as_genomic_regions(x, build = NULL, ...)
 
 \item{...}{Additional arguments passed to methods}
 
-\item{include}{Whether the regions are included (TRUE) or excluded, i.e.
-the complement (FALSE). NULL inherits the input's include attribute,
-defaulting to TRUE.}
+\item{complement}{Whether the rows describe the coordinates the set
+excludes (TRUE) rather than those it covers (FALSE). NULL inherits the
+input's `complement` attribute, defaulting to FALSE.}
 
 \item{merge_contiguous}{If TRUE, merge overlapping or adjacent regions.}
 }

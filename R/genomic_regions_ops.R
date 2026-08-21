@@ -126,7 +126,7 @@ liftover.genomic_regions <- function(
   ) |>
     as_genomic_regions(
       build = build(target),
-      include = is_included(x)
+      complement = is_complement(x)
     )
 }
 
@@ -158,15 +158,15 @@ liftover.genomic_regions <- function(
   e1,
   e2
 ) {
-  if (!is_included(e1)) {
-    if (!is_included(e2)) {
+  if (is_complement(e1)) {
+    if (is_complement(e2)) {
       return(!(!e1 & !e2))
     }
     return(
       expand_genomic_regions(e1) + e2
     )
   }
-  if (!is_included(e2)) {
+  if (is_complement(e2)) {
     return(
       e1 + expand_genomic_regions(e2)
     )
@@ -179,15 +179,25 @@ liftover.genomic_regions <- function(
 `!.genomic_regions` <- function(
   x
 ) {
-  is_included(x) <- !is_included(x)
+  is_complement(x) <- !is_complement(x)
   x
 }
-is_included <- function(gregions) {
-  attr(gregions, "include")
+
+#' Whether a genomic_regions stores its coordinates or their complement
+#'
+#' @param gregions A genomic_regions object
+#' @param value TRUE if the rows are stored as the set's complement
+#' @return `is_complement()` returns whether the rows are stored as the set's
+#'   complement; `is_complement<-()` returns `gregions` with that bit set.
+#' @keywords internal
+is_complement <- function(gregions) {
+  attr(gregions, "complement")
 }
-`is_included<-` <- function(gregions, value) {
+#' @rdname is_complement
+#' @keywords internal
+`is_complement<-` <- function(gregions, value) {
   stopifnot(is.logical(value))
-  attr(gregions, "include") <- value
+  attr(gregions, "complement") <- value
   gregions
 }
 
@@ -222,7 +232,7 @@ expand_genomic_regions <- function(
   gregions,
   ordered_chr = 1:22
 ) {
-  if (is_included(gregions)) {
+  if (!is_complement(gregions)) {
     return(gregions)
   }
   if (nrow(gregions) == 0) {
@@ -290,10 +300,10 @@ rbind.genomic_regions <- function(
   merge_contiguous = TRUE
 ) {
   dots <- list(...)
-  if (!all(sapply(dots, is_included) == is_included(dots[[1]]))) {
+  if (!all(sapply(dots, is_complement) == is_complement(dots[[1]]))) {
     stop(
-      "Attempting to rbind genomic_regions of different types ",
-      "(both including and excluding the described regions)."
+      "Attempting to rbind genomic_regions that are stored differently ",
+      "(one holding its coordinates, the other their complement)."
     )
   }
   # Check if all inputs have the required columns
@@ -316,7 +326,7 @@ rbind.genomic_regions <- function(
     data.table::rbindlist(use.names = TRUE, fill = TRUE) |>
     as_genomic_regions(
       build = build(dots[[1]]),
-      include = is_included(dots[[1]]),
+      complement = is_complement(dots[[1]]),
       merge_contiguous = merge_contiguous
     )
 }
@@ -358,8 +368,8 @@ rbind.genomic_regions <- function(
     e2 <- liftover(e2, build(e1))
   }
 
-  if (!is_included(e1)) {
-    if (!is_included(e2)) {
+  if (is_complement(e1)) {
+    if (is_complement(e2)) {
       return(
         rbind(e1, e2) |>
           merge_contiguous_regions()
@@ -369,7 +379,7 @@ rbind.genomic_regions <- function(
       expand_genomic_regions(e1) & e2
     )
   }
-  if (!is_included(e2)) {
+  if (is_complement(e2)) {
     return(
       e1 & expand_genomic_regions(e2)
     )
@@ -609,7 +619,7 @@ merge_contiguous_regions <- function(
     replace_sentinel_with_na() |>
     as_genomic_regions(
       build = build(gregions),
-      include = is_included(gregions),
+      complement = is_complement(gregions),
       merge_contiguous = FALSE
     )
 }

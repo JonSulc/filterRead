@@ -657,7 +657,7 @@ test_that("liftover keeps an excluded set excluded", {
   )
 
   lifted <- liftover(gregions, chain_dt)
-  expect_false(is_included(lifted))
+  expect_true(is_complement(lifted))
   expect_equal(build(lifted), "b38")
 })
 
@@ -670,5 +670,5 @@ test_that("liftover keeps an included set included", {
     build = "b37"
   )
 
-  expect_true(is_included(liftover(gregions, chain_dt)))
+  expect_false(is_complement(liftover(gregions, chain_dt)))
 })
