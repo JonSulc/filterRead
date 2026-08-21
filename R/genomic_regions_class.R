@@ -244,15 +244,25 @@ drop_chr_prefix <- function(
   gsub(paste0("^", chr_prefix), "", chr)
 }
 
-#' Check if genomic_regions represents full genome
-#'
-#' A full genome query has all NA values (no constraints).
+#' Check if genomic_regions covers the whole genome
 #'
 #' @param gregions A genomic_regions object
-#' @return TRUE if gregions has no genomic constraints
+#' @return TRUE if gregions constrains no position
 #' @keywords internal
 is_full_genome <- function(gregions) {
-  all(is.na(gregions))
+  if (is_complement(gregions)) {
+    return(nrow(gregions) == 0L)
+  }
+  nrow(gregions) == 1L && all(is.na(gregions))
+}
+
+#' Check if genomic_regions covers no position at all
+#'
+#' @param gregions A genomic_regions object
+#' @return TRUE if no row can satisfy gregions
+#' @keywords internal
+is_empty_genome <- function(gregions) {
+  is_full_genome(!gregions)
 }
 
 

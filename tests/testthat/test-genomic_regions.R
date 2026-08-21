@@ -2303,3 +2303,39 @@ test_that("the empty set equals the complement of the whole genome", {
       !full_genomic_regions(build = "b38")
   )
 })
+
+test_that("the coverage predicates read the complement bit", {
+  full <- full_genomic_regions(build = "b38")
+  empty <- empty_genomic_regions(build = "b38")
+  chr1 <- new_genomic_regions(chr = 1, build = "b38")
+
+  expect_true(is_full_genome(full))
+  expect_false(is_empty_genome(full))
+
+  expect_false(is_full_genome(empty))
+  expect_true(is_empty_genome(empty))
+
+  expect_false(is_full_genome(!full))
+  expect_true(is_empty_genome(!full))
+
+  expect_true(is_full_genome(!empty))
+  expect_false(is_empty_genome(!empty))
+
+  expect_false(is_full_genome(chr1))
+  expect_false(is_empty_genome(chr1))
+
+  expect_false(is_full_genome(!chr1))
+  expect_false(is_empty_genome(!chr1))
+})
+
+test_that("uniting complementary halves of the genome covers everything", {
+  result <- new_genomic_regions(end = 200, build = "b38") |
+    new_genomic_regions(start = 201, build = "b38")
+  expect_true(is_full_genome(result))
+})
+
+test_that("intersecting complementary halves of the genome matches nothing", {
+  result <- !new_genomic_regions(end = 200, build = "b38") &
+    !new_genomic_regions(start = 201, build = "b38")
+  expect_true(is_empty_genome(result))
+})

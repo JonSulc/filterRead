@@ -99,12 +99,6 @@ fc_genomic_regions <- function(
     as.character(fcondition[[1]])
   )
 }
-has_no_gregions <- function(
-  fcondition
-) {
-  gregions <- fc_genomic_regions(fcondition, recursive = TRUE)
-  is.null(gregions) || is_full_genome(gregions)
-}
 
 #' Set genomic regions on a filter condition
 #'

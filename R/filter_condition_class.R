@@ -651,14 +651,13 @@ format.filter_condition <- function(
     }
   }
 
-  paste(
-    fcondition_str,
-    ifelse(
-      is_full_genome(fc_genomic_regions(x)),
-      "",
-      str(fc_genomic_regions(x))
-    )
-  )
+  gregions <- fc_genomic_regions(x)
+  regions_str <- if (is.null(gregions) || is_full_genome(gregions)) {
+    ""
+  } else {
+    str(gregions)
+  }
+  paste(fcondition_str, regions_str)
 }
 
 #' @export

@@ -551,16 +551,17 @@ fcondition_and_rsid_to_awk <- function(
   ],
   index = 0
 ) {
-  # RSID-based indexing should only be applied if required, i.e.,
-  # if the file is RSID-indexed and there is a genomic condition applied
+  # RSID-based indexing is only useful if it is a discriminating factor
   rsid_indexed <- needs_rsid_matching(get_file_interface(fcondition))
-  full_genome_condition <- is_full_genome(
-    fc_genomic_regions(fcondition, recursive = TRUE)
-  )
-  no_genome_condition <- has_no_gregions(fcondition)
+  gregions <- fc_genomic_regions(fcondition, recursive = TRUE)
+  positions_match_everything <-
+    is.null(gregions) || is_full_genome(gregions)
+  positions_match_nothing <-
+    !is.null(gregions) && is_empty_genome(gregions)
 
-  # Standard path: no RSID matching needed
-  if (!rsid_indexed || full_genome_condition || no_genome_condition) {
+  if (!rsid_indexed
+    || positions_match_everything
+    || positions_match_nothing) {
     awk_conditions <- eval_fcondition_w_gregions(
       fcondition,
       finterface = get_file_interface(fcondition)

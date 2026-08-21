@@ -121,15 +121,19 @@ eval_genomic_regions_from_fc <- function(
 ) {
   gregions <- fc_genomic_regions(fcondition) |>
     post_process(finterface = finterface)
-  # Skip for NULL regions or RSID-indexed files (handled differently)
-  if (is.null(gregions) || needs_rsid_matching(finterface)) {
+  if (is.null(gregions)) {
     return()
   }
-  # Empty regions are a degenerate case:
-  # - Directly stored with 0 rows = match nothing (awk false constant "0")
-  # - Complement-stored with 0 rows = no constraint (drop the condition)
-  if (nrow(gregions) == 0) {
-    if (!is_complement(gregions)) return("0")
+  # A set no row can satisfy matches nothing on an RSID-indexed file as on
+  # any other, so coverage is decided before the RSID bail below.
+  if (is_empty_genome(gregions)) {
+    return("0")
+  }
+  if (is_full_genome(gregions)) {
+    return()
+  }
+  # Positions on an RSID-indexed file are handled through the index
+  if (needs_rsid_matching(finterface)) {
     return()
   }
   # Convert each row to an awk condition, combine with ||
@@ -142,9 +146,6 @@ eval_genomic_regions_from_fc <- function(
     by = .I # Could be improved if vectorized
   ][, -"I"] |>
     unlist()
-  if (is.null(gregions_fcs)) {
-    return()
-  }
   gregions_fcs <- paste(gregions_fcs, collapse = " || ")
   # Wrap multiple regions in parentheses for correct precedence
   if (1 < nrow(gregions)) {

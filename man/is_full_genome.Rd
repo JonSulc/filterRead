@@ -2,7 +2,7 @@
 % Please edit documentation in R/genomic_regions_class.R
 \name{is_full_genome}
 \alias{is_full_genome}
-\title{Check if genomic_regions represents full genome}
+\title{Check if genomic_regions covers the whole genome}
 \usage{
 is_full_genome(gregions)
 }
@@ -10,9 +10,9 @@ is_full_genome(gregions)
 \item{gregions}{A genomic_regions object}
 }
 \value{
-TRUE if gregions has no genomic constraints
+TRUE if gregions constrains no position
 }
 \description{
-A full genome query has all NA values (no constraints).
+Check if genomic_regions covers the whole genome
 }
 \keyword{internal}
