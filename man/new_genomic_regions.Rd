@@ -15,23 +15,26 @@ new_genomic_regions(
 )
 }
 \arguments{
-\item{chr}{Character vector of chromosome names (NA = any chromosome)}
+\item{chr}{Character vector of chromosome names (NA = any chromosome).}
 
-\item{start}{Integer vector of start positions (NA = from beginning)}
+\item{start}{Integer vector of start positions (NA = from beginning).}
 
-\item{end}{Integer vector of end positions (NA = to end)}
+\item{end}{Integer vector of end positions (NA = to end).}
 
-\item{build}{Genome build identifier ("b38", "b37", "b36", default: NULL)}
+\item{build}{Reference build the coordinates are expressed in ("b36",
+"b37", "b38", or a synonym). Optional at construction, but positional
+filtering against a build-bearing file requires it (see
+[as_genomic_regions()] and the file-interface `[` method).}
 
-\item{chr_prefix}{Prefix to add to chromosome names (default: "chr")}
+\item{chr_prefix}{Prefix to ensure on chromosome names (default "chr").}
 
-\item{merge_contiguous}{If TRUE, merge overlapping/adjacent regions}
+\item{merge_contiguous}{If TRUE, merge overlapping/adjacent regions.}
 
-\item{include}{If TRUE, the genomic_regions includes the positions specified,
-otherwise it excludes them.}
+\item{include}{If TRUE the regions are included; if FALSE they are
+excluded (the complement).}
 }
 \value{
-A genomic_regions object (data.table with class attribute)
+A `genomic_regions` object.
 }
 \description{
 Constructor for genomic_regions. Validates inputs, formats chromosome

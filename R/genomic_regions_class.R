@@ -75,16 +75,9 @@ genomic_regions <- function(
 #' Constructor for genomic_regions. Validates inputs, formats chromosome
 #' names, and optionally merges contiguous regions.
 #'
-#' @param chr Character vector of chromosome names (NA = any chromosome)
-#' @param start Integer vector of start positions (NA = from beginning)
-#' @param end Integer vector of end positions (NA = to end)
-#' @param build Genome build identifier ("b38", "b37", "b36", default: NULL)
-#' @param chr_prefix Prefix to add to chromosome names (default: "chr")
-#' @param merge_contiguous If TRUE, merge overlapping/adjacent regions
-#' @param include If TRUE, the genomic_regions includes the positions specified,
-#'   otherwise it excludes them.
+#' @inheritParams genomic_regions
 #'
-#' @return A genomic_regions object (data.table with class attribute)
+#' @return A `genomic_regions` object.
 #' @section NA semantics:
 #' Each row's `chr`, `start`, and `end` may be NA, meaning "unconstrained on
 #' this axis":
