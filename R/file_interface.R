@@ -567,9 +567,9 @@ empty_read_for_query <- function(
     finterface = finterface
   )
 
-  # Short-circuit unsatisfiable conditions: an empty included
-  # genomic_regions cannot match any row regardless of non-genomic
-  # constraints, so skip awk entirely.
+  # Short-circuit unsatisfiable conditions: a directly stored
+  # genomic_regions with no rows cannot match any row regardless of
+  # non-genomic constraints, so skip awk entirely.
   gregions <- fc_genomic_regions(fcondition)
   if (!return_only_cmd
     && !is.null(gregions)

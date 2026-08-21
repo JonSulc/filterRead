@@ -1108,7 +1108,7 @@ test_that("Not-equal operator works with genomic conditions", {
   )
 })
 
-test_that("Excluded genomic_regions combine correctly with non-genomic", {
+test_that("Complement-stored genomic_regions combine with non-genomic", {
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
   result <- finterface[chr != 1 & 5000 < pos]
   expect_false("chr1" %in% unique(result$chr))
@@ -1142,7 +1142,7 @@ test_that("pos %in% set keeps exactly the listed positions", {
   )
 })
 
-test_that("Two excluded chromosome conditions combine via AND", {
+test_that("Two complement-stored chromosome conditions combine via AND", {
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
   expect_setequal(
     unique(finterface[chr != 1 & chr != 2]$chr),
@@ -1150,7 +1150,7 @@ test_that("Two excluded chromosome conditions combine via AND", {
   )
 })
 
-test_that("Mixing positive and negative chromosome conditions", {
+test_that("Mixing directly and complement-stored chromosome conditions", {
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
   # Contradiction: dropping either side leaves a non-empty result.
   expect_equal(nrow(finterface[chr == 1 & chr != 1]), 0)
@@ -1161,19 +1161,19 @@ test_that("Mixing positive and negative chromosome conditions", {
   )
 })
 
-test_that("eval_genomic_regions_from_fc honors Excluded flag", {
+test_that("eval_genomic_regions_from_fc honors the complement bit", {
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
-  fc_excluded <- new_filter_condition(rlang::quo(chr != 1), finterface)
-  fc_included <- new_filter_condition(rlang::quo(chr == 1), finterface)
-  cond_excluded <- eval_fcondition_w_gregions(
-    fc_excluded,
+  fc_complement <- new_filter_condition(rlang::quo(chr != 1), finterface)
+  fc_direct <- new_filter_condition(rlang::quo(chr == 1), finterface)
+  cond_complement <- eval_fcondition_w_gregions(
+    fc_complement,
     finterface = finterface
   )$condition
-  cond_included <- eval_fcondition_w_gregions(
-    fc_included,
+  cond_direct <- eval_fcondition_w_gregions(
+    fc_direct,
     finterface = finterface
   )$condition
-  expect_equal(cond_excluded, sprintf("!(%s)", cond_included))
+  expect_equal(cond_complement, sprintf("!(%s)", cond_direct))
 })
 
 # Under library()/installed loading the internal *_filter_condition

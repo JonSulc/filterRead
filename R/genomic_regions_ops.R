@@ -254,34 +254,34 @@ expand_genomic_regions <- function(
     build = build(gregions)
   )
   if (!is.na(gregions$start) && 1 < gregions$start) {
-    include_before <- data.table::data.table(
+    before_fragment <- data.table::data.table(
       chr = gregions$chr,
       start = 1,
       end = gregions$start - 1
     )
   } else {
-    include_before <- data.table::data.table(
+    before_fragment <- data.table::data.table(
       chr = character(0),
       start = integer(0),
       end = integer(0)
     )
   }
   if (!is.na(gregions$end)) {
-    include_after <- data.table::data.table(
+    after_fragment <- data.table::data.table(
       chr = gregions$chr,
       start = gregions$end + 1,
       end = NA_integer_
     )
   } else {
-    include_after <- data.table::data.table(
+    after_fragment <- data.table::data.table(
       chr = character(0),
       start = integer(0),
       end = integer(0)
     )
   }
   list(
-    include_before,
-    include_after
+    before_fragment,
+    after_fragment
   ) |>
     data.table::rbindlist() |>
     as_genomic_regions(build = build(gregions)) |>
@@ -440,7 +440,6 @@ prepare_for_intersection <- function(e1, e2) {
 #' @return genomic_regions with overlapping portions
 #' @keywords internal
 compute_intersection <- function(e1, e2, build) {
-  # TODO Handle 'include'
   data.table::foverlaps(e1, e2, nomatch = 0)[
     ,
     c(
@@ -626,10 +625,10 @@ merge_contiguous_regions <- function(
 
 #' Return the smallest equivalent genomic_regions representation
 #'
-#' Compares the input against two expanded forms (the included regions
-#' expanded, and the complement of the expanded negation) and returns
-#' whichever has the fewest rows. Output is semantically equivalent to the
-#' input - it represents the same set of genomic positions.
+#' Compares the input against both stored forms — its rows expanded, and the
+#' complement of its negation expanded — and returns whichever has the fewest
+#' rows. Output is semantically equivalent to the input - it represents the
+#' same set of genomic positions.
 #'
 #' @param gregions A genomic_regions object
 #' @return A genomic_regions object with the same coverage as `gregions`

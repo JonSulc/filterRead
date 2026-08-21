@@ -126,8 +126,8 @@ eval_genomic_regions_from_fc <- function(
     return()
   }
   # Empty regions are a degenerate case:
-  # - Included with 0 rows = match nothing (awk false constant "0")
-  # - Excluded with 0 rows = no constraint to apply (drop the condition)
+  # - Directly stored with 0 rows = match nothing (awk false constant "0")
+  # - Complement-stored with 0 rows = no constraint (drop the condition)
   if (nrow(gregions) == 0) {
     if (!is_complement(gregions)) return("0")
     return()

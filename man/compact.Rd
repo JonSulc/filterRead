@@ -14,10 +14,10 @@ A genomic_regions object with the same coverage as `gregions`
   but with the minimum number of rows
 }
 \description{
-Compares the input against two expanded forms (the included regions
-expanded, and the complement of the expanded negation) and returns
-whichever has the fewest rows. Output is semantically equivalent to the
-input - it represents the same set of genomic positions.
+Compares the input against both stored forms — its rows expanded, and the
+complement of its negation expanded — and returns whichever has the fewest
+rows. Output is semantically equivalent to the input - it represents the
+same set of genomic positions.
 }
 \examples{
 \dontrun{

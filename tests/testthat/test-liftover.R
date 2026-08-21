@@ -647,7 +647,7 @@ test_that("normalize_build is still strict by default", {
   expect_error(normalize_build("dahu42"), "Unknown build")
 })
 
-test_that("liftover keeps an excluded set excluded", {
+test_that("liftover keeps a complement-stored set complement-stored", {
   chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
   gregions <- !new_genomic_regions(
     chr = 1,
@@ -661,7 +661,7 @@ test_that("liftover keeps an excluded set excluded", {
   expect_equal(build(lifted), "b38")
 })
 
-test_that("liftover keeps an included set included", {
+test_that("liftover keeps a directly stored set directly stored", {
   chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
   gregions <- new_genomic_regions(
     chr = 1,

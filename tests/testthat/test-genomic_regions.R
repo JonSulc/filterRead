@@ -1181,7 +1181,7 @@ test_that("complete containment intersection returns inner region", {
   expect_equal(result$end, 300)
 })
 
-test_that("`+` handles negative genomic_regions", {
+test_that("`+` handles a complement-stored genomic_regions", {
   gregions1 <- new_genomic_regions(
     chr = 1,
     start = 123,
@@ -1431,19 +1431,19 @@ test_that("set difference with different chromosomes returns A unchanged", {
   expect_equal(result$chr, "chr1")
 })
 
-# Union with negative regions tests ------------------------------------------
+# Union with complement-stored regions tests ---------------------------------
 
-test_that("positive + negative expands negative and unions", {
-  # positive region: chr1:100-200
-  # negative region: !chr1:150-250 (everything except chr1:150-250)
+test_that("direct + complemented expands the complement and unions", {
+  # directly stored: chr1:100-200
+  # complement-stored: !chr1:150-250 (everything except chr1:150-250)
   # Result should be everything except chr1:201-250
-  positive <- new_genomic_regions(
+  direct <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200,
     build = "b38"
   )
-  negative <- new_genomic_regions(
+  complemented <- new_genomic_regions(
     chr = 1,
     start = 150,
     end = 250,
@@ -1451,7 +1451,7 @@ test_that("positive + negative expands negative and unions", {
     complement = TRUE
   )
 
-  result <- positive + negative
+  result <- direct + complemented
   # The union of chr1:100-200 with !chr1:150-250
   # is everything except chr1:201-250
   expect_false(is_complement(result))
@@ -1466,14 +1466,14 @@ test_that("positive + negative expands negative and unions", {
   )
 })
 
-test_that("negative + positive is commutative with positive + negative", {
-  positive <- new_genomic_regions(
+test_that("union of a direct and a complemented set is commutative", {
+  direct <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200,
     build = "b38"
   )
-  negative <- new_genomic_regions(
+  complemented <- new_genomic_regions(
     chr = 1,
     start = 150,
     end = 250,
@@ -1481,8 +1481,8 @@ test_that("negative + positive is commutative with positive + negative", {
     build = "b38"
   )
 
-  result1 <- positive + negative
-  result2 <- negative + positive
+  result1 <- direct + complemented
+  result2 <- complemented + direct
 
   expect_equal(is_complement(result1), is_complement(result2))
   expect_equal(result1$chr, result2$chr)
@@ -1490,9 +1490,9 @@ test_that("negative + positive is commutative with positive + negative", {
   expect_equal(result1$end, result2$end)
 })
 
-# Intersection with negative regions tests -----------------------------------
+# Intersection with complement-stored regions tests --------------------------
 
-test_that("negative & negative combines underlying regions (still negative)", {
+test_that("complemented & complemented combines rows and stays complemented", {
   # !chr1:100-200 & !chr1:150-250 should be !(chr1:100-200 | chr1:150-250)
   # which is !(chr1:100-250) = !chr1:100-250
   neg1 <- new_genomic_regions(
@@ -1522,16 +1522,16 @@ test_that("negative & negative combines underlying regions (still negative)", {
   )
 })
 
-test_that("positive & negative works correctly", {
+test_that("direct & complemented subtracts the complemented rows", {
   # chr1:100-300 & !chr1:150-200
   # Should give chr1:100-149 and chr1:201-300
-  positive <- new_genomic_regions(
+  direct <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 300,
     build = "b38"
   )
-  negative <- new_genomic_regions(
+  complemented <- new_genomic_regions(
     chr = 1,
     start = 150,
     end = 200,
@@ -1539,21 +1539,21 @@ test_that("positive & negative works correctly", {
     complement = TRUE
   )
 
-  result <- positive & negative
+  result <- direct & complemented
   expect_false(is_complement(result))
   expect_equal(nrow(result), 2)
   expect_equal(result$start, c(100, 201))
   expect_equal(result$end, c(149, 300))
 })
 
-test_that("negative & positive is same as positive & negative", {
-  positive <- new_genomic_regions(
+test_that("intersection of a direct and a complemented set is commutative", {
+  direct <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 300,
     build = "b38"
   )
-  negative <- new_genomic_regions(
+  complemented <- new_genomic_regions(
     chr = 1,
     start = 150,
     end = 200,
@@ -1561,8 +1561,8 @@ test_that("negative & positive is same as positive & negative", {
     complement = TRUE
   )
 
-  result1 <- positive & negative
-  result2 <- negative & positive
+  result1 <- direct & complemented
+  result2 <- complemented & direct
 
   expect_equal(is_complement(result1), is_complement(result2))
   expect_equal(nrow(result1), nrow(result2))
@@ -1572,7 +1572,7 @@ test_that("negative & positive is same as positive & negative", {
 
 # expand_genomic_regions behavior tests --------------------------------------
 
-test_that("empty negative region expands to full genome", {
+test_that("a complement-stored set with no rows expands to the whole genome", {
   empty_neg <- empty_genomic_regions(build = "b38")
   is_complement(empty_neg) <- TRUE
 
@@ -1584,12 +1584,12 @@ test_that("empty negative region expands to full genome", {
   expect_true(is.na(expanded$end))
 })
 
-test_that("single-row negative region expands to complement", {
+test_that("a single complement-stored row expands to its complement", {
   # !chr1:100-200 should expand to:
   # - All other chromosomes (chr2-chr22)
   # - chr1:1-99
   # - chr1:201-end
-  negative <- new_genomic_regions(
+  complemented <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200,
@@ -1597,7 +1597,7 @@ test_that("single-row negative region expands to complement", {
     complement = TRUE
   )
 
-  expanded <- expand_genomic_regions(negative)
+  expanded <- expand_genomic_regions(complemented)
   expect_false(is_complement(expanded))
   # Should have rows for chr2-chr22 (21 rows) plus chr1:1-99 and chr1:201-end
   expect_true(nrow(expanded) >= 23)
@@ -1609,24 +1609,24 @@ test_that("single-row negative region expands to complement", {
   expect_true(is.na(chr1_rows$end[2])) # to end of chromosome
 })
 
-test_that("positive region returns unchanged from expand_genomic_regions", {
-  positive <- new_genomic_regions(
+test_that("a directly stored set is returned unchanged by expansion", {
+  direct <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200,
     build = "b38"
   )
 
-  result <- expand_genomic_regions(positive)
-  expect_equal(result$chr, positive$chr)
-  expect_equal(result$start, positive$start)
-  expect_equal(result$end, positive$end)
+  result <- expand_genomic_regions(direct)
+  expect_equal(result$chr, direct$chr)
+  expect_equal(result$start, direct$start)
+  expect_equal(result$end, direct$end)
   expect_false(is_complement(result))
 })
 
 # String and print representation tests --------------------------------------
 
-test_that("str() shows `!` prefix for negative regions", {
+test_that("str() shows a `!` prefix for a complement-stored set", {
   gregions <- new_genomic_regions(
     chr = 1,
     start = 100,
@@ -1638,7 +1638,7 @@ test_that("str() shows `!` prefix for negative regions", {
   expect_true(grepl("^!", str_output))
 })
 
-test_that("str() shows no prefix for positive regions", {
+test_that("str() shows no prefix for a directly stored set", {
   gregions <- new_genomic_regions(
     chr = 1,
     start = 100,
@@ -1685,7 +1685,7 @@ test_that("negation with NA chromosome", {
   expect_equal(negated$end, 200)
 })
 
-test_that("single-position negative region works", {
+test_that("a single-position complement-stored region works", {
   # !chr1:100-100
   gregions <- new_genomic_regions(
     chr = 1,
@@ -1703,10 +1703,10 @@ test_that("single-position negative region works", {
   expect_equal(chr1_rows$end[1], 99)
 })
 
-test_that("multi-row negative region expands correctly", {
+test_that("a multi-row complement-stored set expands correctly", {
   # !{chr1:100-200, chr2:300-400}
   # This is the intersection of !chr1:100-200 and !chr2:300-400
-  negative <- new_genomic_regions(
+  complemented <- new_genomic_regions(
     chr = c(1, 2),
     start = c(100, 300),
     end = c(200, 400),
@@ -1714,7 +1714,7 @@ test_that("multi-row negative region expands correctly", {
     complement = TRUE
   )
 
-  expanded <- expand_genomic_regions(negative)
+  expanded <- expand_genomic_regions(complemented)
   expect_false(is_complement(expanded))
 
   # Should exclude both chr1:100-200 and chr2:300-400
@@ -1727,9 +1727,9 @@ test_that("multi-row negative region expands correctly", {
   expect_true(all(chr2_rows$end < 300 | chr2_rows$start > 400))
 })
 
-test_that("negative region at start of chromosome expands correctly", {
+test_that("a complement-stored region at a chromosome start expands", {
   # !chr1:1-100 (start of chromosome)
-  negative <- new_genomic_regions(
+  complemented <- new_genomic_regions(
     chr = 1,
     start = 1,
     end = 100,
@@ -1737,7 +1737,7 @@ test_that("negative region at start of chromosome expands correctly", {
     complement = TRUE
   )
 
-  expanded <- expand_genomic_regions(negative)
+  expanded <- expand_genomic_regions(complemented)
   expect_false(is_complement(expanded))
   chr1_rows <- expanded[chr == "chr1"]
   # Should only have one row for chr1 (101 to end), no row for before
@@ -1746,9 +1746,9 @@ test_that("negative region at start of chromosome expands correctly", {
   expect_true(is.na(chr1_rows$end))
 })
 
-test_that("negative region at end of chromosome expands correctly", {
+test_that("a complement-stored region at a chromosome end expands", {
   # !chr1:1000-NA (end of chromosome)
-  negative <- new_genomic_regions(
+  complemented <- new_genomic_regions(
     chr = 1,
     start = 1000,
     end = NA_integer_,
@@ -1756,7 +1756,7 @@ test_that("negative region at end of chromosome expands correctly", {
     complement = TRUE
   )
 
-  expanded <- expand_genomic_regions(negative)
+  expanded <- expand_genomic_regions(complemented)
   expect_false(is_complement(expanded))
   chr1_rows <- expanded[chr == "chr1"]
   # Should only have one row for chr1 (1 to 999), no row for after
@@ -1827,18 +1827,18 @@ test_that("`==` returns FALSE when row counts differ", {
   expect_false(region1 == region2)
 })
 
-test_that("`==` returns TRUE for equivalent positive and negative regions", {
-  # A single excluded region should equal its positive expansion
-  negative <- new_genomic_regions(
+test_that("`==` returns TRUE across the two stored forms", {
+  # A single complement-stored region equals its expansion
+  complemented <- new_genomic_regions(
     chr = 1,
     start = 100,
     end = 200,
     build = "b38",
     complement = TRUE
   )
-  positive_expanded <- expand_genomic_regions(negative)
+  expanded <- expand_genomic_regions(complemented)
 
-  expect_true(negative == positive_expanded)
+  expect_true(complemented == expanded)
 })
 
 test_that("`==` returns TRUE for empty regions", {
@@ -1915,13 +1915,13 @@ test_that("compact reduces adjacent regions via negation", {
   expect_true(nrow(compacted) <= nrow(adjacent))
 })
 
-test_that("compact prefers negative representation when more compact", {
-  # A region covering most chromosomes is more compact as negative
+test_that("compact prefers the complement-stored form when it has fewer rows", {
+  # A region covering most chromosomes has fewer rows as a complement
   # E.g., "all of chr1-chr21" can be represented as "!chr22"
   many_chrs <- new_genomic_regions(chr = 1:21)
 
   compacted <- compact(many_chrs)
-  # Should be represented as negative (excluding chr22) = 1 row
+  # Should be stored as the complement of chr22 = 1 row
   expect_equal(
     nrow(compacted),
     1
