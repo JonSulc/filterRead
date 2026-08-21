@@ -646,3 +646,29 @@ test_that("normalize_build passes unknown tags through when not strict", {
 test_that("normalize_build is still strict by default", {
   expect_error(normalize_build("dahu42"), "Unknown build")
 })
+
+test_that("liftover keeps an excluded set excluded", {
+  chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
+  gregions <- !new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b37"
+  )
+
+  lifted <- liftover(gregions, chain_dt)
+  expect_false(is_included(lifted))
+  expect_equal(build(lifted), "b38")
+})
+
+test_that("liftover keeps an included set included", {
+  chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
+  gregions <- new_genomic_regions(
+    chr = 1,
+    start = 100,
+    end = 200,
+    build = "b37"
+  )
+
+  expect_true(is_included(liftover(gregions, chain_dt)))
+})

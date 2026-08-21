@@ -124,7 +124,10 @@ liftover.genomic_regions <- function(
     replace_na_with_sentinel(expanded_x, start_sentinel = 1L),
     chain_dt
   ) |>
-    as_genomic_regions(build = build(target))
+    as_genomic_regions(
+      build = build(target),
+      include = is_included(x)
+    )
 }
 
 #' @export
