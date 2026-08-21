@@ -398,22 +398,6 @@ rbind.genomic_regions <- function(
     return((e1 & e2[is.na(chr)]) + (e1 & e2[!is.na(chr)]))
   }
 
-  # Prepare inputs and compute intersection
-  prepared <- prepare_for_intersection(e1, e2)
-  compute_intersection(prepared$e1, prepared$e2, build = build(e1))
-}
-
-# Helper Functions for Intersection
-
-#' Prepare genomic_regions pair for intersection
-#'
-#' Copies inputs, expands NA chromosomes if needed, and replaces NAs with
-#' sentinel values for foverlaps compatibility.
-#'
-#' @param e1,e2 genomic_regions objects (same build, no mixed NA)
-#' @return List with prepared e1 and e2
-#' @keywords internal
-prepare_for_intersection <- function(e1, e2) {
   e1_safe <- copy_genomic_regions(e1)
   e2_safe <- copy_genomic_regions(e2)
 
@@ -426,21 +410,12 @@ prepare_for_intersection <- function(e1, e2) {
     }
   }
 
-  # Replace NAs with sentinels (foverlaps doesn't handle NAs)
-  list(
-    e1 = replace_na_with_sentinel(e1_safe),
-    e2 = replace_na_with_sentinel(e2_safe)
-  )
-}
-
-#' Compute intersection using foverlaps
-#'
-#' @param e1,e2 Prepared genomic_regions (sentinel values, keyed)
-#' @param build Build to assign to result
-#' @return genomic_regions with overlapping portions
-#' @keywords internal
-compute_intersection <- function(e1, e2, build) {
-  data.table::foverlaps(e1, e2, nomatch = 0)[
+  # foverlaps does not handle NAs
+  data.table::foverlaps(
+    replace_na_with_sentinel(e1_safe),
+    replace_na_with_sentinel(e2_safe),
+    nomatch = 0
+  )[
     ,
     c(
       .SD,
@@ -452,7 +427,7 @@ compute_intersection <- function(e1, e2, build) {
     .SDcols = -c("start", "end", "i.start", "i.end")
   ] |>
     replace_sentinel_with_na() |>
-    as_genomic_regions(build = build)
+    as_genomic_regions(build = build(e1))
 }
 
 #' Check if genomic_regions has both NA and non-NA chromosomes
