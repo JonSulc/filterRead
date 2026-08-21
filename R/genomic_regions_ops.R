@@ -250,10 +250,14 @@ expand_genomic_regions <- function(
         Reduce(f = "&")
     )
   }
-  full_chrs <- new_genomic_regions(
-    chr = setdiff(ordered_chr, drop_chr_prefix(gregions$chr)),
-    build = build(gregions)
-  )
+  if (is.na(gregions$chr)) {
+    full_chrs <- empty_genomic_regions(build = build(gregions))
+  } else {
+    full_chrs <- new_genomic_regions(
+      chr = setdiff(ordered_chr, drop_chr_prefix(gregions$chr)),
+      build = build(gregions)
+    )
+  }
   if (!is.na(gregions$start) && 1 < gregions$start) {
     before_fragment <- data.table::data.table(
       chr = gregions$chr,

@@ -1956,9 +1956,9 @@ test_that("compact handles full genome region", {
   full <- full_genomic_regions(build = "b38")
 
   compacted <- compact(full)
-  # Full genome is already compact (1 row with NA chr)
-  expect_equal(nrow(compacted), 1)
-  expect_true(is.na(compacted$chr))
+  expect_equal(nrow(compacted), 0)
+  expect_true(is_complement(compacted))
+  expect_true(is_full_genome(compacted))
 })
 
 test_that("compact returns semantically equivalent region", {
@@ -2259,5 +2259,47 @@ test_that("construction leaves the rows canonical", {
   expect_canonical(
     new_genomic_regions(end = 200, build = "b38") |
       new_genomic_regions(chr = 1, start = 150, end = 300, build = "b38")
+  )
+})
+
+# Complement of an unconstrained chromosome ----------------------------------
+
+test_that("the complement of the whole genome matches nothing", {
+  expect_equal(
+    nrow(expand_genomic_regions(!full_genomic_regions(build = "b38"))),
+    0L
+  )
+  expect_equal(
+    nrow(
+      new_genomic_regions(chr = 1, build = "b38") &
+        !full_genomic_regions(build = "b38")
+    ),
+    0L
+  )
+  expect_equal(
+    nrow(
+      full_genomic_regions(build = "b38") &
+        !full_genomic_regions(build = "b38")
+    ),
+    0L
+  )
+})
+
+test_that("complementing an open-chromosome range enumerates nothing", {
+  expect_equal(
+    expand_genomic_regions(!new_genomic_regions(end = 200, build = "b38")),
+    new_genomic_regions(start = 201, build = "b38")
+  )
+  expect_equal(
+    new_genomic_regions(chr = 1, build = "b38") &
+      !new_genomic_regions(end = 200, build = "b38"),
+    new_genomic_regions(chr = 1, start = 201, build = "b38")
+  )
+})
+
+test_that("the empty set equals the complement of the whole genome", {
+  expect_true(
+    empty_genomic_regions(build = "b38") ==
+      !full_genomic_regions(build = "b38")
   )
 })
