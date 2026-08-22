@@ -558,9 +558,9 @@ test_that("An unsatisfiable condition emits a command matching no rows", {
   command <- finterface[chr == 1 & chr == 2 & pval < 0.5,
     return_only_cmd = TRUE
   ]
-  expect_length(
-    system(paste("bash -c", shQuote(command)), intern = TRUE),
-    0
-  )
+  matched_rows <- system(paste("bash -c", shQuote(command)), intern = TRUE)
+  expect_null(attr(matched_rows, "status"))
+  expect_length(matched_rows, 0)
+  expect_false(grepl("tabix", command, fixed = TRUE))
   expect_equal(nrow(finterface[chr == 1 & chr == 2 & pval < 0.5]), 0)
 })
