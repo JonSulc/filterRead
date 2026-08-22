@@ -551,7 +551,9 @@ fcondition_and_rsid_to_awk <- function(
   ],
   index = 0
 ) {
-  # RSID-based indexing is only useful if it is a discriminating factor
+  # RSID indexing pays only when the positions discriminate. A set matching
+  # nothing takes the standard path, where the renderer emits the awk false
+  # constant.
   rsid_indexed <- needs_rsid_matching(get_file_interface(fcondition))
   gregions <- fc_genomic_regions(fcondition, recursive = TRUE)
   positions_match_everything <-
