@@ -50,8 +50,7 @@ expect_canonical <- function(gregions) {
   )
   expect(
     nrow(reached) == 0L,
-    # expect() forces the message even when the check passes, and indexing
-    # an empty matrix raises rather than returning NA
+    # expect() evaluates the message eagerly, which errors on a 0-row matrix
     if (nrow(reached) != 0L) {
       sprintf(
         "%s reaches the named region %s",
