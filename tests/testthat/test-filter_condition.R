@@ -1493,3 +1493,27 @@ test_that("non_genomic_is_and_block is TRUE when no OR reaches those tests", {
       non_genomic_is_and_block()
   )
 })
+
+test_that("format() reports the regions a condition constrains", {
+  finterface <- local_summary_stats_interface()
+
+  expect_equal(
+    format(new_filter_condition(rlang::quo(pval < 0.5), finterface)),
+    "pval < 0.5 "
+  )
+  expect_equal(
+    format(new_filter_condition(
+      rlang::quo(pval < 0.5 & chr == 1 & chr == 2),
+      finterface
+    )),
+    "pval < 0.5 {}"
+  )
+  expect_match(
+    format(new_filter_condition(
+      rlang::quo(pval < 0.5 & chr == 1),
+      finterface
+    )),
+    "{chr1",
+    fixed = TRUE
+  )
+})
