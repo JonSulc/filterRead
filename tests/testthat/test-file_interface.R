@@ -1167,7 +1167,6 @@ test_that("A caller's separator reaches both read paths", {
   expect_equal(head(finterface, 1, sep = ","), head(finterface, 1))
 })
 
-
 test_that("A condition covering the whole genome reads every row", {
   fixture <- data.table::data.table(
     chr = rep(1:2, each = 4),
