@@ -258,10 +258,12 @@ expand_genomic_regions <- function(
       build = build(gregions)
     )
   }
+  # Must check whether the start is greater than 1, independent of the NA
+  # sentinel above
   if (!is.na(gregions$start) && 1 < gregions$start) {
     before_fragment <- data.table::data.table(
       chr = gregions$chr,
-      start = 1,
+      start = NA_integer_,
       end = gregions$start - 1
     )
   } else {
