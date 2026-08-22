@@ -172,8 +172,7 @@ liftover.genomic_regions <- function(
       e1 + expand_genomic_regions(e2)
     )
   }
-  rbind(e1, e2) |>
-    merge_contiguous_regions()
+  rbind(e1, e2)
 }
 
 #' @export
@@ -377,10 +376,7 @@ rbind.genomic_regions <- function(
 
   if (is_complement(e1)) {
     if (is_complement(e2)) {
-      return(
-        rbind(e1, e2) |>
-          merge_contiguous_regions()
-      )
+      return(rbind(e1, e2))
     }
     return(
       expand_genomic_regions(e1) & e2
