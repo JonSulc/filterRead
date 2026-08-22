@@ -16,7 +16,7 @@ replace_na_with_sentinel(
 
 \item{chr_sentinel}{Value to use for NA chromosomes (default: "")}
 
-\item{start_sentinel}{Value to use for NA start (default: 0)}
+\item{start_sentinel}{Value to use for NA start (default: 1)}
 
 \item{end_sentinel}{Value to use for NA end
 (default: .Machine$integer.max - 1)}
@@ -27,7 +27,7 @@ Copy with NAs replaced by sentinels, keyed for foverlaps
 \description{
 Converts NA to sentinel values that foverlaps can handle:
 - NA chr -> empty string
-- NA start -> 0 (from beginning)
+- NA start -> 1 (from beginning)
 - NA end -> max integer - 1 (to end)
 The default for end subtracts 1 from max integer to avoid overflows
 (data.table::foverlaps adds 1 internally).

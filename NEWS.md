@@ -39,6 +39,13 @@
   command `return_only_cmd = TRUE` emits for it did the same. Both now match
   no rows.
 
+* A start position of 1 is now treated as unconstrained, so
+  `genomic_regions(chr = 1, start = 1, end = 100)` and
+  `genomic_regions(chr = 1, end = 100)` are equal. Positions are 1-based, so
+  the two always denoted the same set. Negating a region with a lower bound
+  now leaves the start open for the same reason, where it previously produced
+  a region starting at position 1.
+
 # filterRead 2.14.0
 
 * `new_file_interface()`'s `ieugwas_parsing` argument is now

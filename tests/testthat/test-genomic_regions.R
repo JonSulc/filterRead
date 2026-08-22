@@ -2352,7 +2352,7 @@ test_that("absorption keeps a complement-stored set complemented", {
   expect_true(is_complement(gregions))
   expect_equal(build(gregions), "b38")
   expect_equal(gregions$chr, c(NA, "chr1", "chr1"))
-  expect_equal(gregions$start, c(100L, 1L, 201L))
+  expect_equal(gregions$start, c(100L, NA, 201L))
   expect_equal(gregions$end, c(200L, 99L, 1000L))
 })
 
@@ -2365,4 +2365,13 @@ test_that("complementing a lower bound leaves the start unconstrained", {
   expect_equal(nrow(chr1_rows), 1)
   expect_true(is.na(chr1_rows$start))
   expect_equal(chr1_rows$end, 99)
+})
+
+test_that("a region starting at the first position is left open", {
+  gregions <- new_genomic_regions(chr = 1, start = 1, end = 100, build = "b38")
+
+  expect_true(is.na(gregions$start))
+  expect_true(
+    gregions == new_genomic_regions(chr = 1, end = 100, build = "b38")
+  )
 })

@@ -16,7 +16,7 @@ replace_sentinel_with_na(
 
 \item{chr_sentinel}{Value used for NA chromosomes (default: "")}
 
-\item{start_sentinel}{Value used for NA start (default: 0)}
+\item{start_sentinel}{Value used for NA start (default: 1)}
 
 \item{end_sentinel}{Value used for NA end (default: .Machine$integer.max - 1)}
 }

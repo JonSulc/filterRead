@@ -51,6 +51,19 @@ test_that("tabix process substitution works", {
     get_tabix_process_substitution(1:2, c(123, 456), c(234, 567), "dbsnp_file.vcf.gz"),
     "<(tabix 'dbsnp_file.vcf.gz' 1:123-234 2:456-567)"
   )
+
+  expect_equal(
+    get_tabix_process_substitution(1, NA, 234, "dbsnp_file.vcf.gz"),
+    "<(tabix 'dbsnp_file.vcf.gz' 1:-234)"
+  )
+  expect_equal(
+    get_tabix_process_substitution(1, 123, NA, "dbsnp_file.vcf.gz"),
+    "<(tabix 'dbsnp_file.vcf.gz' 1:123-)"
+  )
+  expect_equal(
+    get_tabix_process_substitution(1, NA, NA, "dbsnp_file.vcf.gz"),
+    "<(tabix 'dbsnp_file.vcf.gz' 1)"
+  )
 })
 
 test_that("File reading works", {

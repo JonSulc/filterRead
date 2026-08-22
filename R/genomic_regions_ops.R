@@ -12,7 +12,7 @@
 # Any future code that adds more than 1 to `end` must lower this sentinel
 # accordingly, otherwise it will silently overflow to NA on sentinel rows.
 CHR_SENTINEL <- ""
-START_SENTINEL <- 0L
+START_SENTINEL <- 1L
 END_SENTINEL <- .Machine$integer.max - 1L
 
 #' Liftover genomic_regions to a different genome build
@@ -122,7 +122,7 @@ liftover.genomic_regions <- function(
 
   lift_chain_overlap(
     # foverlaps doesn't handle NAs
-    replace_na_with_sentinel(expanded_x, start_sentinel = 1L),
+    replace_na_with_sentinel(expanded_x),
     chain_dt
   ) |>
     as_genomic_regions(
@@ -487,14 +487,14 @@ expand_na_chr <- function(
 #'
 #' Converts NA to sentinel values that foverlaps can handle:
 #' - NA chr -> empty string
-#' - NA start -> 0 (from beginning)
+#' - NA start -> 1 (from beginning)
 #' - NA end -> max integer - 1 (to end)
 #' The default for end subtracts 1 from max integer to avoid overflows
 #' (data.table::foverlaps adds 1 internally).
 #'
 #' @param genomic_regions data.table with potential NAs
 #' @param chr_sentinel Value to use for NA chromosomes (default: "")
-#' @param start_sentinel Value to use for NA start (default: 0)
+#' @param start_sentinel Value to use for NA start (default: 1)
 #' @param end_sentinel Value to use for NA end
 #'   (default: .Machine$integer.max - 1)
 #'
@@ -525,7 +525,7 @@ replace_na_with_sentinel <- function(
 #'
 #' @param genomic_regions data.table with sentinel values
 #' @param chr_sentinel Value used for NA chromosomes (default: "")
-#' @param start_sentinel Value used for NA start (default: 0)
+#' @param start_sentinel Value used for NA start (default: 1)
 #' @param end_sentinel Value used for NA end (default: .Machine$integer.max - 1)
 #'
 #' @return Copy with sentinels replaced by NAs
