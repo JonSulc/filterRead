@@ -2339,3 +2339,19 @@ test_that("intersecting complementary halves of the genome matches nothing", {
     !new_genomic_regions(start = 201, build = "b38")
   expect_true(is_empty_genome(result))
 })
+
+test_that("absorption keeps a complement-stored set complemented", {
+  gregions <- new_genomic_regions(
+    chr = c(NA_character_, "chr1"),
+    start = c(100, 1),
+    end = c(200, 1000),
+    complement = TRUE,
+    build = "b38"
+  )
+
+  expect_true(is_complement(gregions))
+  expect_equal(build(gregions), "b38")
+  expect_equal(gregions$chr, c(NA, "chr1", "chr1"))
+  expect_equal(gregions$start, c(100L, 1L, 201L))
+  expect_equal(gregions$end, c(200L, 99L, 1000L))
+})
