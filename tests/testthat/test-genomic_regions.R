@@ -2375,3 +2375,16 @@ test_that("a region starting at the first position is left open", {
     gregions == new_genomic_regions(chr = 1, end = 100, build = "b38")
   )
 })
+
+test_that("as_genomic_regions.filter_condition returns the subtree regions", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo((chr == 1 & ref == "A") | (chr == 2 & ref == "C")),
+    finterface,
+    build = "b38"
+  )
+  expect_true(
+    as_genomic_regions(fcondition) ==
+      new_genomic_regions(chr = c(1, 2), build = "b38")
+  )
+})

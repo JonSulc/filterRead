@@ -354,8 +354,9 @@ as_genomic_regions.filter_condition <- function(
   ordered_chr = 1:22,
   ...
 ) {
-  if (!is.null(fc_genomic_regions(x))) {
-    return(fc_genomic_regions(x))
+  gregions <- fc_genomic_regions(x, recursive = TRUE)
+  if (!is.null(gregions)) {
+    return(gregions)
   }
   full_genomic_regions(build = build)
 }
