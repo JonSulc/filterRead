@@ -347,16 +347,20 @@ as_genomic_regions.gte_filter_condition <- function(
   }
   full_genomic_regions(build = build)
 }
+#' Regions a filter condition can match within
+#'
+#' The smallest set of regions covering every row the condition could select
+#' when its non-genomic constraints are ignored.
+#'
+#' @param fcondition A filter_condition object
+#' @return A genomic_regions object, in the build the condition carries
 #' @export
-as_genomic_regions.filter_condition <- function(
-  x,
-  build = NULL,
-  ordered_chr = 1:22,
-  ...
+covered_regions <- function(
+  fcondition
 ) {
-  gregions <- fc_genomic_regions(x, recursive = TRUE)
-  if (!is.null(gregions)) {
-    return(gregions)
+  gregions <- fc_genomic_regions(fcondition, recursive = TRUE)
+  if (is.null(gregions)) {
+    return(full_genomic_regions(build = build(fcondition)))
   }
-  full_genomic_regions(build = build)
+  gregions
 }
