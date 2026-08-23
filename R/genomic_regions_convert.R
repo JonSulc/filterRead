@@ -1,7 +1,10 @@
 #' Convert objects to genomic_regions
 #'
-#' Generic function to convert various objects (data.frames, filter_conditions)
-#' to genomic_regions format.
+#' Generic function to convert various objects (data.frames, comparisons on
+#' `chr` or `pos`) to genomic_regions format.
+#'
+#' @seealso [covered_regions()] for the regions a filter_condition can match
+#'   within.
 #'
 #' @param x Object to convert
 #' @param build Reference build the coordinates are expressed in ("b36",
