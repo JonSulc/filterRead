@@ -1434,16 +1434,10 @@ test_that("combine_filter_condition reduces two empty operands to NULL", {
 })
 
 test_that("an OR of two purely positional branches runs", {
-  finterface <- local_file_interface(dt = data.table::data.table(
-    chr    = rep(1:2, each = 4),
-    pos    = rep(c(100, 200, 300, 400), times = 2),
-    ref    = rep(c("A", "T"), each = 4),
-    alt    = rep(c("T", "A"), each = 4),
-    effect = 0,
-    pval   = 0.5
-  ))
+  finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
   result <- finterface[
-    (chr == 1 & 150 <= pos & pos <= 350) | (chr == 2 & 250 <= pos & pos <= 450)
+    (chr == "chr1" & 150 <= pos & pos <= 350) |
+      (chr == "chr2" & 250 <= pos & pos <= 450)
   ]
   expect_equal(nrow(result), 4)
   expect_equal(result$chr, c("chr1", "chr1", "chr2", "chr2"))
@@ -1451,20 +1445,14 @@ test_that("an OR of two purely positional branches runs", {
 })
 
 test_that("an OR of two branches keeps each branch's positions", {
-  finterface <- local_file_interface(dt = data.table::data.table(
-    chr    = rep(1:2, each = 4),
-    pos    = rep(c(100, 200, 300, 400), times = 2),
-    ref    = rep(c("A", "T"), each = 4),
-    alt    = rep(c("T", "A"), each = 4),
-    effect = 0,
-    pval   = 0.5
-  ))
+  finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
   result <- finterface[
-    (chr == 1 & pos <= 200 & ref == "A") | (chr == 2 & pos <= 200 & ref == "T")
+    (chr == "chr1" & pos <= 200 & ref == "A") |
+      (chr == "chr2" & pos <= 200 & ref == "C")
   ]
-  expect_equal(nrow(result), 4)
-  expect_equal(result$chr, c("chr1", "chr1", "chr2", "chr2"))
-  expect_equal(result$pos, c(100, 200, 100, 200))
+  expect_equal(nrow(result), 2)
+  expect_equal(result$chr, c("chr1", "chr2"))
+  expect_equal(result$pos, c(100, 200))
 })
 
 test_that("non_genomic_is_and_block is FALSE for an OR of non-genomic tests", {

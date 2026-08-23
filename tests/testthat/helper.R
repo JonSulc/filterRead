@@ -465,3 +465,44 @@ test_in_fc <- function(
       sprintf(filepath, random_code)
   )
 }
+
+# An eight-row fixture whose chromosome, position, allele and p-value columns
+# each select a different subset, so a constraint dropped from the emitted awk
+# changes the row set rather than passing unnoticed. Chromosomes are stored
+# prefixed, as a read returns them, so a condition holds the same values on
+# either side of the comparison.
+dummy_fixed_summary_stats <- function() {
+  data.table::data.table(
+    chr  = rep(c("chr1", "chr2"), each = 4),
+    pos  = rep(c(100L, 200L, 300L, 400L), times = 2),
+    ref  = rep(c("A", "C"), times = 4),
+    alt  = rep(c("T", "T", "G", "G"), times = 2),
+    pval = rep(c(0.01, 0.9), times = 4)
+  )
+}
+
+# Reads `fcall` through awk and evaluates the same expression in R over the
+# rows the interface returns unfiltered, so the two sides differ only in the
+# rows the condition selects. Both are compared as sets of chr:pos keys.
+# Deriving the expected rows from the interface keeps column formatting out of
+# the comparison, which the tests in test-chr_prefix.R cover instead.
+expect_read_matches_r <- function(
+  finterface,
+  fcall,
+  expected_awk_condition = NULL
+) {
+  if (!is.null(expected_awk_condition)) {
+    testthat::expect_match(
+      eval(bquote(finterface[.(fcall), return_only_cmd = TRUE])),
+      paste0("if (", expected_awk_condition, ") {"),
+      fixed = TRUE
+    )
+  }
+  read <- eval(bquote(finterface[.(fcall)]))
+  expected <- finterface[][eval(fcall)]
+  testthat::expect_equal(
+    sort(paste0(read$chr, ":", read$pos)),
+    sort(paste0(expected$chr, ":", expected$pos)),
+    info = paste(deparse(fcall), collapse = "")
+  )
+}
