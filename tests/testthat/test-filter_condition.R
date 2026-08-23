@@ -1599,3 +1599,34 @@ test_that("an OR branch repeating its partner's constraint emits both", {
       "100 <= $2 && $2 <= 300 || $5 < 0.5 && 100 <= $2 && $2 <= 300"
   )
 })
+
+test_that("a genomic constraint beside a parenthesized OR filters the read", {
+  finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
+  expect_read_matches_r(
+    finterface,
+    quote(pos <= 200 & (ref == "A" | alt == "G")),
+    expected_awk_condition = '(($3 == "A" || $4 == "G")) && $2 <= 200'
+  )
+  expect_read_matches_r(
+    finterface,
+    quote(chr == "chr1" & (ref == "A" | alt == "G")),
+    expected_awk_condition = '(($3 == "A" || $4 == "G")) && $1 == "chr1"'
+  )
+})
+
+test_that("a genomic_regions beside a parenthesized OR filters the read", {
+  finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
+  gregions <- new_genomic_regions(
+    chr   = 1,
+    end   = 250,
+    build = build(finterface)
+  )
+  expect_match(
+    finterface[gregions & (ref == "A" | alt == "G"), return_only_cmd = TRUE],
+    'if ((($3 == "A" || $4 == "G")) && $1 == "chr1" && $2 <= 250) {',
+    fixed = TRUE
+  )
+  result <- finterface[gregions & (ref == "A" | alt == "G")]
+  expect_equal(result$chr, "chr1")
+  expect_equal(result$pos, 100L)
+})

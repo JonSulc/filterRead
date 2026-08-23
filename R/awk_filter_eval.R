@@ -26,16 +26,32 @@ eval_fcondition_w_gregions <- function(
 ) {
   # For non-AND blocks (i.e., OR at top level), recursively process children
   if (!non_genomic_is_and_block(fcondition)) {
-    return(
-      do.call(
-        get(fcondition[[1]]),
-        lapply(
-          fcondition[-1],
-          eval_fcondition_w_gregions,
-          column_indices = column_indices
-        )
+    awk_conditions <- do.call(
+      get(fcondition[[1]]),
+      lapply(
+        fcondition[-1],
+        eval_fcondition_w_gregions,
+        column_indices = column_indices
       )
     )
+    gregions_condition <- eval_genomic_regions_from_fc(
+      fcondition,
+      finterface = finterface,
+      column_indices = column_indices
+    )
+    if (length(gregions_condition) != 0L) {
+      # or_filter_condition joins its operands with a bare ||, so the
+      # children's condition is parenthesized to keep && from binding to
+      # the last operand alone.
+      awk_conditions$condition <- c(
+        if (length(awk_conditions$condition) != 0L) {
+          sprintf("(%s)", awk_conditions$condition)
+        },
+        gregions_condition
+      ) |>
+        paste(collapse = " && ")
+    }
+    return(awk_conditions)
   }
   # For AND blocks, evaluate non-genomic conditions first
   awk_conditions <- eval_fcondition(
