@@ -1,3 +1,36 @@
+# filterRead 2.16.0
+
+* `as_genomic_regions()` no longer accepts a `filter_condition`. The regions a
+  condition can match within are reported by `covered_regions()`: the smallest
+  set containing every row the condition can select. Non-genomic constraints
+  are ignored, so the result covers more than the condition selects.
+
+* Fixed a chromosome or position constraint being dropped when written beside
+  a parenthesized OR. `pos <= 200 & (ref == "A" | alt == "G")` read every row
+  matching the OR, ignoring the position. The same defect affected
+  `chr == 1 & (...)` and a `genomic_regions` object combined with a
+  parenthesized OR.
+
+* Fixed a top-level OR dropping a branch's positional constraint, so that
+  `(chr == 1 & pos <= 200 & ref == "A") | (chr == 2 & pos <= 200 & ref == "C")`
+  did not read each branch under its own range.
+
+* A parenthesized chromosome or position test no longer exhausts the C stack.
+  `finterface[(chr == 1)]` failed with `C stack usage ... is too close to the
+  limit`, and so did every condition containing one, among them
+  `ref == "A" & (pos <= 200 | 400 <= pos)`, `(chr == 1) | (pval < 0.5)` and
+  `pval < 0.05 & (chr == 1 | chr == 2)`. All now read.
+
+* An OR whose branch repeats its partner's genomic constraint no longer fails
+  with `no applicable method for 'post_process' applied to an object of class
+  "name"`. `chr == 1 | chr == 1 & pval < 0.5` and
+  `100 <= pos & pos <= 300 | 100 <= pos & pos <= 300 & pval < 0.5` now read.
+
+* Fixed `covered_regions()` reading only the regions recorded at the
+  condition's outermost node.
+  `(chr == 1 & ref == "A") | (chr == 2 & ref == "C")` reported the whole genome
+  instead of chromosomes 1 and 2.
+
 # filterRead 2.15.0
 
 * The `merge_contiguous` argument of `genomic_regions()`,
