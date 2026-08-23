@@ -1505,3 +1505,27 @@ test_that("format() reports the regions a condition constrains", {
     fixed = TRUE
   )
 })
+
+test_that("a parenthesized chromosome or position test filters the read", {
+  finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
+  expect_read_matches_r(
+    finterface,
+    quote((chr == "chr1")),
+    expected_awk_condition = '$1 == "chr1"'
+  )
+  expect_read_matches_r(
+    finterface,
+    quote((chr == "chr1") | (pval < 0.5)),
+    expected_awk_condition = '$1 == "chr1" || ($5 < 0.5)'
+  )
+  expect_read_matches_r(
+    finterface,
+    quote(ref == "A" & (pos <= 200 | 400 <= pos)),
+    expected_awk_condition = '$3 == "A" && ($2 <= 200 || 400 <= $2)'
+  )
+  expect_read_matches_r(
+    finterface,
+    quote(pval < 0.05 & (chr == "chr1" | chr == "chr2")),
+    expected_awk_condition = '$5 < 0.05 && ($1 == "chr1" || $1 == "chr2")'
+  )
+})
