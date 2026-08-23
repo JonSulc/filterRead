@@ -601,7 +601,7 @@ fcondition_and_rsid_to_awk <- function(
     fcondition,
     finterface = get_file_interface(fcondition)
   )
-  branch <- fc_genomic_regions(fcondition)[
+  branch <- fc_genomic_regions(fcondition, recursive = TRUE)[
     ,
     .(
       index = index,

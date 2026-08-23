@@ -577,3 +577,35 @@ test_that("An unsatisfiable condition emits a command matching no rows", {
   expect_false(grepl("tabix", command, fixed = TRUE))
   expect_equal(nrow(finterface[chr == 1 & chr == 2 & pval < 0.5]), 0)
 })
+
+test_that("an unsatisfiable OR of RSID-indexed regions matches no rows", {
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
+  expect_false(
+    grepl(
+      "tabix",
+      finterface[
+        (chr == 1 & chr == 2 & pval < 0.5) | (chr == 3 & chr == 4 & pval < 0.5),
+        return_only_cmd = TRUE
+      ],
+      fixed = TRUE
+    )
+  )
+  expect_equal(
+    nrow(finterface[
+      (chr == 1 & chr == 2 & pval < 0.5) | (chr == 3 & chr == 4 & pval < 0.5)
+    ]),
+    0
+  )
+})
+
+test_that("an OR of branches sharing a range issues one tabix query", {
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
+  command <- finterface[
+    123 <= pos & pos <= 50000 & pval < 0.9 |
+      123 <= pos & pos <= 50000 & effect < 9 |
+      123 <= pos & pos <= 50000 & pval < 0.5,
+    return_only_cmd = TRUE
+  ]
+  expect_match(command, "rsid0", fixed = TRUE)
+  expect_false(grepl("rsid1", command, fixed = TRUE))
+})

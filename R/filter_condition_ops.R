@@ -67,21 +67,9 @@
     as_filter_condition()
   fcondition[2:3] <- list(fcondition1, fcondition2)
   attr(fcondition, "context") <- attr(fcondition1, "context")
-  if (is_single_genomic_block(fcondition)) {
-    if (length(fcondition1) == 0) {
-      fcondition <- fcondition2
-    } else if (length(fcondition2) == 0) {
-      fcondition <- fcondition1
-    }
-    fc_genomic_regions(fcondition) <- rbind(
-      fc_genomic_regions(fcondition1),
-      fc_genomic_regions(fcondition2)
-    )
-  } else {
-    fc_genomic_regions(fcondition) <- full_genomic_regions(
-      build = build(fcondition1)
-    )
-  }
+  fc_genomic_regions(fcondition) <- full_genomic_regions(
+    build = build(fcondition1)
+  )
 
   if (!identical(build(fcondition1), build(fcondition2))) {
     warning(

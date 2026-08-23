@@ -568,7 +568,7 @@ empty_read_for_query <- function(
   )
 
   # Short-circuit an unsatisfiable condition
-  gregions <- fc_genomic_regions(fcondition)
+  gregions <- fc_genomic_regions(fcondition, recursive = TRUE)
   if (!return_only_cmd
     && !is.null(gregions)
     && is_empty_genome(gregions)) {

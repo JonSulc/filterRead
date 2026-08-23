@@ -71,7 +71,7 @@ fc_genomic_regions <- function(
   fcondition,
   recursive = FALSE
 ) {
-  if (!recursive || !is_composite_filter_condition(fcondition)) {
+  if (!recursive || length(fcondition) <= 1) {
     return(attr(fcondition, "genomic_regions"))
   }
   if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
@@ -94,10 +94,7 @@ fc_genomic_regions <- function(
           fc_genomic_regions(fcondition[[3]], recursive = TRUE))
     )
   }
-  stop(
-    "Unrecognized composite filter_condition: ",
-    as.character(fcondition[[1]])
-  )
+  attr(fcondition, "genomic_regions")
 }
 
 #' Set genomic regions on a filter condition
@@ -465,15 +462,13 @@ is_single_genomic_block <- function(
     !has_position_condition(fcondition)) {
     return(TRUE)
   }
-  # TODO: Handle when fc_genomic_regions(fcondition) exists
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
+    left <- fc_genomic_regions(fcondition[[2]], recursive = TRUE)
+    right <- fc_genomic_regions(fcondition[[3]], recursive = TRUE)
     return(
       is_single_genomic_block(fcondition[[2]]) &&
         is_single_genomic_block(fcondition[[3]]) &&
-        identical(
-          fc_genomic_regions(fcondition[[2]]),
-          fc_genomic_regions(fcondition[[3]])
-        )
+        left == right
     )
   }
   FALSE

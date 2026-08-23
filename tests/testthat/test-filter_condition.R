@@ -1442,6 +1442,26 @@ test_that("an OR of two purely positional branches runs", {
   expect_equal(nrow(result), 4)
   expect_equal(result$chr, c("chr1", "chr1", "chr2", "chr2"))
   expect_equal(result$pos, c(200, 300, 300, 400))
+
+  expect_read_matches_r(
+    finterface,
+    quote(
+      (chr == "chr1" & 150 <= pos & pos <= 350) |
+        (chr == "chr2" & 250 <= pos & pos <= 450)
+    ),
+    expected_awk_condition = paste0(
+      '$1 == "chr1" && 150 <= $2 && $2 <= 350 || ',
+      '$1 == "chr2" && 250 <= $2 && $2 <= 450'
+    )
+  )
+  expect_read_matches_r(
+    finterface,
+    quote((chr == "chr1" | chr == "chr2") & (pos <= 200 | 400 <= pos)),
+    expected_awk_condition = paste0(
+      '($1 == "chr1" && $2 <= 200 || $1 == "chr1" && 400 <= $2 || ',
+      '$1 == "chr2" && $2 <= 200 || $1 == "chr2" && 400 <= $2)'
+    )
+  )
 })
 
 test_that("an OR of two branches keeps each branch's positions", {
@@ -1527,5 +1547,56 @@ test_that("a parenthesized chromosome or position test filters the read", {
     finterface,
     quote(pval < 0.05 & (chr == "chr1" | chr == "chr2")),
     expected_awk_condition = '$5 < 0.05 && ($1 == "chr1" || $1 == "chr2")'
+  )
+})
+
+test_that("an OR node stores full genome and derives the branch union", {
+  finterface <- local_summary_stats_interface()
+  fcondition <- new_filter_condition(
+    rlang::quo(
+      (chr == 1 & 123 <= pos & pos <= 50000) |
+        (chr == 1 & 60000 <= pos & pos <= 99999)
+    ),
+    finterface,
+    build = "b38"
+  )
+  expect_true(is_full_genome(attr(fcondition, "genomic_regions")))
+  expect_equal(
+    fc_genomic_regions(fcondition, recursive = TRUE),
+    new_genomic_regions(
+      chr   = c(1, 1),
+      start = c(123, 60000),
+      end   = c(50000, 99999),
+      build = "b38"
+    )
+  )
+})
+
+test_that("an OR of branches sharing a range is a single genomic block", {
+  finterface <- local_summary_stats_interface()
+  expect_true(
+    new_filter_condition(
+      rlang::quo(
+        chr == 1 & ref == "A" | chr == 1 & alt == "G" | chr == 1 & pval < 0.5
+      ),
+      finterface
+    ) |>
+      is_single_genomic_block()
+  )
+})
+
+test_that("an OR branch repeating its partner's constraint emits both", {
+  finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
+  expect_read_matches_r(
+    finterface,
+    quote(chr == "chr1" | chr == "chr1" & pval < 0.5),
+    expected_awk_condition = '$1 == "chr1" || $5 < 0.5 && $1 == "chr1"'
+  )
+  expect_read_matches_r(
+    finterface,
+    quote(100 <= pos & pos <= 300 | 100 <= pos & pos <= 300 & pval < 0.5),
+    expected_awk_condition = paste0(
+      "100 <= $2 && $2 <= 300 || $5 < 0.5 && 100 <= $2 && $2 <= 300"
+    )
   )
 })
