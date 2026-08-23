@@ -1595,8 +1595,7 @@ test_that("an OR branch repeating its partner's constraint emits both", {
   expect_read_matches_r(
     finterface,
     quote(100 <= pos & pos <= 300 | 100 <= pos & pos <= 300 & pval < 0.5),
-    expected_awk_condition = paste0(
+    expected_awk_condition =
       "100 <= $2 && $2 <= 300 || $5 < 0.5 && 100 <= $2 && $2 <= 300"
-    )
   )
 })
