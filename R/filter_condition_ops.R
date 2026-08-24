@@ -28,9 +28,17 @@
 
   fcondition <- rlang::quo(and_filter_condition()) |>
     as_filter_condition()
+  combined_regions <- fc_genomic_regions(fcondition1) &
+    fc_genomic_regions(fcondition2)
+  fc_genomic_regions(fcondition1) <- full_genomic_regions(
+    build = build(fcondition1)
+  )
+  fc_genomic_regions(fcondition2) <- full_genomic_regions(
+    build = build(fcondition2)
+  )
   fcondition[2:3] <- list(fcondition1, fcondition2)
   attr(fcondition, "context") <- attr(fcondition1, "context")
-  fc_genomic_regions(fcondition) <- fc_genomic_regions(fcondition1) & fc_genomic_regions(fcondition2)
+  fc_genomic_regions(fcondition) <- combined_regions
 
   if (!identical(build(fcondition1), build(fcondition2))) {
     warning(

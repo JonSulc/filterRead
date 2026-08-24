@@ -419,20 +419,22 @@ strip_parentheses <- function(
     return(fcondition)
   }
   if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
-    return(strip_parentheses(fcondition[[2]], recursive = recursive))
+    child <- fcondition[[2]]
+    fc_genomic_regions(child) <- fc_genomic_regions(fcondition)
+    return(strip_parentheses(child, recursive = recursive))
   }
   if (recursive) {
     if (fcondition[[1]] == as.symbol("and_filter_condition")) {
-      return(
-        strip_parentheses(fcondition[[2]], recursive = recursive) &
-          strip_parentheses(fcondition[[3]], recursive = recursive)
-      )
+      stripped <- strip_parentheses(fcondition[[2]], recursive = recursive) &
+        strip_parentheses(fcondition[[3]], recursive = recursive)
+      fc_genomic_regions(stripped) <- fc_genomic_regions(fcondition)
+      return(stripped)
     }
     if (fcondition[[1]] == as.symbol("or_filter_condition")) {
-      return(
-        strip_parentheses(fcondition[[2]], recursive = recursive) |
-          strip_parentheses(fcondition[[3]], recursive = recursive)
-      )
+      stripped <- strip_parentheses(fcondition[[2]], recursive = recursive) |
+        strip_parentheses(fcondition[[3]], recursive = recursive)
+      fc_genomic_regions(stripped) <- fc_genomic_regions(fcondition)
+      return(stripped)
     }
   }
   fcondition

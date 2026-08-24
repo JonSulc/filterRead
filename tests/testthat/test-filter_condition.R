@@ -1630,3 +1630,38 @@ test_that("a genomic_regions beside a parenthesized OR filters the read", {
   expect_equal(result$chr, c("chr1", "chr1"))
   expect_equal(result$pos, c(100L, 200L))
 })
+
+test_that("a repeated constraint is emitted once, not at every node", {
+  finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
+  expect_read_matches_r(
+    finterface,
+    quote(
+      (chr == "chr1" & (ref == "A" | alt == "G")) &
+        (chr == "chr1" & (pval < 0.5 | alt == "T"))
+    ),
+    expected_awk_condition = paste0(
+      '((($3 == "A" || $4 == "G")) && (($5 < 0.5 || $4 == "T"))) && ',
+      '$1 == "chr1"'
+    )
+  )
+})
+
+test_that("a repeated genomic_regions set is emitted once", {
+  finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
+  gregions <- new_genomic_regions(
+    chr   = c(1, 2),
+    end   = c(250, 250),
+    build = build(finterface)
+  )
+  expect_match(
+    finterface[
+      gregions & (ref == "A" | alt == "G") & (pval < 0.5 | alt == "T"),
+      return_only_cmd = TRUE
+    ],
+    paste0(
+      'if ((($3 == "A" || $4 == "G") && ($5 < 0.5 || $4 == "T")) && ',
+      '($1 == "chr1" && $2 <= 250 || $1 == "chr2" && $2 <= 250)) {'
+    ),
+    fixed = TRUE
+  )
+})
