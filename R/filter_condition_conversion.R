@@ -26,7 +26,8 @@
 #' Wrap filter condition in parentheses
 #'
 #' Creates a new lp_filter_condition wrapping an existing filter_condition.
-#' Preserves build and genomic_regions attributes.
+#' Preserves the build, and takes over the wrapped condition's genomic
+#' regions so the wrapper alone records them.
 #'
 #' @param fcall An existing filter_condition object
 #'
