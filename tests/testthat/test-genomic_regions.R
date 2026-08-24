@@ -2212,3 +2212,21 @@ test_that("covered_regions reports the full genome when nothing is recorded", {
   expect_null(fc_genomic_regions(fcondition, recursive = TRUE))
   expect_true(is_full_genome(covered_regions(fcondition)))
 })
+
+test_that("covered_regions rejects an object that is not a condition", {
+  expect_error(
+    covered_regions(new_genomic_regions(chr = 1, build = "b38")),
+    'inherits(fcondition, "filter_condition") is not TRUE',
+    fixed = TRUE
+  )
+  expect_error(
+    covered_regions(NULL),
+    'inherits(fcondition, "filter_condition") is not TRUE',
+    fixed = TRUE
+  )
+  expect_error(
+    covered_regions(42),
+    'inherits(fcondition, "filter_condition") is not TRUE',
+    fixed = TRUE
+  )
+})

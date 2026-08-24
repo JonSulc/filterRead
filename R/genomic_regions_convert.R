@@ -361,6 +361,7 @@ as_genomic_regions.gte_filter_condition <- function(
 covered_regions <- function(
   fcondition
 ) {
+  stopifnot(inherits(fcondition, "filter_condition"))
   gregions <- fc_genomic_regions(fcondition, recursive = TRUE)
   if (is.null(gregions)) {
     return(full_genomic_regions(build = build(fcondition)))
