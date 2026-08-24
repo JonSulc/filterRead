@@ -1627,6 +1627,6 @@ test_that("a genomic_regions beside a parenthesized OR filters the read", {
     fixed = TRUE
   )
   result <- finterface[gregions & (ref == "A" | alt == "G")]
-  expect_equal(result$chr, "chr1")
-  expect_equal(result$pos, 100L)
+  expect_equal(result$chr, c("chr1", "chr1"))
+  expect_equal(result$pos, c(100L, 200L))
 })

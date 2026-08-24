@@ -476,8 +476,8 @@ dummy_fixed_summary_stats <- function() {
     chr  = rep(c("chr1", "chr2"), each = 4),
     pos  = rep(c(100L, 200L, 300L, 400L), times = 2),
     ref  = rep(c("A", "C"), times = 4),
-    alt  = rep(c("T", "T", "G", "G"), times = 2),
-    pval = rep(c(0.01, 0.9), times = 4)
+    alt  = c("T", "G", "T", "G", "T", "T", "G", "G"),
+    pval = c(0.01, 0.01, 0.01, 0.9, 0.9, 0.9, 0.01, 0.9)
   )
 }
 
