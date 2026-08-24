@@ -723,16 +723,16 @@ test_that("as_genomic_regions with explicit build parameter", {
   expect_equal(build(result2), "b36")
 })
 
-expect_covered_regions <- function(fcall, expected, finterface) {
+expect_source_regions <- function(fcall, expected, finterface) {
   testthat::expect_equal(
     new_filter_condition(fcall, finterface, build = "b38") |>
-      covered_regions(),
+      source_regions(),
     expected,
     info = paste(deparse(rlang::get_expr(fcall)), collapse = "")
   )
 }
 
-test_that("covered_regions reports the positions a comparison denotes", {
+test_that("source_regions reports the positions a comparison denotes", {
   finterface <- local_summary_stats_interface()
   cases <- list(
     list(
@@ -776,10 +776,10 @@ test_that("covered_regions reports the positions a comparison denotes", {
       new_genomic_regions(start = 1000, build = "b38")
     )
   )
-  for (case in cases) expect_covered_regions(case[[1]], case[[2]], finterface)
+  for (case in cases) expect_source_regions(case[[1]], case[[2]], finterface)
 })
 
-test_that("covered_regions reports the chromosomes a comparison denotes", {
+test_that("source_regions reports the chromosomes a comparison denotes", {
   finterface <- local_summary_stats_interface()
   cases <- list(
     list(
@@ -823,15 +823,15 @@ test_that("covered_regions reports the chromosomes a comparison denotes", {
       new_genomic_regions(chr = 21:22, build = "b38")
     )
   )
-  for (case in cases) expect_covered_regions(case[[1]], case[[2]], finterface)
+  for (case in cases) expect_source_regions(case[[1]], case[[2]], finterface)
 })
 
 test_that(
-  "covered_regions falls back to the full genome off the chromosome range",
+  "source_regions falls back to the full genome off the chromosome range",
   {
     finterface <- local_summary_stats_interface()
     for (fcall in list(rlang::quo(chr < 100), rlang::quo(100 > chr))) {
-      expect_covered_regions(
+      expect_source_regions(
         fcall,
         full_genomic_regions(build = "b38"),
         finterface
@@ -2194,7 +2194,7 @@ test_that("a region starting at the first position is left open", {
   )
 })
 
-test_that("covered_regions returns the whole condition's regions", {
+test_that("source_regions returns the whole condition's regions", {
   finterface <- local_summary_stats_interface()
   fcondition <- new_filter_condition(
     rlang::quo((chr == 1 & ref == "A") | (chr == 2 & ref == "C")),
@@ -2202,30 +2202,30 @@ test_that("covered_regions returns the whole condition's regions", {
     build = "b38"
   )
   expect_true(
-    covered_regions(fcondition) ==
+    source_regions(fcondition) ==
       new_genomic_regions(chr = c(1, 2), build = "b38")
   )
 })
 
-test_that("covered_regions reports the full genome when nothing is recorded", {
+test_that("source_regions reports the full genome when nothing is recorded", {
   fcondition <- as_filter_condition(rlang::quo(chr == 1))
   expect_null(fc_genomic_regions(fcondition, recursive = TRUE))
-  expect_true(is_full_genome(covered_regions(fcondition)))
+  expect_true(is_full_genome(source_regions(fcondition)))
 })
 
-test_that("covered_regions rejects an object that is not a condition", {
+test_that("source_regions rejects an object that is not a condition", {
   expect_error(
-    covered_regions(new_genomic_regions(chr = 1, build = "b38")),
+    source_regions(new_genomic_regions(chr = 1, build = "b38")),
     'inherits(fcondition, "filter_condition") is not TRUE',
     fixed = TRUE
   )
   expect_error(
-    covered_regions(NULL),
+    source_regions(NULL),
     'inherits(fcondition, "filter_condition") is not TRUE',
     fixed = TRUE
   )
   expect_error(
-    covered_regions(42),
+    source_regions(42),
     'inherits(fcondition, "filter_condition") is not TRUE',
     fixed = TRUE
   )

@@ -38,6 +38,6 @@ Generic function to convert various objects (data.frames, comparisons on
 `chr` or `pos`) to genomic_regions format.
 }
 \seealso{
-[covered_regions()] for the regions a filter_condition can match
+[source_regions()] for the regions a filter_condition can match
   within.
 }

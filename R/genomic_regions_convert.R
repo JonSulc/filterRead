@@ -3,7 +3,7 @@
 #' Generic function to convert various objects (data.frames, comparisons on
 #' `chr` or `pos`) to genomic_regions format.
 #'
-#' @seealso [covered_regions()] for the regions a filter_condition can match
+#' @seealso [source_regions()] for the regions a filter_condition can match
 #'   within.
 #'
 #' @param x Object to convert
@@ -358,7 +358,7 @@ as_genomic_regions.gte_filter_condition <- function(
 #' @param fcondition A filter_condition object
 #' @return A genomic_regions object, in the build the condition carries
 #' @export
-covered_regions <- function(
+source_regions <- function(
   fcondition
 ) {
   stopifnot(inherits(fcondition, "filter_condition"))

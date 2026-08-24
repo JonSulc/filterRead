@@ -1,7 +1,7 @@
 # filterRead 2.16.0
 
 * `as_genomic_regions()` no longer accepts a `filter_condition`. The regions a
-  condition can match within are reported by `covered_regions()`: the smallest
+  condition can match within are reported by `source_regions()`: the smallest
   set containing every row the condition can select. Non-genomic constraints
   are ignored, so the result covers more than the condition selects.
 
@@ -26,7 +26,7 @@
   "name"`. `chr == 1 | chr == 1 & pval < 0.5` and
   `100 <= pos & pos <= 300 | 100 <= pos & pos <= 300 & pval < 0.5` now read.
 
-* Fixed `covered_regions()` reading only the regions recorded at the
+* Fixed `source_regions()` reading only the regions recorded at the
   condition's outermost node.
   `(chr == 1 & ref == "A") | (chr == 2 & ref == "C")` reported the whole genome
   instead of chromosomes 1 and 2.
