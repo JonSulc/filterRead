@@ -9,14 +9,15 @@ fc_genomic_regions(fcondition, recursive = FALSE)
 \arguments{
 \item{fcondition}{A filter_condition object}
 
-\item{recursive}{Logical, whether to recursively combine nested regions}
+\item{recursive}{Whether to walk the subtree rather than read the node's
+own regions}
 }
 \value{
 A genomic_regions object, or NULL if not set
 }
 \description{
-Extracts the genomic_regions attribute from a filter condition. When
-recursive is TRUE, combines regions from nested conditions using
-appropriate set operations.
+`recursive = FALSE` returns the regions stored on the node itself.
+`recursive = TRUE` walks the subtree and returns the regions every row the
+condition can select falls within.
 }
 \keyword{internal}

@@ -59,12 +59,13 @@ non_genomic_is_and_block <- function(
 
 #' Get genomic regions from a filter condition
 #'
-#' Extracts the genomic_regions attribute from a filter condition. When
-#' recursive is TRUE, combines regions from nested conditions using
-#' appropriate set operations.
+#' `recursive = FALSE` returns the regions stored on the node itself.
+#' `recursive = TRUE` walks the subtree and returns the regions every row the
+#' condition can select falls within.
 #'
 #' @param fcondition A filter_condition object
-#' @param recursive Logical, whether to recursively combine nested regions
+#' @param recursive Whether to walk the subtree rather than read the node's
+#'   own regions
 #' @return A genomic_regions object, or NULL if not set
 #' @keywords internal
 fc_genomic_regions <- function(
