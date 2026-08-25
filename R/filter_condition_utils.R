@@ -57,6 +57,20 @@ non_genomic_is_and_block <- function(
   all(sapply(fcondition[-1], non_genomic_is_and_block))
 }
 
+#' Check whether a genomic constraint restricts nothing
+#'
+#' A constraint restricts nothing when it is absent or covers the full genome.
+#' Either way it narrows no read.
+#'
+#' @param gconstraint A genomic_regions object, or NULL for the full genome
+#' @return Logical indicating whether the constraint narrows nothing
+#' @keywords internal
+is_unconstrained <- function(
+  gconstraint
+) {
+  is.null(gconstraint) || is_full_genome(gconstraint)
+}
+
 #' Combine genomic constraints, treating NULL as the full genome
 #'
 #' @param left,right A genomic_regions object, or NULL for the full genome
@@ -136,10 +150,8 @@ has_genomic_condition <- function(
 has_chromosome_condition <- function(
   fcondition
 ) {
-  if (!is.null(genomic_constraint(fcondition))) {
-    if (any(!is.na(genomic_constraint(fcondition)$chr))) {
-      return(TRUE)
-    }
+  if (any(!is.na(genomic_constraint(fcondition)$chr))) {
+    return(TRUE)
   }
   if (rlang::is_quosure(fcondition)) {
     fcondition <- strip_parentheses(fcondition, recursive = FALSE)
@@ -167,10 +179,9 @@ has_chromosome_condition <- function(
 has_position_condition <- function(
   fcondition
 ) {
-  if (!is.null(genomic_constraint(fcondition))) {
-    if (any(genomic_constraint(fcondition)[, c(!is.na(start), !is.na(end))])) {
-      return(TRUE)
-    }
+  gregions <- genomic_constraint(fcondition)
+  if (any(!is.na(gregions$start), !is.na(gregions$end))) {
+    return(TRUE)
   }
   if (rlang::is_quosure(fcondition)) {
     fcondition <- strip_parentheses(fcondition, recursive = FALSE)

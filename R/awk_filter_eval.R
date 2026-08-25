@@ -129,8 +129,8 @@ eval_fcondition <- function(
 #' @param column_indices Named list with chr and pos column refs
 #'
 #' @return Character string with the awk condition, `"0"` when the regions
-#'   match nothing, or NULL when they impose no constraint: no regions, the
-#'   whole genome, or positions handled through an RSID index
+#'   match nothing, or NULL when they impose no constraint: an unconstrained
+#'   condition, or positions handled through an RSID index
 #' @keywords internal
 eval_genomic_regions_from_fc <- function(
   fcondition,
@@ -138,7 +138,7 @@ eval_genomic_regions_from_fc <- function(
   column_indices
 ) {
   gregions <- genomic_constraint(fcondition)
-  if (is.null(gregions)) {
+  if (is_unconstrained(gregions)) {
     return()
   }
   gregions <- post_process(gregions, finterface = finterface)
@@ -146,9 +146,6 @@ eval_genomic_regions_from_fc <- function(
   # any other, so coverage is decided before the RSID bail below.
   if (is_empty_genome(gregions)) {
     return("0")
-  }
-  if (is_full_genome(gregions)) {
-    return()
   }
   # Positions on an RSID-indexed file are handled through the index
   if (needs_rsid_matching(finterface)) {

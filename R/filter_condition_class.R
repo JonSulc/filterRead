@@ -553,22 +553,10 @@ get_used_columns <- function(
   finterface = get_file_interface(fcondition)
 ) {
   gregions <- genomic_constraint(fcondition)
-  if (is.null(gregions)) {
-    gregion_columns <- NULL
-  } else {
-    gregion_columns <- genomic_constraint(fcondition)[
-      ,
-      .(
-        chr = chr,
-        pos = start,
-        pos = end
-      )
-    ] |>
-      sapply(\(x) any(!is.na(x))) |>
-      which() |>
-      names() |>
-      unique()
-  }
+  gregion_columns <- c(
+    if (any(!is.na(gregions$chr))) "chr",
+    if (any(!is.na(gregions$start), !is.na(gregions$end))) "pos"
+  )
 
   if (rlang::is_quosure(fcondition)) {
     return(sapply(
@@ -652,7 +640,7 @@ format.filter_condition <- function(
   }
 
   gregions <- genomic_constraint(x)
-  regions_str <- if (is.null(gregions) || is_full_genome(gregions)) {
+  regions_str <- if (is_unconstrained(gregions)) {
     ""
   } else {
     str(gregions)

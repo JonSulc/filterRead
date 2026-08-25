@@ -1700,3 +1700,18 @@ test_that("a condition that restricts nothing records no constraint", {
   expect_null(genomic_constraint(fcondition))
   expect_true(is_full_genome(source_regions(fcondition)))
 })
+
+test_that("is_unconstrained holds for an absent or full-genome constraint", {
+  expect_true(is_unconstrained(NULL))
+  expect_true(is_unconstrained(full_genomic_regions(build = "b38")))
+  expect_false(is_unconstrained(new_genomic_regions(chr = 1, build = "b38")))
+})
+
+test_that("get_used_columns names no coordinate column without one", {
+  finterface <- local_summary_stats_interface(build = "b38")
+  expect_equal(
+    new_filter_condition(rlang::quo(pval < 0.05), finterface, build = "b38") |>
+      get_used_columns(finterface),
+    "pval"
+  )
+})
