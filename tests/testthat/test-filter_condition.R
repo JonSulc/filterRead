@@ -1665,3 +1665,30 @@ test_that("a repeated genomic_regions set is emitted once", {
     fixed = TRUE
   )
 })
+
+test_that("has_position_condition detects a constraint on either bound", {
+  finterface <- local_summary_stats_interface(build = "b38")
+  detects <- function(fcall) {
+    has_position_condition(
+      new_filter_condition(fcall, finterface, build = "b38")
+    )
+  }
+
+  expect_false(detects(rlang::quo(NULL)))
+  expect_false(detects(rlang::quo(ref == "A")))
+  expect_false(detects(rlang::quo(pval < .05)))
+  expect_false(detects(rlang::quo(chr == 1)))
+  # grepl on pos cannot be enumerated into a range, so it stays non-genomic
+  expect_false(detects(rlang::quo(grepl("123", pos))))
+
+  expect_true(detects(rlang::quo(pos < 456)))
+  expect_true(detects(rlang::quo(123 < pos & pos < 456 & pval < .05)))
+  expect_true(detects(rlang::quo(chr == 1 & 123 < pos & pval < .05)))
+  expect_true(detects(rlang::quo(chr == 1 | 123 < pos & pval < .05)))
+
+  # Read from the constraint rather than the expression
+  chr_only <- new_genomic_regions(chr = 1, build = "b38")
+  ranged <- new_genomic_regions(chr = 1, start = 100, end = 200, build = "b38")
+  expect_false(detects(rlang::quo(chr_only)))
+  expect_true(detects(rlang::quo(ranged)))
+})
