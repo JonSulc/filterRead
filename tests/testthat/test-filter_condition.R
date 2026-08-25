@@ -1714,6 +1714,19 @@ test_that("is_overconstrained holds only for an empty genome constraint", {
   expect_false(is_overconstrained(new_genomic_regions(chr = 1, build = "b38")))
 })
 
+test_that("eq_constraints reads an absent constraint as the full genome", {
+  full <- full_genomic_regions(build = "b38")
+  constrained <- new_genomic_regions(chr = 1, build = "b38")
+
+  expect_true(eq_constraints(NULL, NULL))
+  expect_true(eq_constraints(NULL, full))
+  expect_false(eq_constraints(NULL, constrained))
+  expect_true(eq_constraints(full, NULL))
+  expect_false(eq_constraints(constrained, NULL))
+  expect_true(eq_constraints(constrained, constrained))
+  expect_false(eq_constraints(constrained, full))
+})
+
 test_that("get_used_columns names no coordinate column without one", {
   finterface <- local_summary_stats_interface(build = "b38")
   expect_equal(

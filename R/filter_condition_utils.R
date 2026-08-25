@@ -117,6 +117,27 @@ or_constraints <- function(
   left | right
 }
 
+#' Compare two genomic constraints, treating NULL as the full genome
+#'
+#' An absent constraint and an explicit full-genome set cover the same
+#' positions, so they compare equal.
+#'
+#' @param left,right A genomic_regions object, or NULL for the full genome
+#' @return Logical indicating whether both constraints cover the same positions
+#' @keywords internal
+eq_constraints <- function(
+  left,
+  right
+) {
+  if (is.null(left)) {
+    return(is_unconstrained(right))
+  }
+  if (is.null(right)) {
+    return(is_unconstrained(left))
+  }
+  left == right
+}
+
 #' Get the genomic constraint of a filter condition
 #'
 #' The coordinate restriction the condition contributes on its own, beyond
