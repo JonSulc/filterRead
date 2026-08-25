@@ -59,26 +59,48 @@ is_regex_filter_condition <- function(fcondition) {
   as.character(fcondition[[1]]) %in% regex_fc_names
 }
 
-#' Create an empty filter condition
+#' Create a pure genomic condition
 #'
-#' Creates a filter_condition with no conditions (no filtering, matches all
-#' rows).
+#' A pure genomic condition restricts rows by coordinate and nothing else: it
+#' carries no expression, so its genomic constraint is the whole of what it
+#' narrows.
 #'
+#' @param genomic_regions Genomic regions the condition selects within, or NULL
+#'   for the full genome
 #' @param build Optional genome build (b36, b37, b38)
-#' @param genomic_regions Genomic regions to associate with the condition
 #' @param context Environment carrying $finterface and $env for the condition
-#' @return An empty filter_condition object
+#' @return A filter_condition object with no expression
 #' @keywords internal
-empty_filter_condition <- function(
+pure_genomic_condition <- function(
+  genomic_regions,
   build = NULL,
-  genomic_regions = NULL,
   context = NULL
 ) {
-  structure(
+  as_filter_condition(
     list(),
-    class = c("filter_condition", "list"),
     build = build,
     genomic_constraint = genomic_regions,
+    context = context
+  )
+}
+
+#' Create a filter condition that restricts nothing
+#'
+#' What a read given no condition carries: no expression and no genomic
+#' constraint, so every row matches. The limiting case of a pure genomic
+#' condition.
+#'
+#' @param build Optional genome build (b36, b37, b38)
+#' @param context Environment carrying $finterface and $env for the condition
+#' @return A filter_condition object selecting every row
+#' @keywords internal
+unconstrained_condition <- function(
+  build = NULL,
+  context = NULL
+) {
+  pure_genomic_condition(
+    genomic_regions = NULL,
+    build = build,
     context = context
   )
 }
@@ -458,9 +480,9 @@ new_filter_condition_impl.genomic_regions <- function(
     )
   }
   build <- build %||% file_build
-  empty_filter_condition(
-    build = build,
+  pure_genomic_condition(
     genomic_regions = liftover(x, build),
+    build = build,
     context = context
   )
 }
@@ -476,8 +498,7 @@ new_filter_condition_impl.quosure <- function(
   build <- build %||% build(context$finterface)
 
   if (is.null(rlang::get_expr(x))) {
-    # TODO Check this actually ever triggers
-    fcondition <- empty_filter_condition(build = build)
+    fcondition <- unconstrained_condition(build = build)
   } else if (is_composite_filter_condition(x, context$finterface)) {
     fc_operator <- rlang::get_expr(x)[[1]]
     args <- lapply(

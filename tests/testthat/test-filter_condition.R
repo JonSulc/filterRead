@@ -578,15 +578,15 @@ test_that("Parenthesis stripping works", {
   )
 })
 
-test_that("empty_fc | empty_fc does not inherit or_filter_condition_class", {
+test_that("unconstrained | unconstrained is not an or_filter_condition", {
   finterface <- local_summary_stats_interface()
   context <- {
     env <- new.env(parent = emptyenv())
     env$finterface <- finterface
     env
   }
-  fcondition1 <- empty_filter_condition(context = context)
-  fcondition2 <- empty_filter_condition(
+  fcondition1 <- unconstrained_condition(context = context)
+  fcondition2 <- unconstrained_condition(
     context = attr(fcondition1, "context")
   )
   expect_equal(

@@ -273,9 +273,9 @@ split_genomic_conditions <- function(
   }
   if (!has_non_genomic_condition(fcondition)) {
     return(
-      empty_filter_condition(
-        build = build,
+      pure_genomic_condition(
         genomic_regions = as_genomic_regions(fcondition, build = build),
+        build = build,
         context = attr(fcondition, "context")
       )
     )

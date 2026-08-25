@@ -125,9 +125,9 @@ new_filter_condition_impl.variants <- function(x, context, build = NULL, ...) {
   keyset <- variant_keyset(x, finterface, build)
 
   if (length(keyset$keys) == 0) {
-    return(empty_filter_condition(
-      build = build,
+    return(pure_genomic_condition(
       genomic_regions = empty_genomic_regions(build = build),
+      build = build,
       context = context
     ))
   }

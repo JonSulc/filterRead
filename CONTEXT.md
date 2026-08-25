@@ -37,6 +37,21 @@ what the conditions beneath it already say. Recording no constraint and
 constraining nothing are the same state: neither narrows a read.
 _Avoid_: positional constraint, node regions, attached regions
 
+**Pure genomic condition**:
+A condition that restricts rows by coordinate and nothing else: whatever it
+narrows, it narrows through its genomic constraint. `chr == 1` and
+`chr == 1 | chr == 2` are pure; `chr == 1 & pval < 0.5` carries a genomic
+constraint but is not pure. Purity is a property of what a condition selects,
+so how it was written — parenthesized or not — does not bear on it. An
+unconstrained condition is the limiting case, narrowing by nothing at all.
+_Avoid_: empty condition (empty of expression, never of meaning)
+
+**Unconstrained condition**:
+A condition that selects every row: it carries no expression, and its genomic
+constraint covers the full genome. The limiting case of a pure genomic
+condition, and what a read given no condition carries.
+_Avoid_: empty condition, null condition, no condition
+
 **Reference lookup**:
 Querying an auxiliary indexed file, such as dbSNP, for information the file
 being read does not carry — the positions of its rsids. Adds information,
