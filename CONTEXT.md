@@ -33,7 +33,8 @@ _Avoid_: query regions, filter regions, envelope
 The coordinate restriction one condition contributes on its own, beyond
 whatever the conditions it combines contribute. Every condition carries one,
 however deeply combined, and it is a condition's own — never a restatement of
-what the conditions beneath it already say.
+what the conditions beneath it already say. Recording no constraint and
+constraining nothing are the same state: neither narrows a read.
 _Avoid_: positional constraint, node regions, attached regions
 
 **Reference lookup**:
@@ -79,8 +80,9 @@ _Avoid_: normalized form, minimal form (that is `compact()`)
 **Full genome / empty genome**:
 The two extremes of what a region set covers — every position of every
 chromosome, or no position at all. Coverage, not row shape: each has a
-spelling in both stored forms.
-_Avoid_: empty regions, no regions, null constraint
+spelling in both stored forms, and the full genome has a third — a condition
+that records no genomic constraint at all.
+_Avoid_: empty regions, no regions
 
 **Read schema**:
 The columns a read returns, fixed by the file interface and the query together

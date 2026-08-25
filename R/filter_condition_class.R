@@ -71,7 +71,7 @@ is_regex_filter_condition <- function(fcondition) {
 #' @keywords internal
 empty_filter_condition <- function(
   build = NULL,
-  genomic_regions = full_genomic_regions(build = build),
+  genomic_regions = NULL,
   context = NULL
 ) {
   structure(
@@ -88,8 +88,8 @@ empty_filter_condition <- function(
 #'
 #' Builds an `in_filter_condition` atom testing whether a literal awk expression
 #' (e.g. `"$2"`, or a composite key like `$1 "_" $2 "_" $3 "_" $4`) is a member
-#' of `values`, with the build, context, and a full-genome `genomic_regions`
-#' set so the atom adds no positional range condition. A literal field
+#' of `values`, with the build and context set and no genomic constraint
+#' recorded, so the atom adds no positional range condition. A literal field
 #' expression is not a `chr`/`pos` column symbol, so the genomic-condition
 #' extraction leaves it in place and it compiles to an awk associative-array
 #' membership test. `column_expr` and `values` are evaluated here and spliced

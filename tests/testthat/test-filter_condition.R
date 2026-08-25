@@ -36,8 +36,7 @@ test_that("Basic filter_condition initialization", {
       rlang::quo(lt_filter_condition(num, 3)),
       class = c("lt_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
   expect_equal(
@@ -48,8 +47,7 @@ test_that("Basic filter_condition initialization", {
       rlang::quo(gt_filter_condition(num, 3)),
       class = c("gt_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
   expect_equal(
@@ -60,8 +58,7 @@ test_that("Basic filter_condition initialization", {
       rlang::quo(lte_filter_condition(num, 3)),
       class = c("lte_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
   expect_equal(
@@ -72,8 +69,7 @@ test_that("Basic filter_condition initialization", {
       rlang::quo(gte_filter_condition(num, 3)),
       class = c("gte_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
   expect_equal(
@@ -84,8 +80,7 @@ test_that("Basic filter_condition initialization", {
       rlang::quo(eq_filter_condition(num, 3)),
       class = c("eq_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
 })
@@ -123,8 +118,7 @@ test_that("Basic filter_condition initialization works with column names", {
       rlang::quo(lt_filter_condition(num, 3)),
       class = c("lt_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
   expect_equal(
@@ -135,8 +129,7 @@ test_that("Basic filter_condition initialization works with column names", {
       rlang::quo(gt_filter_condition(num, 3)),
       class = c("gt_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
   expect_equal(
@@ -147,8 +140,7 @@ test_that("Basic filter_condition initialization works with column names", {
       rlang::quo(lte_filter_condition(num, 3)),
       class = c("lte_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
   expect_equal(
@@ -159,8 +151,7 @@ test_that("Basic filter_condition initialization works with column names", {
       rlang::quo(gte_filter_condition(num, 3)),
       class = c("gte_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
   expect_equal(
@@ -171,8 +162,7 @@ test_that("Basic filter_condition initialization works with column names", {
       rlang::quo(eq_filter_condition(num, 3)),
       class = c("eq_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
 })
@@ -843,8 +833,7 @@ test_that("%in% parsing works", {
         env$env <- environment()
         env
       },
-      build = "b38",
-      genomic_constraint = full_genomic_regions(build = "b38")
+      build = "b38"
     )
   )
 
@@ -1361,8 +1350,8 @@ test_that("dispatch recognizes an in_filter_condition atom over a literal field"
   random_code <- sub("^file", "", basename(compiled$additional_files))
   expect_equal(compiled$condition, sprintf("($2 in var%s)", random_code))
   # A literal field expression stays a membership test, never a positional
-  # range: the atom carries the full genome (no OR-chain extraction).
-  expect_equal(genomic_constraint(atom), full_genomic_regions(build = "b38"))
+  # range: the atom records no constraint (no OR-chain extraction).
+  expect_null(genomic_constraint(atom))
 })
 
 test_that("in_membership_atom builds a membership atom over a literal field", {
@@ -1376,11 +1365,8 @@ test_that("in_membership_atom builds a membership atom over a literal field", {
   expect_equal(readLines(compiled$additional_files), c("100", "200"))
 
   # A literal field expression must stay an awk membership test, never become a
-  # positional range: the atom carries the full genome (no OR-chain extraction).
-  expect_equal(
-    genomic_constraint(atom),
-    full_genomic_regions(build = "b38")
-  )
+  # positional range: the atom records no constraint (no OR-chain extraction).
+  expect_null(genomic_constraint(atom))
 })
 
 test_that("combine_filter_condition drops an empty right operand", {
@@ -1550,7 +1536,7 @@ test_that("a parenthesized chromosome or position test filters the read", {
   )
 })
 
-test_that("an OR node stores full genome and derives the branch union", {
+test_that("an OR node records no constraint and derives the branch union", {
   finterface <- local_summary_stats_interface()
   fcondition <- new_filter_condition(
     rlang::quo(
@@ -1560,7 +1546,7 @@ test_that("an OR node stores full genome and derives the branch union", {
     finterface,
     build = "b38"
   )
-  expect_true(is_full_genome(attr(fcondition, "genomic_constraint")))
+  expect_null(attr(fcondition, "genomic_constraint"))
   expect_equal(
     source_regions(fcondition),
     new_genomic_regions(
@@ -1691,4 +1677,26 @@ test_that("has_position_condition detects a constraint on either bound", {
   ranged <- new_genomic_regions(chr = 1, start = 100, end = 200, build = "b38")
   expect_false(detects(rlang::quo(chr_only)))
   expect_true(detects(rlang::quo(ranged)))
+})
+
+test_that("constraint combinators treat NULL as the full genome", {
+  gregions <- new_genomic_regions(chr = 1, build = "b38")
+
+  expect_equal(and_constraints(NULL, gregions), gregions)
+  expect_equal(and_constraints(gregions, NULL), gregions)
+  expect_null(and_constraints(NULL, NULL))
+
+  expect_null(or_constraints(NULL, gregions))
+  expect_null(or_constraints(gregions, NULL))
+  expect_null(or_constraints(NULL, NULL))
+})
+
+test_that("a condition that restricts nothing records no constraint", {
+  finterface <- local_summary_stats_interface(build = "b38")
+  fcondition <- new_filter_condition(
+    rlang::quo(pval < 0.05), finterface, build = "b38"
+  )
+
+  expect_null(genomic_constraint(fcondition))
+  expect_true(is_full_genome(source_regions(fcondition)))
 })

@@ -39,7 +39,7 @@ lp_wrap_fcondition <- function(
   fcondition <- rlang::quo(lp_filter_condition())
   fcondition <- as_filter_condition(fcondition)
   gregions <- genomic_constraint(fcall)
-  genomic_constraint(fcall) <- full_genomic_regions(build = build(fcall))
+  genomic_constraint(fcall) <- NULL
   fcondition[[2]] <- fcall
   class(fcondition) <- c("lp_filter_condition", class(fcondition)) |>
     unique()

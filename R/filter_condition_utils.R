@@ -57,15 +57,22 @@ non_genomic_is_and_block <- function(
   all(sapply(fcondition[-1], non_genomic_is_and_block))
 }
 
-#' Combine genomic constraints
+#' Combine genomic constraints, treating NULL as the full genome
 #'
-#' @param left,right A genomic_regions object
-#' @return A genomic_regions object
+#' @param left,right A genomic_regions object, or NULL for the full genome
+#' @return A genomic_regions object, or NULL: for `and_constraints()` when
+#'   neither side constrains, for `or_constraints()` when either side does not.
 #' @keywords internal
 and_constraints <- function(
   left,
   right
 ) {
+  if (is.null(left)) {
+    return(right)
+  }
+  if (is.null(right)) {
+    return(left)
+  }
   left & right
 }
 
@@ -75,6 +82,9 @@ or_constraints <- function(
   left,
   right
 ) {
+  if (is.null(left) || is.null(right)) {
+    return(NULL)
+  }
   left | right
 }
 
@@ -96,7 +106,7 @@ genomic_constraint <- function(
 #' Set the genomic constraint of a filter condition
 #'
 #' @param fcondition A filter_condition object
-#' @param value A genomic_regions object to set
+#' @param value A genomic_regions object, or NULL for the full genome
 #' @return The modified filter_condition
 #' @keywords internal
 `genomic_constraint<-` <- function(
@@ -243,9 +253,7 @@ split_genomic_conditions <- function(
   }
   fcondition <- strip_parentheses(fcondition)
   if (!has_genomic_condition(fcondition)) {
-    genomic_constraint(fcondition) <- full_genomic_regions(
-      build = build
-    )
+    genomic_constraint(fcondition) <- NULL
     return(fcondition)
   }
   if (!has_non_genomic_condition(fcondition)) {
