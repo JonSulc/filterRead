@@ -52,6 +52,14 @@ constraint covers the full genome. The limiting case of a pure genomic
 condition, and what a read given no condition carries.
 _Avoid_: empty condition, null condition, no condition
 
+**Single genomic scope**:
+What a condition has when one region set governs every row it can select, so
+its source regions apply to the condition as a whole rather than separately to
+each condition it combines. Combining with AND intersects constraints to one
+scope; combining with OR need not, since each side may reach coordinates the
+other excludes.
+_Avoid_: AND block (a structural test for the property, not the property)
+
 **Reference lookup**:
 Querying an auxiliary indexed file, such as dbSNP, for information the file
 being read does not carry — the positions of its rsids. Adds information,

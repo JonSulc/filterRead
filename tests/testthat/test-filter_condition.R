@@ -1558,7 +1558,7 @@ test_that("an OR node records no constraint and derives the branch union", {
   )
 })
 
-test_that("an OR of branches sharing a range is a single genomic block", {
+test_that("an OR of branches sharing a range has a single genomic scope", {
   finterface <- local_summary_stats_interface()
   expect_true(
     new_filter_condition(
@@ -1567,7 +1567,7 @@ test_that("an OR of branches sharing a range is a single genomic block", {
       ),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
 })
 

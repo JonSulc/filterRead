@@ -129,56 +129,56 @@ test_that("File reading works", {
   )
 })
 
-test_that("Genomic blocks are correctly identified", {
+test_that("Single genomic scope is correctly identified", {
   finterface <- local_rsid_summary_stats_interface()
   expect_true(
     new_filter_condition(
       rlang::quo(pval < .05),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_true(
     new_filter_condition(
       rlang::quo(chr == 1),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_true(
     new_filter_condition(
       rlang::quo(chr == 1 & pval < .05),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_false(
     new_filter_condition(
       rlang::quo(chr == 1 | pval < .05),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_false(
     new_filter_condition(
       rlang::quo(chr == 1 & pos < 123 | pval < .05),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_false(
     new_filter_condition(
       rlang::quo(chr == 1 & 123 < pos & pos < 234 | pval < .05),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_true(
     new_filter_condition(
       rlang::quo(chr == 1 & 123 < pos & pos < 234 & pval < .05),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_true(
     new_filter_condition(
@@ -186,7 +186,7 @@ test_that("Genomic blocks are correctly identified", {
         pval < .05 & ref == "A"),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_true(
     new_filter_condition(
@@ -194,7 +194,7 @@ test_that("Genomic blocks are correctly identified", {
         chr == 2 & 21 < pos & pos < 42),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
 
   expect_false(
@@ -202,14 +202,14 @@ test_that("Genomic blocks are correctly identified", {
       rlang::quo(chr == 1 & 123 < pos | pos < 234 & pval < .05),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_false(
     new_filter_condition(
       rlang::quo(chr == 1 | 123 < pos & pos < 234 & pval < .05),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_false(
     new_filter_condition(
@@ -217,7 +217,7 @@ test_that("Genomic blocks are correctly identified", {
         chr == 2 & 21 < pos & pos < 42),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_false(
     new_filter_condition(
@@ -225,7 +225,7 @@ test_that("Genomic blocks are correctly identified", {
         chr == 2 & 21 < pos & pos < 42 & pval < .01),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
   expect_false(
     new_filter_condition(
@@ -233,7 +233,7 @@ test_that("Genomic blocks are correctly identified", {
         chr == 2 & 21 < pos & pos < 42 & pval < .01),
       finterface
     ) |>
-      is_single_genomic_block()
+      has_single_genomic_scope()
   )
 })
 

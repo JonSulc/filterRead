@@ -529,11 +529,11 @@ array_loads_from_awk_conditions <- function(awk_conditions) {
 #'
 #' @param fcondition A filter_condition object
 #' @param rsid_bash_index Awk column ref for RSID column (e.g., "$3")
-#' @param index Counter for multiple genomic blocks (for unique array names)
+#' @param index Counter for multiple branches (for unique array names)
 #'
 #' @return A named list of two `data.table`s whose row counts are independent:
 #'   - branches: one row per condition branch. Always carries `condition` (the
-#'     non-genomic awk guard). On the RSID path it also carries `index` (block
+#'     non-genomic awk guard). On the RSID path it also carries `index` (branch
 #'     index for unique array naming), `awk_code_block` (awk loading the RSID
 #'     array from dbSNP), `print_prefix` (awk prepending chr/pos to output),
 #'     `process_substitution` (the tabix query), and `rsid_condition` (the RSID
@@ -572,8 +572,8 @@ fcondition_and_rsid_to_awk <- function(
     ))
   }
 
-  # Recursive case: handle OR of multiple genomic blocks
-  if (!is_single_genomic_block(fcondition)) {
+  # Recursive case: handle OR of multiple branches
+  if (!has_single_genomic_scope(fcondition)) {
     stopifnot(fcondition[[1]] == as.symbol("or_filter_condition"))
     left <- fcondition_and_rsid_to_awk(
       fcondition[[2]],
@@ -591,7 +591,7 @@ fcondition_and_rsid_to_awk <- function(
     ))
   }
 
-  # Single genomic block with RSID matching:
+  # Single genomic scope with RSID matching:
   # 1. Query dbSNP via tabix for RSIDs in the region
   # 2. Generate awk code to load RSIDs into array
   # 3. Generate condition to filter by RSID membership

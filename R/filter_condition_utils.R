@@ -462,18 +462,18 @@ strip_parentheses <- function(
   fcondition
 }
 
-#' Check if a filter condition has a single genomic block
+#' Check whether a filter condition has a single genomic scope
 #'
-#' Determines whether all non-genomic conditions apply to the same
-#' genomic range, allowing for efficient query optimization.
+#' One region set governs every row the condition can select, so its source
+#' regions apply to the condition as a whole rather than separately to each
+#' condition it combines.
 #'
 #' @param fcondition A filter_condition object
-#' @return Logical indicating whether it's a single genomic block
+#' @return Logical indicating whether one region set governs every row
 #' @keywords internal
-is_single_genomic_block <- function(
+has_single_genomic_scope <- function(
   fcondition
 ) {
-  # Determine whether all non-genomic conditions apply to the same genomic range
   if (!rlang::is_quosure(fcondition)) {
     return(TRUE)
   }
@@ -491,8 +491,8 @@ is_single_genomic_block <- function(
     left <- source_regions(fcondition[[2]])
     right <- source_regions(fcondition[[3]])
     return(
-      is_single_genomic_block(fcondition[[2]]) &&
-        is_single_genomic_block(fcondition[[3]]) &&
+      has_single_genomic_scope(fcondition[[2]]) &&
+        has_single_genomic_scope(fcondition[[3]]) &&
         left == right
     )
   }
