@@ -9,7 +9,7 @@
 is_and_block <- function(
   fcondition
 ) {
-  if (!inherits(fcondition, "filter_condition")) {
+  if (!is.filter_condition(fcondition)) {
     return(TRUE)
   }
 
@@ -151,7 +151,7 @@ eq_constraints <- function(
 genomic_constraint <- function(
   fcondition
 ) {
-  stopifnot(inherits(fcondition, "filter_condition"))
+  stopifnot(is.filter_condition(fcondition))
   attr(fcondition, "genomic_constraint")
 }
 
@@ -188,7 +188,7 @@ has_genomic_condition <- function(
 has_chromosome_condition <- function(
   fcondition
 ) {
-  if (inherits(fcondition, "filter_condition")) {
+  if (is.filter_condition(fcondition)) {
     if (any(!is.na(genomic_constraint(fcondition)$chr))) {
       return(TRUE)
     }
@@ -219,7 +219,7 @@ has_chromosome_condition <- function(
 has_position_condition <- function(
   fcondition
 ) {
-  if (inherits(fcondition, "filter_condition")) {
+  if (is.filter_condition(fcondition)) {
     gregions <- genomic_constraint(fcondition)
     if (any(!is.na(gregions$start), !is.na(gregions$end))) {
       return(TRUE)

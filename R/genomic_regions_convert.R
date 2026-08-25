@@ -362,7 +362,7 @@ as_genomic_regions.gte_filter_condition <- function(
 source_regions <- function(
   fcondition
 ) {
-  stopifnot(inherits(fcondition, "filter_condition"))
+  stopifnot(is.filter_condition(fcondition))
   combined_constraint(fcondition) %||%
     full_genomic_regions(build = build(fcondition))
 }

@@ -573,7 +573,7 @@ get_used_columns <- function(
   fcondition,
   finterface = get_file_interface(fcondition)
 ) {
-  gregions <- if (inherits(fcondition, "filter_condition")) {
+  gregions <- if (is.filter_condition(fcondition)) {
     genomic_constraint(fcondition)
   }
   gregion_columns <- c(

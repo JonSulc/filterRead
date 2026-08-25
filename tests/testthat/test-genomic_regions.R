@@ -2216,17 +2216,17 @@ test_that("source_regions reports the full genome when nothing is recorded", {
 test_that("source_regions rejects an object that is not a condition", {
   expect_error(
     source_regions(new_genomic_regions(chr = 1, build = "b38")),
-    'inherits(fcondition, "filter_condition") is not TRUE',
+    "is.filter_condition(fcondition) is not TRUE",
     fixed = TRUE
   )
   expect_error(
     source_regions(NULL),
-    'inherits(fcondition, "filter_condition") is not TRUE',
+    "is.filter_condition(fcondition) is not TRUE",
     fixed = TRUE
   )
   expect_error(
     source_regions(42),
-    'inherits(fcondition, "filter_condition") is not TRUE',
+    "is.filter_condition(fcondition) is not TRUE",
     fixed = TRUE
   )
 })

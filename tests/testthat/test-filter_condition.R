@@ -1778,12 +1778,12 @@ test_that("get_used_columns names no coordinate column without one", {
 test_that("genomic_constraint rejects anything but a filter condition", {
   expect_error(
     genomic_constraint(as.symbol("chr")),
-    'inherits(fcondition, "filter_condition") is not TRUE',
+    "is.filter_condition(fcondition) is not TRUE",
     fixed = TRUE
   )
   expect_error(
     genomic_constraint(NULL),
-    'inherits(fcondition, "filter_condition") is not TRUE',
+    "is.filter_condition(fcondition) is not TRUE",
     fixed = TRUE
   )
 })
