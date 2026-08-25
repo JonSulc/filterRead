@@ -366,120 +366,120 @@ test_that("Genomic position conditions are correctly detected", {
     )
   )
 
-  expect_false(
-    has_non_genomic_condition(
+  expect_true(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1),
         finterface
       )
     )
   )
-  expect_false(
-    has_non_genomic_condition(
+  expect_true(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(pos < 1),
         finterface
       )
     )
   )
-  expect_false(
-    has_non_genomic_condition(
+  expect_true(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(123 < pos & pos < 456),
         finterface
       )
     )
   )
-  expect_false(
-    has_non_genomic_condition(
+  expect_true(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1 & 123 < pos & pos < 456),
         finterface
       )
     )
   )
-  expect_false(
-    has_non_genomic_condition(
+  expect_true(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1 | 123 < pos & pos < 456),
         finterface
       )
     )
   )
-  expect_false(
-    has_non_genomic_condition(
+  expect_true(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1 & 123 < pos | pos < 456),
         finterface
       )
     )
   )
-  expect_false(
-    has_non_genomic_condition(
+  expect_true(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1 | 123 < pos | pos < 456),
         finterface
       )
     )
   )
-  expect_true(
-    has_non_genomic_condition(
+  expect_false(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(ref == "A"),
         finterface
       )
     )
   )
-  expect_true(
-    has_non_genomic_condition(
+  expect_false(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(pval < .05),
         finterface
       )
     )
   )
-  expect_false(
-    has_non_genomic_condition(
+  expect_true(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1 & (pos < 123 | 345 < pos)),
         finterface
       )
     )
   )
-  expect_true(
-    has_non_genomic_condition(
+  expect_false(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(123 < pos & pos < 456 & pval < .05),
         finterface
       )
     )
   )
-  expect_true(
-    has_non_genomic_condition(
+  expect_false(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1 & 123 < pos & pos < 456 & pval < .05),
         finterface
       )
     )
   )
-  expect_true(
-    has_non_genomic_condition(
+  expect_false(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1 | 123 < pos & pos < 456 & pval < .05),
         finterface
       )
     )
   )
-  expect_true(
-    has_non_genomic_condition(
+  expect_false(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1 & 123 < pos | pos < 456 & pval < .05),
         finterface
       )
     )
   )
-  expect_true(
-    has_non_genomic_condition(
+  expect_false(
+    is_pure_genomic_condition(
       new_filter_condition(
         rlang::quo(chr == 1 | 123 < pos | pos < 456 & pval < .05),
         finterface

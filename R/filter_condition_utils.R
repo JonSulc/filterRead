@@ -205,36 +205,40 @@ has_position_condition <- function(
   fcondition == as.symbol("pos")
 }
 
-#' Check if a filter condition contains non-genomic constraints
+#' Check whether a filter condition selects by coordinate alone
 #'
-#' Non-genomic conditions are those that don't involve chr or pos.
+#' A pure genomic condition restricts rows by coordinate and nothing else, so
+#' its genomic constraint is the whole of what it narrows.
 #'
 #' @param fcondition A filter_condition object
-#' @return Logical indicating whether non-genomic conditions exist
+#' @return Logical indicating whether the condition selects by coordinate alone
 #' @keywords internal
-has_non_genomic_condition <- function(
+is_pure_genomic_condition <- function(
   fcondition
 ) {
   if (length(fcondition) == 0) {
-    return(FALSE)
+    return(TRUE)
   }
-  if (as.character(fcondition[[1]]) %in% c("and_filter_condition", "or_filter_condition")) {
-    return(any(sapply(fcondition[2:3], has_non_genomic_condition)))
+  if (as.character(fcondition[[1]]) %in%
+    c("and_filter_condition", "or_filter_condition")) {
+    return(all(sapply(fcondition[2:3], is_pure_genomic_condition)))
   }
   if (as.character(fcondition[[1]]) == "in_filter_condition") {
-    return(!is_genomic_symbol(fcondition[[2]]))
+    return(is_genomic_symbol(fcondition[[2]]))
   }
   if (as.character(fcondition[[1]]) %in% c(
     "lt_filter_condition", "lte_filter_condition",
     "gt_filter_condition", "gte_filter_condition",
     "eq_filter_condition", "neq_filter_condition"
   )) {
-    return(!is_genomic_symbol(fcondition[[2]]) & !is_genomic_symbol(fcondition[[3]]))
+    return(
+      is_genomic_symbol(fcondition[[2]]) | is_genomic_symbol(fcondition[[3]])
+    )
   }
   if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
-    return(has_non_genomic_condition(fcondition[[2]]))
+    return(is_pure_genomic_condition(fcondition[[2]]))
   }
-  !is_genomic_symbol(fcondition)
+  is_genomic_symbol(fcondition)
 }
 
 #' Check if a symbol is a genomic column reference
@@ -251,7 +255,7 @@ is_genomic_symbol <- function(
 
 #' Split genomic conditions from a filter condition
 #'
-#' Separates genomic (chr, pos) conditions into the genomic_regions attribute
+#' Separates genomic (chr, pos) conditions into the genomic constraint
 #' while keeping non-genomic conditions in the filter expression.
 #'
 #' @param fcondition A filter_condition object
@@ -271,7 +275,7 @@ split_genomic_conditions <- function(
     genomic_constraint(fcondition) <- NULL
     return(fcondition)
   }
-  if (!has_non_genomic_condition(fcondition)) {
+  if (is_pure_genomic_condition(fcondition)) {
     return(
       pure_genomic_condition(
         genomic_regions = as_genomic_regions(fcondition, build = build),
@@ -476,7 +480,7 @@ is_single_genomic_block <- function(
   if (is_and_block(fcondition)) {
     return(TRUE)
   }
-  if (!has_non_genomic_condition(fcondition)) {
+  if (is_pure_genomic_condition(fcondition)) {
     return(TRUE)
   }
   if (!has_chromosome_condition(fcondition) &&
