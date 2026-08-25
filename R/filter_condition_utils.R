@@ -62,11 +62,28 @@ non_genomic_is_and_block <- function(
 #'
 #' @param gconstraint A genomic_regions object, or NULL for the full genome
 #' @return Logical indicating whether the constraint narrows nothing
+#' @seealso [is_overconstrained()] for the opposite pole of coverage.
 #' @keywords internal
 is_unconstrained <- function(
   gconstraint
 ) {
   is.null(gconstraint) || is_full_genome(gconstraint)
+}
+
+#' Check whether a genomic constraint admits no position
+#'
+#' A constraint admits no position when it is present and includes no genomic
+#' position.
+#'
+#' @param genomic_constraint A genomic_regions object, or NULL for the full
+#'   genome
+#' @return Logical indicating whether the constraint admits no position
+#' @seealso [is_unconstrained()] for the opposite pole of coverage.
+#' @keywords internal
+is_overconstrained <- function(
+  genomic_constraint
+) {
+  !is.null(genomic_constraint) && is_empty_genome(genomic_constraint)
 }
 
 #' Combine genomic constraints, treating NULL as the full genome
