@@ -552,7 +552,9 @@ get_used_columns <- function(
   fcondition,
   finterface = get_file_interface(fcondition)
 ) {
-  gregions <- genomic_constraint(fcondition)
+  gregions <- if (inherits(fcondition, "filter_condition")) {
+    genomic_constraint(fcondition)
+  }
   gregion_columns <- c(
     if (any(!is.na(gregions$chr))) "chr",
     if (any(!is.na(gregions$start), !is.na(gregions$end))) "pos"

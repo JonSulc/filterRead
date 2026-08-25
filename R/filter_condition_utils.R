@@ -9,15 +9,13 @@
 is_and_block <- function(
   fcondition
 ) {
-  if (!inherits(fcondition, "quosure") &&
-    is.null(genomic_constraint(fcondition))) {
+  if (!inherits(fcondition, "filter_condition")) {
     return(TRUE)
   }
 
-  if (!is.null(genomic_constraint(fcondition))) {
-    if (1 < nrow(genomic_constraint(fcondition))) {
-      return(FALSE)
-    }
+  gregions <- genomic_constraint(fcondition)
+  if (!is.null(gregions) && 1 < nrow(gregions)) {
+    return(FALSE)
   }
 
   if (length(fcondition) == 0) {
@@ -108,12 +106,14 @@ or_constraints <- function(
 #' whatever the conditions it combines contribute.
 #'
 #' @param fcondition A filter_condition object
-#' @return A genomic_regions object, or NULL if not set
+#' @return A genomic_regions object, or NULL when the condition restricts no
+#'   coordinates
 #' @seealso [source_regions()] for what the condition as a whole covers.
 #' @keywords internal
 genomic_constraint <- function(
   fcondition
 ) {
+  stopifnot(inherits(fcondition, "filter_condition"))
   attr(fcondition, "genomic_constraint")
 }
 
@@ -150,8 +150,10 @@ has_genomic_condition <- function(
 has_chromosome_condition <- function(
   fcondition
 ) {
-  if (any(!is.na(genomic_constraint(fcondition)$chr))) {
-    return(TRUE)
+  if (inherits(fcondition, "filter_condition")) {
+    if (any(!is.na(genomic_constraint(fcondition)$chr))) {
+      return(TRUE)
+    }
   }
   if (rlang::is_quosure(fcondition)) {
     fcondition <- strip_parentheses(fcondition, recursive = FALSE)
@@ -179,9 +181,11 @@ has_chromosome_condition <- function(
 has_position_condition <- function(
   fcondition
 ) {
-  gregions <- genomic_constraint(fcondition)
-  if (any(!is.na(gregions$start), !is.na(gregions$end))) {
-    return(TRUE)
+  if (inherits(fcondition, "filter_condition")) {
+    gregions <- genomic_constraint(fcondition)
+    if (any(!is.na(gregions$start), !is.na(gregions$end))) {
+      return(TRUE)
+    }
   }
   if (rlang::is_quosure(fcondition)) {
     fcondition <- strip_parentheses(fcondition, recursive = FALSE)
