@@ -1,7 +1,7 @@
 #' Check if a filter condition is an AND block
 #'
 #' An AND block contains only AND operations (no OR at any level, including
-#' genomic_regions).
+#' its genomic constraint).
 #'
 #' @param fcondition A filter_condition object
 #' @return Logical indicating whether the condition is an AND block

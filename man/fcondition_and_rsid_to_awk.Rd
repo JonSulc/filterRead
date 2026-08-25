@@ -16,12 +16,12 @@ fcondition_and_rsid_to_awk(
 
 \item{rsid_bash_index}{Awk column ref for RSID column (e.g., "$3")}
 
-\item{index}{Counter for multiple genomic blocks (for unique array names)}
+\item{index}{Counter for multiple branches (for unique array names)}
 }
 \value{
 A named list of two `data.table`s whose row counts are independent:
   - branches: one row per condition branch. Always carries `condition` (the
-    non-genomic awk guard). On the RSID path it also carries `index` (block
+    non-genomic awk guard). On the RSID path it also carries `index` (branch
     index for unique array naming), `awk_code_block` (awk loading the RSID
     array from dbSNP), `print_prefix` (awk prepending chr/pos to output),
     `process_substitution` (the tabix query), and `rsid_condition` (the RSID

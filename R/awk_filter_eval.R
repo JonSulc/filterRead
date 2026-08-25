@@ -124,7 +124,8 @@ eval_fcondition <- function(
 #' `$1 == "chr1" && 1000 <= $2 && $2 <= 2000`, combined with OR for multiple
 #' regions.
 #'
-#' @param fcondition A filter_condition with embedded genomic_regions
+#' @param fcondition A filter_condition carrying the genomic constraint to
+#'   translate
 #' @param finterface File interface (used to check RSID matching)
 #' @param column_indices Named list with chr and pos column refs
 #'

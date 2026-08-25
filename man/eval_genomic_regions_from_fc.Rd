@@ -7,7 +7,8 @@
 eval_genomic_regions_from_fc(fcondition, finterface, column_indices)
 }
 \arguments{
-\item{fcondition}{A filter_condition with embedded genomic_regions}
+\item{fcondition}{A filter_condition carrying the genomic constraint to
+translate}
 
 \item{finterface}{File interface (used to check RSID matching)}
 
@@ -15,8 +16,8 @@ eval_genomic_regions_from_fc(fcondition, finterface, column_indices)
 }
 \value{
 Character string with the awk condition, `"0"` when the regions
-  match nothing, or NULL when they impose no constraint: no regions, the
-  whole genome, or positions handled through an RSID index
+  match nothing, or NULL when they impose no constraint: an unconstrained
+  condition, or positions handled through an RSID index
 }
 \description{
 Translates a genomic_regions from the filter_condition into awk conditions.

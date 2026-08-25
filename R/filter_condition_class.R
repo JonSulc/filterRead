@@ -563,7 +563,7 @@ new_filter_condition_impl.quosure <- function(
 #' Get column names used in a filter_condition
 #'
 #' Recursively extracts all column names referenced in a filter_condition,
-#' including those implied by genomic_regions constraints.
+#' including those implied by its genomic constraint.
 #'
 #' @param fcondition A filter_condition object
 #' @param finterface file_interface for column name resolution

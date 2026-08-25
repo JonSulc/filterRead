@@ -16,6 +16,6 @@ Character vector of column names used in the condition
 }
 \description{
 Recursively extracts all column names referenced in a filter_condition,
-including those implied by genomic_regions constraints.
+including those implied by its genomic constraint.
 }
 \keyword{internal}

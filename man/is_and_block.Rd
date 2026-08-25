@@ -14,6 +14,6 @@ Logical indicating whether the condition is an AND block
 }
 \description{
 An AND block contains only AND operations (no OR at any level, including
-genomic_regions).
+its genomic constraint).
 }
 \keyword{internal}

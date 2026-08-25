@@ -15,7 +15,7 @@ split_genomic_conditions(fcondition, build = NULL)
 Modified filter_condition with genomic conditions extracted
 }
 \description{
-Separates genomic (chr, pos) conditions into the genomic_regions attribute
+Separates genomic (chr, pos) conditions into the genomic constraint
 while keeping non-genomic conditions in the filter expression.
 }
 \keyword{internal}
