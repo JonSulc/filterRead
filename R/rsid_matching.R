@@ -551,13 +551,13 @@ fcondition_and_rsid_to_awk <- function(
   ],
   index = 0
 ) {
-  # RSID indexing pays only when the positions discriminate. A set matching
-  # nothing takes the standard path, where the renderer emits the awk false
-  # constant.
+  # RSID indexing pays only when the positions discriminate. A constraint
+  # matching nothing takes the standard path, where the renderer emits the awk
+  # false constant.
   rsid_indexed <- needs_rsid_matching(get_file_interface(fcondition))
-  gregions <- source_regions(fcondition)
-  positions_match_everything <- is_full_genome(gregions)
-  positions_match_nothing <- is_empty_genome(gregions)
+  genomic_constraint <- combined_constraint(fcondition)
+  positions_match_everything <- is_unconstrained(genomic_constraint)
+  positions_match_nothing <- is_overconstrained(genomic_constraint)
 
   if (!rsid_indexed
     || positions_match_everything

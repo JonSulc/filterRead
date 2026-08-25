@@ -526,12 +526,13 @@ has_single_genomic_scope <- function(
     return(TRUE)
   }
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
-    left <- source_regions(fcondition[[2]])
-    right <- source_regions(fcondition[[3]])
     return(
       has_single_genomic_scope(fcondition[[2]]) &&
         has_single_genomic_scope(fcondition[[3]]) &&
-        left == right
+        eq_constraints(
+          combined_constraint(fcondition[[2]]),
+          combined_constraint(fcondition[[3]])
+        )
     )
   }
   FALSE

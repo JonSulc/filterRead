@@ -568,8 +568,8 @@ empty_read_for_query <- function(
   )
 
   # Short-circuit an unsatisfiable condition
-  gregions <- source_regions(fcondition)
-  if (!return_only_cmd && is_empty_genome(gregions)) {
+  genomic_constraint <- combined_constraint(fcondition)
+  if (!return_only_cmd && is_overconstrained(genomic_constraint)) {
     return(empty_read_for_query(finterface, fcondition))
   }
 
