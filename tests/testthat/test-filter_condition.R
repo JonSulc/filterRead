@@ -1562,7 +1562,7 @@ test_that("an OR node stores full genome and derives the branch union", {
   )
   expect_true(is_full_genome(attr(fcondition, "genomic_regions")))
   expect_equal(
-    fc_genomic_regions(fcondition, recursive = TRUE),
+    source_regions(fcondition),
     new_genomic_regions(
       chr   = c(1, 1),
       start = c(123, 60000),

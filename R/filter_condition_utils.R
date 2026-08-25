@@ -57,44 +57,39 @@ non_genomic_is_and_block <- function(
   all(sapply(fcondition[-1], non_genomic_is_and_block))
 }
 
-#' Get genomic regions from a filter condition
+#' Combine genomic constraints
 #'
-#' `recursive = FALSE` returns the regions stored on the node itself.
-#' `recursive = TRUE` walks the subtree and returns the regions every row the
-#' condition can select falls within.
+#' @param left,right A genomic_regions object
+#' @return A genomic_regions object
+#' @keywords internal
+and_constraints <- function(
+  left,
+  right
+) {
+  left & right
+}
+
+#' @rdname and_constraints
+#' @keywords internal
+or_constraints <- function(
+  left,
+  right
+) {
+  left | right
+}
+
+#' Get the genomic constraint of a filter condition
+#'
+#' The coordinate restriction the condition contributes on its own, beyond
+#' whatever the conditions it combines contribute.
 #'
 #' @param fcondition A filter_condition object
-#' @param recursive Whether to walk the subtree rather than read the node's
-#'   own regions
 #' @return A genomic_regions object, or NULL if not set
+#' @seealso [source_regions()] for what the condition as a whole covers.
 #' @keywords internal
 fc_genomic_regions <- function(
-  fcondition,
-  recursive = FALSE
+  fcondition
 ) {
-  if (!recursive || length(fcondition) <= 1) {
-    return(attr(fcondition, "genomic_regions"))
-  }
-  if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
-    # fcondition is (
-    return(
-      attr(fcondition, "genomic_regions") &
-        fc_genomic_regions(fcondition[[2]], recursive = TRUE)
-    )
-  } else if (fcondition[[1]] == as.symbol("and_filter_condition")) {
-    # fcondition is & or |
-    return(
-      attr(fcondition, "genomic_regions") &
-        fc_genomic_regions(fcondition[[2]], recursive = TRUE) &
-        fc_genomic_regions(fcondition[[3]], recursive = TRUE)
-    )
-  } else if (fcondition[[1]] == as.symbol("or_filter_condition")) {
-    return(
-      attr(fcondition, "genomic_regions") &
-        (fc_genomic_regions(fcondition[[2]], recursive = TRUE) |
-          fc_genomic_regions(fcondition[[3]], recursive = TRUE))
-    )
-  }
   attr(fcondition, "genomic_regions")
 }
 

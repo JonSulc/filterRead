@@ -353,7 +353,8 @@ as_genomic_regions.gte_filter_condition <- function(
 #' Regions a filter condition can match within
 #'
 #' The smallest set of regions covering every row the condition could select
-#' when its non-genomic constraints are ignored.
+#' when its non-genomic constraints are ignored. Combines the condition's own
+#' genomic constraint with those of every condition it combines.
 #'
 #' @param fcondition A filter_condition object
 #' @return A genomic_regions object, in the build the condition carries
@@ -362,9 +363,44 @@ source_regions <- function(
   fcondition
 ) {
   stopifnot(inherits(fcondition, "filter_condition"))
-  gregions <- fc_genomic_regions(fcondition, recursive = TRUE)
-  if (is.null(gregions)) {
-    return(full_genomic_regions(build = build(fcondition)))
+  combined_constraint(fcondition) %||%
+    full_genomic_regions(build = build(fcondition))
+}
+
+#' Combine the genomic constraints of a condition and everything it combines
+#'
+#' @param fcondition A filter_condition object
+#' @return A genomic_regions object, or NULL when nothing is constrained
+#' @keywords internal
+combined_constraint <- function(
+  fcondition
+) {
+  if (length(fcondition) <= 1) {
+    return(fc_genomic_regions(fcondition))
   }
-  gregions
+  if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
+    return(and_constraints(
+      fc_genomic_regions(fcondition),
+      combined_constraint(fcondition[[2]])
+    ))
+  }
+  if (fcondition[[1]] == as.symbol("and_filter_condition")) {
+    return(and_constraints(
+      fc_genomic_regions(fcondition),
+      and_constraints(
+        combined_constraint(fcondition[[2]]),
+        combined_constraint(fcondition[[3]])
+      )
+    ))
+  }
+  if (fcondition[[1]] == as.symbol("or_filter_condition")) {
+    return(and_constraints(
+      fc_genomic_regions(fcondition),
+      or_constraints(
+        combined_constraint(fcondition[[2]]),
+        combined_constraint(fcondition[[3]])
+      )
+    ))
+  }
+  fc_genomic_regions(fcondition)
 }
