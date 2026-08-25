@@ -466,8 +466,8 @@ is_single_genomic_block <- function(
     return(TRUE)
   }
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
-    left <- fc_genomic_regions(fcondition[[2]], recursive = TRUE)
-    right <- fc_genomic_regions(fcondition[[3]], recursive = TRUE)
+    left <- source_regions(fcondition[[2]])
+    right <- source_regions(fcondition[[3]])
     return(
       is_single_genomic_block(fcondition[[2]]) &&
         is_single_genomic_block(fcondition[[3]]) &&

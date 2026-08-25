@@ -555,11 +555,9 @@ fcondition_and_rsid_to_awk <- function(
   # nothing takes the standard path, where the renderer emits the awk false
   # constant.
   rsid_indexed <- needs_rsid_matching(get_file_interface(fcondition))
-  gregions <- fc_genomic_regions(fcondition, recursive = TRUE)
-  positions_match_everything <-
-    is.null(gregions) || is_full_genome(gregions)
-  positions_match_nothing <-
-    !is.null(gregions) && is_empty_genome(gregions)
+  gregions <- source_regions(fcondition)
+  positions_match_everything <- is_full_genome(gregions)
+  positions_match_nothing <- is_empty_genome(gregions)
 
   if (!rsid_indexed
     || positions_match_everything
@@ -601,7 +599,7 @@ fcondition_and_rsid_to_awk <- function(
     fcondition,
     finterface = get_file_interface(fcondition)
   )
-  branch <- fc_genomic_regions(fcondition, recursive = TRUE)[
+  branch <- source_regions(fcondition)[
     ,
     .(
       index = index,
