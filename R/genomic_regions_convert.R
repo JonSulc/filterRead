@@ -376,17 +376,17 @@ combined_constraint <- function(
   fcondition
 ) {
   if (length(fcondition) <= 1) {
-    return(fc_genomic_regions(fcondition))
+    return(genomic_constraint(fcondition))
   }
   if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
     return(and_constraints(
-      fc_genomic_regions(fcondition),
+      genomic_constraint(fcondition),
       combined_constraint(fcondition[[2]])
     ))
   }
   if (fcondition[[1]] == as.symbol("and_filter_condition")) {
     return(and_constraints(
-      fc_genomic_regions(fcondition),
+      genomic_constraint(fcondition),
       and_constraints(
         combined_constraint(fcondition[[2]]),
         combined_constraint(fcondition[[3]])
@@ -395,12 +395,12 @@ combined_constraint <- function(
   }
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
     return(and_constraints(
-      fc_genomic_regions(fcondition),
+      genomic_constraint(fcondition),
       or_constraints(
         combined_constraint(fcondition[[2]]),
         combined_constraint(fcondition[[3]])
       )
     ))
   }
-  fc_genomic_regions(fcondition)
+  genomic_constraint(fcondition)
 }

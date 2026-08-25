@@ -38,13 +38,13 @@ lp_wrap_fcondition <- function(
 ) {
   fcondition <- rlang::quo(lp_filter_condition())
   fcondition <- as_filter_condition(fcondition)
-  gregions <- fc_genomic_regions(fcall)
-  fc_genomic_regions(fcall) <- full_genomic_regions(build = build(fcall))
+  gregions <- genomic_constraint(fcall)
+  genomic_constraint(fcall) <- full_genomic_regions(build = build(fcall))
   fcondition[[2]] <- fcall
   class(fcondition) <- c("lp_filter_condition", class(fcondition)) |>
     unique()
   build(fcondition) <- build(fcall)
-  fc_genomic_regions(fcondition) <- gregions
+  genomic_constraint(fcondition) <- gregions
   fcondition
 }
 

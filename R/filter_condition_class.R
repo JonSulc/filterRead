@@ -78,7 +78,7 @@ empty_filter_condition <- function(
     list(),
     class = c("filter_condition", "list"),
     build = build,
-    genomic_regions = genomic_regions,
+    genomic_constraint = genomic_regions,
     context = context
   )
 }
@@ -552,11 +552,11 @@ get_used_columns <- function(
   fcondition,
   finterface = get_file_interface(fcondition)
 ) {
-  gregions <- fc_genomic_regions(fcondition)
+  gregions <- genomic_constraint(fcondition)
   if (is.null(gregions)) {
     gregion_columns <- NULL
   } else {
-    gregion_columns <- fc_genomic_regions(fcondition)[
+    gregion_columns <- genomic_constraint(fcondition)[
       ,
       .(
         chr = chr,
@@ -651,7 +651,7 @@ format.filter_condition <- function(
     }
   }
 
-  gregions <- fc_genomic_regions(x)
+  gregions <- genomic_constraint(x)
   regions_str <- if (is.null(gregions) || is_full_genome(gregions)) {
     ""
   } else {

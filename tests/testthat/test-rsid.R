@@ -330,7 +330,7 @@ test_that("Genomic ranges are correctly identified", {
   finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_equal(
     new_filter_condition(rlang::quo(chr == 1 & pos < 123), finterface) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     new_genomic_regions(chr = "1", start = NA_real_, end = 122, build = "b38")
   )
 })
@@ -339,7 +339,7 @@ test_that("Genomic ranges are correctly structured", {
   finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_equal(
     new_filter_condition(rlang::quo(pos < 123), finterface) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     new_genomic_regions(
       end = 122,
       build = "b38"

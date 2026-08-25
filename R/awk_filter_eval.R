@@ -137,7 +137,7 @@ eval_genomic_regions_from_fc <- function(
   finterface,
   column_indices
 ) {
-  gregions <- fc_genomic_regions(fcondition) |>
+  gregions <- genomic_constraint(fcondition) |>
     post_process(finterface = finterface)
   if (is.null(gregions)) {
     return()

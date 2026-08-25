@@ -10,12 +10,12 @@ is_and_block <- function(
   fcondition
 ) {
   if (!inherits(fcondition, "quosure") &&
-    is.null(fc_genomic_regions(fcondition))) {
+    is.null(genomic_constraint(fcondition))) {
     return(TRUE)
   }
 
-  if (!is.null(fc_genomic_regions(fcondition))) {
-    if (1 < nrow(fc_genomic_regions(fcondition))) {
+  if (!is.null(genomic_constraint(fcondition))) {
+    if (1 < nrow(genomic_constraint(fcondition))) {
       return(FALSE)
     }
   }
@@ -87,23 +87,23 @@ or_constraints <- function(
 #' @return A genomic_regions object, or NULL if not set
 #' @seealso [source_regions()] for what the condition as a whole covers.
 #' @keywords internal
-fc_genomic_regions <- function(
+genomic_constraint <- function(
   fcondition
 ) {
-  attr(fcondition, "genomic_regions")
+  attr(fcondition, "genomic_constraint")
 }
 
-#' Set genomic regions on a filter condition
+#' Set the genomic constraint of a filter condition
 #'
 #' @param fcondition A filter_condition object
 #' @param value A genomic_regions object to set
 #' @return The modified filter_condition
 #' @keywords internal
-`fc_genomic_regions<-` <- function(
+`genomic_constraint<-` <- function(
   fcondition,
   value
 ) {
-  attr(fcondition, "genomic_regions") <- value
+  attr(fcondition, "genomic_constraint") <- value
   fcondition
 }
 
@@ -126,8 +126,8 @@ has_genomic_condition <- function(
 has_chromosome_condition <- function(
   fcondition
 ) {
-  if (!is.null(fc_genomic_regions(fcondition))) {
-    if (any(!is.na(fc_genomic_regions(fcondition)$chr))) {
+  if (!is.null(genomic_constraint(fcondition))) {
+    if (any(!is.na(genomic_constraint(fcondition)$chr))) {
       return(TRUE)
     }
   }
@@ -157,8 +157,8 @@ has_chromosome_condition <- function(
 has_position_condition <- function(
   fcondition
 ) {
-  if (!is.null(fc_genomic_regions(fcondition))) {
-    if (any(fc_genomic_regions(fcondition)[, c(!is.na(start), !is.na(end))])) {
+  if (!is.null(genomic_constraint(fcondition))) {
+    if (any(genomic_constraint(fcondition)[, c(!is.na(start), !is.na(end))])) {
       return(TRUE)
     }
   }
@@ -243,7 +243,7 @@ split_genomic_conditions <- function(
   }
   fcondition <- strip_parentheses(fcondition)
   if (!has_genomic_condition(fcondition)) {
-    fc_genomic_regions(fcondition) <- full_genomic_regions(
+    genomic_constraint(fcondition) <- full_genomic_regions(
       build = build
     )
     return(fcondition)
@@ -415,20 +415,20 @@ strip_parentheses <- function(
   }
   if (fcondition[[1]] == as.symbol("lp_filter_condition")) {
     child <- fcondition[[2]]
-    fc_genomic_regions(child) <- fc_genomic_regions(fcondition)
+    genomic_constraint(child) <- genomic_constraint(fcondition)
     return(strip_parentheses(child, recursive = recursive))
   }
   if (recursive) {
     if (fcondition[[1]] == as.symbol("and_filter_condition")) {
       stripped <- strip_parentheses(fcondition[[2]], recursive = recursive) &
         strip_parentheses(fcondition[[3]], recursive = recursive)
-      fc_genomic_regions(stripped) <- fc_genomic_regions(fcondition)
+      genomic_constraint(stripped) <- genomic_constraint(fcondition)
       return(stripped)
     }
     if (fcondition[[1]] == as.symbol("or_filter_condition")) {
       stripped <- strip_parentheses(fcondition[[2]], recursive = recursive) |
         strip_parentheses(fcondition[[3]], recursive = recursive)
-      fc_genomic_regions(stripped) <- fc_genomic_regions(fcondition)
+      genomic_constraint(stripped) <- genomic_constraint(fcondition)
       return(stripped)
     }
   }

@@ -2209,7 +2209,7 @@ test_that("source_regions returns the whole condition's regions", {
 
 test_that("source_regions reports the full genome when nothing is recorded", {
   fcondition <- as_filter_condition(rlang::quo(chr == 1))
-  expect_null(fc_genomic_regions(fcondition))
+  expect_null(genomic_constraint(fcondition))
   expect_true(is_full_genome(source_regions(fcondition)))
 })
 

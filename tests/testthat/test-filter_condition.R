@@ -37,7 +37,7 @@ test_that("Basic filter_condition initialization", {
       class = c("lt_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
@@ -49,7 +49,7 @@ test_that("Basic filter_condition initialization", {
       class = c("gt_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
@@ -61,7 +61,7 @@ test_that("Basic filter_condition initialization", {
       class = c("lte_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
@@ -73,7 +73,7 @@ test_that("Basic filter_condition initialization", {
       class = c("gte_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
@@ -85,7 +85,7 @@ test_that("Basic filter_condition initialization", {
       class = c("eq_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
 })
@@ -124,7 +124,7 @@ test_that("Basic filter_condition initialization works with column names", {
       class = c("lt_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
@@ -136,7 +136,7 @@ test_that("Basic filter_condition initialization works with column names", {
       class = c("gt_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
@@ -148,7 +148,7 @@ test_that("Basic filter_condition initialization works with column names", {
       class = c("lte_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
@@ -160,7 +160,7 @@ test_that("Basic filter_condition initialization works with column names", {
       class = c("gte_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
   expect_equal(
@@ -172,7 +172,7 @@ test_that("Basic filter_condition initialization works with column names", {
       class = c("eq_filter_condition", "filter_condition", "quosure", "formula"),
       context = context,
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
 })
@@ -631,7 +631,7 @@ test_that("Getting genomic regions works", {
       finterface,
       build = NULL
     ) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     new_genomic_regions(chr = "1", start = 123, end = 234)
   )
   expect_equal(
@@ -639,7 +639,7 @@ test_that("Getting genomic regions works", {
       rlang::quo(123 <= pos & pos <= 234),
       finterface
     ) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     new_genomic_regions(start = 123, end = 234)
   )
   expect_equal(
@@ -647,7 +647,7 @@ test_that("Getting genomic regions works", {
       rlang::quo(chr == 1 & 123 < pos & pos < 234),
       finterface
     ) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     new_genomic_regions(chr = "1", start = 124, end = 233)
   )
   expect_equal(
@@ -655,7 +655,7 @@ test_that("Getting genomic regions works", {
       rlang::quo(chr < 2 & 123 < pos & pos < 234),
       finterface
     ) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     new_genomic_regions(chr = "1", start = 124, end = 233)
   )
   expect_equal(
@@ -664,7 +664,7 @@ test_that("Getting genomic regions works", {
         chr == "X" & 21 <= pos & pos <= 42),
       finterface
     ) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     new_genomic_regions(
       chr = c("1", "X"),
       start = c(123, 21),
@@ -676,7 +676,7 @@ test_that("Getting genomic regions works", {
       rlang::quo((chr == 1 | chr == "X") & 123 <= pos & pos <= 234),
       finterface
     ) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     new_genomic_regions(
       chr = c("1", "X"),
       start = 123,
@@ -688,7 +688,7 @@ test_that("Getting genomic regions works", {
       rlang::quo((chr == 1 & chr == "X") & 123 <= pos & pos <= 234),
       finterface
     ) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     empty_genomic_regions()
   )
   expect_equal(
@@ -696,7 +696,7 @@ test_that("Getting genomic regions works", {
       rlang::quo((chr == 1 | chr == "X") & 234 <= pos & pos <= 123),
       finterface
     ) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     empty_genomic_regions()
   )
   expect_equal(
@@ -706,7 +706,7 @@ test_that("Getting genomic regions works", {
         pos <= 234 & pos < 512),
       finterface
     ) |>
-      fc_genomic_regions(),
+      genomic_constraint(),
     new_genomic_regions(
       chr = c("1", "X"),
       start = 123,
@@ -844,7 +844,7 @@ test_that("%in% parsing works", {
         env
       },
       build = "b38",
-      genomic_regions = full_genomic_regions(build = "b38")
+      genomic_constraint = full_genomic_regions(build = "b38")
     )
   )
 
@@ -966,7 +966,7 @@ test_that("new_filter_condition.genomic_regions creates filter from regions", {
 
   expect_true(is.filter_condition(fc))
   expect_equal(build(fc), "b36")
-  expect_equal(fc_genomic_regions(fc), gr)
+  expect_equal(genomic_constraint(fc), gr)
 })
 
 test_that("new_filter_condition.genomic_regions handles build parameter", {
@@ -1001,7 +1001,7 @@ test_that("new_filter_condition.genomic_regions works with multiple regions", {
   fc <- new_filter_condition(gr, finterface)
 
   expect_true(is.filter_condition(fc))
-  expect_equal(nrow(fc_genomic_regions(fc)), 2)
+  expect_equal(nrow(genomic_constraint(fc)), 2)
 })
 
 test_that("new_filter_condition.genomic_regions handles empty regions", {
@@ -1012,7 +1012,7 @@ test_that("new_filter_condition.genomic_regions handles empty regions", {
   fc <- new_filter_condition(empty_gr, finterface)
 
   expect_true(is.filter_condition(fc))
-  expect_equal(nrow(fc_genomic_regions(fc)), 0)
+  expect_equal(nrow(genomic_constraint(fc)), 0)
 })
 
 test_that("new_filter_condition.name evaluates name to get value", {
@@ -1028,7 +1028,7 @@ test_that("new_filter_condition.name evaluates name to get value", {
   fc <- new_filter_condition(rlang::quo(gr), finterface)
 
   expect_true(is.filter_condition(fc))
-  expect_equal(fc_genomic_regions(fc), gr)
+  expect_equal(genomic_constraint(fc), gr)
 })
 
 test_that("get_used_columns fuctions within nested conditions", {
@@ -1256,7 +1256,7 @@ test_that("new_filter_condition evaluates a bare name in the caller frame", {
   fcondition <- new_filter_condition(as.name("gregions"), finterface)
 
   expect_true(is.filter_condition(fcondition))
-  expect_equal(fc_genomic_regions(fcondition), gregions)
+  expect_equal(genomic_constraint(fcondition), gregions)
 })
 
 test_that("as_fc_context normalizes an interface and is idempotent", {
@@ -1362,7 +1362,7 @@ test_that("dispatch recognizes an in_filter_condition atom over a literal field"
   expect_equal(compiled$condition, sprintf("($2 in var%s)", random_code))
   # A literal field expression stays a membership test, never a positional
   # range: the atom carries the full genome (no OR-chain extraction).
-  expect_equal(fc_genomic_regions(atom), full_genomic_regions(build = "b38"))
+  expect_equal(genomic_constraint(atom), full_genomic_regions(build = "b38"))
 })
 
 test_that("in_membership_atom builds a membership atom over a literal field", {
@@ -1378,7 +1378,7 @@ test_that("in_membership_atom builds a membership atom over a literal field", {
   # A literal field expression must stay an awk membership test, never become a
   # positional range: the atom carries the full genome (no OR-chain extraction).
   expect_equal(
-    fc_genomic_regions(atom),
+    genomic_constraint(atom),
     full_genomic_regions(build = "b38")
   )
 })
@@ -1560,7 +1560,7 @@ test_that("an OR node stores full genome and derives the branch union", {
     finterface,
     build = "b38"
   )
-  expect_true(is_full_genome(attr(fcondition, "genomic_regions")))
+  expect_true(is_full_genome(attr(fcondition, "genomic_constraint")))
   expect_equal(
     source_regions(fcondition),
     new_genomic_regions(
