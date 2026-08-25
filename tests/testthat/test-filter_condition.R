@@ -1727,6 +1727,45 @@ test_that("eq_constraints reads an absent constraint as the full genome", {
   expect_false(eq_constraints(constrained, full))
 })
 
+test_that("building a condition allocates no full genome", {
+  finterface <- local_summary_stats_interface(build = "b38")
+  allocations <- 0L
+  unmocked_full_genomic_regions <- full_genomic_regions
+  testthat::local_mocked_bindings(
+    full_genomic_regions = function(...) {
+      allocations <<- allocations + 1L
+      unmocked_full_genomic_regions(...)
+    }
+  )
+
+  new_filter_condition(rlang::quo(pval < 0.05), finterface, build = "b38")
+  expect_equal(allocations, 0L)
+
+  new_filter_condition(
+    rlang::quo(chr == 1 & pval < 0.05), finterface, build = "b38"
+  )
+  expect_equal(allocations, 0L)
+})
+
+test_that("combining conditions records the constraint on one node only", {
+  finterface <- local_summary_stats_interface(build = "b38")
+
+  combined <- new_filter_condition(
+    rlang::quo((chr == 1 & pval < 0.05) & (2 < chr | pos < 500)),
+    finterface,
+    build = "b38"
+  )
+  expect_null(genomic_constraint(combined[[2]]))
+  expect_null(genomic_constraint(combined[[3]]))
+
+  wrapped <- new_filter_condition(
+    rlang::quo((chr == 1 & pval < 0.05)), finterface, build = "b38"
+  )
+  expect_null(genomic_constraint(wrapped[[2]]))
+
+  expect_null(genomic_constraint(unconstrained_condition(build = "b38")))
+})
+
 test_that("get_used_columns names no coordinate column without one", {
   finterface <- local_summary_stats_interface(build = "b38")
   expect_equal(
