@@ -651,12 +651,10 @@ format.filter_condition <- function(
   }
 
   gconstraint <- genomic_constraint(x)
-  gconstraint_str <- if (is_unconstrained(gconstraint)) {
-    ""
-  } else {
-    str(gconstraint)
+  if (is_unconstrained(gconstraint)) {
+    return(fcondition_str)
   }
-  paste(fcondition_str, gconstraint_str)
+  paste(fcondition_str, str(gconstraint))
 }
 
 #' @export
