@@ -117,11 +117,11 @@ eval_fcondition <- function(
   )
 }
 
-#' Convert genomic_regions from filter_condition to awk
+#' Convert a condition's genomic constraint to awk
 #'
-#' Translates a genomic_regions from the filter_condition into awk conditions.
+#' Translates the regions a filter_condition constrains into awk conditions.
 #' Each region becomes a condition like
-#' `$1 == "chr1" && 1000 <= $2 && $2 <= 2000`, combined with OR for multiple
+#' `$1 == "1" && 1000 <= $2 && $2 <= 2000`, combined with OR for multiple
 #' regions.
 #'
 #' @param fcondition A filter_condition carrying the genomic constraint to

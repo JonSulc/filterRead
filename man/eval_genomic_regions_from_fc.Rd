@@ -2,7 +2,7 @@
 % Please edit documentation in R/awk_filter_eval.R
 \name{eval_genomic_regions_from_fc}
 \alias{eval_genomic_regions_from_fc}
-\title{Convert genomic_regions from filter_condition to awk}
+\title{Convert a condition's genomic constraint to awk}
 \usage{
 eval_genomic_regions_from_fc(fcondition, finterface, column_indices)
 }
@@ -20,9 +20,9 @@ Character string with the awk condition, `"0"` when the regions
   condition, or positions handled through an RSID index
 }
 \description{
-Translates a genomic_regions from the filter_condition into awk conditions.
+Translates the regions a filter_condition constrains into awk conditions.
 Each region becomes a condition like
-`$1 == "chr1" && 1000 <= $2 && $2 <= 2000`, combined with OR for multiple
+`$1 == "1" && 1000 <= $2 && $2 <= 2000`, combined with OR for multiple
 regions.
 }
 \keyword{internal}
