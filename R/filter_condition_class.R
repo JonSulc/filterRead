@@ -616,7 +616,6 @@ get_file_interface <- function(
 #' @export
 format.filter_condition <- function(
   x,
-  append_genomic_regions = TRUE,
   ...
 ) {
   fcondition_operations <- c(
@@ -639,25 +638,14 @@ format.filter_condition <- function(
         format(x[[3]])
       )
     } else if (as.character(x[[1]]) == "lp_filter_condition") {
-      fcondition_str <- sprintf(
-        "(%s)",
-        format(x[[2]], append_genomic_regions = append_genomic_regions)
-      )
+      fcondition_str <- sprintf("(%s)", format(x[[2]]))
     } else if (as.character(x[[1]]) == "and_filter_condition") {
-      fcondition_str <- paste(
-        format(x[[2]], append_genomic_regions = FALSE),
-        "&", format(x[[3]], append_genomic_regions = FALSE)
-      )
+      fcondition_str <- paste(format(x[[2]]), "&", format(x[[3]]))
     } else if (as.character(x[[1]]) == "or_filter_condition") {
-      fcondition_str <- paste(
-        format(x[[2]], append_genomic_regions = FALSE),
-        "|", format(x[[3]], append_genomic_regions = FALSE)
-      )
+      fcondition_str <- paste(format(x[[2]]), "|", format(x[[3]]))
     } else {
       fcondition_str <- paste(
-        format(x[[2]], append_genomic_regions = FALSE),
-        as.character(x[[1]]),
-        format(x[[3]], append_genomic_regions = FALSE)
+        format(x[[2]]), as.character(x[[1]]), format(x[[3]])
       )
     }
   }
