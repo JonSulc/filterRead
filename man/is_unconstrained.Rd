@@ -4,10 +4,11 @@
 \alias{is_unconstrained}
 \title{Check whether a genomic constraint restricts nothing}
 \usage{
-is_unconstrained(gconstraint)
+is_unconstrained(genomic_constraint)
 }
 \arguments{
-\item{gconstraint}{A genomic_regions object, or NULL for the full genome}
+\item{genomic_constraint}{A genomic_regions object, or NULL for the full
+genome}
 }
 \value{
 Logical indicating whether the constraint narrows nothing
@@ -15,5 +16,8 @@ Logical indicating whether the constraint narrows nothing
 \description{
 A constraint restricts nothing when it is absent or covers the full genome.
 Either way it narrows no read.
+}
+\seealso{
+[is_overconstrained()] for the opposite pole of coverage.
 }
 \keyword{internal}

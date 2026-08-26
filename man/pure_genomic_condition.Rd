@@ -4,11 +4,11 @@
 \alias{pure_genomic_condition}
 \title{Create a pure genomic condition}
 \usage{
-pure_genomic_condition(genomic_regions, build = NULL, context = NULL)
+pure_genomic_condition(genomic_constraint, build = NULL, context = NULL)
 }
 \arguments{
-\item{genomic_regions}{Genomic regions the condition selects within, or NULL
-for the full genome}
+\item{genomic_constraint}{Genomic regions the condition selects within, or
+NULL for the full genome}
 
 \item{build}{Optional genome build (b36, b37, b38)}
 

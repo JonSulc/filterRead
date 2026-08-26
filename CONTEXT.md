@@ -19,7 +19,7 @@ _Avoid_: full read, sequential read
 **Indexed read**:
 Reading only the parts of a file its index reports as able to match, in place
 of a scan. Returns what a scan returns; it selects no rows itself.
-_Avoid_: tabix query, index path, seek
+_Avoid_: tabix query (names the mechanism, not the read), index path, seek
 
 **Source regions**:
 The region set covering everything a condition can select, used to narrow what
@@ -64,7 +64,7 @@ _Avoid_: AND block (a structural test for the property, not the property)
 Querying an auxiliary indexed file, such as dbSNP, for information the file
 being read does not carry — the positions of its rsids. Adds information,
 where an indexed read only restricts what is read.
-_Avoid_: tabix query, dbSNP query
+_Avoid_: tabix query (names the mechanism, not the lookup), dbSNP query
 
 **Variant-identity filtering**:
 Selecting file rows matching given variants on `(chr, pos)` and the unordered
