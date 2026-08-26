@@ -138,11 +138,11 @@ eval_genomic_regions_from_fc <- function(
   finterface,
   column_indices
 ) {
-  gregions <- genomic_constraint(fcondition)
-  if (is_unconstrained(gregions)) {
+  gconstraint <- genomic_constraint(fcondition)
+  if (is_unconstrained(gconstraint)) {
     return()
   }
-  gregions <- post_process(gregions, finterface = finterface)
+  gregions <- post_process(gconstraint, finterface = finterface)
   # A set no row can satisfy matches nothing on an RSID-indexed file as on
   # any other, so coverage is decided before the RSID bail below.
   if (is_empty_genome(gregions)) {

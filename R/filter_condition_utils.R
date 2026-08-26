@@ -13,8 +13,8 @@ is_and_block <- function(
     return(TRUE)
   }
 
-  gregions <- genomic_constraint(fcondition)
-  if (!is.null(gregions) && 1 < nrow(gregions)) {
+  gconstraint <- genomic_constraint(fcondition)
+  if (!is.null(gconstraint) && 1 < nrow(gconstraint)) {
     return(FALSE)
   }
 
@@ -221,8 +221,8 @@ has_position_condition <- function(
   fcondition
 ) {
   if (is.filter_condition(fcondition)) {
-    gregions <- genomic_constraint(fcondition)
-    if (any(!is.na(gregions$start), !is.na(gregions$end))) {
+    gconstraint <- genomic_constraint(fcondition)
+    if (any(!is.na(gconstraint$start), !is.na(gconstraint$end))) {
       return(TRUE)
     }
   }

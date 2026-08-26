@@ -555,9 +555,9 @@ fcondition_and_rsid_to_awk <- function(
   # matching nothing takes the standard path, where the renderer emits the awk
   # false constant.
   rsid_indexed <- needs_rsid_matching(get_file_interface(fcondition))
-  genomic_constraint <- combined_constraint(fcondition)
-  positions_match_everything <- is_unconstrained(genomic_constraint)
-  positions_match_nothing <- is_overconstrained(genomic_constraint)
+  gconstraint <- combined_constraint(fcondition)
+  positions_match_everything <- is_unconstrained(gconstraint)
+  positions_match_nothing <- is_overconstrained(gconstraint)
 
   if (!rsid_indexed
     || positions_match_everything

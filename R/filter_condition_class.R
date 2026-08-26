@@ -573,12 +573,12 @@ get_used_columns <- function(
   fcondition,
   finterface = get_file_interface(fcondition)
 ) {
-  gregions <- if (is.filter_condition(fcondition)) {
+  gconstraint <- if (is.filter_condition(fcondition)) {
     genomic_constraint(fcondition)
   }
-  gregion_columns <- c(
-    if (any(!is.na(gregions$chr))) "chr",
-    if (any(!is.na(gregions$start), !is.na(gregions$end))) "pos"
+  gconstraint_columns <- c(
+    if (any(!is.na(gconstraint$chr))) "chr",
+    if (any(!is.na(gconstraint$start), !is.na(gconstraint$end))) "pos"
   )
 
   if (rlang::is_quosure(fcondition)) {
@@ -588,14 +588,14 @@ get_used_columns <- function(
       get_file_interface(fcondition)
     ) |>
       unlist() |>
-      c(gregion_columns) |>
+      c(gconstraint_columns) |>
       unique())
   }
   intersect(
     finterface$column_info$name,
     as.character(fcondition)
   ) |>
-    c(gregion_columns) |>
+    c(gconstraint_columns) |>
     unique()
 }
 
@@ -662,13 +662,13 @@ format.filter_condition <- function(
     }
   }
 
-  gregions <- genomic_constraint(x)
-  regions_str <- if (is_unconstrained(gregions)) {
+  gconstraint <- genomic_constraint(x)
+  gconstraint_str <- if (is_unconstrained(gconstraint)) {
     ""
   } else {
-    str(gregions)
+    str(gconstraint)
   }
-  paste(fcondition_str, regions_str)
+  paste(fcondition_str, gconstraint_str)
 }
 
 #' @export

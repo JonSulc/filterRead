@@ -568,8 +568,8 @@ empty_read_for_query <- function(
   )
 
   # Short-circuit an unsatisfiable condition
-  genomic_constraint <- combined_constraint(fcondition)
-  if (!return_only_cmd && is_overconstrained(genomic_constraint)) {
+  gconstraint <- combined_constraint(fcondition)
+  if (!return_only_cmd && is_overconstrained(gconstraint)) {
     return(empty_read_for_query(finterface, fcondition))
   }
 
