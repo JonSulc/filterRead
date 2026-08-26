@@ -60,14 +60,15 @@ non_genomic_is_and_block <- function(
 #' A constraint restricts nothing when it is absent or covers the full genome.
 #' Either way it narrows no read.
 #'
-#' @param gconstraint A genomic_regions object, or NULL for the full genome
+#' @param genomic_constraint A genomic_regions object, or NULL for the full
+#'   genome
 #' @return Logical indicating whether the constraint narrows nothing
 #' @seealso [is_overconstrained()] for the opposite pole of coverage.
 #' @keywords internal
 is_unconstrained <- function(
-  gconstraint
+  genomic_constraint
 ) {
-  is.null(gconstraint) || is_full_genome(gconstraint)
+  is.null(genomic_constraint) || is_full_genome(genomic_constraint)
 }
 
 #' Check whether a genomic constraint admits no position
@@ -316,7 +317,7 @@ split_genomic_conditions <- function(
   if (is_pure_genomic_condition(fcondition)) {
     return(
       pure_genomic_condition(
-        genomic_regions = as_genomic_regions(fcondition, build = build),
+        genomic_constraint = as_genomic_regions(fcondition, build = build),
         build = build,
         context = attr(fcondition, "context")
       )

@@ -65,21 +65,21 @@ is_regex_filter_condition <- function(fcondition) {
 #' carries no expression, so its genomic constraint is the whole of what it
 #' narrows.
 #'
-#' @param genomic_regions Genomic regions the condition selects within, or NULL
-#'   for the full genome
+#' @param genomic_constraint Genomic regions the condition selects within, or
+#'   NULL for the full genome
 #' @param build Optional genome build (b36, b37, b38)
 #' @param context Environment carrying $finterface and $env for the condition
 #' @return A filter_condition object with no expression
 #' @keywords internal
 pure_genomic_condition <- function(
-  genomic_regions,
+  genomic_constraint,
   build = NULL,
   context = NULL
 ) {
   as_filter_condition(
     list(),
     build = build,
-    genomic_constraint = genomic_regions,
+    genomic_constraint = genomic_constraint,
     context = context
   )
 }
@@ -99,7 +99,7 @@ unconstrained_condition <- function(
   context = NULL
 ) {
   pure_genomic_condition(
-    genomic_regions = NULL,
+    genomic_constraint = NULL,
     build = build,
     context = context
   )
@@ -481,7 +481,7 @@ new_filter_condition_impl.genomic_regions <- function(
   }
   build <- build %||% file_build
   pure_genomic_condition(
-    genomic_regions = liftover(x, build),
+    genomic_constraint = liftover(x, build),
     build = build,
     context = context
   )

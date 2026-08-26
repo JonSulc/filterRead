@@ -126,7 +126,7 @@ new_filter_condition_impl.variants <- function(x, context, build = NULL, ...) {
 
   if (length(keyset$keys) == 0) {
     return(pure_genomic_condition(
-      genomic_regions = empty_genomic_regions(build = build),
+      genomic_constraint = empty_genomic_regions(build = build),
       build = build,
       context = context
     ))
