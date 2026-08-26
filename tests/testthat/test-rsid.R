@@ -566,6 +566,14 @@ test_that("head() of an rsid file with an encoded column decodes it", {
   expect_equal(head(finterface, 1)$ref, "T")
 })
 
+test_that("A condition with no positions scans instead of indexing", {
+  finterface <- local_rsid_summary_stats_interface(build = "b38")
+  command <- finterface[pval < 0.5, return_only_cmd = TRUE]
+
+  expect_false(grepl("tabix", command, fixed = TRUE))
+  expect_true(nrow(finterface[pval < 0.5]) != 0L)
+})
+
 test_that("An unsatisfiable condition emits a command matching no rows", {
   finterface <- local_rsid_summary_stats_interface(build = "b38")
   command <- finterface[chr == 1 & chr == 2 & pval < 0.5,
