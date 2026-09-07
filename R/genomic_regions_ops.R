@@ -72,7 +72,7 @@ liftover.genomic_regions <- function(
     if (build(x) == target) {
       return(x)
     }
-    chain_dt <- get_chain_dt(
+    chain_dt <- get_shared_chain_dt(
       from = build(x),
       to = target
     )

@@ -31,6 +31,7 @@ Collate:
     'awk_codegen.R'
     'awk_filter_eval.R'
     'build_versioned_columns.R'
+    'chain_cache.R'
     'column_metadata.R'
     'column_names.R'
     'complete_missing_stats.R'

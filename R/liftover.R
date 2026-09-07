@@ -126,7 +126,8 @@ setup_chain_files <- function(
         to_build <- normalize_build(pair$to)
         chain_dt <- parse_chain_file(dest_file) |>
           data.table::setattr("from", from_build) |>
-          data.table::setattr("to", to_build)
+          data.table::setattr("to", to_build) |>
+          prepare_chain_dt()
         rds_file <- file.path(
           path,
           get_chain_rds_filename(from_build, to_build)
@@ -164,6 +165,8 @@ setup_chain_files <- function(
     )
   }
 
+  invalidate_chain_cache()
+
   invisible(path)
 }
 
@@ -178,6 +181,7 @@ setup_chain_files <- function(
 #' @return Invisibly returns paths of removed files.
 #' @export
 clear_chain_cache <- function(path = get_chain_path(warn = FALSE)) {
+  invalidate_chain_cache()
   rds_files <- list.files(path, "\\.chain_dt\\.rds$", full.names = TRUE)
   if (length(rds_files) > 0) {
     file.remove(rds_files)
@@ -202,6 +206,30 @@ clear_chain_cache <- function(path = get_chain_path(warn = FALSE)) {
 #'   Has attributes `from` and `to` recording the source and target builds.
 #' @keywords internal
 get_chain_dt <- function(
+  from,
+  to,
+  auto_download = TRUE
+) {
+  get_shared_chain_dt(from, to, auto_download = auto_download) |>
+    data.table::copy()
+}
+
+#' Load a chain data.table from disk
+#'
+#' Reads the cached RDS when it is present and valid, otherwise parses the
+#' raw chain file and writes the RDS, downloading the chain first when it is
+#' absent and `auto_download` is TRUE.
+#'
+#' @seealso [get_shared_chain_dt()] and [get_chain_dt()], which hold the loaded
+#'   chain for the session.
+#' @param from Source build (b36, b37, b38, or synonyms like hg38)
+#' @param to Target build (b36, b37, b38, or synonyms like hg38)
+#' @param auto_download Logical, whether to automatically download chain
+#'   files if not found. Default TRUE.
+#' @return data.table with chain alignment data, keyed by (chr, start, end).
+#'   Has attributes `from` and `to` recording the source and target builds.
+#' @keywords internal
+load_chain_dt <- function(
   from,
   to,
   auto_download = TRUE
@@ -249,7 +277,8 @@ get_chain_dt <- function(
   chain_dt <- chain_file |>
     parse_chain_file() |>
     data.table::setattr("from", from) |>
-    data.table::setattr("to", to)
+    data.table::setattr("to", to) |>
+    prepare_chain_dt()
 
   tryCatch(
     saveRDS(chain_dt, rds_file),
@@ -589,7 +618,7 @@ liftover.data.table <- function(
     return(x_work)
   }
 
-  chain_dt <- get_chain_dt(from, target)
+  chain_dt <- get_shared_chain_dt(from, target)
 
   positions <- data.table::data.table(
     I     = seq_len(nrow(x_work)),

@@ -483,6 +483,105 @@ test_that("clear_chain_cache reports when no files exist", {
   )
 })
 
+test_that("a chain is parsed once per session", {
+  loads <- 0L
+  testthat::local_mocked_bindings(
+    load_chain_dt = function(from, to, auto_download = TRUE) {
+      loads <<- loads + 1L
+      make_fwd_chain(1L, 100L, 5L, from, to)
+    }
+  )
+  invalidate_chain_cache()
+
+  first <- get_shared_chain_dt("b37", "b38")
+  second <- get_shared_chain_dt("b37", "b38")
+
+  expect_equal(loads, 1L)
+  expect_true(identical(first, second))
+})
+
+test_that("the cached chain carries the index the overlap join reads", {
+  testthat::local_mocked_bindings(
+    load_chain_dt = function(from, to, auto_download = TRUE) {
+      make_fwd_chain(1L, 100L, 5L, from, to)
+    }
+  )
+  invalidate_chain_cache()
+
+  expect_equal(
+    data.table::indices(get_shared_chain_dt("b37", "b38")),
+    "chr__start__end"
+  )
+})
+
+test_that("get_chain_dt hands out a copy, so callers cannot edit the cache", {
+  testthat::local_mocked_bindings(
+    load_chain_dt = function(from, to, auto_download = TRUE) {
+      make_fwd_chain(1L, 100L, 5L, from, to)
+    }
+  )
+  invalidate_chain_cache()
+
+  handed_out <- get_chain_dt("b37", "b38")
+  handed_out[, offset := 999L]
+
+  expect_equal(get_shared_chain_dt("b37", "b38")$offset, 5L)
+})
+
+test_that("a chain written to RDS carries the overlap join's index", {
+  tmp <- local_chain_path()
+  chain_file <- file.path(tmp, "hg19ToHg38.over.chain")
+  writeLines(
+    c(
+      "chain 1000 chr1 500 + 100 200 chr20 600 + 40 140 1",
+      "30\t10\t5",
+      "50\t5\t10",
+      "5"
+    ),
+    chain_file
+  )
+  invisible(get_chain_dt(from = "b37", to = "b38", auto_download = FALSE))
+
+  from_disk <- readRDS(file.path(tmp, "b37_to_b38.chain_dt.rds"))
+  expect_equal(data.table::indices(from_disk), "chr__start__end")
+})
+
+test_that("repointing the chain directory drops the cached chains", {
+  loads <- 0L
+  testthat::local_mocked_bindings(
+    load_chain_dt = function(from, to, auto_download = TRUE) {
+      loads <<- loads + 1L
+      make_fwd_chain(1L, 100L, 5L, from, to)
+    }
+  )
+  invalidate_chain_cache()
+
+  local_chain_path()
+  get_shared_chain_dt("b37", "b38")
+  local_chain_path()
+  get_shared_chain_dt("b37", "b38")
+
+  expect_equal(loads, 2L)
+})
+
+test_that("clear_chain_cache drops the cached chains", {
+  loads <- 0L
+  testthat::local_mocked_bindings(
+    load_chain_dt = function(from, to, auto_download = TRUE) {
+      loads <<- loads + 1L
+      make_fwd_chain(1L, 100L, 5L, from, to)
+    }
+  )
+  tmp <- local_chain_path()
+  invalidate_chain_cache()
+
+  get_shared_chain_dt("b37", "b38")
+  expect_message(clear_chain_cache(tmp), "No cached chain files")
+  get_shared_chain_dt("b37", "b38")
+
+  expect_equal(loads, 2L)
+})
+
 test_that("parse_chain_file errors on a file with no chain headers", {
   tmp <- withr::local_tempfile()
   writeLines(c("not", "a", "chain", "file"), tmp)

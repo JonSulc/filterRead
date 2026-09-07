@@ -57,7 +57,7 @@ test_that("buildless empty genomic_regions matches nothing without awk", {
 
 test_that("finterface[gregions] lifts the regions to the file build", {
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) make_fwd_chain(100L, 200L, 50L, "b37", "b38")
+    get_shared_chain_dt = function(from, to) make_fwd_chain(100L, 200L, 50L, "b37", "b38")
   )
   fi <- local_file_interface(
     dt = data.table::data.table(

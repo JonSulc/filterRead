@@ -69,7 +69,7 @@ test_that("best-source liftover recovers rows NA in the current build via a newe
     b38_b36 = make_fwd_chain(500L, 2500L, 200L, "b38", "b36")   # covers row B (b38 2000)
   )
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) chains[[paste(from, to, sep = "_")]]
+    get_shared_chain_dt = function(from, to) chains[[paste(from, to, sep = "_")]]
   )
 
   # Currently in b37; row B failed b38->b37 (b37 NA) but keeps b38 provenance.
@@ -119,7 +119,7 @@ test_that("select_source_build picks the defining build then falls back", {
 
 test_that("source = 'current' does not recover NA-at-current rows", {
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) make_fwd_chain(800L, 1000L, 100L, "b37", "b36")
+    get_shared_chain_dt = function(from, to) make_fwd_chain(800L, 1000L, 100L, "b37", "b36")
   )
   v <- new_variants(
     data.table::data.table(
@@ -186,7 +186,7 @@ test_that("source selects the build to lift from (best / current / named)", {
     data.table::setattr(chains[[nm]], "to", parts[2])
   }
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) chains[[paste(from, to, sep = "_")]]
+    get_shared_chain_dt = function(from, to) chains[[paste(from, to, sep = "_")]]
   )
 
   # Declared in b37, then lifted to b38 (the lift keeps b37 as defining_build).
@@ -224,7 +224,7 @@ test_that("a chain-gap row is not retried from another build (source fixed by co
     data.table::setattr(chains[[nm]], "to", parts[2])
   }
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) chains[[paste(from, to, sep = "_")]]
+    get_shared_chain_dt = function(from, to) chains[[paste(from, to, sep = "_")]]
   )
 
   v <- new_variants(
@@ -257,7 +257,7 @@ test_that("source = 'best', multi_match = 'all' fans out multi-mapped variants i
     data.table::setattr(ch, "to", "b38")
     ch
   }
-  testthat::local_mocked_bindings(get_chain_dt = function(from, to) overlapping())
+  testthat::local_mocked_bindings(get_shared_chain_dt = function(from, to) overlapping())
 
   v <- new_variants(
     data.table::data.table(
@@ -292,7 +292,7 @@ test_that("liftover.variants rejects forwarded liftover.data.table arguments", {
 
 test_that("liftover.variants records the target build's provenance columns", {
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to)
+    get_shared_chain_dt = function(from, to)
       make_fwd_chain(1L, 1000L, -4900L, from, to)   # 100 -> 5000
   )
 
@@ -345,7 +345,7 @@ test_that("liftover.variants reverse-complements alleles on strand flip", {
     data.table::setattr(ch, "to", "b38")
     ch
   }
-  testthat::local_mocked_bindings(get_chain_dt = function(from, to) rev_chain())
+  testthat::local_mocked_bindings(get_shared_chain_dt = function(from, to) rev_chain())
 
   v <- new_variants(
     data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C"),
@@ -508,7 +508,7 @@ test_that("new_variants errors when build conflicts with the id suffix", {
 
 test_that("a multi-build variant_id table splits and lifts to the first build", {
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) make_fwd_chain(1L, 10000L, 50L, from, to)
+    get_shared_chain_dt = function(from, to) make_fwd_chain(1L, 10000L, 50L, from, to)
   )
   v <- as_variants(data.table::data.table(
     variant_id = c("chr1_1000_A_G_b37", "chr1_2000_C_T_b38")
@@ -638,7 +638,7 @@ test_that("liftover on a mixed-build variants returns integer pos", {
     ch
   }
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) chain_via_parser(from, to)
+    get_shared_chain_dt = function(from, to) chain_via_parser(from, to)
   )
 
   # Two rows declared in different builds -> mixed defining_build. Binding to
@@ -668,7 +668,7 @@ test_that("liftover on a mixed-build variants returns integer pos", {
 
 test_that("liftover.variants lifts a zero-row table across builds", {
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to)
+    get_shared_chain_dt = function(from, to)
       make_fwd_chain(1L, 1000L, -4900L, from, to)
   )
   populated <- new_variants(

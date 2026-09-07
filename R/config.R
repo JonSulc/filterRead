@@ -2,6 +2,9 @@
 .filterread_env <- new.env(parent = emptyenv())
 .filterread_env$config_loaded <- FALSE
 
+# Chains parsed this session, keyed by build pair and chain directory
+.filterread_env$chain_cache <- new.env(parent = emptyenv())
+
 # Build name constants
 .valid_builds <- c("b36", "b37", "b38")
 
@@ -181,6 +184,7 @@ set_chain_path <- function(
 
   # Update cache
   .filterread_env$config <- config
+  invalidate_chain_cache()
 
   invisible(config)
 }

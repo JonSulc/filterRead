@@ -229,7 +229,7 @@ test_that("finterface[v] lifts v across builds and matches swapped alleles", {
   # unchanged: v arrives as G/A while the ss_dt() row chr1:100 is A/G,
   # exercising the cross-build lift and swapped-allele-order match together.
   testthat::local_mocked_bindings(
-    get_chain_dt = function(from, to) {
+    get_shared_chain_dt = function(from, to) {
       make_fwd_chain(100L, 200L, 50L, "b37", "b38")
     }
   )
