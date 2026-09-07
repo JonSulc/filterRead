@@ -1104,7 +1104,7 @@ test_that("is_complement returns TRUE for a complement-stored set", {
   expect_true(is_complement(gregions))
 })
 
-test_that("is_complement<- can set the attribute", {
+test_that("set_complement can set the attribute", {
   gregions <- new_genomic_regions(
     chr = 1,
     start = 100,
@@ -1112,10 +1112,10 @@ test_that("is_complement<- can set the attribute", {
   )
   expect_false(is_complement(gregions))
 
-  is_complement(gregions) <- TRUE
+  set_complement(gregions, TRUE)
   expect_true(is_complement(gregions))
 
-  is_complement(gregions) <- FALSE
+  set_complement(gregions, FALSE)
   expect_false(is_complement(gregions))
 })
 
@@ -1392,7 +1392,7 @@ test_that("intersection of a direct and a complemented set is commutative", {
 
 test_that("a complement-stored set with no rows expands to the whole genome", {
   empty_neg <- empty_genomic_regions(build = "b38")
-  is_complement(empty_neg) <- TRUE
+  set_complement(empty_neg, TRUE)
 
   expanded <- expand_genomic_regions(empty_neg)
   expect_false(is_complement(expanded))
@@ -2229,4 +2229,52 @@ test_that("source_regions rejects an object that is not a condition", {
     "is.filter_condition(fcondition) is not TRUE",
     fixed = TRUE
   )
+})
+
+test_that("genomic_regions constructors and operators keep over-allocation", {
+  # A shallow copy comes back with truelength 0, and data.table takes another
+  # shallow copy — warning in the caller — on its next `:=`.
+  gregions <- genomic_regions(chr = 1, start = 1L, end = 10L, build = "b37")
+  other <- genomic_regions(chr = 1, start = 20L, end = 30L, build = "b37")
+  converted <- as_genomic_regions(
+    data.frame(chr = "chr1", start = 1L, end = 10L),
+    build = "b37"
+  )
+  empty <- genomic_regions(
+    chr = character(), start = integer(), end = integer(), build = "b37"
+  )
+
+  expect_true(data.table::truelength(gregions) != 0L)
+  expect_true(data.table::truelength(converted) != 0L)
+  expect_true(data.table::truelength(!gregions) != 0L)
+  expect_true(data.table::truelength(gregions | other) != 0L)
+  expect_true(data.table::truelength(gregions & other) != 0L)
+  expect_true(data.table::truelength(liftover(gregions, "b38")) != 0L)
+  expect_true(data.table::truelength(liftover(empty, "b38")) != 0L)
+})
+
+test_that("negation leaves its operand's complement bit alone", {
+  gregions <- genomic_regions(chr = 1, start = 1L, end = 10L, build = "b37")
+  negated <- !gregions
+
+  expect_true(is_complement(negated))
+  expect_false(is_complement(gregions))
+})
+
+test_that("lifting an empty genomic_regions to no target keeps its build", {
+  gregions <- genomic_regions(
+    chr = character(), start = integer(), end = integer(), build = "b37"
+  )
+
+  expect_equal(build(liftover(gregions, NULL)), "b37")
+})
+
+test_that("lifting an empty genomic_regions leaves its operand's build alone", {
+  gregions <- genomic_regions(
+    chr = character(), start = integer(), end = integer(), build = "b37"
+  )
+  lifted <- liftover(gregions, "b38")
+
+  expect_equal(build(lifted), "b38")
+  expect_equal(build(gregions), "b37")
 })

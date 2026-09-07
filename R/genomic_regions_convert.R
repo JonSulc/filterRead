@@ -52,8 +52,10 @@ as_genomic_regions.data.frame <- function(
       data.table::set(gregions, j = col, value = as.integer(gregions[[col]]))
     }
   }
-  build(gregions) <- build
-  is_complement(gregions) <- complement
+  if (!is.null(build)) {
+    set_build(gregions, build)
+  }
+  set_complement(gregions, complement)
   data.table::setattr(
     gregions,
     "class",

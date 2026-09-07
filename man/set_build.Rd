@@ -2,22 +2,20 @@
 % Please edit documentation in R/variants_class.R
 \name{set_build}
 \alias{set_build}
-\title{Set a variants' genome build by reference}
+\title{Set a data.table's genome build by reference}
 \usage{
 set_build(x, value)
 }
 \arguments{
-\item{x}{A variants (or data.table).}
+\item{x}{A data.table: a `variants`, a `genomic_regions`, or a plain one.}
 
-\item{value}{Build name or synonym (non-native tags pass through).}
+\item{value}{Build name or synonym (non-native tags pass through); NULL is
+an error.}
 }
 \value{
 `x`, invisibly.
 }
 \description{
-Records the (normalized) genome build in the `build` attribute in place.
-Unlike `build(x) <- value`, this is a plain side-effecting setter, so it does
-not bump the object's reference count and is safe to call immediately before
-a `:=`. Use it to relabel an existing `variants` without lifting coordinates.
-It is the canonical in-place build setter for the variants core.
+Records the (normalized) genome build in the `build` attribute, modifying
+`x` in place. Use it to relabel a table without lifting coordinates.
 }

@@ -218,16 +218,14 @@ as_variants.data.frame <- function(x, build = NULL, ...) {
   new_variants(x, build = build)
 }
 
-#' Set a variants' genome build by reference
+#' Set a data.table's genome build by reference
 #'
-#' Records the (normalized) genome build in the `build` attribute in place.
-#' Unlike `build(x) <- value`, this is a plain side-effecting setter, so it does
-#' not bump the object's reference count and is safe to call immediately before
-#' a `:=`. Use it to relabel an existing `variants` without lifting coordinates.
-#' It is the canonical in-place build setter for the variants core.
+#' Records the (normalized) genome build in the `build` attribute, modifying
+#' `x` in place. Use it to relabel a table without lifting coordinates.
 #'
-#' @param x A variants (or data.table).
-#' @param value Build name or synonym (non-native tags pass through).
+#' @param x A data.table: a `variants`, a `genomic_regions`, or a plain one.
+#' @param value Build name or synonym (non-native tags pass through); NULL is
+#'   an error.
 #' @return `x`, invisibly.
 #' @export
 set_build <- function(x, value) {

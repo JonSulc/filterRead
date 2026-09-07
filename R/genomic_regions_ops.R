@@ -42,10 +42,10 @@ liftover.genomic_regions <- function(
     target <- normalize_build(target, allow_null = FALSE)
   }
   if (nrow(x) == 0) {
-    if (is.character(target)) {
-      build(x) <- target
-    } else {
-      build(x) <- attr(target, "to")
+    target_build <- if (is.character(target)) target else attr(target, "to")
+    x <- data.table::copy(x)
+    if (!is.null(target_build)) {
+      set_build(x, target_build)
     }
     return(x)
   }
@@ -179,26 +179,29 @@ liftover.genomic_regions <- function(
 `!.genomic_regions` <- function(
   x
 ) {
-  is_complement(x) <- !is_complement(x)
+  x <- data.table::copy(x)
+  set_complement(x, !is_complement(x))
   x
 }
 
 #' Whether a genomic_regions stores its coordinates or their complement
 #'
+#' `set_complement()` modifies `gregions` in place.
+#'
 #' @param gregions A genomic_regions object
 #' @param value TRUE if the rows are stored as the set's complement
 #' @return `is_complement()` returns whether the rows are stored as the set's
-#'   complement; `is_complement<-()` returns `gregions` with that bit set.
+#'   complement; `set_complement()` returns `gregions`, invisibly.
 #' @keywords internal
 is_complement <- function(gregions) {
   attr(gregions, "complement")
 }
 #' @rdname is_complement
 #' @keywords internal
-`is_complement<-` <- function(gregions, value) {
+set_complement <- function(gregions, value) {
   stopifnot(is.logical(value))
-  attr(gregions, "complement") <- value
-  gregions
+  data.table::setattr(gregions, "complement", value)
+  invisible(gregions)
 }
 
 #' @export

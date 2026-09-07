@@ -2,12 +2,12 @@
 % Please edit documentation in R/genomic_regions_ops.R
 \name{is_complement}
 \alias{is_complement}
-\alias{is_complement<-}
+\alias{set_complement}
 \title{Whether a genomic_regions stores its coordinates or their complement}
 \usage{
 is_complement(gregions)
 
-is_complement(gregions) <- value
+set_complement(gregions, value)
 }
 \arguments{
 \item{gregions}{A genomic_regions object}
@@ -16,9 +16,9 @@ is_complement(gregions) <- value
 }
 \value{
 `is_complement()` returns whether the rows are stored as the set's
-  complement; `is_complement<-()` returns `gregions` with that bit set.
+  complement; `set_complement()` returns `gregions`, invisibly.
 }
 \description{
-Whether a genomic_regions stores its coordinates or their complement
+`set_complement()` modifies `gregions` in place.
 }
 \keyword{internal}
