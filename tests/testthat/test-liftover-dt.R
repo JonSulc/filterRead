@@ -384,3 +384,19 @@ test_that("liftover.data.table returns integer pos through a parser-built chain"
   expect_type(lifted$pos, "integer")
   expect_equal(lifted$pos, 1950L)
 })
+
+test_that("liftover returns a table that keeps its over-allocation", {
+  testthat::local_mocked_bindings(
+    get_chain_dt = function(from, to) {
+      make_fwd_chain(1L, 10000L, 50L, from, to)
+    }
+  )
+  dt <- data.table::data.table(chr = "chr1", pos = c(100L, 20000L))
+  build(dt) <- "b37"
+
+  expect_true(data.table::truelength(liftover(dt, "b38")) != 0L)
+  expect_true(
+    data.table::truelength(liftover(dt, "b38", drop_unlifted = FALSE)) != 0L
+  )
+  expect_true(data.table::truelength(liftover(dt, "b37")) != 0L)
+})

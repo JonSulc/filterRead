@@ -156,3 +156,16 @@ test_that("liftover same-build no-op honors retain_builds", {
   expect_equal(result$chr_b37, "chr1")
   expect_equal(result$pos_b37, 100L)
 })
+
+test_that("record_build adds its columns in place on an over-allocated table", {
+  dt <- data.table::data.table(chr = "chr19", pos = 45411941L)
+  build(dt) <- "b37"
+  expect_true(data.table::truelength(dt) != 0L)
+
+  # The return value is deliberately dropped: liftover.data.table relies on
+  # the columns landing on the table it passed in.
+  record_build(dt, build = "b37")
+
+  expect_equal(dt$chr_b37, "chr19")
+  expect_equal(dt$pos_b37, 45411941L)
+})

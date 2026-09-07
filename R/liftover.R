@@ -572,7 +572,7 @@ liftover.data.table <- function(
   # Same-build short-circuit: the source-build suffix columns added
   # above already double as the target-build mirror.
   if (identical(from, target) || nrow(x_work) == 0) {
-    build(x_work) <- target
+    set_build(x_work, target)
     return(x_work)
   }
 
@@ -585,7 +585,7 @@ liftover.data.table <- function(
     for (col in cache_value_cols) {
       x_work[, (col) := build_versioned_column(x_work, col, target)]
     }
-    build(x_work) <- target
+    set_build(x_work, target)
     return(x_work)
   }
 
@@ -620,7 +620,7 @@ liftover.data.table <- function(
         c("chr", coord_cols$output) := na_assignment
       ]
     }
-    build(result) <- target
+    set_build(result, target)
     if (!retain_builds) return(result)
     return(record_build(result, build = target))
   }
@@ -667,7 +667,7 @@ liftover.data.table <- function(
   if (drop_unlifted) {
     result <- result[!is.na(chr)]
   }
-  build(result) <- target
+  set_build(result, target)
 
   if (!retain_builds) return(result)
   record_build(result, build = target)
