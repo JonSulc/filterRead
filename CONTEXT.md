@@ -149,3 +149,33 @@ imputation)
 The coordinate system (`b36`/`b37`/`b38`) a set of coordinates is expressed in.
 Coordinates are comparable only within the same build.
 _Avoid_: genome version, assembly (in prose)
+
+**Chain**:
+The block-by-block mapping carrying coordinates from one reference build to
+another, in one direction. Directional: the mapping to a build and the mapping
+back are different chains, and neither is the other's inverse.
+_Avoid_: chain file (names the storage, not the mapping), liftover file
+
+**Chain block**:
+One run of positions a chain carries with a single offset and strand, so a
+position's target coordinate follows from the block covering it. A block on the
+reverse strand inverts the interval it carries, which is what makes an allele's
+strand representation change across a lift.
+_Avoid_: chain segment, alignment block, interval
+
+**Chain gap**:
+A stretch of the origin build no chain block covers. Positions there do not
+lift, and are dropped or returned with absent coordinates.
+_Avoid_: unmapped region, hole, missing block
+
+**Lift**:
+Re-expressing coordinates in another build by carrying each through the chain
+block covering it. Not invertible: lifting to a build and back need not return
+the coordinate started from.
+_Avoid_: convert, translate, remap
+
+**Origin build**:
+The build a lift starts from, as against the target build it produces. Unrelated
+to source regions, which name a read-narrowing envelope; the `source` argument
+of a variants lift selects the origin build.
+_Avoid_: source build (collides with source regions), from build
