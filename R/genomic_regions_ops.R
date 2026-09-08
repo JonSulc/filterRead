@@ -1,6 +1,7 @@
 # Sentinel values for NA replacement during overlap operations
 # These must stay in sync between replace_na_with_sentinel and
-# replace_sentinel_with_na.
+# replace_sentinel_with_na. They cover the interval axes of the foverlaps
+# join; chr joins on equality.
 #
 # END_SENTINEL is calibrated so that `END_SENTINEL + 1L` equals
 # .Machine$integer.max exactly — no overflow. Every arithmetic site that
@@ -11,7 +12,6 @@
 # - expand_genomic_regions (negation): start = end + 1L
 # Any future code that adds more than 1 to `end` must lower this sentinel
 # accordingly, otherwise it will silently overflow to NA on sentinel rows.
-CHR_SENTINEL <- ""
 START_SENTINEL <- 1L
 END_SENTINEL <- .Machine$integer.max - 1L
 
@@ -489,14 +489,12 @@ expand_na_chr <- function(
 #' Replace NA values with sentinel values for overlap operations
 #'
 #' Converts NA to the concrete bounds an overlap operation reads:
-#' - NA chr -> empty string
 #' - NA start -> 1 (from beginning)
 #' - NA end -> max integer - 1 (to end)
 #' The default for end subtracts 1 from max integer to avoid overflows
 #' (data.table::foverlaps adds 1 internally).
 #'
 #' @param genomic_regions data.table with potential NAs
-#' @param chr_sentinel Value to use for NA chromosomes (default: "")
 #' @param start_sentinel Value to use for NA start (default: 1)
 #' @param end_sentinel Value to use for NA end
 #'   (default: .Machine$integer.max - 1)
@@ -506,14 +504,10 @@ expand_na_chr <- function(
 #' @keywords internal
 replace_na_with_sentinel <- function(
   genomic_regions,
-  chr_sentinel = CHR_SENTINEL,
   start_sentinel = START_SENTINEL,
   end_sentinel = END_SENTINEL
 ) {
   copy_genomic_regions(genomic_regions)[
-    is.na(chr),
-    chr := chr_sentinel
-  ][
     is.na(start),
     start := start_sentinel
   ][
@@ -528,7 +522,6 @@ replace_na_with_sentinel <- function(
 #' Converts sentinel values back to NA after overlap operations.
 #'
 #' @param genomic_regions data.table with sentinel values
-#' @param chr_sentinel Value used for NA chromosomes (default: "")
 #' @param start_sentinel Value used for NA start (default: 1)
 #' @param end_sentinel Value used for NA end (default: .Machine$integer.max - 1)
 #'
@@ -536,14 +529,10 @@ replace_na_with_sentinel <- function(
 #' @keywords internal
 replace_sentinel_with_na <- function(
   genomic_regions,
-  chr_sentinel = CHR_SENTINEL,
   start_sentinel = START_SENTINEL,
   end_sentinel = END_SENTINEL
 ) {
   copy_genomic_regions(genomic_regions)[
-    chr == chr_sentinel,
-    chr := NA_character_
-  ][
     start == start_sentinel,
     start := NA_integer_
   ][

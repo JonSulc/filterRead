@@ -1,7 +1,7 @@
 format_sentinel_regions <- function(rows) {
   paste0(
     "(",
-    ifelse(rows$chr == CHR_SENTINEL, "*", rows$chr), ",",
+    ifelse(is.na(rows$chr), "*", rows$chr), ",",
     ifelse(rows$start == START_SENTINEL, "", rows$start), "-",
     ifelse(rows$end == END_SENTINEL, "", rows$end), ")",
     collapse = " "
@@ -10,14 +10,13 @@ format_sentinel_regions <- function(rows) {
 
 expect_canonical <- function(gregions) {
   rows <- data.table::data.table(
-    chr = data.table::fifelse(
-      is.na(gregions$chr), CHR_SENTINEL, gregions$chr
-    ),
+    chr = gregions$chr,
     start = data.table::fcoalesce(gregions$start, START_SENTINEL),
     end = data.table::fcoalesce(gregions$end, END_SENTINEL)
   )
 
-  sorted <- rows[order(chr, start, end)]
+  sorted <- data.table::copy(rows) |>
+    data.table::setorder(chr, start, end)
   expect(
     identical(rows, sorted),
     sprintf(
@@ -38,12 +37,12 @@ expect_canonical <- function(gregions) {
     sprintf(
       "Rows on %s overlap or abut: %s",
       touching$chr[1],
-      format_sentinel_regions(rows[chr == touching$chr[1]])
+      format_sentinel_regions(rows[chr %in% touching$chr[1]])
     )
   )
 
-  open <- rows[chr == CHR_SENTINEL]
-  named <- rows[chr != CHR_SENTINEL]
+  open <- rows[is.na(chr)]
+  named <- rows[!is.na(chr)]
   reached <- which(
     outer(named$start, open$end, "<=") & outer(named$end, open$start, ">="),
     arr.ind = TRUE
