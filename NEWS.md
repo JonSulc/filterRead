@@ -31,6 +31,12 @@
   `(chr == 1 & ref == "A") | (chr == 2 & ref == "C")` reported the whole genome
   instead of chromosomes 1 and 2.
 
+* A blank chromosome name is now read as missing rather than prefixed into
+  `"chr"`, so a file whose chromosome field is empty on some rows loads those
+  rows with `chr = NA`. Because a missing chromosome means "any chromosome",
+  `genomic_regions()` now rejects a blank chromosome instead of silently
+  widening the regions to the whole genome.
+
 # filterRead 2.15.0
 
 * The `merge_contiguous` argument of `genomic_regions()`,

@@ -456,6 +456,24 @@ test_that("constructor errors on incompatible lengths", {
   )
 })
 
+test_that("constructor rejects a blank chromosome", {
+  expect_error(
+    new_genomic_regions(chr = ""),
+    "Blank chromosome name"
+  )
+  expect_error(
+    new_genomic_regions(chr = c("1", "")),
+    "Blank chromosome name"
+  )
+})
+
+test_that("constructor accepts NA as the any-chromosome wildcard", {
+  expect_true(
+    new_genomic_regions(chr = NA_character_) |>
+      is_full_genome()
+  )
+})
+
 test_that("constructor allows length-1 recycling", {
   gregions <- new_genomic_regions(
     chr = "chr1",
