@@ -2144,6 +2144,7 @@ test_that("the coverage predicates read the complement bit", {
   full <- full_genomic_regions(build = "b38")
   empty <- empty_genomic_regions(build = "b38")
   chr1 <- new_genomic_regions(chr = 1, build = "b38")
+  blank_chr <- new_genomic_regions(chr = "", build = "b38")
 
   expect_true(is_full_genome(full))
   expect_false(is_empty_genome(full))
@@ -2162,6 +2163,9 @@ test_that("the coverage predicates read the complement bit", {
 
   expect_false(is_full_genome(!chr1))
   expect_false(is_empty_genome(!chr1))
+
+  expect_false(is_full_genome(blank_chr))
+  expect_false(is_empty_genome(blank_chr))
 })
 
 test_that("uniting complementary halves of the genome covers everything", {
@@ -2295,4 +2299,25 @@ test_that("lifting an empty genomic_regions leaves its operand's build alone", {
 
   expect_equal(build(lifted), "b38")
   expect_equal(build(gregions), "b37")
+})
+
+test_that("as_genomic_regions keeps a blank chromosome name", {
+  gregions <- as_genomic_regions(
+    data.table::data.table(
+      chr = c("chr1", ""), start = 1000L, end = 2000L
+    ),
+    build = "b38"
+  )
+  expect_equal(gregions$chr, c("", "chr1"))
+})
+
+test_that("intersection matches a blank chromosome name only to itself", {
+  gregions <- genomic_regions(chr = c("", "1"), start = 1000L, end = 2000L,
+                              build = "b38")
+  named_only <- genomic_regions(chr = "1", start = 1500L, end = 2500L,
+                                build = "b38")
+  named_and_blank <- genomic_regions(chr = c("", "1"), start = 1500L,
+                                     end = 2500L, build = "b38")
+  expect_equal((gregions & named_only)$chr, "chr1")
+  expect_equal((gregions & named_and_blank)$chr, c("", "chr1"))
 })
