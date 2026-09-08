@@ -214,11 +214,14 @@ format_chr <- function(
   prefix
 ) {
   chr <- as.character(chr)
-  data.table::fifelse(
-    grepl(paste0("^", prefix), chr) | is.na(chr),
-    chr,
-    paste0(prefix, chr)
+  distinct_chr <- unique(chr)
+  formatted <- data.table::fifelse(
+    grepl(paste0("^", prefix), distinct_chr),
+    distinct_chr,
+    paste0(prefix, distinct_chr)
   )
+  formatted[is.na(distinct_chr) | distinct_chr == ""] <- NA_character_
+  formatted[data.table::chmatch(chr, distinct_chr)]
 }
 
 #' Deep copy genomic_regions

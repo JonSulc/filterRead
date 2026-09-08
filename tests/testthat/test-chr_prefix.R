@@ -138,3 +138,31 @@ test_that("chr prefix works with filtering conditions", {
   expect_true(all(grepl("^chr", result$chr)))
   expect_true(all(result$pval < 0.05))
 })
+
+test_that("format_chr prefixes only the values that lack the prefix", {
+  expect_equal(
+    format_chr(c("1", "chr1", NA, "2", "1"), prefix = "chr"),
+    c("chr1", "chr1", NA, "chr2", "chr1")
+  )
+})
+
+test_that("format_chr treats the prefix as a regular expression", {
+  expect_equal(
+    format_chr(c("1", "c.r1", "chr2"), prefix = "c.r"),
+    c("c.r1", "c.r1", "chr2")
+  )
+})
+
+test_that("format_chr treats an empty chromosome as missing", {
+  expect_equal(
+    format_chr(c("1", "", "2"), prefix = "chr"),
+    c("chr1", NA, "chr2")
+  )
+})
+
+test_that("format_chr coerces non-character input", {
+  expect_equal(format_chr(c(1L, 2L, NA), prefix = "chr"),
+               c("chr1", "chr2", NA))
+  expect_equal(format_chr(factor(c("1", "2")), prefix = "chr"),
+               c("chr1", "chr2"))
+})
