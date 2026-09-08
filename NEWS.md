@@ -37,6 +37,23 @@
   `genomic_regions()` now rejects a blank chromosome instead of silently
   widening the regions to the whole genome.
 
+* Tables returned by `genomic_regions()` and `liftover()` now keep
+  data.table's over-allocation, so a `:=` on one no longer warns `Invalid
+  .internal.selfref detected and fixed by taking a (shallow) copy` and adds
+  its column to a detached copy. Recording the result's build stripped the
+  over-allocation, so the first modification by reference a caller made to a
+  region set or a lifted table hit the warning.
+
+* `liftover()` of an empty `genomic_regions` with a `NULL` target now returns
+  it with its build intact, where it previously came back with the build
+  stripped to `NULL`. A non-empty set already warned and kept its build.
+
+* `clear_chain_cache()` now drops the chains held in the session alongside
+  the chain RDS files on disk. Each chain is parsed once per session, so a
+  chain file replaced on disk out of band is read only once the cache has
+  been invalidated, which `clear_chain_cache()`, `set_chain_path()` and
+  `setup_chain_files()` each do.
+
 # filterRead 2.15.0
 
 * The `merge_contiguous` argument of `genomic_regions()`,

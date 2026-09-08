@@ -2,7 +2,7 @@
 % Please edit documentation in R/genomic_regions_ops.R
 \name{replace_sentinel_with_na}
 \alias{replace_sentinel_with_na}
-\title{Restore NA values from sentinel values after foverlaps}
+\title{Restore NA values from sentinel values after an overlap operation}
 \usage{
 replace_sentinel_with_na(
   genomic_regions,

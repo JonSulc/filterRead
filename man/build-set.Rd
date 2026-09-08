@@ -30,6 +30,18 @@ build(x) <- value
 Modified object
 }
 \description{
-Replacement function for setting the genome build attribute.
-Uses data.table::setattr for data.tables (modifies by reference).
+Records `value` in the object's `build` attribute as it stands, so
+`build(x) <- "hg19"` stores `"hg19"`. It dispatches on the class of `x`
+and falls back to a plain attribute assignment, which makes it the form
+to reach for when that class is open.
+}
+\details{
+A replacement call assigns its result back into `x` and so raises the
+table's reference count, at which point data.table copies it on the next
+modification by reference. Use [set_build()] on a data.table that a `:=`
+is about to reach.
+}
+\seealso{
+[set_build()], which normalizes the build name and records it on
+  a data.table by reference.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/genomic_regions_ops.R
 \name{replace_na_with_sentinel}
 \alias{replace_na_with_sentinel}
-\title{Replace NA values with sentinel values for foverlaps}
+\title{Replace NA values with sentinel values for overlap operations}
 \usage{
 replace_na_with_sentinel(
   genomic_regions,
@@ -22,10 +22,11 @@ replace_na_with_sentinel(
 (default: .Machine$integer.max - 1)}
 }
 \value{
-Copy with NAs replaced by sentinels, keyed for foverlaps
+Copy with NAs replaced by sentinels, keyed on `chr`, `start`
+  and `end`, the key `data.table::foverlaps` requires of its `y`.
 }
 \description{
-Converts NA to sentinel values that foverlaps can handle:
+Converts NA to the concrete bounds an overlap operation reads:
 - NA chr -> empty string
 - NA start -> 1 (from beginning)
 - NA end -> max integer - 1 (to end)

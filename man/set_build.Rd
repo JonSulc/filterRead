@@ -16,6 +16,16 @@ an error.}
 `x`, invisibly.
 }
 \description{
-Records the (normalized) genome build in the `build` attribute, modifying
-`x` in place. Use it to relabel a table without lifting coordinates.
+Normalizes `value` with [normalize_build()] and records it in the `build`
+attribute through [data.table::setattr()], so `set_build(x, "hg19")`
+stores `"b37"`. Use it to relabel a table without lifting coordinates.
+}
+\details{
+The call is a plain side-effecting setter, so it leaves `x`'s reference
+count where it found it and the table keeps its over-allocation. That
+makes it the form to reach for on the way to a `:=`, which reads both.
+}
+\seealso{
+[`build<-`()], the replacement form, which spans every class
+  carrying a build and stores the name it is given as it stands.
 }

@@ -1,4 +1,4 @@
-# Sentinel values for NA replacement during foverlaps operations
+# Sentinel values for NA replacement during overlap operations
 # These must stay in sync between replace_na_with_sentinel and
 # replace_sentinel_with_na.
 #
@@ -477,15 +477,18 @@ expand_na_chr <- function(
     as_genomic_regions(build = build(gregions1))
 }
 
-# Sentinel Value Handling for foverlaps
+# Sentinel Value Handling for Overlap Operations
 #
-# data.table::foverlaps cannot handle NA values in any columns.
-# NAs are replaced with sentinel values, which enable foverlaps and can then
-# be substituted back for NA after foverlaps-dependent operations.
+# An overlap operation over region sets — data.table::foverlaps under
+# `&`, the non-equi join under a lift — has no notion of an unconstrained
+# axis, and foverlaps rejects an NA in any column outright. NAs are
+# replaced with sentinel values, which state the unconstrained axis as a
+# concrete interval, and can be substituted back for NA once the overlap
+# is done.
 
-#' Replace NA values with sentinel values for foverlaps
+#' Replace NA values with sentinel values for overlap operations
 #'
-#' Converts NA to sentinel values that foverlaps can handle:
+#' Converts NA to the concrete bounds an overlap operation reads:
 #' - NA chr -> empty string
 #' - NA start -> 1 (from beginning)
 #' - NA end -> max integer - 1 (to end)
@@ -498,7 +501,8 @@ expand_na_chr <- function(
 #' @param end_sentinel Value to use for NA end
 #'   (default: .Machine$integer.max - 1)
 #'
-#' @return Copy with NAs replaced by sentinels, keyed for foverlaps
+#' @return Copy with NAs replaced by sentinels, keyed on `chr`, `start`
+#'   and `end`, the key `data.table::foverlaps` requires of its `y`.
 #' @keywords internal
 replace_na_with_sentinel <- function(
   genomic_regions,
@@ -519,7 +523,7 @@ replace_na_with_sentinel <- function(
     data.table::setkey("chr", "start", "end")
 }
 
-#' Restore NA values from sentinel values after foverlaps
+#' Restore NA values from sentinel values after an overlap operation
 #'
 #' Converts sentinel values back to NA after overlap operations.
 #'

@@ -220,13 +220,20 @@ as_variants.data.frame <- function(x, build = NULL, ...) {
 
 #' Set a data.table's genome build by reference
 #'
-#' Records the (normalized) genome build in the `build` attribute, modifying
-#' `x` in place. Use it to relabel a table without lifting coordinates.
+#' Normalizes `value` with [normalize_build()] and records it in the `build`
+#' attribute through [data.table::setattr()], so `set_build(x, "hg19")`
+#' stores `"b37"`. Use it to relabel a table without lifting coordinates.
+#'
+#' The call is a plain side-effecting setter, so it leaves `x`'s reference
+#' count where it found it and the table keeps its over-allocation. That
+#' makes it the form to reach for on the way to a `:=`, which reads both.
 #'
 #' @param x A data.table: a `variants`, a `genomic_regions`, or a plain one.
 #' @param value Build name or synonym (non-native tags pass through); NULL is
 #'   an error.
 #' @return `x`, invisibly.
+#' @seealso [`build<-`()], the replacement form, which spans every class
+#'   carrying a build and stores the name it is given as it stands.
 #' @export
 set_build <- function(x, value) {
   data.table::setattr(

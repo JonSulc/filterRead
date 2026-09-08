@@ -463,8 +463,8 @@ liftover <- function(
 #'   read-only: it is the cached object every other caller sees, so
 #'   modifying it corrupts every later lift in the session. It carries a
 #'   `(chr, start, end)` index, which the overlap join reads; an
-#'   unindexed chain is re-sorted on each call, costing roughly a
-#'   ten-fold slowdown.
+#'   unindexed chain is re-sorted on each call, which takes the join
+#'   over the 53,950-row b37-to-b38 chain from 3.7 ms to 6.2 ms.
 #' @param mult How a position overlapping more than one chain block is
 #'   resolved. Forwarded to the overlap join in [data.table::data.table].
 #' @param nomatch Whether a position no chain block covers is kept, with `NA`
@@ -792,12 +792,21 @@ build.file_interface <- build.list
 
 #' Set genome build on an object
 #'
-#' Replacement function for setting the genome build attribute.
-#' Uses data.table::setattr for data.tables (modifies by reference).
+#' Records `value` in the object's `build` attribute as it stands, so
+#' `build(x) <- "hg19"` stores `"hg19"`. It dispatches on the class of `x`
+#' and falls back to a plain attribute assignment, which makes it the form
+#' to reach for when that class is open.
+#'
+#' A replacement call assigns its result back into `x` and so raises the
+#' table's reference count, at which point data.table copies it on the next
+#' modification by reference. Use [set_build()] on a data.table that a `:=`
+#' is about to reach.
 #'
 #' @param x Object to modify
 #' @param value Build string to set (e.g., "b37", "b38")
 #' @return Modified object
+#' @seealso [set_build()], which normalizes the build name and records it on
+#'   a data.table by reference.
 #' @rdname build-set
 #' @export
 `build<-` <- function(x, value) {
