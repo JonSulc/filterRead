@@ -6,15 +6,12 @@
 \usage{
 replace_na_with_sentinel(
   genomic_regions,
-  chr_sentinel = CHR_SENTINEL,
   start_sentinel = START_SENTINEL,
   end_sentinel = END_SENTINEL
 )
 }
 \arguments{
 \item{genomic_regions}{data.table with potential NAs}
-
-\item{chr_sentinel}{Value to use for NA chromosomes (default: "")}
 
 \item{start_sentinel}{Value to use for NA start (default: 1)}
 
@@ -27,7 +24,6 @@ Copy with NAs replaced by sentinels, keyed on `chr`, `start`
 }
 \description{
 Converts NA to the concrete bounds an overlap operation reads:
-- NA chr -> empty string
 - NA start -> 1 (from beginning)
 - NA end -> max integer - 1 (to end)
 The default for end subtracts 1 from max integer to avoid overflows

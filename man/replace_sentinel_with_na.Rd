@@ -6,15 +6,12 @@
 \usage{
 replace_sentinel_with_na(
   genomic_regions,
-  chr_sentinel = CHR_SENTINEL,
   start_sentinel = START_SENTINEL,
   end_sentinel = END_SENTINEL
 )
 }
 \arguments{
 \item{genomic_regions}{data.table with sentinel values}
-
-\item{chr_sentinel}{Value used for NA chromosomes (default: "")}
 
 \item{start_sentinel}{Value used for NA start (default: 1)}
 

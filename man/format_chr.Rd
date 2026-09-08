@@ -16,6 +16,6 @@ Formatted chromosome names
 }
 \description{
 Ensures all chromosome names have the specified prefix (e.g., "chr").
-A missing or empty name is returned as NA.
+A missing name is returned as NA.
 }
 \keyword{internal}

@@ -31,11 +31,19 @@
   `(chr == 1 & ref == "A") | (chr == 2 & ref == "C")` reported the whole genome
   instead of chromosomes 1 and 2.
 
-* A blank chromosome name is now read as missing rather than prefixed into
-  `"chr"`, so a file whose chromosome field is empty on some rows loads those
-  rows with `chr = NA`. Because a missing chromosome means "any chromosome",
-  `genomic_regions()` now rejects a blank chromosome instead of silently
-  widening the regions to the whole genome.
+* A blank chromosome field is now read as the empty name rather than as a
+  missing chromosome. A file whose chromosome field is empty on some rows loads
+  those rows with `chr = ""`, and a region set carrying the empty name selects
+  exactly those rows, where a missing chromosome selects every chromosome.
+  `genomic_regions()` accepts the empty name, which previously widened its
+  regions to the whole genome.
+
+* A blank chromosome field no longer disturbs the chromosome names beside it.
+  Prefix detection reads only the values that can carry a prefix, so one blank
+  field no longer marks a prefixed column unprefixed and prefixes every name in
+  it a second time: a file whose chromosome column held `chr1`, a blank field
+  and `chr2` read back as `chrchr1`, `chr` and `chrchr2`. A blank chromosome
+  field is left blank rather than rewritten to `"chr"`.
 
 * Tables returned by `genomic_regions()` and `liftover()` now keep
   data.table's over-allocation, so a `:=` on one no longer warns `Invalid

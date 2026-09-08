@@ -15,8 +15,7 @@ genomic_regions(
 )
 }
 \arguments{
-\item{chr}{Character vector of chromosome names (NA = any chromosome).
-An empty name is rejected.}
+\item{chr}{Character vector of chromosome names (NA = any chromosome).}
 
 \item{start}{Integer vector of start positions (NA = from beginning).}
 
