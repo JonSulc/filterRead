@@ -665,7 +665,7 @@ liftover.data.table <- function(
   # under multi_match = "all"; chain-gap positions come back with NA
   # coordinates. `.ord`/`.sub` restore input order with fan-out rows grouped
   # after their source row.
-  result <- data.table::copy(x_work[lifted$I])
+  result <- x_work[lifted$I]
   result[, chr := lifted$chr]
   for (col in coord_cols$output) {
     lifted_col <- if (col == coord_cols$end) "end" else "start"
@@ -678,7 +678,9 @@ liftover.data.table <- function(
 
   # Rows with NA input coordinates were excluded from `positions`; re-add them
   # with NA coordinates so every input row is represented.
-  missing <- setdiff(seq_len(nrow(x_work)), positions$I)
+  unmatched <- rep(TRUE, nrow(x_work))
+  unmatched[positions$I] <- FALSE
+  missing <- which(unmatched)
   if (length(missing) > 0L) {
     na_rows <- data.table::copy(x_work[missing])
     na_rows[, chr := NA_character_]
