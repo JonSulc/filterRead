@@ -10,13 +10,13 @@ detect_coordinate_columns(x)
 \item{x}{A data.table.}
 }
 \value{
-List with `start`, `end` (column names in `x` to feed into
-  foverlaps as the source interval) and `output` (column names in
-  `x` to overwrite with lifted coordinates).
+List with `start`, `end` (column names in `x` bounding the
+  source interval to overlap with the chain) and `output` (column
+  names in `x` to overwrite with lifted coordinates).
 }
 \description{
 Resolves the input column to use for `start` and `end` of the
-foverlaps interval, plus the names of the columns whose values
+source interval, plus the names of the columns whose values
 should be overwritten with the lifted coordinates. Errors if `pos`
 is mixed with `start`/`end` or none of the three is present.
 }

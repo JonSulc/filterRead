@@ -454,9 +454,17 @@ liftover <- function(
 #'
 #' @param positions_dt A data.table with at least `chr`, `start`,
 #'   `end` columns in the source build's coordinate system; extra
-#'   columns are carried through.
-#' @param chain_dt Chain data.table from [get_chain_dt()] for the
-#'   desired source-to-target build pair.
+#'   columns are carried through. None of `chr`, `start`, `end` may
+#'   hold `NA`: the join accepts such rows and returns them with `NA`
+#'   coordinates (or drops them, under `nomatch = 0L`) rather than
+#'   signalling.
+#' @param chain_dt The session's shared chain for the desired
+#'   source-to-target build pair, from [get_shared_chain_dt()]. Held
+#'   read-only: it is the cached object every other caller sees, so
+#'   modifying it corrupts every later lift in the session. It carries a
+#'   `(chr, start, end)` index, which the overlap join reads; an
+#'   unindexed chain is re-sorted on each call, costing roughly a
+#'   ten-fold slowdown.
 #' @param mult How a position overlapping more than one chain block is
 #'   resolved. Forwarded to the overlap join in [data.table::data.table].
 #' @param nomatch Whether a position no chain block covers is kept, with `NA`
@@ -707,14 +715,14 @@ liftover.data.table <- function(
 #' Determine which coordinate columns a data.table carries
 #'
 #' Resolves the input column to use for `start` and `end` of the
-#' foverlaps interval, plus the names of the columns whose values
+#' source interval, plus the names of the columns whose values
 #' should be overwritten with the lifted coordinates. Errors if `pos`
 #' is mixed with `start`/`end` or none of the three is present.
 #'
 #' @param x A data.table.
-#' @return List with `start`, `end` (column names in `x` to feed into
-#'   foverlaps as the source interval) and `output` (column names in
-#'   `x` to overwrite with lifted coordinates).
+#' @return List with `start`, `end` (column names in `x` bounding the
+#'   source interval to overlap with the chain) and `output` (column
+#'   names in `x` to overwrite with lifted coordinates).
 #' @keywords internal
 detect_coordinate_columns <- function(x) {
   has_pos   <- "pos"   %in% names(x)

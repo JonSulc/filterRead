@@ -121,7 +121,8 @@ liftover.genomic_regions <- function(
   ][]
 
   lift_chain_overlap(
-    # foverlaps doesn't handle NAs
+    # NA on an axis is unconstrained, which the overlap join has no notion
+    # of; the sentinels state it as a concrete interval.
     replace_na_with_sentinel(expanded_x),
     chain_dt
   ) |>

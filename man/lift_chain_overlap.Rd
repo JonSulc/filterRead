@@ -15,10 +15,18 @@ lift_chain_overlap(
 \arguments{
 \item{positions_dt}{A data.table with at least `chr`, `start`,
 `end` columns in the source build's coordinate system; extra
-columns are carried through.}
+columns are carried through. None of `chr`, `start`, `end` may
+hold `NA`: the join accepts such rows and returns them with `NA`
+coordinates (or drops them, under `nomatch = 0L`) rather than
+signalling.}
 
-\item{chain_dt}{Chain data.table from [get_chain_dt()] for the
-desired source-to-target build pair.}
+\item{chain_dt}{The session's shared chain for the desired
+source-to-target build pair, from [get_shared_chain_dt()]. Held
+read-only: it is the cached object every other caller sees, so
+modifying it corrupts every later lift in the session. It carries a
+`(chr, start, end)` index, which the overlap join reads; an
+unindexed chain is re-sorted on each call, costing roughly a
+ten-fold slowdown.}
 
 \item{mult}{How a position overlapping more than one chain block is
 resolved. Forwarded to the overlap join in [data.table::data.table].}

@@ -13,7 +13,8 @@
 reverse_complement <- function(alleles) {
   complemented <- chartr("ACGT", "TGCA", toupper(alleles))
   # Reversal is a no-op on single bases, so only multi-base values are split.
-  # nchar(NA_character_) is 2L, hence the explicit NA guard.
+  # nchar(NA_character_) is NA, so without the explicit NA guard the mask
+  # carries NA and the subscripted assignment below errors.
   multi_base <- !is.na(complemented) & 1L < nchar(complemented)
   complemented[multi_base] <- complemented[multi_base] |>
     strsplit("", fixed = TRUE) |>

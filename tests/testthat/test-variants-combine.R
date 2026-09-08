@@ -27,7 +27,9 @@ test_that("rbind.variants is the pairwise convenience", {
 
 test_that("rbindlist_variants lifts inputs to the first input's build", {
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) make_fwd_chain(1L, 10000L, 50L, from, to)
+    get_shared_chain_dt = function(from, to) {
+      make_fwd_chain(1L, 10000L, 50L, from, to)
+    }
   )
   out <- rbindlist_variants(list(
     mk("chr1", 1000L, "A", "G", "b37"),
@@ -41,7 +43,9 @@ test_that("rbindlist_variants lifts inputs to the first input's build", {
 
 test_that("target overrides the first input's build", {
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) make_fwd_chain(1L, 10000L, 50L, from, to)
+    get_shared_chain_dt = function(from, to) {
+      make_fwd_chain(1L, 10000L, 50L, from, to)
+    }
   )
   out <- rbindlist_variants(
     list(mk("chr1", 1000L, "A", "G", "b37")),

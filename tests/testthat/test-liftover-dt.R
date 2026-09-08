@@ -205,7 +205,9 @@ test_that("liftover.data.table reverse-complements alleles across a minus-strand
   data.table::setkey(rev_chain, chr, start, end)
   data.table::setattr(rev_chain, "from", "b37")
   data.table::setattr(rev_chain, "to", "b38")
-  testthat::local_mocked_bindings(get_shared_chain_dt = function(from, to) rev_chain)
+  testthat::local_mocked_bindings(
+    get_shared_chain_dt = function(from, to) rev_chain
+  )
 
   dt <- data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C")
   build(dt) <- "b37"
@@ -285,7 +287,9 @@ test_that("drop_unlifted = FALSE preserves NA-input rows, not just chain-gap row
     data.table::setattr(ch, "to", "b38")
     ch
   }
-  testthat::local_mocked_bindings(get_shared_chain_dt = function(from, to) fwd_chain())
+  testthat::local_mocked_bindings(
+    get_shared_chain_dt = function(from, to) fwd_chain()
+  )
 
   dt <- data.table::data.table(
     chr = c("chr1", "chr1", "chr1"),
@@ -337,7 +341,9 @@ test_that("use_cache = FALSE bypasses the round-trip cache and re-lifts", {
     data.table::setattr(ch, "to", "b37")
     ch
   }
-  testthat::local_mocked_bindings(get_shared_chain_dt = function(from, to) fwd_chain())
+  testthat::local_mocked_bindings(
+    get_shared_chain_dt = function(from, to) fwd_chain()
+  )
 
   # Bogus recorded b37 columns: the cache would return them verbatim.
   dt <- data.table::data.table(
