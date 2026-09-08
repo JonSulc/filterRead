@@ -263,13 +263,15 @@ test_that("multi_match = 'all' duplicates a variant that maps to two chain block
   dt <- data.table::data.table(chr = "chr1", pos = 150L, id = "x")
   build(dt) <- "b37"
 
+  # The blocks are ordered (100, 200) then (120, 180), so "first" resolves
+  # through offset 50 and "last" through offset 30.
   all_matches <- liftover(dt, "b38", multi_match = "all")
-  expect_equal(nrow(all_matches), 2L)              # one row per overlapping block
-  expect_setequal(all_matches$pos, c(100L, 120L))  # 150 - 50 and 150 - 30
-  expect_equal(all_matches$id, c("x", "x"))        # both are the same input variant
+  expect_equal(nrow(all_matches), 2L)          # one row per overlapping block
+  expect_equal(all_matches$pos, c(100L, 120L)) # 150 - 50 and 150 - 30
+  expect_equal(all_matches$id, c("x", "x"))    # both are the same input variant
 
-  first_match <- liftover(dt, "b38", multi_match = "first")
-  expect_equal(nrow(first_match), 1L)
+  expect_equal(liftover(dt, "b38", multi_match = "first")$pos, 100L)
+  expect_equal(liftover(dt, "b38", multi_match = "last")$pos, 120L)
 })
 
 test_that("drop_unlifted = FALSE preserves NA-input rows, not just chain-gap rows", {
@@ -320,7 +322,7 @@ test_that("drop_unlifted = FALSE fans out multi-mappings and keeps unmapped rows
 
   lifted <- liftover(dt, "b38", drop_unlifted = FALSE, multi_match = "all")
   expect_equal(lifted$id, c("x", "x", "y"))         # x fanned out, y kept
-  expect_setequal(lifted[id == "x", pos], c(100L, 120L))
+  expect_equal(lifted[id == "x", pos], c(100L, 120L))
   expect_true(is.na(lifted[id == "y", pos]))        # chain gap kept as NA
 })
 
@@ -394,9 +396,34 @@ test_that("liftover returns a table that keeps its over-allocation", {
   dt <- data.table::data.table(chr = "chr1", pos = c(100L, 20000L))
   build(dt) <- "b37"
 
-  expect_true(data.table::truelength(liftover(dt, "b38")) != 0L)
   expect_true(
     data.table::truelength(liftover(dt, "b38", drop_unlifted = FALSE)) != 0L
   )
-  expect_true(data.table::truelength(liftover(dt, "b37")) != 0L)
+
+  # No coordinate survives the NA filter, so the lift returns before the
+  # chain join.
+  unliftable <- data.table::data.table(chr = "chr1", pos = NA_integer_)
+  build(unliftable) <- "b37"
+  expect_true(
+    data.table::truelength(
+      liftover(unliftable, "b38", drop_unlifted = FALSE)
+    ) != 0L
+  )
+})
+
+test_that("liftover leaves the caller's table alone", {
+  testthat::local_mocked_bindings(
+    get_shared_chain_dt = function(from, to) {
+      make_fwd_chain(1L, 10000L, 50L, from, to)
+    }
+  )
+  dt <- data.table::data.table(chr = "chr1", pos = 100L, id = "x")
+  build(dt) <- "b37"
+
+  lifted <- liftover(dt, "b38", retain_builds = TRUE)
+
+  expect_equal(build(dt), "b37")
+  expect_equal(names(dt), c("chr", "pos", "id"))
+  expect_equal(dt$pos, 100L)
+  expect_equal(lifted$pos, 50L)
 })

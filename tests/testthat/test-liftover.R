@@ -531,6 +531,41 @@ test_that("get_chain_dt hands out a copy, so callers cannot edit the cache", {
   expect_equal(get_shared_chain_dt("b37", "b38")$offset, 5L)
 })
 
+test_that("lifting leaves the shared chain untouched", {
+  testthat::local_mocked_bindings(
+    load_chain_dt = function(from, to, auto_download = TRUE) {
+      make_fwd_chain(100L, 10000L, 50L, from, to)
+    }
+  )
+  invalidate_chain_cache()
+  withr::defer(invalidate_chain_cache())
+
+  fingerprint <- function(chain_dt) {
+    internal <- c(".internal.selfref", "index", "row.names")
+    list(
+      nrow       = nrow(chain_dt),
+      names      = names(chain_dt),
+      key        = data.table::key(chain_dt),
+      indices    = data.table::indices(chain_dt),
+      attributes = attributes(chain_dt)[
+        setdiff(names(attributes(chain_dt)), internal)
+      ],
+      columns    = data.table::copy(as.list(chain_dt))
+    )
+  }
+  before <- fingerprint(get_shared_chain_dt("b37", "b38"))
+
+  dt <- data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C")
+  build(dt) <- "b37"
+  liftover(dt, "b38")
+  liftover(
+    genomic_regions(chr = "1", start = 200L, end = 300L, build = "b37"),
+    "b38"
+  )
+
+  expect_equal(fingerprint(get_shared_chain_dt("b37", "b38")), before)
+})
+
 test_that("a chain written to RDS carries the overlap join's index", {
   tmp <- local_chain_path()
   chain_file <- file.path(tmp, "hg19ToHg38.over.chain")
@@ -580,6 +615,29 @@ test_that("clear_chain_cache drops the cached chains", {
 
   get_shared_chain_dt("b37", "b38")
   expect_message(clear_chain_cache(tmp), "No cached chain files")
+  get_shared_chain_dt("b37", "b38")
+
+  expect_equal(loads, 2L)
+})
+
+test_that("setup_chain_files drops the cached chains", {
+  loads <- 0L
+  testthat::local_mocked_bindings(
+    load_chain_dt = function(from, to, auto_download = TRUE) {
+      loads <<- loads + 1L
+      make_fwd_chain(1L, 100L, 5L, from, to)
+    }
+  )
+  tmp <- local_chain_path()
+  # An already-present chain file makes setup_chain_files skip the download.
+  file.create(file.path(tmp, get_chain_filename("b37", "b38")))
+  invalidate_chain_cache()
+
+  get_shared_chain_dt("b37", "b38")
+  expect_message(
+    setup_chain_files(builds = "b37_to_b38", path = tmp),
+    "Chain file exists"
+  )
   get_shared_chain_dt("b37", "b38")
 
   expect_equal(loads, 2L)

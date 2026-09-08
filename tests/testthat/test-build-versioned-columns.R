@@ -123,6 +123,7 @@ test_that("liftover reuses cached target-build columns verbatim", {
   expect_equal(back$chr, "chrXX")
   expect_equal(back$pos, 999999L)
   expect_equal(build(back), "b37")
+  expect_true(data.table::truelength(back) != 0L)
 })
 
 test_that("cache hit avoids the chain lookup entirely", {
@@ -155,6 +156,7 @@ test_that("liftover same-build no-op honors retain_builds", {
   expect_equal(result$pos, 100L)
   expect_equal(result$chr_b37, "chr1")
   expect_equal(result$pos_b37, 100L)
+  expect_true(data.table::truelength(result) != 0L)
 })
 
 test_that("record_build adds its columns in place on an over-allocated table", {
