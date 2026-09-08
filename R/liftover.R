@@ -452,13 +452,16 @@ liftover <- function(
 #' directly by users. Columns beyond `chr`/`start`/`end` in
 #' `positions_dt` are carried through unchanged.
 #'
-#' @param positions_dt A keyed data.table with at least `chr`, `start`,
+#' @param positions_dt A data.table with at least `chr`, `start`,
 #'   `end` columns in the source build's coordinate system; extra
 #'   columns are carried through.
 #' @param chain_dt Chain data.table from [get_chain_dt()] for the
-#'   desired source-to-target build pair, keyed on `(chr, start, end)`.
-#' @param mult Forwarded to [data.table::foverlaps].
-#' @param nomatch Forwarded to [data.table::foverlaps].
+#'   desired source-to-target build pair.
+#' @param mult How a position overlapping more than one chain block is
+#'   resolved. Forwarded to the overlap join in [data.table::data.table].
+#' @param nomatch Whether a position no chain block covers is kept, with `NA`
+#'   coordinates, or dropped. Forwarded to the overlap join in
+#'   [data.table::data.table].
 #' @param allele_cols Character vector of `positions_dt` column names to
 #'   reverse-complement on reverse-strand (`rev = TRUE`) blocks. Default
 #'   `character()` (no reverse-complement).
@@ -474,31 +477,29 @@ lift_chain_overlap <- function(
   allele_cols = character()
 ) {
   extra_cols <- setdiff(names(positions_dt), c("chr", "start", "end"))
-  lifted <- data.table::foverlaps(
+  lifted <- chain_dt[
     positions_dt,
-    chain_dt,
-    mult = mult,
-    nomatch = nomatch
-  )[
-    ,
     c(
       list(
         chr = new_chr,
         start = data.table::fifelse(
           rev,
-          end - offset - (pmin(end, i.end) - start),
-          pmax(start, i.start) - offset
+          x.end - offset - (pmin(x.end, i.end) - x.start),
+          pmax(x.start, i.start) - offset
         ),
         end = data.table::fifelse(
           rev,
-          end - offset - (pmax(start, i.start) - start),
-          pmin(end, i.end) - offset
+          x.end - offset - (pmax(x.start, i.start) - x.start),
+          pmin(x.end, i.end) - offset
         ),
         .lift_rev = rev
       ),
-      .SD
+      carried
     ),
-    .SDcols = extra_cols
+    on = .(chr, start <= end, end >= start),
+    mult = mult,
+    nomatch = nomatch,
+    env = list(carried = as.list(extra_cols) |> setNames(extra_cols))
   ]
   # On reverse-strand blocks the lifted region is the reverse complement of
   # the source, so allele columns are complemented there. The chain's `rev`
@@ -542,8 +543,8 @@ lift_chain_overlap <- function(
 #' @param multi_match How to resolve source positions that overlap more
 #'   than one chain block: `"first"` (default) keeps the first match
 #'   per source row, `"last"` keeps the last, and `"all"` emits one
-#'   row per match. Forwarded to [data.table::foverlaps]'s `mult`
-#'   argument.
+#'   row per match. Forwarded to the overlap join in
+#'   [data.table::data.table] as its `mult` argument.
 #' @param retain_builds If TRUE, call [record_build()]
 #'   for both `from` and `target` so the result carries
 #'   `chr_<from>`/`pos_<from>` (source-build snapshot) and
@@ -632,7 +633,6 @@ liftover.data.table <- function(
   positions <- positions[
     !is.na(chr) & !is.na(start) & !is.na(end)
   ]
-  data.table::setkey(positions, chr, start, end)
 
   if (nrow(positions) == 0) {
     if (drop_unlifted) {

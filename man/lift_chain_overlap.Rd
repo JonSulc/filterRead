@@ -13,16 +13,19 @@ lift_chain_overlap(
 )
 }
 \arguments{
-\item{positions_dt}{A keyed data.table with at least `chr`, `start`,
+\item{positions_dt}{A data.table with at least `chr`, `start`,
 `end` columns in the source build's coordinate system; extra
 columns are carried through.}
 
 \item{chain_dt}{Chain data.table from [get_chain_dt()] for the
-desired source-to-target build pair, keyed on `(chr, start, end)`.}
+desired source-to-target build pair.}
 
-\item{mult}{Forwarded to [data.table::foverlaps].}
+\item{mult}{How a position overlapping more than one chain block is
+resolved. Forwarded to the overlap join in [data.table::data.table].}
 
-\item{nomatch}{Forwarded to [data.table::foverlaps].}
+\item{nomatch}{Whether a position no chain block covers is kept, with `NA`
+coordinates, or dropped. Forwarded to the overlap join in
+[data.table::data.table].}
 
 \item{allele_cols}{Character vector of `positions_dt` column names to
 reverse-complement on reverse-strand (`rev = TRUE`) blocks. Default

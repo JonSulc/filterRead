@@ -34,8 +34,8 @@ rows appear with `NA` for `chr` and the coordinate columns.}
 \item{multi_match}{How to resolve source positions that overlap more
 than one chain block: `"first"` (default) keeps the first match
 per source row, `"last"` keeps the last, and `"all"` emits one
-row per match. Forwarded to [data.table::foverlaps]'s `mult`
-argument.}
+row per match. Forwarded to the overlap join in
+[data.table::data.table] as its `mult` argument.}
 
 \item{retain_builds}{If TRUE, call [record_build()]
 for both `from` and `target` so the result carries
