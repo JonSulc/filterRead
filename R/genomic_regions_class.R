@@ -23,7 +23,6 @@
 #' existing `data.table` of `chr`/`start`/`end`, use [as_genomic_regions()].
 #'
 #' @param chr Character vector of chromosome names (NA = any chromosome).
-#'   An empty name is rejected.
 #' @param start Integer vector of start positions (NA = from beginning).
 #' @param end Integer vector of end positions (NA = to end).
 #' @param build Reference build the coordinates are expressed in ("b36",
@@ -122,13 +121,6 @@ new_genomic_regions <- function(
     if (length(end) == 0) end <- NA_integer_
   }
 
-  if (any(chr %in% "")) {
-    stop(
-      "Blank chromosome name. `chr` must name a chromosome, ",
-      "or be NA to match any chromosome."
-    )
-  }
-
   end_before_start <- end < start
   any_end_before_start <- end_before_start |>
     na.omit() |>
@@ -211,7 +203,7 @@ is_genomic_regions <- function(
 #' Format chromosome names with prefix
 #'
 #' Ensures all chromosome names have the specified prefix (e.g., "chr").
-#' A missing or empty name is returned as NA.
+#' A missing name is returned as NA.
 #'
 #' @param chr Character vector of chromosome names
 #' @param prefix Prefix to add (default: "chr")
@@ -224,11 +216,10 @@ format_chr <- function(
   chr <- as.character(chr)
   distinct_chr <- unique(chr)
   formatted <- data.table::fifelse(
-    grepl(paste0("^", prefix), distinct_chr),
+    distinct_chr == "" | grepl(paste0("^", prefix), distinct_chr),
     distinct_chr,
     paste0(prefix, distinct_chr)
   )
-  formatted[is.na(distinct_chr) | distinct_chr == ""] <- NA_character_
   formatted[data.table::chmatch(chr, distinct_chr)]
 }
 

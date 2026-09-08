@@ -456,14 +456,14 @@ test_that("constructor errors on incompatible lengths", {
   )
 })
 
-test_that("constructor rejects a blank chromosome", {
-  expect_error(
-    new_genomic_regions(chr = ""),
-    "Blank chromosome name"
+test_that("constructor keeps a blank chromosome name", {
+  expect_equal(
+    new_genomic_regions(chr = "")$chr,
+    ""
   )
-  expect_error(
-    new_genomic_regions(chr = c("1", "")),
-    "Blank chromosome name"
+  expect_equal(
+    new_genomic_regions(chr = c("1", ""))$chr,
+    c("", "chr1")
   )
 })
 

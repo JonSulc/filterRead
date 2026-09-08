@@ -153,10 +153,10 @@ test_that("format_chr treats the prefix as a regular expression", {
   )
 })
 
-test_that("format_chr treats an empty chromosome as missing", {
+test_that("format_chr does not prefix a blank chromosome name", {
   expect_equal(
     format_chr(c("1", "", "2"), prefix = "chr"),
-    c("chr1", NA, "chr2")
+    c("chr1", "", "chr2")
   )
 })
 
