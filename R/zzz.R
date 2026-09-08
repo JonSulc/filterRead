@@ -9,6 +9,7 @@ utils::globalVariables(c(
   "alt",
   "bash_index",
   "build_match",
+  "carried",
   "chr",
   "chr_is_na",
   "class",
@@ -50,5 +51,7 @@ utils::globalVariables(c(
   "standard_name",
   "start",
   "variant_id",
-  "width"
+  "width",
+  "x.end",
+  "x.start"
 ))
