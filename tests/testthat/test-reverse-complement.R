@@ -19,3 +19,14 @@ test_that("reverse_complement upper-cases and preserves NA and unknown bases", {
   expect_equal(reverse_complement("N"), "N")
   expect_equal(reverse_complement("-"), "-")
 })
+
+test_that("reverse_complement maps a vector of mixed-width alleles", {
+  expect_equal(
+    reverse_complement(c("A", "at", NA, "GATTACA", "N", "")),
+    c("T", "AT", NA, "TGTAATC", "N", "")
+  )
+})
+
+test_that("reverse_complement returns an empty vector for empty input", {
+  expect_equal(reverse_complement(character(0)), character(0))
+})

@@ -11,12 +11,12 @@
 #' @return Character vector of reverse-complemented alleles.
 #' @keywords internal
 reverse_complement <- function(alleles) {
-  rc_one <- function(allele) {
-    if (is.na(allele)) {
-      return(NA_character_)
-    }
-    bases <- strsplit(toupper(allele), "", fixed = TRUE)[[1]]
-    paste(chartr("ACGT", "TGCA", rev(bases)), collapse = "")
-  }
-  vapply(alleles, rc_one, character(1), USE.NAMES = FALSE)
+  complemented <- chartr("ACGT", "TGCA", toupper(alleles))
+  # Reversal is a no-op on single bases, so only multi-base values are split.
+  # nchar(NA_character_) is 2L, hence the explicit NA guard.
+  multi_base <- !is.na(complemented) & 1L < nchar(complemented)
+  complemented[multi_base] <- complemented[multi_base] |>
+    strsplit("", fixed = TRUE) |>
+    vapply(\(bases) paste(rev(bases), collapse = ""), character(1))
+  complemented
 }
