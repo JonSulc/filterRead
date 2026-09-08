@@ -492,6 +492,7 @@ test_that("a chain is parsed once per session", {
     }
   )
   invalidate_chain_cache()
+  withr::defer(invalidate_chain_cache())
 
   first <- get_shared_chain_dt("b37", "b38")
   second <- get_shared_chain_dt("b37", "b38")
@@ -507,6 +508,7 @@ test_that("the cached chain carries the index the overlap join reads", {
     }
   )
   invalidate_chain_cache()
+  withr::defer(invalidate_chain_cache())
 
   expect_equal(
     data.table::indices(get_shared_chain_dt("b37", "b38")),
@@ -521,6 +523,7 @@ test_that("get_chain_dt hands out a copy, so callers cannot edit the cache", {
     }
   )
   invalidate_chain_cache()
+  withr::defer(invalidate_chain_cache())
 
   handed_out <- get_chain_dt("b37", "b38")
   handed_out[, offset := 999L]
