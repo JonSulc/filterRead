@@ -166,3 +166,33 @@ test_that("format_chr coerces non-character input", {
   expect_equal(format_chr(factor(c("1", "2")), prefix = "chr"),
                c("chr1", "chr2"))
 })
+
+test_that("a blank chromosome field leaves the other names unchanged", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr  = c("chr1", "", "chr2"),
+      pos  = c(1000L, 1500L, 2000L),
+      ref  = c("A", "C", "G"),
+      alt  = c("G", "T", "A"),
+      pval = c(0.1, 0.2, 0.3)
+    ),
+    quote = FALSE,
+    build = "b38"
+  )
+  expect_equal(fi[]$chr, c("chr1", "", "chr2"))
+})
+
+test_that("a blank chromosome field stays blank when its column is prefixed", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr  = c("1", "", "2"),
+      pos  = c(1000L, 1500L, 2000L),
+      ref  = c("A", "C", "G"),
+      alt  = c("G", "T", "A"),
+      pval = c(0.1, 0.2, 0.3)
+    ),
+    quote = FALSE,
+    build = "b38"
+  )
+  expect_equal(fi[]$chr, c("chr1", "", "chr2"))
+})

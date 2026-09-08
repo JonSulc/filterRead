@@ -313,8 +313,12 @@ check_single_column_prefix <- function(
   prefixes,
   column_data
 ) {
+  prefixable_values <- column_data[!is.na(column_data) & column_data != ""]
+  if (length(prefixable_values) == 0L) {
+    return()
+  }
   prefixes <- sapply(prefixes, \(prefix) {
-    grepl(paste0("^", prefix), column_data) |>
+    grepl(paste0("^", prefix), prefixable_values) |>
       all()
   })
   if (sum(prefixes) == 0) {

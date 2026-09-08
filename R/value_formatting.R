@@ -77,7 +77,7 @@ check_prefix <- function(
     return(values)
   }
   data.table::fifelse(
-    grepl(paste0("^", prefix), values),
+    values == "" | grepl(paste0("^", prefix), values),
     as.character(values),
     paste0(prefix, values)
   )

@@ -24,3 +24,10 @@ test_that("check_post_processing normalizes chr prefix to the file's form", {
     c("1", "1")
   )
 })
+
+test_that("check_prefix does not prefix a blank or missing value", {
+  expect_equal(
+    check_prefix(c("1", "", NA, "chr2"), "chr"),
+    c("chr1", "", NA, "chr2")
+  )
+})

@@ -127,3 +127,47 @@ test_that("as_genomic_regions() reports each missing coordinate column", {
     "missing: chr, start, end"
   )
 })
+
+test_that("a blank chromosome name selects rows whose chromosome is blank", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr  = c("chr1", "", "chr2"),
+      pos  = c(100L, 200L, 300L),
+      ref  = c("A", "C", "G"),
+      alt  = c("G", "T", "A"),
+      pval = c(0.1, 0.2, 0.3)
+    ),
+    quote = FALSE,
+    build = "b38"
+  )
+  blank_only <- genomic_regions(chr = "", start = 150L, end = 350L,
+                                build = "b38")
+  expect_equal(fi[blank_only]$pos, 200L)
+
+  with_named <- genomic_regions(chr = c("", "1"), start = 1L, end = 350L,
+                                build = "b38")
+  result <- fi[with_named]
+  expect_equal(result$chr, c("chr1", ""))
+  expect_equal(result$pos, c(100L, 200L))
+
+  every_chr <- genomic_regions(chr = NA_character_, start = 1L, end = 350L,
+                               build = "b38")
+  expect_equal(nrow(fi[every_chr]), 3L)
+})
+
+test_that("chr %in% a vector holding a blank chromosome name reads", {
+  fi <- local_file_interface(
+    dt = data.table::data.table(
+      chr  = c("chr1", "", "chr2"),
+      pos  = c(100L, 200L, 300L),
+      ref  = c("A", "C", "G"),
+      alt  = c("G", "T", "A"),
+      pval = c(0.1, 0.2, 0.3)
+    ),
+    quote = FALSE,
+    build = "b38"
+  )
+  chromosomes <- c("1", "")
+  result <- fi[chr %in% chromosomes]
+  expect_equal(result$chr, c("chr1", ""))
+})

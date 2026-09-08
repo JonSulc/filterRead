@@ -698,7 +698,10 @@ get_awk_column_arrays <- function(
 
   prefix_code <- column_info[
     !is.na(add_prefix),
-    sprintf('%s = "%s"%s', bash_index, add_prefix, bash_index)
+    sprintf(
+      'if (%s != "") %s = "%s"%s',
+      bash_index, bash_index, add_prefix, bash_index
+    )
   ]
 
   if (!has_encoded) {
