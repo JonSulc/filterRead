@@ -417,8 +417,8 @@ rbind.genomic_regions <- function(
     }
   }
 
-  # foverlaps does not handle NAs
   data.table::foverlaps(
+    # foverlaps rejects an NA start or end
     replace_na_with_sentinel(e1_safe),
     replace_na_with_sentinel(e2_safe),
     nomatch = 0
@@ -481,10 +481,10 @@ expand_na_chr <- function(
 #
 # An overlap operation over region sets — data.table::foverlaps under
 # `&`, the non-equi join under a lift — has no notion of an unconstrained
-# axis, and foverlaps rejects an NA in any column outright. NAs are
-# replaced with sentinel values, which state the unconstrained axis as a
-# concrete interval, and can be substituted back for NA once the overlap
-# is done.
+# axis, and foverlaps rejects an NA in an interval column outright. An NA
+# start or end is replaced with a sentinel value, which states the
+# unconstrained axis as a concrete interval, and can be substituted back
+# for NA once the overlap is done.
 
 #' Replace NA values with sentinel values for overlap operations
 #'
