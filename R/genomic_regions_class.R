@@ -5,7 +5,7 @@
 #
 # - Represents regions as data.table with chr, start, end columns
 # - Supports set operations: union (|/+), intersection (&)
-# - Handles full-genome queries (NA values mean "any")
+# - Handles full-genome queries (an NA chr or end means "any")
 # - Liftover between genome builds (e.g., b37 -> b38)
 # - Reduces regions to a canonical form on construction
 #
@@ -23,7 +23,7 @@
 #' existing `data.table` of `chr`/`start`/`end`, use [as_genomic_regions()].
 #'
 #' @param chr Character vector of chromosome names (NA = any chromosome).
-#' @param start Integer vector of start positions (NA = from beginning).
+#' @param start Integer vector of start positions.
 #' @param end Integer vector of end positions (NA = to end).
 #' @param build Reference build the coordinates are expressed in ("b36",
 #'   "b37", "b38", or a synonym). Optional at construction, but positional
@@ -80,11 +80,11 @@ genomic_regions <- function(
 #'
 #' @return A `genomic_regions` object.
 #' @section NA semantics:
-#' Each row's `chr`, `start`, and `end` may be NA, meaning "unconstrained on
-#' this axis":
+#' A row's `chr` and `end` may be NA, meaning "unconstrained on this axis":
 #' - `chr = NA` matches every chromosome.
-#' - `start = NA` extends to the beginning of the chromosome.
 #' - `end = NA` extends to the end of the chromosome.
+#'
+#' A start is always a position.
 #'
 #' Set operations propagate this:
 #' - Intersection (`&`) of two regions where exactly one has `chr = NA`
@@ -117,16 +117,8 @@ new_genomic_regions <- function(
   }
   if (any(argument_lengths == 0) && nrows != 0) {
     if (length(chr) == 0) chr <- NA_character_
-    if (length(start) == 0) start <- NA_integer_
+    if (length(start) == 0) start <- 1L
     if (length(end) == 0) end <- NA_integer_
-  }
-
-  end_before_start <- end < start
-  any_end_before_start <- end_before_start |>
-    na.omit() |>
-    any()
-  if (any_end_before_start) {
-    stop("start must be less than end.")
   }
 
   data.table::data.table(
@@ -141,23 +133,60 @@ new_genomic_regions <- function(
     )
 }
 
-#' Validate a genomic_regions data.table
+#' Validate a genomic_regions
 #'
-#' Checks that the object is a data.table.
+#' Checks the invariants every genomic_regions holds: the `chr`, `start` and
+#' `end` columns, each of its own type; a start on every row that is a
+#' position; and an end either unconstrained or at or after its start.
 #'
-#' @param genomic_regions_dt Object to validate
+#' @param gregions Object to validate
 #' @return The input invisibly; stops with error if invalid
 #' @keywords internal
-validate_genomic_regions_dt <- function(
-  genomic_regions_dt
+validate_genomic_regions <- function(
+  gregions
 ) {
-  if (!data.table::is.data.table(genomic_regions_dt)) {
+  if (!data.table::is.data.table(gregions)) {
     stop(
       "Object does not inherit the data.table class.\n",
-      "Actual class: ", class(genomic_regions_dt)
+      "Actual class: ", class(gregions)
     )
   }
-  invisible(genomic_regions_dt)
+  missing_cols <- setdiff(c("chr", "start", "end"), names(gregions))
+  if (length(missing_cols) != 0L) {
+    stop(
+      "Genomic regions require columns `chr`, `start`, and `end`; ",
+      "missing: ", paste(missing_cols, collapse = ", "), ".\n",
+      "To build regions from vectors, use `genomic_regions()`."
+    )
+  }
+  wrong_type <- c(
+    chr = !is.character(gregions$chr),
+    start = !is.integer(gregions$start),
+    end = !is.integer(gregions$end)
+  )
+  if (any(wrong_type)) {
+    offending <- names(wrong_type)[wrong_type]
+    stop(
+      "A region's `chr` must be character and its `start` and `end` ",
+      "integer.\nGot: ",
+      paste0(
+        offending, " ",
+        sapply(offending, \(col) class(gregions[[col]])[1]),
+        collapse = ", "
+      )
+    )
+  }
+  not_a_position <- is.na(gregions$start) | gregions$start < 1L
+  if (any(not_a_position)) {
+    stop(
+      "A region's start must be a position of at least 1.\n",
+      "Got: ", paste(gregions$start[not_a_position], collapse = ", ")
+    )
+  }
+  if (any(gregions$end < gregions$start, na.rm = TRUE)) {
+    stop("start must be less than end.")
+  }
+  invisible(gregions)
 }
 
 #' Create empty genomic_regions (no regions)
@@ -173,7 +202,7 @@ empty_genomic_regions <- function(
 
 #' Create full-genome genomic_regions (all positions)
 #'
-#' Returns a genomic_regions with NA for chr, start, and end.
+#' Returns a genomic_regions with NA for chr and end, and start = 1.
 #'
 #' @param build Genome build identifier
 #' @return genomic_regions representing the entire genome
@@ -183,6 +212,54 @@ full_genomic_regions <- function(
 ) {
   new_genomic_regions(
     chr = NA_character_,
+    build = build
+  )
+}
+
+#' Create genomic_regions covering every position from a lower bound
+#'
+#' A bound outside the position axis resolves against it: a bound below the
+#' first position is clamped to it, and a bound above every position —
+#' necessarily an infinite one — covers none.
+#'
+#' @param start Lower bound on the positions covered
+#' @param build Genome build identifier
+#' @return genomic_regions on every chromosome from the resolved bound on,
+#'   with no rows when the bound lies above every position
+#' @keywords internal
+genomic_regions_from <- function(
+  start,
+  build = NULL
+) {
+  if (is.infinite(start) && 0 < start) {
+    return(empty_genomic_regions(build = build))
+  }
+  new_genomic_regions(
+    start = max(start, 1L),
+    build = build
+  )
+}
+
+#' Create genomic_regions covering every position up to an upper bound
+#'
+#' A bound outside the position axis resolves against it: a bound below the
+#' first position covers no position, and a bound above every position —
+#' necessarily an infinite one — extends to the end of every chromosome.
+#'
+#' @param end Upper bound on the positions covered
+#' @param build Genome build identifier
+#' @return genomic_regions on every chromosome up to the resolved bound, with
+#'   no rows when the bound lies below every position
+#' @keywords internal
+genomic_regions_to <- function(
+  end,
+  build = NULL
+) {
+  if (end < 1L) {
+    return(empty_genomic_regions(build = build))
+  }
+  new_genomic_regions(
+    end = if (is.infinite(end)) NA_integer_ else end,
     build = build
   )
 }

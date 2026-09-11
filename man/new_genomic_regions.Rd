@@ -17,7 +17,7 @@ new_genomic_regions(
 \arguments{
 \item{chr}{Character vector of chromosome names (NA = any chromosome).}
 
-\item{start}{Integer vector of start positions (NA = from beginning).}
+\item{start}{Integer vector of start positions.}
 
 \item{end}{Integer vector of end positions (NA = to end).}
 
@@ -43,11 +43,11 @@ names, and optionally reduces the regions to their canonical form.
 }
 \section{NA semantics}{
 
-Each row's `chr`, `start`, and `end` may be NA, meaning "unconstrained on
-this axis":
+A row's `chr` and `end` may be NA, meaning "unconstrained on this axis":
 - `chr = NA` matches every chromosome.
-- `start = NA` extends to the beginning of the chromosome.
 - `end = NA` extends to the end of the chromosome.
+
+A start is always a position.
 
 Set operations propagate this:
 - Intersection (`&`) of two regions where exactly one has `chr = NA`

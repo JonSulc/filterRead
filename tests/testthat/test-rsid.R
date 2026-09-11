@@ -53,15 +53,15 @@ test_that("tabix process substitution works", {
   )
 
   expect_equal(
-    get_tabix_process_substitution(1, NA, 234, "dbsnp_file.vcf.gz"),
-    "<(tabix 'dbsnp_file.vcf.gz' 1:-234)"
+    get_tabix_process_substitution(1, 1, 234, "dbsnp_file.vcf.gz"),
+    "<(tabix 'dbsnp_file.vcf.gz' 1:1-234)"
   )
   expect_equal(
     get_tabix_process_substitution(1, 123, NA, "dbsnp_file.vcf.gz"),
     "<(tabix 'dbsnp_file.vcf.gz' 1:123-)"
   )
   expect_equal(
-    get_tabix_process_substitution(1, NA, NA, "dbsnp_file.vcf.gz"),
+    get_tabix_process_substitution(1, 1, NA, "dbsnp_file.vcf.gz"),
     "<(tabix 'dbsnp_file.vcf.gz' 1)"
   )
 })
@@ -331,7 +331,7 @@ test_that("Genomic ranges are correctly identified", {
   expect_equal(
     new_filter_condition(rlang::quo(chr == 1 & pos < 123), finterface) |>
       genomic_constraint(),
-    new_genomic_regions(chr = "1", start = NA_real_, end = 122, build = "b38")
+    new_genomic_regions(chr = "1", start = 1L, end = 122, build = "b38")
   )
 })
 

@@ -34,22 +34,26 @@ as_genomic_regions.data.frame <- function(
   normalize_regions = TRUE,
   ...
 ) {
-  missing_cols <- setdiff(c("chr", "start", "end"), names(x))
-  if (length(missing_cols) != 0L) {
-    stop(
-      "`as_genomic_regions()` requires columns `chr`, `start`, and `end`; ",
-      "missing: ", paste(missing_cols, collapse = ", "), ".\n",
-      "To build regions from vectors, use `genomic_regions()`."
-    )
-  }
   build <- build %||% build(x)
   complement <- complement %||% is_complement(x) %||% FALSE
   gregions <- data.table::as.data.table(x) |>
     data.table::copy()
-  validate_genomic_regions_dt(gregions)
+  if ("chr" %in% names(gregions) && !is.character(gregions$chr)) {
+    data.table::set(
+      gregions,
+      j = "chr",
+      value = as.character(gregions$chr)
+    )
+  }
   for (col in intersect(c("start", "end"), names(gregions))) {
-    if (!is.integer(gregions[[col]])) {
-      data.table::set(gregions, j = col, value = as.integer(gregions[[col]]))
+    value <- gregions[[col]]
+    if (!is.integer(value)) {
+      as_integer <- suppressWarnings(as.integer(value))
+      # An NA introduced by conversion should not read as unconstrained,
+      # so leave a column the conversion cannot read for the validator to name
+      if (!any(!is.na(value) & is.na(as_integer))) {
+        data.table::set(gregions, j = col, value = as_integer)
+      }
     }
   }
   if (!is.null(build)) {
@@ -62,6 +66,7 @@ as_genomic_regions.data.frame <- function(
     c("genomic_regions", class(gregions)) |>
       unique()
   )
+  validate_genomic_regions(gregions)
   data.table::setkey(gregions, chr, start, end)
 
   if (!normalize_regions) return(gregions)
@@ -149,18 +154,12 @@ as_genomic_regions.lt_filter_condition <- function(
   }
   if (x[[2]] == as.symbol("pos")) {
     return(
-      new_genomic_regions(
-        end = x[[3]] - 1,
-        build = build
-      )
+      genomic_regions_to(x[[3]] - 1, build = build)
     )
   }
   if (x[[3]] == as.symbol("pos")) {
     return(
-      new_genomic_regions(
-        start = x[[2]] + 1,
-        build = build
-      )
+      genomic_regions_from(x[[2]] + 1, build = build)
     )
   }
   if (x[[2]] == as.symbol("chr")) {
@@ -203,18 +202,12 @@ as_genomic_regions.lte_filter_condition <- function(
   }
   if (x[[2]] == as.symbol("pos")) {
     return(
-      new_genomic_regions(
-        end = x[[3]],
-        build = build
-      )
+      genomic_regions_to(x[[3]], build = build)
     )
   }
   if (x[[3]] == as.symbol("pos")) {
     return(
-      new_genomic_regions(
-        start = x[[2]],
-        build = build
-      )
+      genomic_regions_from(x[[2]], build = build)
     )
   }
   if (x[[2]] == as.symbol("chr")) {
@@ -257,18 +250,12 @@ as_genomic_regions.gt_filter_condition <- function(
   }
   if (x[[2]] == as.symbol("pos")) {
     return(
-      new_genomic_regions(
-        start = x[[3]] + 1,
-        build = build
-      )
+      genomic_regions_from(x[[3]] + 1, build = build)
     )
   }
   if (x[[3]] == as.symbol("pos")) {
     return(
-      new_genomic_regions(
-        end = x[[2]] - 1,
-        build = build
-      )
+      genomic_regions_to(x[[2]] - 1, build = build)
     )
   }
   if (x[[2]] == as.symbol("chr")) {
@@ -311,18 +298,12 @@ as_genomic_regions.gte_filter_condition <- function(
   }
   if (x[[2]] == as.symbol("pos")) {
     return(
-      new_genomic_regions(
-        start = x[[3]],
-        build = build
-      )
+      genomic_regions_from(x[[3]], build = build)
     )
   }
   if (x[[3]] == as.symbol("pos")) {
     return(
-      new_genomic_regions(
-        end = x[[2]],
-        build = build
-      )
+      genomic_regions_to(x[[2]], build = build)
     )
   }
   if (x[[2]] == as.symbol("chr")) {

@@ -17,7 +17,7 @@ genomic_regions(
 \arguments{
 \item{chr}{Character vector of chromosome names (NA = any chromosome).}
 
-\item{start}{Integer vector of start positions (NA = from beginning).}
+\item{start}{Integer vector of start positions.}
 
 \item{end}{Integer vector of end positions (NA = to end).}
 

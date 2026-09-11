@@ -13,6 +13,6 @@ full_genomic_regions(build = NULL)
 genomic_regions representing the entire genome
 }
 \description{
-Returns a genomic_regions with NA for chr, start, and end.
+Returns a genomic_regions with NA for chr and end, and start = 1.
 }
 \keyword{internal}

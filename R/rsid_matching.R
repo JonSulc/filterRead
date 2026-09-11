@@ -457,11 +457,11 @@ get_tabix_process_substitution <- function(
     sprintf(
       "%s%s",
       drop_chr_prefix(chr),
-      ifelse(is.na(start) & is.na(end),
+      ifelse(start == 1L & is.na(end),
         "",
         sprintf(
           ":%s-%s",
-          ifelse(is.na(start) | is.infinite(start), "", start),
+          ifelse(is.infinite(start), "", start),
           ifelse(is.na(end) | is.infinite(end), "", end)
         )
       )

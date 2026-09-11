@@ -33,35 +33,58 @@ test_that("empty initialization works", {
   )
 })
 
-test_that("incomplete initialization works", {
-  gregions <- new_genomic_regions(start = 42)
-  expect_equal(
-    gregions,
-    new_genomic_regions(chr = NA_character_, start = 42, end = NA_integer_)
+test_that("construction rejects a start that is not a position", {
+  expect_error(
+    new_genomic_regions(chr = "chr1", start = NA_integer_, end = 400),
+    "start must be a position of at least 1.\nGot: NA"
   )
-  expect_null(attr(gregions, "build"))
-
-  expect_equal(
-    new_genomic_regions(
-      chr = "chr1"
+  expect_error(
+    new_genomic_regions(chr = "chr1", start = 0, end = 400),
+    "start must be a position of at least 1.\nGot: 0"
+  )
+  expect_error(
+    as_genomic_regions(
+      data.table::data.table(chr = "chr1", start = -5L, end = 400L)
     ),
-    new_genomic_regions(
-      chr = "chr1",
-      start = NA_integer_,
-      end = NA_integer_
-    )
+    "start must be a position of at least 1.\nGot: -5"
+  )
+})
+
+test_that("construction rejects an end before its start", {
+  expect_error(
+    genomic_regions(chr = 1, start = 400, end = 1),
+    "start must be less than end"
+  )
+  expect_error(
+    as_genomic_regions(
+      data.table::data.table(chr = "chr1", start = 400L, end = 1L)
+    ),
+    "start must be less than end"
+  )
+})
+
+test_that("construction converts a column it can read", {
+  gregions <- as_genomic_regions(
+    data.table::data.table(chr = 1, start = "100", end = 200)
   )
 
-  expect_equal(
-    new_genomic_regions(
-      chr = "chr1",
-      start = 42
+  expect_equal(gregions$chr, "1")
+  expect_equal(gregions$start, 100L)
+  expect_equal(gregions$end, 200L)
+})
+
+test_that("construction rejects a column it cannot read", {
+  expect_error(
+    as_genomic_regions(
+      data.table::data.table(chr = "chr1", start = "a", end = 400L)
     ),
-    new_genomic_regions(
-      chr = "chr1",
-      start = 42,
-      end = NA_integer_
-    )
+    "`start` and `end` integer"
+  )
+  expect_error(
+    as_genomic_regions(
+      data.table::data.table(chr = "chr1", start = 100L, end = "a")
+    ),
+    "Got: end character"
   )
 })
 
@@ -201,7 +224,7 @@ test_that("merging preserves attributes", {
 test_that("merging keeps rows separated by an unconstrained position", {
   gregions <- new_genomic_regions(
     chr = c(1, 1),
-    start = c(NA, 200),
+    start = c(1, 200),
     end = c(100, NA),
     build = "b38"
   )
@@ -213,7 +236,7 @@ test_that("merging keeps rows separated by an unconstrained position", {
 test_that("merging joins rows that meet across an unconstrained position", {
   gregions <- new_genomic_regions(
     chr = c(1, 1),
-    start = c(NA, 101),
+    start = c(1, 101),
     end = c(100, NA),
     build = "b38"
   )
@@ -360,7 +383,7 @@ test_that("intersection returns empty for different chromosomes", {
 test_that("intersection handles NA values", {
   gregions1 <- new_genomic_regions(
     chr = "chr1",
-    start = NA_integer_,
+    start = 1L,
     end = 300
   )
   gregions2 <- new_genomic_regions(
@@ -792,6 +815,22 @@ test_that("source_regions reports the positions a comparison denotes", {
     list(
       rlang::quo(1000 <= pos),
       new_genomic_regions(start = 1000, build = "b38")
+    ),
+    list(
+      rlang::quo(pos < 1),
+      new_genomic_regions(build = "b38")
+    ),
+    list(
+      rlang::quo(pos >= 0),
+      new_genomic_regions(chr = NA_character_, build = "b38")
+    ),
+    list(
+      rlang::quo(pos <= Inf),
+      new_genomic_regions(chr = NA_character_, build = "b38")
+    ),
+    list(
+      rlang::quo(pos > Inf),
+      new_genomic_regions(build = "b38")
     )
   )
   for (case in cases) expect_source_regions(case[[1]], case[[2]], finterface)
@@ -2040,7 +2079,7 @@ test_that("a region on every chromosome trims one it overlaps", {
       new_genomic_regions(chr = 1, build = "b38"),
     new_genomic_regions(
       chr = c(NA_character_, "chr1"),
-      start = c(NA, 201),
+      start = c(1, 201),
       end = c(200, NA),
       build = "b38"
     )
@@ -2050,7 +2089,7 @@ test_that("a region on every chromosome trims one it overlaps", {
       new_genomic_regions(chr = 1, start = 150, end = 300, build = "b38"),
     new_genomic_regions(
       chr = c(NA_character_, "chr1"),
-      start = c(NA, 201),
+      start = c(1, 201),
       end = c(200, 300),
       build = "b38"
     )
@@ -2071,13 +2110,13 @@ test_that("compact keeps the absorbed coverage", {
 test_that("construction leaves the rows canonical", {
   expect_canonical(new_genomic_regions(
     chr = c(1, 1),
-    start = c(NA, 200),
+    start = c(1, 200),
     end = c(100, NA),
     build = "b38"
   ))
   expect_canonical(new_genomic_regions(
     chr = c(NA_character_, "chr1"),
-    start = c(NA, 150),
+    start = c(1, 150),
     end = c(200, 300),
     build = "b38"
   ))
