@@ -15,7 +15,6 @@ genomic_regions with overlapping regions merged
 \description{
 Combines regions that overlap or are adjacent (end + 1 == start) into
 single regions. A region leaving a position unconstrained reaches the
-start or the end of its chromosome, so it merges with whatever it meets
-there.
+end of its chromosome, so it merges with whatever it meets there.
 }
 \keyword{internal}

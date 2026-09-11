@@ -1,7 +1,7 @@
-# Sentinel values for NA replacement during overlap operations
-# These must stay in sync between replace_na_with_sentinel and
-# replace_sentinel_with_na. They cover the interval axes of the foverlaps
-# join; chr joins on equality.
+# Sentinel value for NA replacement during overlap operations
+# This must stay in sync between replace_na_with_sentinel and
+# replace_sentinel_with_na. It covers the end axis of the foverlaps join;
+# chr joins on equality and a start is always a position.
 #
 # END_SENTINEL is calibrated so that `END_SENTINEL + 1L` equals
 # .Machine$integer.max exactly — no overflow. Every arithmetic site that
@@ -12,7 +12,6 @@
 # - expand_genomic_regions (negation): start = end + 1L
 # Any future code that adds more than 1 to `end` must lower this sentinel
 # accordingly, otherwise it will silently overflow to NA on sentinel rows.
-START_SENTINEL <- 1L
 END_SENTINEL <- .Machine$integer.max - 1L
 
 #' Liftover genomic_regions to a different genome build
@@ -121,8 +120,8 @@ liftover.genomic_regions <- function(
   ][]
 
   lift_chain_overlap(
-    # NA on an axis is unconstrained, which the overlap join has no notion
-    # of; the sentinels state it as a concrete interval.
+    # An NA end is unconstrained, which the overlap join has no notion of;
+    # the sentinel states it as a concrete interval.
     replace_na_with_sentinel(expanded_x),
     chain_dt
   ) |>
@@ -416,7 +415,7 @@ rbind.genomic_regions <- function(
   }
 
   data.table::foverlaps(
-    # foverlaps rejects an NA start or end
+    # foverlaps rejects an NA end
     replace_na_with_sentinel(e1_safe),
     replace_na_with_sentinel(e2_safe),
     nomatch = 0
@@ -480,35 +479,26 @@ expand_na_chr <- function(
 # An overlap operation over region sets — data.table::foverlaps under
 # `&`, the non-equi join under a lift — has no notion of an unconstrained
 # axis, and foverlaps rejects an NA in an interval column outright. An NA
-# start or end is replaced with a sentinel value, which states the
-# unconstrained axis as a concrete interval, and can be substituted back
-# for NA once the overlap is done.
+# end is replaced with a sentinel value, which states the unconstrained
+# axis as a concrete interval, and can be substituted back for NA once the
+# overlap is done.
 
 #' Replace NA values with sentinel values for overlap operations
 #'
-#' Converts NA to the concrete bounds an overlap operation reads:
-#' - NA start -> 1 (from beginning)
-#' - NA end -> max integer - 1 (to end)
-#' The default for end subtracts 1 from max integer to avoid overflows
-#' (data.table::foverlaps adds 1 internally).
+#' Converts an NA end to `end_sentinel`, the concrete bound an overlap
+#' operation reads in its place.
 #'
-#' @param genomic_regions data.table with potential NAs
-#' @param start_sentinel Value to use for NA start (default: 1)
+#' @param genomic_regions data.table with a potential NA end
 #' @param end_sentinel Value to use for NA end
-#'   (default: .Machine$integer.max - 1)
 #'
 #' @return Copy with NAs replaced by sentinels, keyed on `chr`, `start`
 #'   and `end`, the key `data.table::foverlaps` requires of its `y`.
 #' @keywords internal
 replace_na_with_sentinel <- function(
   genomic_regions,
-  start_sentinel = START_SENTINEL,
   end_sentinel = END_SENTINEL
 ) {
   copy_genomic_regions(genomic_regions)[
-    is.na(start),
-    start := start_sentinel
-  ][
     is.na(end),
     end := end_sentinel
   ][] |>

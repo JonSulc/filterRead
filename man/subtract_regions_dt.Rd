@@ -17,7 +17,8 @@ Removes the coverage of `to_remove` from the rows of `regions_dt`. A row
 is kept when `to_remove` does not reach it, dropped when `to_remove`
 covers it, trimmed when the two overlap at one end, and split into two
 when an interval of `to_remove` lands inside it. A row of `to_remove`
-whose `chr` is NA applies to every row.
+whose `chr` is NA applies to every row, and one whose `end` is NA reaches
+the end of the chromosome. A start is always a position.
 }
 \details{
 Both arguments are plain region tables of `chr`, `start` and `end`, read

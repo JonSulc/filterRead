@@ -7,9 +7,10 @@
 subtract_interval_coverage(rows, interval)
 }
 \arguments{
-\item{rows}{Region rows carrying sentinel values in place of NA}
+\item{rows}{Region rows carrying the end sentinel in place of an NA end}
 
-\item{interval}{A one-row data.table of `chr`, `start` and `end`}
+\item{interval}{A one-row data.table of `chr`, `start` and `end`, whose
+start is always a position}
 }
 \value{
 The rows with the interval's coverage removed

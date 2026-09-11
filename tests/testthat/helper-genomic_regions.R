@@ -2,7 +2,7 @@ format_sentinel_regions <- function(rows) {
   paste0(
     "(",
     ifelse(is.na(rows$chr), "*", rows$chr), ",",
-    ifelse(rows$start == START_SENTINEL, "", rows$start), "-",
+    rows$start, "-",
     ifelse(rows$end == END_SENTINEL, "", rows$end), ")",
     collapse = " "
   )
@@ -11,7 +11,7 @@ format_sentinel_regions <- function(rows) {
 expect_canonical <- function(gregions) {
   rows <- data.table::data.table(
     chr = gregions$chr,
-    start = data.table::fcoalesce(gregions$start, START_SENTINEL),
+    start = gregions$start,
     end = data.table::fcoalesce(gregions$end, END_SENTINEL)
   )
 

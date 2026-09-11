@@ -4,29 +4,19 @@
 \alias{replace_na_with_sentinel}
 \title{Replace NA values with sentinel values for overlap operations}
 \usage{
-replace_na_with_sentinel(
-  genomic_regions,
-  start_sentinel = START_SENTINEL,
-  end_sentinel = END_SENTINEL
-)
+replace_na_with_sentinel(genomic_regions, end_sentinel = END_SENTINEL)
 }
 \arguments{
-\item{genomic_regions}{data.table with potential NAs}
+\item{genomic_regions}{data.table with a potential NA end}
 
-\item{start_sentinel}{Value to use for NA start (default: 1)}
-
-\item{end_sentinel}{Value to use for NA end
-(default: .Machine$integer.max - 1)}
+\item{end_sentinel}{Value to use for NA end}
 }
 \value{
 Copy with NAs replaced by sentinels, keyed on `chr`, `start`
   and `end`, the key `data.table::foverlaps` requires of its `y`.
 }
 \description{
-Converts NA to the concrete bounds an overlap operation reads:
-- NA start -> 1 (from beginning)
-- NA end -> max integer - 1 (to end)
-The default for end subtracts 1 from max integer to avoid overflows
-(data.table::foverlaps adds 1 internally).
+Converts an NA end to `end_sentinel`, the concrete bound an overlap
+operation reads in its place.
 }
 \keyword{internal}

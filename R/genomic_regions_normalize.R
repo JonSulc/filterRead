@@ -21,8 +21,7 @@ normalize_genomic_regions <- function(
 #'
 #' Combines regions that overlap or are adjacent (end + 1 == start) into
 #' single regions. A region leaving a position unconstrained reaches the
-#' start or the end of its chromosome, so it merges with whatever it meets
-#' there.
+#' end of its chromosome, so it merges with whatever it meets there.
 #'
 #' @param gregions A genomic_regions object
 #' @return genomic_regions with overlapping regions merged
@@ -112,7 +111,8 @@ subtract_unconstrained_chr_coverage <- function(
 #' is kept when `to_remove` does not reach it, dropped when `to_remove`
 #' covers it, trimmed when the two overlap at one end, and split into two
 #' when an interval of `to_remove` lands inside it. A row of `to_remove`
-#' whose `chr` is NA applies to every row.
+#' whose `chr` is NA applies to every row, and one whose `end` is NA reaches
+#' the end of the chromosome. A start is always a position.
 #'
 #' Both arguments are plain region tables of `chr`, `start` and `end`, read
 #' as the positions they cover — there is no complement bit — and the result
@@ -130,7 +130,7 @@ subtract_regions_dt <- function(
   }
   rows <- data.table::data.table(
     chr = regions_dt$chr,
-    start = data.table::fcoalesce(regions_dt$start, START_SENTINEL),
+    start = regions_dt$start,
     end = data.table::fcoalesce(regions_dt$end, END_SENTINEL)
   )
   for (index in seq_len(nrow(to_remove))) {
@@ -149,15 +149,16 @@ subtract_regions_dt <- function(
 #' interval does not reach pass through untouched, so carving the intervals
 #' one at a time is correct even when they overlap each other.
 #'
-#' @param rows Region rows carrying sentinel values in place of NA
-#' @param interval A one-row data.table of `chr`, `start` and `end`
+#' @param rows Region rows carrying the end sentinel in place of an NA end
+#' @param interval A one-row data.table of `chr`, `start` and `end`, whose
+#'   start is always a position
 #' @return The rows with the interval's coverage removed
 #' @keywords internal
 subtract_interval_coverage <- function(
   rows,
   interval
 ) {
-  cut_start <- data.table::fcoalesce(interval$start, START_SENTINEL)
+  cut_start <- interval$start
   cut_end <- data.table::fcoalesce(interval$end, END_SENTINEL)
   reaches <- cut_start <= rows$end & rows$start <= cut_end
   if (is.na(interval$chr)) {

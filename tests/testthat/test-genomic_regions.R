@@ -1948,17 +1948,17 @@ test_that("subtract_regions_dt applies an NA-chromosome row to every row", {
   )
 })
 
-test_that("subtract_regions_dt reads NA start and end as unconstrained", {
+test_that("subtract_regions_dt reads an NA end as unconstrained", {
   expect_equal(
     subtract_regions_dt(
       data.table::data.table(
         chr = "chr1",
-        start = NA_integer_,
+        start = 1L,
         end = NA_integer_
       ),
       data.table::data.table(
         chr = NA_character_,
-        start = NA_integer_,
+        start = 1L,
         end = 200L
       )
     ),
@@ -2030,7 +2030,7 @@ test_that("subtract_regions_dt removes every unconstrained-chromosome region", {
         ),
         data.table::data.table(
           chr = NA_character_,
-          start = c(NA_integer_, 200L),
+          start = c(1L, 200L),
           end = c(100L, NA_integer_)
         )
       ),
