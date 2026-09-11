@@ -85,11 +85,12 @@ independent of which chromosomes exist.
 _Avoid_: included regions, excluded regions, negative regions, blacklist
 
 **Unconstrained axis**:
-An `NA` on one of a region's three axes, meaning the region restricts nothing
-there: every chromosome, from the start of the chromosome, or to its end. The
-set algebra reads it as coverage, so a region with an unconstrained chromosome
-absorbs any region it covers, and two regions that meet across an
-unconstrained position merge.
+An `NA` on a region's `chr` or `end`, meaning the region restricts nothing
+there: every chromosome, or to the end of the chromosome. A start carries no
+`NA` — it is always a position, and 1 leaves the lower bound unconstrained.
+The set algebra reads all three as coverage, so a region with an
+unconstrained chromosome absorbs any region it covers, and two regions that
+meet across an unconstrained position merge.
 _Avoid_: wildcard, missing value, blank
 
 **Canonical region set**:
