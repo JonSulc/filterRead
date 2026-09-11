@@ -178,9 +178,10 @@ eval_genomic_regions_from_fc <- function(
 #' Convert single genomic region to awk condition
 #'
 #' Creates awk condition for one region: chr equality and position bounds.
-#' NA values in chr/start/end are skipped (allowing partial constraints).
+#' An NA chr or end is skipped, as is a start of 1: each leaves its axis
+#' unconstrained, so there is nothing for awk to test.
 #'
-#' @param gregion_row List with chr, start, end (possibly NA)
+#' @param gregion_row List with chr, start, end (chr and end possibly NA)
 #' @param column_indices Named list with chr and pos column refs
 #'
 #' @return Character string like `$1 == "1" && 1000 <= $2 && $2 <= 2000`
@@ -189,12 +190,11 @@ single_genomic_region_to_fc <- function(
   gregion_row,
   column_indices
 ) {
-  # Build condition components, skipping NA constraints
   all_fc <- c(
     if (!is.na(gregion_row$chr)) {
       eq_filter_condition(column_indices$chr, gregion_row$chr)
     },
-    if (!is.na(gregion_row$start)) {
+    if (1L < gregion_row$start) {
       lte_filter_condition(gregion_row$start, column_indices$pos)
     },
     if (!is.na(gregion_row$end)) {

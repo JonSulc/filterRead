@@ -578,7 +578,7 @@ get_used_columns <- function(
   }
   gconstraint_columns <- c(
     if (any(!is.na(gconstraint$chr))) "chr",
-    if (any(!is.na(gconstraint$start), !is.na(gconstraint$end))) "pos"
+    if (any(1L < gconstraint$start, !is.na(gconstraint$end))) "pos"
   )
 
   if (rlang::is_quosure(fcondition)) {

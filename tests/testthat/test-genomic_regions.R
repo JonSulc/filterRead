@@ -206,7 +206,7 @@ test_that("merging keeps rows separated by an unconstrained position", {
     build = "b38"
   )
   expect_equal(nrow(gregions), 2)
-  expect_equal(gregions$start, c(NA_integer_, 200L))
+  expect_equal(gregions$start, c(1L, 200L))
   expect_equal(gregions$end, c(100L, NA_integer_))
 })
 
@@ -218,7 +218,7 @@ test_that("merging joins rows that meet across an unconstrained position", {
     build = "b38"
   )
   expect_equal(nrow(gregions), 1)
-  expect_true(is.na(gregions$start))
+  expect_equal(gregions$start, 1L)
   expect_true(is.na(gregions$end))
 })
 
@@ -1416,7 +1416,7 @@ test_that("a complement-stored set with no rows expands to the whole genome", {
   expect_false(is_complement(expanded))
   expect_equal(nrow(expanded), 1)
   expect_true(is.na(expanded$chr))
-  expect_true(is.na(expanded$start))
+  expect_equal(expanded$start, 1L)
   expect_true(is.na(expanded$end))
 })
 
@@ -1440,9 +1440,8 @@ test_that("a single complement-stored row expands to its complement", {
   # Check chr1 portions exist
   chr1_rows <- expanded[chr == "chr1"]
   expect_equal(nrow(chr1_rows), 2)
-  expect_equal(chr1_rows$start, c(NA, 201))
-  expect_equal(chr1_rows$end[1], 99)
-  expect_true(is.na(chr1_rows$end[2])) # to end of chromosome
+  expect_equal(chr1_rows$start, c(1L, 201L))
+  expect_equal(chr1_rows$end, c(99L, NA))
 })
 
 test_that("a directly stored set is returned unchanged by expansion", {
@@ -1535,7 +1534,7 @@ test_that("a single-position complement-stored region works", {
   expect_false(is_complement(expanded))
   chr1_rows <- expanded[chr == "chr1"]
   expect_equal(nrow(chr1_rows), 2)
-  expect_equal(chr1_rows$start, c(NA, 101))
+  expect_equal(chr1_rows$start, c(1L, 101L))
   expect_equal(chr1_rows$end[1], 99)
 })
 
@@ -1597,7 +1596,7 @@ test_that("a complement-stored region at a chromosome end expands", {
   chr1_rows <- expanded[chr == "chr1"]
   # Should only have one row for chr1 (1 to 999), no row for after
   expect_equal(nrow(chr1_rows), 1)
-  expect_equal(chr1_rows$start, NA_integer_)
+  expect_equal(chr1_rows$start, 1L)
   expect_equal(chr1_rows$end, 999)
 })
 
@@ -2192,28 +2191,8 @@ test_that("absorption keeps a complement-stored set complemented", {
   expect_true(is_complement(gregions))
   expect_equal(build(gregions), "b38")
   expect_equal(gregions$chr, c(NA, "chr1", "chr1"))
-  expect_equal(gregions$start, c(100L, NA, 201L))
+  expect_equal(gregions$start, c(100L, 1L, 201L))
   expect_equal(gregions$end, c(200L, 99L, 1000L))
-})
-
-test_that("complementing a lower bound leaves the start unconstrained", {
-  expanded <- expand_genomic_regions(
-    !new_genomic_regions(chr = 1, start = 100, build = "b38")
-  )
-  chr1_rows <- expanded[chr == "chr1"]
-
-  expect_equal(nrow(chr1_rows), 1)
-  expect_true(is.na(chr1_rows$start))
-  expect_equal(chr1_rows$end, 99)
-})
-
-test_that("a region starting at the first position is left open", {
-  gregions <- new_genomic_regions(chr = 1, start = 1, end = 100, build = "b38")
-
-  expect_true(is.na(gregions$start))
-  expect_true(
-    gregions == new_genomic_regions(chr = 1, end = 100, build = "b38")
-  )
 })
 
 test_that("source_regions returns the whole condition's regions", {

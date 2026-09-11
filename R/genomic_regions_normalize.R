@@ -137,9 +137,6 @@ subtract_regions_dt <- function(
     rows <- subtract_interval_coverage(rows, to_remove[index])
   }
   rows[
-    start == START_SENTINEL,
-    start := NA_integer_
-  ][
     end == END_SENTINEL,
     end := NA_integer_
   ][]

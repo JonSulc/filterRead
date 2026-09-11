@@ -519,23 +519,18 @@ replace_na_with_sentinel <- function(
 
 #' Restore NA values from sentinel values after an overlap operation
 #'
-#' Converts sentinel values back to NA after overlap operations.
+#' Converts `end_sentinel` back to NA after overlap operations.
 #'
 #' @param genomic_regions data.table with sentinel values
-#' @param start_sentinel Value used for NA start (default: 1)
-#' @param end_sentinel Value used for NA end (default: .Machine$integer.max - 1)
+#' @param end_sentinel Value used for NA end
 #'
 #' @return Copy with sentinels replaced by NAs
 #' @keywords internal
 replace_sentinel_with_na <- function(
   genomic_regions,
-  start_sentinel = START_SENTINEL,
   end_sentinel = END_SENTINEL
 ) {
   copy_genomic_regions(genomic_regions)[
-    start == start_sentinel,
-    start := NA_integer_
-  ][
     end == end_sentinel,
     end := NA_integer_
   ][] |>

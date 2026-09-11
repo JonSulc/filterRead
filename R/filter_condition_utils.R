@@ -222,7 +222,7 @@ has_position_condition <- function(
 ) {
   if (is.filter_condition(fcondition)) {
     gconstraint <- genomic_constraint(fcondition)
-    if (any(!is.na(gconstraint$start), !is.na(gconstraint$end))) {
+    if (any(1L < gconstraint$start, !is.na(gconstraint$end))) {
       return(TRUE)
     }
   }

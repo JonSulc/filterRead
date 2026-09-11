@@ -255,7 +255,10 @@ is_full_genome <- function(gregions) {
   if (is_complement(gregions)) {
     return(nrow(gregions) == 0L)
   }
-  nrow(gregions) == 1L && all(is.na(gregions))
+  nrow(gregions) == 1L &&
+    is.na(gregions$chr) &&
+    gregions$start == 1L &&
+    is.na(gregions$end)
 }
 
 #' Check if genomic_regions covers no position at all
@@ -297,7 +300,7 @@ str.genomic_regions <- function(
       .(region_str = sprintf(
         "%s:%i-%s",
         ifelse(is.na(chr), "*", chr),
-        ifelse(is.na(start), 1, start),
+        start,
         ifelse(is.na(end), "", end)
       )),
       by = .I

@@ -7,7 +7,7 @@
 single_genomic_region_to_fc(gregion_row, column_indices)
 }
 \arguments{
-\item{gregion_row}{List with chr, start, end (possibly NA)}
+\item{gregion_row}{List with chr, start, end (chr and end possibly NA)}
 
 \item{column_indices}{Named list with chr and pos column refs}
 }
@@ -16,6 +16,7 @@ Character string like `$1 == "1" && 1000 <= $2 && $2 <= 2000`
 }
 \description{
 Creates awk condition for one region: chr equality and position bounds.
-NA values in chr/start/end are skipped (allowing partial constraints).
+An NA chr or end is skipped, as is a start of 1: each leaves its axis
+unconstrained, so there is nothing for awk to test.
 }
 \keyword{internal}

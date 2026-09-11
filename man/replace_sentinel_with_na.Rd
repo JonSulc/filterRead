@@ -4,23 +4,17 @@
 \alias{replace_sentinel_with_na}
 \title{Restore NA values from sentinel values after an overlap operation}
 \usage{
-replace_sentinel_with_na(
-  genomic_regions,
-  start_sentinel = START_SENTINEL,
-  end_sentinel = END_SENTINEL
-)
+replace_sentinel_with_na(genomic_regions, end_sentinel = END_SENTINEL)
 }
 \arguments{
 \item{genomic_regions}{data.table with sentinel values}
 
-\item{start_sentinel}{Value used for NA start (default: 1)}
-
-\item{end_sentinel}{Value used for NA end (default: .Machine$integer.max - 1)}
+\item{end_sentinel}{Value used for NA end}
 }
 \value{
 Copy with sentinels replaced by NAs
 }
 \description{
-Converts sentinel values back to NA after overlap operations.
+Converts `end_sentinel` back to NA after overlap operations.
 }
 \keyword{internal}
