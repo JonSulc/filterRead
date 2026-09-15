@@ -1686,7 +1686,7 @@ test_that("has_position_condition detects a constraint on either bound", {
   expect_true(detects(rlang::quo(ranged)))
 })
 
-test_that("constraint combinators treat NULL as the full genome", {
+test_that("constraint combinators treat NULL as the full region set", {
   regions <- new_region_set(chr = 1, build = "b38")
 
   expect_equal(and_constraints(NULL, regions), regions)
@@ -1705,7 +1705,7 @@ test_that("a condition that restricts nothing records no constraint", {
   )
 
   expect_null(genomic_constraint(fcondition))
-  expect_true(is_full_genome(source_regions(fcondition)))
+  expect_true(is_full_region_set(source_regions(fcondition)))
 })
 
 test_that("is_unconstrained holds for an absent or full-genome constraint", {
@@ -1714,14 +1714,14 @@ test_that("is_unconstrained holds for an absent or full-genome constraint", {
   expect_false(is_unconstrained(new_region_set(chr = 1, build = "b38")))
 })
 
-test_that("is_overconstrained holds only for an empty genome constraint", {
+test_that("is_overconstrained holds only for an empty region set constraint", {
   expect_false(is_overconstrained(NULL))
   expect_true(is_overconstrained(empty_region_set(build = "b38")))
   expect_false(is_overconstrained(full_region_set(build = "b38")))
   expect_false(is_overconstrained(new_region_set(chr = 1, build = "b38")))
 })
 
-test_that("eq_constraints reads an absent constraint as the full genome", {
+test_that("eq_constraints reads an absent constraint as the full region set", {
   full <- full_region_set(build = "b38")
   constrained <- new_region_set(chr = 1, build = "b38")
 
@@ -1734,7 +1734,7 @@ test_that("eq_constraints reads an absent constraint as the full genome", {
   expect_false(eq_constraints(constrained, full))
 })
 
-test_that("building a condition allocates no full genome", {
+test_that("building a condition allocates no full region set", {
   finterface <- local_summary_stats_interface(build = "b38")
   allocations <- 0L
   unmocked_full_region_set <- full_region_set

@@ -323,12 +323,12 @@ drop_chr_prefix <- function(
   gsub(paste0("^", chr_prefix), "", chr)
 }
 
-#' Check if region_set covers the whole genome
+#' Check if a region_set selects every position
 #'
 #' @param regions A region_set object
 #' @return TRUE if regions constrains no position
 #' @keywords internal
-is_full_genome <- function(regions) {
+is_full_region_set <- function(regions) {
   if (is_complement(regions)) {
     return(nrow(regions) == 0L)
   }
@@ -338,13 +338,13 @@ is_full_genome <- function(regions) {
     is.na(regions$end)
 }
 
-#' Check if region_set covers no position at all
+#' Check if a region_set selects no position at all
 #'
 #' @param regions A region_set object
 #' @return TRUE if no row can satisfy regions
 #' @keywords internal
-is_empty_genome <- function(regions) {
-  is_full_genome(!regions)
+is_empty_region_set <- function(regions) {
+  is_full_region_set(!regions)
 }
 
 

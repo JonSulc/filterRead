@@ -68,7 +68,7 @@ non_genomic_is_and_block <- function(
 is_unconstrained <- function(
   genomic_constraint
 ) {
-  is.null(genomic_constraint) || is_full_genome(genomic_constraint)
+  is.null(genomic_constraint) || is_full_region_set(genomic_constraint)
 }
 
 #' Check whether a genomic constraint admits no position
@@ -84,7 +84,7 @@ is_unconstrained <- function(
 is_overconstrained <- function(
   genomic_constraint
 ) {
-  !is.null(genomic_constraint) && is_empty_genome(genomic_constraint)
+  !is.null(genomic_constraint) && is_empty_region_set(genomic_constraint)
 }
 
 #' Combine genomic constraints, treating NULL as the full genome

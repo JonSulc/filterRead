@@ -145,7 +145,7 @@ eval_region_set_from_fc <- function(
   regions <- post_process(gconstraint, finterface = finterface)
   # A set no row can satisfy matches nothing on an RSID-indexed file as on
   # any other, so coverage is decided before the RSID bail below.
-  if (is_empty_genome(regions)) {
+  if (is_empty_region_set(regions)) {
     return("0")
   }
   # Positions on an RSID-indexed file are handled through the index
