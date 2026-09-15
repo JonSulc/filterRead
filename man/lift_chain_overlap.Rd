@@ -47,7 +47,7 @@ data.table with lifted `chr`, `start`, `end` (in the target
 Maps `(chr, start, end)` intervals from one reference genome to
 another by overlapping them with a UCSC chain data.table and
 applying each chain block's offset and strand. The shared core for
-[liftover.genomic_regions()] and [liftover.data.table()]; not called
+[liftover.region_set()] and [liftover.data.table()]; not called
 directly by users. Columns beyond `chr`/`start`/`end` in
 `positions_dt` are carried through unchanged.
 }

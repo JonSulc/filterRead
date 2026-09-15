@@ -171,7 +171,7 @@ test_that("finterface[v] with empty v matches nothing without awk", {
 test_that("finterface[v] with all rows dropped matches nothing, no awk", {
   # A non-empty v whose rows all carry an unmappable (NA) pos: variant_keyset
   # drops them all (with a warning), leaving an empty keyset that takes the
-  # same empty-genomic_regions short-circuit as the 0-row case.
+  # same empty-region_set short-circuit as the 0-row case.
   testthat::local_mocked_bindings(
     fcondition_to_awk = function(...) {
       stop("fcondition_to_awk should not be called when every variant drops")

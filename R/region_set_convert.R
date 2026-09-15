@@ -1,7 +1,7 @@
-#' Convert objects to genomic_regions
+#' Convert objects to region_set
 #'
 #' Generic function to convert various objects (data.frames, comparisons on
-#' `chr` or `pos`) to genomic_regions format.
+#' `chr` or `pos`) to region_set format.
 #'
 #' @seealso [source_regions()] for the regions a filter_condition can match
 #'   within.
@@ -15,19 +15,19 @@
 #' @param canonicalize If TRUE, reduce the regions to their canonical
 #'   form: sorted and pairwise disjoint.
 #' @param ... Additional arguments passed to methods
-#' @return A genomic_regions object
+#' @return A region_set object
 #' @export
-as_genomic_regions <- function(
+as_region_set <- function(
   x,
   build = NULL,
   ...
 ) {
-  UseMethod("as_genomic_regions")
+  UseMethod("as_region_set")
 }
 
 #' @export
-#' @rdname as_genomic_regions
-as_genomic_regions.data.frame <- function(
+#' @rdname as_region_set
+as_region_set.data.frame <- function(
   x,
   build = NULL,
   complement = NULL,
@@ -63,18 +63,18 @@ as_genomic_regions.data.frame <- function(
   data.table::setattr(
     gregions,
     "class",
-    c("genomic_regions", class(gregions)) |>
+    c("region_set", class(gregions)) |>
       unique()
   )
-  validate_genomic_regions(gregions)
+  validate_region_set(gregions)
   data.table::setkey(gregions, chr, start, end)
 
   if (!canonicalize) return(gregions)
 
-  canonicalize_genomic_regions(gregions)
+  canonicalize_region_set(gregions)
 }
 #' @export
-as_genomic_regions.eq_filter_condition <- function(
+as_region_set.eq_filter_condition <- function(
   x,
   build = NULL,
   ...
@@ -85,38 +85,38 @@ as_genomic_regions.eq_filter_condition <- function(
   }
   if (x[[2]] == as.symbol("chr")) {
     return(
-      new_genomic_regions(chr = x[[3]], build = build)
+      new_region_set(chr = x[[3]], build = build)
     )
   }
   if (x[[3]] == as.symbol("chr")) {
     return(
-      new_genomic_regions(chr = x[[2]], build = build)
+      new_region_set(chr = x[[2]], build = build)
     )
   }
   if (x[[2]] == as.symbol("pos")) {
-    return(new_genomic_regions(
+    return(new_region_set(
       start = x[[3]],
       end = x[[3]],
       build = build
     ))
   }
   if (x[[3]] == as.symbol("pos")) {
-    return(new_genomic_regions(
+    return(new_region_set(
       start = x[[2]],
       end = x[[2]],
       build = build
     ))
   }
-  full_genomic_regions(build = build)
+  full_region_set(build = build)
 }
 #' @export
-as_genomic_regions.neq_filter_condition <- function(
+as_region_set.neq_filter_condition <- function(
   ...
 ) {
-  !as_genomic_regions.eq_filter_condition(...)
+  !as_region_set.eq_filter_condition(...)
 }
 #' @export
-as_genomic_regions.in_filter_condition <- function(
+as_region_set.in_filter_condition <- function(
   x,
   build = NULL,
   ...
@@ -130,19 +130,19 @@ as_genomic_regions.in_filter_condition <- function(
   # interval for `pos`. Combined with the rest of the condition through the
   # usual genomic-regions set operations.
   if (x[[2]] == as.symbol("chr")) {
-    return(new_genomic_regions(chr = x[[3]], build = build))
+    return(new_region_set(chr = x[[3]], build = build))
   }
   if (x[[2]] == as.symbol("pos")) {
-    return(new_genomic_regions(
+    return(new_region_set(
       start = x[[3]],
       end = x[[3]],
       build = build
     ))
   }
-  full_genomic_regions(build = build)
+  full_region_set(build = build)
 }
 #' @export
-as_genomic_regions.lt_filter_condition <- function(
+as_region_set.lt_filter_condition <- function(
   x,
   build = NULL,
   ordered_chr = 1:22,
@@ -166,7 +166,7 @@ as_genomic_regions.lt_filter_condition <- function(
     # chr < x[[3]]
     if (x[[3]] %in% ordered_chr) {
       return(
-        new_genomic_regions(
+        new_region_set(
           chr = ordered_chr[
             ordered_chr < x[[3]]
           ],
@@ -178,7 +178,7 @@ as_genomic_regions.lt_filter_condition <- function(
     # x[[2]] < chr
     if (x[[2]] %in% ordered_chr) {
       return(
-        new_genomic_regions(
+        new_region_set(
           chr = ordered_chr[
             x[[2]] < ordered_chr
           ],
@@ -187,10 +187,10 @@ as_genomic_regions.lt_filter_condition <- function(
       )
     }
   }
-  full_genomic_regions(build = build)
+  full_region_set(build = build)
 }
 #' @export
-as_genomic_regions.lte_filter_condition <- function(
+as_region_set.lte_filter_condition <- function(
   x,
   build = NULL,
   ordered_chr = 1:22,
@@ -214,7 +214,7 @@ as_genomic_regions.lte_filter_condition <- function(
     # chr <= x[[3]]
     if (x[[3]] %in% ordered_chr) {
       return(
-        new_genomic_regions(
+        new_region_set(
           chr = ordered_chr[
             ordered_chr <= x[[3]]
           ],
@@ -226,7 +226,7 @@ as_genomic_regions.lte_filter_condition <- function(
     # x[[2]] <= chr
     if (x[[2]] %in% ordered_chr) {
       return(
-        new_genomic_regions(
+        new_region_set(
           chr = ordered_chr[
             x[[2]] <= ordered_chr
           ],
@@ -235,10 +235,10 @@ as_genomic_regions.lte_filter_condition <- function(
       )
     }
   }
-  full_genomic_regions(build = build)
+  full_region_set(build = build)
 }
 #' @export
-as_genomic_regions.gt_filter_condition <- function(
+as_region_set.gt_filter_condition <- function(
   x,
   build = NULL,
   ordered_chr = 1:22,
@@ -262,7 +262,7 @@ as_genomic_regions.gt_filter_condition <- function(
     # chr > x[[3]]
     if (x[[3]] %in% ordered_chr) {
       return(
-        new_genomic_regions(
+        new_region_set(
           chr = ordered_chr[
             ordered_chr > x[[3]]
           ],
@@ -274,7 +274,7 @@ as_genomic_regions.gt_filter_condition <- function(
     # x[[2]] > chr
     if (x[[2]] %in% ordered_chr) {
       return(
-        new_genomic_regions(
+        new_region_set(
           chr = ordered_chr[
             x[[2]] > ordered_chr
           ],
@@ -283,10 +283,10 @@ as_genomic_regions.gt_filter_condition <- function(
       )
     }
   }
-  full_genomic_regions(build = build)
+  full_region_set(build = build)
 }
 #' @export
-as_genomic_regions.gte_filter_condition <- function(
+as_region_set.gte_filter_condition <- function(
   x,
   build = NULL,
   ordered_chr = 1:22,
@@ -310,7 +310,7 @@ as_genomic_regions.gte_filter_condition <- function(
     # chr >= x[[3]]
     if (x[[3]] %in% ordered_chr) {
       return(
-        new_genomic_regions(
+        new_region_set(
           chr = ordered_chr[
             ordered_chr >= x[[3]]
           ],
@@ -322,7 +322,7 @@ as_genomic_regions.gte_filter_condition <- function(
     # x[[2]] >= chr
     if (x[[2]] %in% ordered_chr) {
       return(
-        new_genomic_regions(
+        new_region_set(
           chr = ordered_chr[
             x[[2]] >= ordered_chr
           ],
@@ -331,7 +331,7 @@ as_genomic_regions.gte_filter_condition <- function(
       )
     }
   }
-  full_genomic_regions(build = build)
+  full_region_set(build = build)
 }
 #' Regions a filter condition can match within
 #'
@@ -340,20 +340,20 @@ as_genomic_regions.gte_filter_condition <- function(
 #' genomic constraint with those of every condition it combines.
 #'
 #' @param fcondition A filter_condition object
-#' @return A genomic_regions object, in the build the condition carries
+#' @return A region_set object, in the build the condition carries
 #' @export
 source_regions <- function(
   fcondition
 ) {
   stopifnot(is.filter_condition(fcondition))
   combined_constraint(fcondition) %||%
-    full_genomic_regions(build = build(fcondition))
+    full_region_set(build = build(fcondition))
 }
 
 #' Combine the genomic constraints of a condition and everything it combines
 #'
 #' @param fcondition A filter_condition object
-#' @return A genomic_regions object, or NULL when nothing is constrained
+#' @return A region_set object, or NULL when nothing is constrained
 #' @keywords internal
 combined_constraint <- function(
   fcondition

@@ -12,6 +12,6 @@ membership test (both allele orderings), matching file rows on
 `(chr, pos, \{ref, alt\})` after lifting `v` to the file's build. `context` is
 the normalized context env built by `as_fc_context()` in the public
 `new_filter_condition()` wrapper, so the interface is read from
-`context$finterface`, mirroring `new_filter_condition_impl.genomic_regions`.
+`context$finterface`, mirroring `new_filter_condition_impl.region_set`.
 }
 \keyword{internal}

@@ -1,16 +1,16 @@
-# The canonical form of a genomic_regions
+# The canonical form of a region_set
 #
 # Every object is canonicalized on construction: rows sorted and pairwise
 # disjoint. Row count and row shape are therefore facts about the set and how
 # it is stored, which is what lets `==` compare by rows, `compact()` choose by
 # row count, and the tabix builder emit one token per row.
 
-#' Reduce a genomic_regions to its canonical form
+#' Reduce a region_set to its canonical form
 #'
-#' @param gregions A genomic_regions object
-#' @return A genomic_regions covering the same positions, in canonical form
+#' @param gregions A region_set object
+#' @return A region_set covering the same positions, in canonical form
 #' @keywords internal
-canonicalize_genomic_regions <- function(
+canonicalize_region_set <- function(
   gregions
 ) {
   merge_contiguous_regions(gregions) |>
@@ -23,8 +23,8 @@ canonicalize_genomic_regions <- function(
 #' single regions. A region leaving a position unconstrained reaches the
 #' end of its chromosome, so it merges with whatever it meets there.
 #'
-#' @param gregions A genomic_regions object
-#' @return genomic_regions with overlapping regions merged
+#' @param gregions A region_set object
+#' @return region_set with overlapping regions merged
 #' @keywords internal
 merge_contiguous_regions <- function(
   gregions
@@ -61,7 +61,7 @@ merge_contiguous_regions <- function(
       .SDcols = -"group"
     ] |>
     replace_sentinel_with_na() |>
-    as_genomic_regions(
+    as_region_set(
       build = build(gregions),
       complement = is_complement(gregions),
       canonicalize = FALSE
@@ -79,8 +79,8 @@ merge_contiguous_regions <- function(
 #' This is the minimality half of the canonical form: a chromosome carries a
 #' specific rule only where it differs from the general rules.
 #'
-#' @param gregions A genomic_regions object with merged rows
-#' @return A genomic_regions selecting the same positions, with pairwise
+#' @param gregions A region_set object with merged rows
+#' @return A region_set selecting the same positions, with pairwise
 #'   disjoint rows
 #' @keywords internal
 trim_specific_rules <- function(
@@ -100,7 +100,7 @@ trim_specific_rules <- function(
     subtract_regions_dt(rows[!is.na(chr)], general_rules)
   ) |>
     data.table::rbindlist() |>
-    as_genomic_regions(
+    as_region_set(
       build = build(gregions),
       complement = is_complement(gregions),
       canonicalize = FALSE

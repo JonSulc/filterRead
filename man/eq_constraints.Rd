@@ -7,7 +7,7 @@
 eq_constraints(left, right)
 }
 \arguments{
-\item{left, right}{A genomic_regions object, or NULL for the full genome}
+\item{left, right}{A region_set object, or NULL for the full genome}
 }
 \value{
 Logical indicating whether both constraints cover the same positions

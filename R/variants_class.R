@@ -228,7 +228,7 @@ as_variants.data.frame <- function(x, build = NULL, ...) {
 #' count where it found it and the table keeps its over-allocation. That
 #' makes it the form to reach for on the way to a `:=`, which reads both.
 #'
-#' @param x A data.table: a `variants`, a `genomic_regions`, or a plain one.
+#' @param x A data.table: a `variants`, a `region_set`, or a plain one.
 #' @param value Build name or synonym (non-native tags pass through); NULL is
 #'   an error.
 #' @return `x`, invisibly.

@@ -622,7 +622,7 @@ test_that("Getting genomic regions works", {
       build = NULL
     ) |>
       genomic_constraint(),
-    new_genomic_regions(chr = "1", start = 123, end = 234)
+    new_region_set(chr = "1", start = 123, end = 234)
   )
   expect_equal(
     new_filter_condition(
@@ -630,7 +630,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_constraint(),
-    new_genomic_regions(start = 123, end = 234)
+    new_region_set(start = 123, end = 234)
   )
   expect_equal(
     new_filter_condition(
@@ -638,7 +638,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_constraint(),
-    new_genomic_regions(chr = "1", start = 124, end = 233)
+    new_region_set(chr = "1", start = 124, end = 233)
   )
   expect_equal(
     new_filter_condition(
@@ -646,7 +646,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_constraint(),
-    new_genomic_regions(chr = "1", start = 124, end = 233)
+    new_region_set(chr = "1", start = 124, end = 233)
   )
   expect_equal(
     new_filter_condition(
@@ -655,7 +655,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_constraint(),
-    new_genomic_regions(
+    new_region_set(
       chr = c("1", "X"),
       start = c(123, 21),
       end = c(234, 42)
@@ -667,7 +667,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_constraint(),
-    new_genomic_regions(
+    new_region_set(
       chr = c("1", "X"),
       start = 123,
       end = 234
@@ -679,7 +679,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_constraint(),
-    empty_genomic_regions()
+    empty_region_set()
   )
   expect_equal(
     new_filter_condition(
@@ -687,7 +687,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_constraint(),
-    empty_genomic_regions()
+    empty_region_set()
   )
   expect_equal(
     new_filter_condition(
@@ -697,7 +697,7 @@ test_that("Getting genomic regions works", {
       finterface
     ) |>
       genomic_constraint(),
-    new_genomic_regions(
+    new_region_set(
       chr = c("1", "X"),
       start = 123,
       end = 234
@@ -940,11 +940,11 @@ test_that("Parentheses work as expected", {
   )
 })
 
-# Tests for new_filter_condition.genomic_regions constructor
-test_that("new_filter_condition.genomic_regions creates filter from regions", {
+# Tests for new_filter_condition.region_set constructor
+test_that("new_filter_condition.region_set creates filter from regions", {
   finterface <- local_summary_stats_interface(build = "b36")
 
-  gr <- new_genomic_regions(
+  gr <- new_region_set(
     chr = "1",
     start = 100,
     end = 200,
@@ -958,10 +958,10 @@ test_that("new_filter_condition.genomic_regions creates filter from regions", {
   expect_equal(genomic_constraint(fc), gr)
 })
 
-test_that("new_filter_condition.genomic_regions handles build parameter", {
+test_that("new_filter_condition.region_set handles build parameter", {
   finterface <- local_summary_stats_interface(build = "b36")
 
-  gr <- new_genomic_regions(
+  gr <- new_region_set(
     chr = "1",
     start = 100,
     end = 200,
@@ -977,10 +977,10 @@ test_that("new_filter_condition.genomic_regions handles build parameter", {
   expect_equal(build(fc_lifted), "b38")
 })
 
-test_that("new_filter_condition.genomic_regions works with multiple regions", {
+test_that("new_filter_condition.region_set works with multiple regions", {
   finterface <- local_summary_stats_interface(build = "b36")
 
-  gr <- new_genomic_regions(
+  gr <- new_region_set(
     chr = c("1", "2"),
     start = c(100, 500),
     end = c(200, 600),
@@ -993,10 +993,10 @@ test_that("new_filter_condition.genomic_regions works with multiple regions", {
   expect_equal(nrow(genomic_constraint(fc)), 2)
 })
 
-test_that("new_filter_condition.genomic_regions handles empty regions", {
+test_that("new_filter_condition.region_set handles empty regions", {
   finterface <- local_summary_stats_interface()
 
-  empty_gr <- empty_genomic_regions(build = "b36")
+  empty_gr <- empty_region_set(build = "b36")
 
   fc <- new_filter_condition(empty_gr, finterface)
 
@@ -1007,7 +1007,7 @@ test_that("new_filter_condition.genomic_regions handles empty regions", {
 test_that("new_filter_condition.name evaluates name to get value", {
   finterface <- local_summary_stats_interface(build = "b36")
 
-  gr <- new_genomic_regions(
+  gr <- new_region_set(
     chr = "1",
     start = 100,
     end = 200,
@@ -1098,7 +1098,7 @@ test_that("Not-equal operator works with genomic conditions", {
   )
 })
 
-test_that("Complement-stored genomic_regions combine with non-genomic", {
+test_that("Complement-stored region_set combines with non-genomic", {
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
   result <- finterface[chr != 1 & 5000 < pos]
   expect_false("chr1" %in% unique(result$chr))
@@ -1151,7 +1151,7 @@ test_that("Mixing directly and complement-stored chromosome conditions", {
   )
 })
 
-test_that("eval_genomic_regions_from_fc honors the complement bit", {
+test_that("eval_region_set_from_fc honors the complement bit", {
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
   fc_complement <- new_filter_condition(rlang::quo(chr != 1), finterface)
   fc_direct <- new_filter_condition(rlang::quo(chr == 1), finterface)
@@ -1211,7 +1211,7 @@ test_that("new_filter_condition stores a {finterface, env} context", {
   expect_identical(quosure_context$finterface, finterface)
   expect_identical(quosure_context$env, rlang::quo_get_env(quosure))
 
-  gregions <- new_genomic_regions(chr = "1", start = 100, end = 200,
+  gregions <- new_region_set(chr = "1", start = 100, end = 200,
     build = "b38")
   gregions_fcondition <- new_filter_condition(gregions, finterface)
   gregions_context <- attr(gregions_fcondition, "context")
@@ -1239,7 +1239,7 @@ test_that("non-literal RHS is evaluated from the caller environment", {
 test_that("new_filter_condition evaluates a bare name in the caller frame", {
   finterface <- local_summary_stats_interface(build = "b36")
 
-  gregions <- new_genomic_regions(chr = "1", start = 100, end = 200,
+  gregions <- new_region_set(chr = "1", start = 100, end = 200,
     build = "b36")
 
   fcondition <- new_filter_condition(as.name("gregions"), finterface)
@@ -1257,7 +1257,7 @@ test_that("as_fc_context normalizes an interface and is idempotent", {
   expect_identical(context$finterface, finterface)
   expect_identical(context$env, rlang::quo_get_env(quosure))
 
-  gregions <- new_genomic_regions(chr = "1", start = 1, end = 2, build = "b38")
+  gregions <- new_region_set(chr = "1", start = 1, end = 2, build = "b38")
   gregions_context <- as_fc_context(finterface, gregions)
   expect_identical(gregions_context$finterface, finterface)
   expect_null(gregions_context$env)
@@ -1556,7 +1556,7 @@ test_that("an OR node records no constraint and derives the branch union", {
   expect_null(attr(fcondition, "genomic_constraint"))
   expect_equal(
     source_regions(fcondition),
-    new_genomic_regions(
+    new_region_set(
       chr   = c(1, 1),
       start = c(123, 60000),
       end   = c(50000, 99999),
@@ -1607,9 +1607,9 @@ test_that("a genomic constraint beside a parenthesized OR filters the read", {
   )
 })
 
-test_that("a genomic_regions beside a parenthesized OR filters the read", {
+test_that("a region_set beside a parenthesized OR filters the read", {
   finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
-  gregions <- new_genomic_regions(
+  gregions <- new_region_set(
     chr   = 1,
     end   = 250,
     build = build(finterface)
@@ -1639,9 +1639,9 @@ test_that("a repeated constraint is emitted once, not at every node", {
   )
 })
 
-test_that("a repeated genomic_regions set is emitted once", {
+test_that("a repeated region_set is emitted once", {
   finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
-  gregions <- new_genomic_regions(
+  gregions <- new_region_set(
     chr   = c(1, 2),
     end   = c(250, 250),
     build = build(finterface)
@@ -1680,14 +1680,14 @@ test_that("has_position_condition detects a constraint on either bound", {
   expect_true(detects(rlang::quo(chr == 1 | 123 < pos & pval < .05)))
 
   # Read from the constraint rather than the expression
-  chr_only <- new_genomic_regions(chr = 1, build = "b38")
-  ranged <- new_genomic_regions(chr = 1, start = 100, end = 200, build = "b38")
+  chr_only <- new_region_set(chr = 1, build = "b38")
+  ranged <- new_region_set(chr = 1, start = 100, end = 200, build = "b38")
   expect_false(detects(rlang::quo(chr_only)))
   expect_true(detects(rlang::quo(ranged)))
 })
 
 test_that("constraint combinators treat NULL as the full genome", {
-  gregions <- new_genomic_regions(chr = 1, build = "b38")
+  gregions <- new_region_set(chr = 1, build = "b38")
 
   expect_equal(and_constraints(NULL, gregions), gregions)
   expect_equal(and_constraints(gregions, NULL), gregions)
@@ -1710,20 +1710,20 @@ test_that("a condition that restricts nothing records no constraint", {
 
 test_that("is_unconstrained holds for an absent or full-genome constraint", {
   expect_true(is_unconstrained(NULL))
-  expect_true(is_unconstrained(full_genomic_regions(build = "b38")))
-  expect_false(is_unconstrained(new_genomic_regions(chr = 1, build = "b38")))
+  expect_true(is_unconstrained(full_region_set(build = "b38")))
+  expect_false(is_unconstrained(new_region_set(chr = 1, build = "b38")))
 })
 
 test_that("is_overconstrained holds only for an empty genome constraint", {
   expect_false(is_overconstrained(NULL))
-  expect_true(is_overconstrained(empty_genomic_regions(build = "b38")))
-  expect_false(is_overconstrained(full_genomic_regions(build = "b38")))
-  expect_false(is_overconstrained(new_genomic_regions(chr = 1, build = "b38")))
+  expect_true(is_overconstrained(empty_region_set(build = "b38")))
+  expect_false(is_overconstrained(full_region_set(build = "b38")))
+  expect_false(is_overconstrained(new_region_set(chr = 1, build = "b38")))
 })
 
 test_that("eq_constraints reads an absent constraint as the full genome", {
-  full <- full_genomic_regions(build = "b38")
-  constrained <- new_genomic_regions(chr = 1, build = "b38")
+  full <- full_region_set(build = "b38")
+  constrained <- new_region_set(chr = 1, build = "b38")
 
   expect_true(eq_constraints(NULL, NULL))
   expect_true(eq_constraints(NULL, full))
@@ -1737,11 +1737,11 @@ test_that("eq_constraints reads an absent constraint as the full genome", {
 test_that("building a condition allocates no full genome", {
   finterface <- local_summary_stats_interface(build = "b38")
   allocations <- 0L
-  unmocked_full_genomic_regions <- full_genomic_regions
+  unmocked_full_region_set <- full_region_set
   testthat::local_mocked_bindings(
-    full_genomic_regions = function(...) {
+    full_region_set = function(...) {
       allocations <<- allocations + 1L
-      unmocked_full_genomic_regions(...)
+      unmocked_full_region_set(...)
     }
   )
 

@@ -113,7 +113,7 @@ variant_key_expr <- function(finterface) {
 #' `(chr, pos, \{ref, alt\})` after lifting `v` to the file's build. `context` is
 #' the normalized context env built by `as_fc_context()` in the public
 #' `new_filter_condition()` wrapper, so the interface is read from
-#' `context$finterface`, mirroring `new_filter_condition_impl.genomic_regions`.
+#' `context$finterface`, mirroring `new_filter_condition_impl.region_set`.
 #'
 #' @keywords internal
 #' @export
@@ -126,7 +126,7 @@ new_filter_condition_impl.variants <- function(x, context, build = NULL, ...) {
 
   if (length(keyset$keys) == 0) {
     return(pure_genomic_condition(
-      genomic_constraint = empty_genomic_regions(build = build),
+      genomic_constraint = empty_region_set(build = build),
       build = build,
       context = context
     ))

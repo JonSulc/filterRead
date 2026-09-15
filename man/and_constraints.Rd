@@ -10,10 +10,10 @@ and_constraints(left, right)
 or_constraints(left, right)
 }
 \arguments{
-\item{left, right}{A genomic_regions object, or NULL for the full genome}
+\item{left, right}{A region_set object, or NULL for the full genome}
 }
 \value{
-A genomic_regions object, or NULL: for `and_constraints()` when
+A region_set object, or NULL: for `and_constraints()` when
   neither side constrains, for `or_constraints()` when either side does not.
 }
 \description{

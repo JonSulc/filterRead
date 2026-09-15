@@ -7,7 +7,7 @@
 is_overconstrained(genomic_constraint)
 }
 \arguments{
-\item{genomic_constraint}{A genomic_regions object, or NULL for the full
+\item{genomic_constraint}{A region_set object, or NULL for the full
 genome}
 }
 \value{

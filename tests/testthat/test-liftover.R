@@ -13,19 +13,19 @@ test_that("liftover matches known coordinates across builds", {
     to = "b37"
   )
 
-  genomic_regions_b36 <- new_genomic_regions(
+  region_set_b36 <- new_region_set(
     chr = "chr19",
     start = 50103781, # rs429358, b36
     end = 50103919, # rs7412, b36
     build = "b36"
   )
-  genomic_regions_b37 <- new_genomic_regions(
+  region_set_b37 <- new_region_set(
     chr = "chr19",
     start = 45411941, # rs429358, b37
     end = 45412079, # rs7412, b37
     build = "b37"
   )
-  genomic_regions_b38 <- new_genomic_regions(
+  region_set_b38 <- new_region_set(
     chr = "chr19",
     start = 44908684, # rs429358, b38
     end = 44908822, # rs7412, b38
@@ -34,29 +34,29 @@ test_that("liftover matches known coordinates across builds", {
 
   expect_equal(
     liftover(
-      genomic_regions_b36,
+      region_set_b36,
       chain_dt_b36_b37
     ),
-    genomic_regions_b37
+    region_set_b37
   )
   expect_equal(
     liftover(
-      genomic_regions_b37,
+      region_set_b37,
       chain_dt_b37_b38
     ),
-    genomic_regions_b38
+    region_set_b38
   )
   expect_equal(
     liftover(
-      genomic_regions_b38,
+      region_set_b38,
       chain_dt_b38_b37
     ),
-    genomic_regions_b37
+    region_set_b37
   )
 })
 
 test_that("liftover to the same build returns the object", {
-  genomic_regions <- new_genomic_regions(
+  region_set <- new_region_set(
     chr = "chr19",
     start = 45411941, # rs429358, b37
     end = 45412079, # rs7412, b37
@@ -65,15 +65,15 @@ test_that("liftover to the same build returns the object", {
 
   expect_equal(
     liftover(
-      genomic_regions,
+      region_set,
       target = "b37"
     ),
-    genomic_regions
+    region_set
   )
 })
 
 test_that("liftover produces a warning if no build is configured", {
-  genomic_regions <- new_genomic_regions(
+  region_set <- new_region_set(
     chr = "chr19",
     start = 45411941,
     end = 45412079
@@ -81,36 +81,36 @@ test_that("liftover produces a warning if no build is configured", {
 
   expect_warning(
     liftover(
-      genomic_regions,
+      region_set,
       target = "b37"
     ),
     "No build"
   )
   expect_equal(
     liftover(
-      genomic_regions,
+      region_set,
       target = "b37"
     ) |>
       suppressWarnings(),
-    genomic_regions
+    region_set
   )
 })
 
 test_that("split regions return additional rows", {
   # There is a mismatch between assemblies at 19:7304090+ (b37)
-  genomic_regions_b37 <- new_genomic_regions(
+  region_set_b37 <- new_region_set(
     chr = "chr19",
     start = 7304000,
     end = 7304100,
     build = "b37"
   )
-  genomic_regions_b37_split <- new_genomic_regions(
+  region_set_b37_split <- new_region_set(
     chr = "chr19",
     start = c(7304000, 7304090),
     end = c(7304089, 7304100),
     build = "b37"
   )
-  expected_regions_b38 <- new_genomic_regions(
+  expected_regions_b38 <- new_region_set(
     chr = c("chr19", "chr7"),
     start = c(7303989, 101687284),
     end = c(7304078, 101687294),
@@ -120,14 +120,14 @@ test_that("split regions return additional rows", {
 
   expect_equal(
     liftover(
-      genomic_regions_b37_split,
+      region_set_b37_split,
       chain_dt
     ),
     expected_regions_b38
   )
   expect_equal(
     liftover(
-      genomic_regions_b37,
+      region_set_b37,
       chain_dt
     ),
     expected_regions_b38
@@ -135,7 +135,7 @@ test_that("split regions return additional rows", {
 })
 
 test_that("Flipped regions work", {
-  gregions <- new_genomic_regions(
+  gregions <- new_region_set(
     chr = 1,
     start = c(317721, 421000),
     end = c(317742, 421421),
@@ -146,7 +146,7 @@ test_that("Flipped regions work", {
       gregions,
       "b38"
     ),
-    new_genomic_regions(
+    new_region_set(
       chr = 1,
       start = c(397916, 501595),
       end = c(398337, 501616),
@@ -156,7 +156,7 @@ test_that("Flipped regions work", {
 })
 
 test_that("full chromosome liftover works", {
-  gregions <- new_genomic_regions(
+  gregions <- new_region_set(
     chr = "chr1",
     build = "b37"
   )
@@ -168,7 +168,7 @@ test_that("full chromosome liftover works", {
     "chr1",
     .(chr, start, end)
   ] |>
-    as_genomic_regions() |>
+    as_region_set() |>
     liftover(chain_dt)
   expect_equal(
     liftover(
@@ -180,7 +180,7 @@ test_that("full chromosome liftover works", {
 })
 
 test_that("chromosome-free liftover works", {
-  gregions <- new_genomic_regions(
+  gregions <- new_region_set(
     end = 1e7,
     build = "b37"
   )
@@ -188,7 +188,7 @@ test_that("chromosome-free liftover works", {
     from = "b37",
     to = "b38"
   )
-  expected <- new_genomic_regions(
+  expected <- new_region_set(
     chr = unique(chain_dt$chr),
     start = 1,
     end = 1e7,
@@ -204,7 +204,7 @@ test_that("chromosome-free liftover works", {
 
 test_that("regions with no mapping are dropped", {
   expect_equal(
-    new_genomic_regions(
+    new_region_set(
       chr = "chr1",
       end = 1000,
       build = "b37"
@@ -215,11 +215,11 @@ test_that("regions with no mapping are dropped", {
   )
 })
 
-test_that("empty genomic_regions returns empty", {
-  empty_regions <- new_genomic_regions(build = "b37")
+test_that("empty region_set returns empty", {
+  empty_regions <- new_region_set(build = "b37")
   result <- liftover(empty_regions, "b38")
   expect_equal(nrow(result), 0)
-  expect_true(is_genomic_regions(result))
+  expect_true(is_region_set(result))
 })
 
 test_that("reverse strand liftover coordinates are correct", {
@@ -230,7 +230,7 @@ test_that("reverse strand liftover coordinates are correct", {
 
   # Use the first reverse strand region
   test_region <- rev_chain[1]
-  input_region <- new_genomic_regions(
+  input_region <- new_region_set(
     chr = test_region$chr,
     start = test_region$start,
     end = test_region$end,
@@ -246,14 +246,14 @@ test_that("reverse strand liftover coordinates are correct", {
 test_that("multiple regions with partial mapping", {
   # Mix of mappable and unmappable regions
   # chr1:1-1000 has no mapping in the chain file
-  unmappable <- new_genomic_regions(
+  unmappable <- new_region_set(
     chr = "chr1",
     start = 1,
     end = 1000,
     build = "b37"
   )
   # APOE region is known to map successfully
-  mappable <- new_genomic_regions(
+  mappable <- new_region_set(
     chr = "chr19",
     start = 45411941,
     end = 45412079,
@@ -293,8 +293,8 @@ test_that("build() accessor works for different object types", {
   finterface <- local_summary_stats_interface(build = "b36")
   expect_equal(build(finterface), "b36")
 
-  # Test build on genomic_regions
-  gr <- new_genomic_regions(chr = "1", start = 100, end = 200, build = "b38")
+  # Test build on region_set
+  gr <- new_region_set(chr = "1", start = 100, end = 200, build = "b38")
   expect_equal(build(gr), "b38")
 })
 
@@ -321,8 +321,8 @@ test_that("build<-() setter works for different object types", {
   build(dt2) <- NULL
   expect_null(build(dt2))
 
-  # Test setting build on genomic_regions
-  gr <- new_genomic_regions(chr = "1", start = 100, end = 200)
+  # Test setting build on region_set
+  gr <- new_region_set(chr = "1", start = 100, end = 200)
   expect_null(build(gr))
   build(gr) <- "b38"
   expect_equal(build(gr), "b38")
@@ -339,9 +339,9 @@ test_that("build() and build<-() work correctly together", {
   build(dt) <- "b38"
   expect_equal(build(dt), "b38")
 
-  # Test with genomic_regions through operations
-  gr1 <- new_genomic_regions(chr = "1", start = 100, end = 200, build = "b38")
-  gr2 <- new_genomic_regions(chr = "1", start = 150, end = 250, build = "b38")
+  # Test with region_set through operations
+  gr1 <- new_region_set(chr = "1", start = 100, end = 200, build = "b38")
+  gr2 <- new_region_set(chr = "1", start = 150, end = 250, build = "b38")
 
   # Build should be preserved through operations
   result <- gr1 & gr2
@@ -428,7 +428,7 @@ test_that("get_chain_downloads() accepts build synonyms", {
 })
 
 test_that("liftover() accepts build synonyms as target", {
-  gr_b37 <- new_genomic_regions(
+  gr_b37 <- new_region_set(
     chr = "chr19",
     start = 45411941,
     end = 45412079,
@@ -559,7 +559,7 @@ test_that("lifting leaves the shared chain untouched", {
   build(dt) <- "b37"
   liftover(dt, "b38")
   liftover(
-    genomic_regions(chr = "1", start = 200L, end = 300L, build = "b37"),
+    region_set(chr = "1", start = 200L, end = 300L, build = "b37"),
     "b38"
   )
 
@@ -809,7 +809,7 @@ test_that("normalize_build is still strict by default", {
 
 test_that("liftover keeps a complement-stored set complement-stored", {
   chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
-  gregions <- !new_genomic_regions(
+  gregions <- !new_region_set(
     chr = 1,
     start = 100,
     end = 200,
@@ -823,7 +823,7 @@ test_that("liftover keeps a complement-stored set complement-stored", {
 
 test_that("liftover keeps a directly stored set directly stored", {
   chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
-  gregions <- new_genomic_regions(
+  gregions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,

@@ -53,7 +53,7 @@ head(finterface)
 
 # Filter using R-style conditions and load into memory
 significant_hits <- finterface[chr == 1 & pval < 5e-8]
-genomic_regions <- finterface[
+regions <- finterface[
   (chr == 2 & 12345 < pos & pos < 23456) |
   (chr == 3 & 42 < pos & pos < 4242)
 ]

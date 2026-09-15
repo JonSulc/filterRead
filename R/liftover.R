@@ -432,7 +432,7 @@ parse_chain_file <- function(path) {
 #' S3 generic for lifting over genomic coordinates from one genome build
 #' to another using UCSC chain files.
 #'
-#' @param x Object containing genomic coordinates (e.g., genomic_regions)
+#' @param x Object containing genomic coordinates (e.g., region_set)
 #' @param ... Additional arguments passed to methods
 #' @return Object with coordinates converted to the target build
 #' @export
@@ -448,7 +448,7 @@ liftover <- function(
 #' Maps `(chr, start, end)` intervals from one reference genome to
 #' another by overlapping them with a UCSC chain data.table and
 #' applying each chain block's offset and strand. The shared core for
-#' [liftover.genomic_regions()] and [liftover.data.table()]; not called
+#' [liftover.region_set()] and [liftover.data.table()]; not called
 #' directly by users. Columns beyond `chr`/`start`/`end` in
 #' `positions_dt` are carried through unchanged.
 #'

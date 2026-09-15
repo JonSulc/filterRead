@@ -1,6 +1,6 @@
-# Genomic Regions
+# Region sets
 #
-# This module provides the genomic_regions class for representing and
+# This module provides the region_set class for representing and
 # manipulating genomic coordinate ranges. Key features:
 #
 # - Represents regions as data.table with chr, start, end columns
@@ -9,18 +9,18 @@
 # - Liftover between genome builds (e.g., b37 -> b38)
 # - Reduces regions to a canonical form on construction
 #
-# The genomic_regions class is used throughout filterRead to:
+# The region_set class is used throughout filterRead to:
 # - Extract genomic constraints from filter conditions
 # - Generate tabix queries for RSID-indexed files
 # - Combine multiple filtering regions efficiently
 
 #' Construct genomic regions for positional filtering
 #'
-#' Builds a `genomic_regions` object — a set of `(chr, start, end)`
+#' Builds a `region_set` object — a set of `(chr, start, end)`
 #' coordinate ranges in one reference build — from parallel vectors. Pass
 #' the result as a `[` subscript to a `file_interface` to filter its rows by
-#' position: `finterface[genomic_regions(...)]`. To build regions from an
-#' existing `data.table` of `chr`/`start`/`end`, use [as_genomic_regions()].
+#' position: `finterface[region_set(...)]`. To build regions from an
+#' existing `data.table` of `chr`/`start`/`end`, use [as_region_set()].
 #'
 #' @param chr Character vector of chromosome names (NA = any chromosome).
 #' @param start Integer vector of start positions.
@@ -28,24 +28,24 @@
 #' @param build Reference build the coordinates are expressed in ("b36",
 #'   "b37", "b38", or a synonym). Optional at construction, but positional
 #'   filtering against a build-bearing file requires it (see
-#'   [as_genomic_regions()] and the file-interface `[` method).
+#'   [as_region_set()] and the file-interface `[` method).
 #' @param chr_prefix Prefix to ensure on chromosome names (default "chr").
 #' @param canonicalize If TRUE, reduce the regions to their canonical
 #'   form: sorted and pairwise disjoint.
 #' @param complement If TRUE the rows describe the coordinates the set
 #'   excludes rather than those it covers.
 #'
-#' @return A `genomic_regions` object.
-#' @seealso [as_genomic_regions()] to coerce an existing table.
+#' @return A `region_set` object.
+#' @seealso [as_region_set()] to coerce an existing table.
 #' @examples
-#' genomic_regions(
+#' region_set(
 #'   chr = c("1", "2"),
 #'   start = c(1000L, 5000L),
 #'   end = c(2000L, 6000L),
 #'   build = "b38"
 #' )
 #' @export
-genomic_regions <- function(
+region_set <- function(
   chr = character(),
   start = integer(),
   end = integer(),
@@ -56,11 +56,11 @@ genomic_regions <- function(
 ) {
   if (data.table::is.data.table(chr)) {
     stop(
-      "`genomic_regions()` builds regions from `chr`/`start`/`end` vectors. ",
-      "To coerce a `data.table` of regions, use `as_genomic_regions()`."
+      "`region_set()` builds regions from `chr`/`start`/`end` vectors. ",
+      "To coerce a `data.table` of regions, use `as_region_set()`."
     )
   }
-  new_genomic_regions(
+  new_region_set(
     chr = chr,
     start = start,
     end = end,
@@ -71,14 +71,14 @@ genomic_regions <- function(
   )
 }
 
-#' Create a new genomic_regions object
+#' Create a new region_set object
 #'
-#' Constructor for genomic_regions. Validates inputs, formats chromosome
+#' Constructor for region_set. Validates inputs, formats chromosome
 #' names, and optionally reduces the regions to their canonical form.
 #'
-#' @inheritParams genomic_regions
+#' @inheritParams region_set
 #'
-#' @return A `genomic_regions` object.
+#' @return A `region_set` object.
 #' @section NA semantics:
 #' A row's `chr` and `end` may be NA, meaning "unconstrained on this axis":
 #' - `chr = NA` matches every chromosome.
@@ -96,7 +96,7 @@ genomic_regions <- function(
 #'   and a region with `chr = NA` absorbs the coverage of the regions it
 #'   spans.
 #' @keywords internal
-new_genomic_regions <- function(
+new_region_set <- function(
   chr = character(),
   start = integer(),
   end = integer(),
@@ -126,23 +126,23 @@ new_genomic_regions <- function(
     start = start,
     end = end
   ) |>
-    as_genomic_regions(
+    as_region_set(
       build = build,
       complement = complement,
       canonicalize = canonicalize
     )
 }
 
-#' Validate a genomic_regions
+#' Validate a region_set
 #'
-#' Checks the invariants every genomic_regions holds: the `chr`, `start` and
+#' Checks the invariants every region_set holds: the `chr`, `start` and
 #' `end` columns, each of its own type; a start on every row that is a
 #' position; and an end either unconstrained or at or after its start.
 #'
 #' @param gregions Object to validate
 #' @return The input invisibly; stops with error if invalid
 #' @keywords internal
-validate_genomic_regions <- function(
+validate_region_set <- function(
   gregions
 ) {
   if (!data.table::is.data.table(gregions)) {
@@ -156,7 +156,7 @@ validate_genomic_regions <- function(
     stop(
       "Genomic regions require columns `chr`, `start`, and `end`; ",
       "missing: ", paste(missing_cols, collapse = ", "), ".\n",
-      "To build regions from vectors, use `genomic_regions()`."
+      "To build regions from vectors, use `region_set()`."
     )
   }
   wrong_type <- c(
@@ -189,28 +189,28 @@ validate_genomic_regions <- function(
   invisible(gregions)
 }
 
-#' Create empty genomic_regions (no regions)
+#' Create empty region_set (no regions)
 #'
 #' @param build Genome build identifier
-#' @return Empty genomic_regions (0 rows)
+#' @return Empty region_set (0 rows)
 #' @keywords internal
-empty_genomic_regions <- function(
+empty_region_set <- function(
   build = NULL
 ) {
-  new_genomic_regions(build = build)
+  new_region_set(build = build)
 }
 
-#' Create full-genome genomic_regions (all positions)
+#' Create full-genome region_set (all positions)
 #'
-#' Returns a genomic_regions with NA for chr and end, and start = 1.
+#' Returns a region_set with NA for chr and end, and start = 1.
 #'
 #' @param build Genome build identifier
-#' @return genomic_regions representing the entire genome
+#' @return region_set representing the entire genome
 #' @keywords internal
-full_genomic_regions <- function(
+full_region_set <- function(
   build = NULL
 ) {
-  new_genomic_regions(
+  new_region_set(
     chr = NA_character_,
     build = build
   )
@@ -224,7 +224,7 @@ full_genomic_regions <- function(
 #'
 #' @param start Lower bound on the positions covered
 #' @param build Genome build identifier
-#' @return genomic_regions holding the one general rule from the resolved
+#' @return region_set holding the one general rule from the resolved
 #'   bound on, with no rows when the bound lies above every position
 #' @keywords internal
 general_rule_from <- function(
@@ -232,9 +232,9 @@ general_rule_from <- function(
   build = NULL
 ) {
   if (is.infinite(start) && 0 < start) {
-    return(empty_genomic_regions(build = build))
+    return(empty_region_set(build = build))
   }
-  new_genomic_regions(
+  new_region_set(
     start = max(start, 1L),
     build = build
   )
@@ -248,7 +248,7 @@ general_rule_from <- function(
 #'
 #' @param end Upper bound on the positions covered
 #' @param build Genome build identifier
-#' @return genomic_regions holding the one general rule up to the resolved
+#' @return region_set holding the one general rule up to the resolved
 #'   bound, with no rows when the bound lies below every position
 #' @keywords internal
 general_rule_to <- function(
@@ -256,9 +256,9 @@ general_rule_to <- function(
   build = NULL
 ) {
   if (end < 1L) {
-    return(empty_genomic_regions(build = build))
+    return(empty_region_set(build = build))
   }
-  new_genomic_regions(
+  new_region_set(
     end = if (is.infinite(end)) NA_integer_ else end,
     build = build
   )
@@ -266,15 +266,15 @@ general_rule_to <- function(
 
 # Utility Functions
 
-#' Check if object is genomic_regions
+#' Check if object is region_set
 #'
 #' @param x Object to test
-#' @return TRUE if x inherits from genomic_regions
+#' @return TRUE if x inherits from region_set
 #' @keywords internal
-is_genomic_regions <- function(
+is_region_set <- function(
   x
 ) {
-  inherits(x, "genomic_regions")
+  inherits(x, "region_set")
 }
 
 #' Format chromosome names with prefix
@@ -300,14 +300,14 @@ format_chr <- function(
   formatted[data.table::chmatch(chr, distinct_chr)]
 }
 
-#' Deep copy genomic_regions
+#' Deep copy region_set
 #'
-#' @param gregions A genomic_regions object
+#' @param gregions A region_set object
 #' @return A copy with class preserved
 #' @keywords internal
-copy_genomic_regions <- function(gregions) {
+copy_region_set <- function(gregions) {
   data.table::copy(gregions) |>
-    as_genomic_regions(canonicalize = FALSE)
+    as_region_set(canonicalize = FALSE)
 }
 
 #' Remove prefix from chromosome names
@@ -323,9 +323,9 @@ drop_chr_prefix <- function(
   gsub(paste0("^", chr_prefix), "", chr)
 }
 
-#' Check if genomic_regions covers the whole genome
+#' Check if region_set covers the whole genome
 #'
-#' @param gregions A genomic_regions object
+#' @param gregions A region_set object
 #' @return TRUE if gregions constrains no position
 #' @keywords internal
 is_full_genome <- function(gregions) {
@@ -338,9 +338,9 @@ is_full_genome <- function(gregions) {
     is.na(gregions$end)
 }
 
-#' Check if genomic_regions covers no position at all
+#' Check if region_set covers no position at all
 #'
-#' @param gregions A genomic_regions object
+#' @param gregions A region_set object
 #' @return TRUE if no row can satisfy gregions
 #' @keywords internal
 is_empty_genome <- function(gregions) {
@@ -349,7 +349,7 @@ is_empty_genome <- function(gregions) {
 
 
 #' @export
-print.genomic_regions <- function(
+print.region_set <- function(
   x,
   ...
 ) {
@@ -365,7 +365,7 @@ print.genomic_regions <- function(
 }
 
 #' @export
-str.genomic_regions <- function(
+str.region_set <- function(
   object,
   ...
 ) {

@@ -7,7 +7,7 @@
 liftover(x, ...)
 }
 \arguments{
-\item{x}{Object containing genomic coordinates (e.g., genomic_regions)}
+\item{x}{Object containing genomic coordinates (e.g., region_set)}
 
 \item{...}{Additional arguments passed to methods}
 }

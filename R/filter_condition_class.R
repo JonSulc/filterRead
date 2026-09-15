@@ -31,7 +31,7 @@ composite_fc_operators <- list(
 
 # Filter conditions whose awk emit is a regex match (`~`). They behave
 # differently from comparison/membership atoms: they cannot be expressed
-# as a genomic_regions and always fall through to awk.
+# as a region_set and always fall through to awk.
 regex_fc_names <- c("grepl_filter_condition", "like_filter_condition")
 
 #' Check whether a filter_condition expression is a regex match
@@ -360,16 +360,16 @@ as_fc_context <- function(finterface, x) {
 #' package's internal representation of a row filter that is later compiled
 #' to awk. Methods are dispatched on the type of `x`; the most common entry
 #' point is the `[.file_interface` operator, which calls this with a
-#' quosure produced by `rlang::enquo()`. Pass a `genomic_regions` object
+#' quosure produced by `rlang::enquo()`. Pass a `region_set` object
 #' to filter on chromosome/position ranges directly.
 #'
 #' @param x A quosure (typically produced by `rlang::enquo()` or
-#'   `rlang::quo()`) or a `genomic_regions` object.
+#'   `rlang::quo()`) or a `region_set` object.
 #' @param finterface The `file_interface` the filter applies to. Used for
 #'   column lookup and build inference.
 #' @param build Optional genome build (`"b36"`, `"b37"`, `"b38"`). When
 #'   `NULL` (the default), it is inferred from `finterface`, falling back to
-#'   the build of `x` itself for `genomic_regions`/`variants` inputs.
+#'   the build of `x` itself for `region_set`/`variants` inputs.
 #' @param ... Reserved for method-specific arguments.
 #' @param env Environment in which to evaluate a bare-symbol condition `x`
 #'   (used by the `name` method); defaults to the caller's frame.
@@ -451,7 +451,7 @@ new_filter_condition_impl.name <- function(
   )
 }
 #' @export
-new_filter_condition_impl.genomic_regions <- function(
+new_filter_condition_impl.region_set <- function(
   x,
   context,
   build = NULL,
@@ -466,13 +466,13 @@ new_filter_condition_impl.genomic_regions <- function(
     stop(
       if (is.null(region_build)) {
         paste0(
-          "genomic_regions has no build but the file is ", file_build,
+          "region_set has no build but the file is ", file_build,
           ". Set the regions' build so their coordinates can be ",
           "reconciled with the file."
         )
       } else {
         paste0(
-          "genomic_regions is ", region_build,
+          "region_set is ", region_build,
           " but the file has no declared build. Set the file's build ",
           "so the regions' coordinates can be reconciled with it."
         )
@@ -547,7 +547,7 @@ new_filter_condition_impl.quosure <- function(
       paste(deparse(rlang::get_expr(x)), collapse = " "),
       "`: a condition must compare, test membership (%in%, grepl, %like%), ",
       "or logically combine file columns, or be a symbol bound to a ",
-      "genomic_regions object."
+      "region_set object."
     )
   }
 
@@ -703,12 +703,12 @@ format.filter_condition <- function(
 #' file_interface's column metadata. Comparison atoms (`<`, `<=`, `>`, `>=`)
 #' pass through unchanged; equality (`==`, `!=`) and membership (`%in%`)
 #' atoms evaluate their right-hand side and run it through
-#' [check_post_processing()]. The `genomic_regions` method normalizes
+#' [check_post_processing()]. The `region_set` method normalizes
 #' chromosome values (strips any `"chr"` prefix, then re-applies the file's
 #' actual prefix and quoting from `column_info`) so the awk pattern matches
 #' the file's format.
 #'
-#' @param x A `filter_condition` (any subclass) or a `genomic_regions`
+#' @param x A `filter_condition` (any subclass) or a `region_set`
 #'   object.
 #' @param finterface The associated file_interface. Defaults to the one
 #'   stored in the object's `context` attribute.
@@ -789,15 +789,15 @@ post_process.in_filter_condition <- function(
   x
 }
 #' @export
-post_process.genomic_regions <- function(
+post_process.region_set <- function(
   x,
   finterface
 ) {
-  copy_genomic_regions(x)[
+  copy_region_set(x)[
     !is.na(chr),
     chr := check_post_processing(chr, "chr", finterface)
   ][] |>
-    as_genomic_regions(complement = is_complement(x))
+    as_region_set(complement = is_complement(x))
 }
 
 #' @export

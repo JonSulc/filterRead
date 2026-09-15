@@ -34,7 +34,7 @@ eval_fcondition_w_gregions <- function(
         column_indices = column_indices
       )
     )
-    gregions_condition <- eval_genomic_regions_from_fc(
+    gregions_condition <- eval_region_set_from_fc(
       fcondition,
       finterface = finterface,
       column_indices = column_indices
@@ -61,7 +61,7 @@ eval_fcondition_w_gregions <- function(
   # Then add genomic region conditions (chr == X && Y <= pos && pos <= Z)
   awk_conditions$condition <- c(
     awk_conditions$condition,
-    eval_genomic_regions_from_fc(
+    eval_region_set_from_fc(
       fcondition,
       finterface = finterface,
       column_indices = column_indices
@@ -133,7 +133,7 @@ eval_fcondition <- function(
 #'   match nothing, or NULL when they impose no constraint: an unconstrained
 #'   condition, or positions handled through an RSID index
 #' @keywords internal
-eval_genomic_regions_from_fc <- function(
+eval_region_set_from_fc <- function(
   fcondition,
   finterface,
   column_indices

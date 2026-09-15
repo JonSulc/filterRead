@@ -282,7 +282,7 @@ test_that("OR of two RSID-indexed regions returns the union of both", {
   finterface <- local_rsid_summary_stats_interface(build = "b38")
   # Disjuncts carry their own non-genomic predicate so they survive as two
   # separate tabix process substitutions rather than collapsing into a single
-  # genomic_regions with two ranges.
+  # region_set with two ranges.
   region_a <- finterface[chr == 1 & 123 <= pos & pos <= 50000 & pval <= 1]
   region_b <- finterface[chr == 1 & 60000 <= pos & pos <= 99999 & pval <= 1]
   union <- finterface[
@@ -331,7 +331,7 @@ test_that("Genomic ranges are correctly identified", {
   expect_equal(
     new_filter_condition(rlang::quo(chr == 1 & pos < 123), finterface) |>
       genomic_constraint(),
-    new_genomic_regions(chr = "1", start = 1L, end = 122, build = "b38")
+    new_region_set(chr = "1", start = 1L, end = 122, build = "b38")
   )
 })
 
@@ -340,7 +340,7 @@ test_that("Genomic ranges are correctly structured", {
   expect_equal(
     new_filter_condition(rlang::quo(pos < 123), finterface) |>
       genomic_constraint(),
-    new_genomic_regions(
+    new_region_set(
       end = 122,
       build = "b38"
     )

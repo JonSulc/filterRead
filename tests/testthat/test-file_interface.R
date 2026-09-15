@@ -689,7 +689,7 @@ test_that("head.file_interface handles filenames with spaces", {
   expect_equal(nrow(head(finterface, 2)), 2)
 })
 
-test_that("[.file_interface short-circuits empty genomic_regions without awk", {
+test_that("[.file_interface short-circuits empty region_set without awk", {
   testthat::local_mocked_bindings(
     fcondition_to_awk = function(...) {
       stop("fcondition_to_awk should not be called for empty regions")

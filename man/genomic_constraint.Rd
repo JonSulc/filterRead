@@ -10,7 +10,7 @@ genomic_constraint(fcondition)
 \item{fcondition}{A filter_condition object}
 }
 \value{
-A genomic_regions object, or NULL when the condition restricts no
+A region_set object, or NULL when the condition restricts no
   coordinates
 }
 \description{

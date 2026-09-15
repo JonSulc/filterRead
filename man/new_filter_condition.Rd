@@ -8,14 +8,14 @@ new_filter_condition(x, finterface, build = NULL, ..., env = parent.frame())
 }
 \arguments{
 \item{x}{A quosure (typically produced by `rlang::enquo()` or
-`rlang::quo()`) or a `genomic_regions` object.}
+`rlang::quo()`) or a `region_set` object.}
 
 \item{finterface}{The `file_interface` the filter applies to. Used for
 column lookup and build inference.}
 
 \item{build}{Optional genome build (`"b36"`, `"b37"`, `"b38"`). When
 `NULL` (the default), it is inferred from `finterface`, falling back to
-the build of `x` itself for `genomic_regions`/`variants` inputs.}
+the build of `x` itself for `region_set`/`variants` inputs.}
 
 \item{...}{Reserved for method-specific arguments.}
 
@@ -32,7 +32,7 @@ S3 generic that turns an R expression into a filter_condition - the
 package's internal representation of a row filter that is later compiled
 to awk. Methods are dispatched on the type of `x`; the most common entry
 point is the `[.file_interface` operator, which calls this with a
-quosure produced by `rlang::enquo()`. Pass a `genomic_regions` object
+quosure produced by `rlang::enquo()`. Pass a `region_set` object
 to filter on chromosome/position ranges directly.
 }
 \examples{

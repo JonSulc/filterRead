@@ -9,24 +9,24 @@
 # - data.table::foverlaps adds 1 internally to convert to half-open ranges
 # - merge_contiguous_regions: shift(end + 1L, fill = 0)
 # - subtract_interval_coverage: pmax(start, cut_end + 1L)
-# - expand_genomic_regions (negation): start = end + 1L
+# - expand_region_set (negation): start = end + 1L
 # Any future code that adds more than 1 to `end` must lower this sentinel
 # accordingly, otherwise it will silently overflow to NA on sentinel rows.
 END_SENTINEL <- .Machine$integer.max - 1L
 
-#' Liftover genomic_regions to a different genome build
+#' Liftover region_set to a different genome build
 #'
 #' Converts genomic coordinates from one reference genome to another
 #' using UCSC chain files. Handles regions that span chain boundaries
 #' by splitting them.
 #'
-#' @param x A genomic_regions object
+#' @param x A region_set object
 #' @param target Target genome build (e.g., "hg38") or a chain data.table
 #' @param ... Ignored
 #'
-#' @return genomic_regions with coordinates in target build
+#' @return region_set with coordinates in target build
 #' @export
-liftover.genomic_regions <- function(
+liftover.region_set <- function(
   x,
   target,
   ...
@@ -57,7 +57,7 @@ liftover.genomic_regions <- function(
         return(x)
       }
       warning(
-        "No build configured for genomic_regions, ",
+        "No build configured for region_set, ",
         "returning original object"
       )
       return(x)
@@ -77,7 +77,7 @@ liftover.genomic_regions <- function(
     )
   }
 
-  expanded_x <- copy_genomic_regions(x)
+  expanded_x <- copy_region_set(x)
 
   if (!is.character(expanded_x$chr)) {
     expanded_x[
@@ -125,14 +125,14 @@ liftover.genomic_regions <- function(
     replace_na_with_sentinel(expanded_x),
     chain_dt
   ) |>
-    as_genomic_regions(
+    as_region_set(
       build = build(target),
       complement = is_complement(x)
     )
 }
 
 #' @export
-`[.genomic_regions` <- function(
+`[.region_set` <- function(
   gregions,
   ...
 ) {
@@ -143,19 +143,19 @@ liftover.genomic_regions <- function(
 
 # Set Operations
 #
-# genomic_regions supports set operations for combining regions:
+# region_set supports set operations for combining regions:
 # - Union (+ or |): combine all regions from both sets
 # - Intersection (&): find overlapping portions
 
-#' Union of genomic_regions
+#' Union of region_set
 #'
 #' Combines two sets of genomic regions, merging overlapping/contiguous
 #' regions.
 #'
-#' @param e1,e2 genomic_regions object
-#' @return Combined genomic_regions with merged overlaps
+#' @param e1,e2 region_set object
+#' @return Combined region_set with merged overlaps
 #' @export
-`+.genomic_regions` <- function(
+`+.region_set` <- function(
   e1,
   e2
 ) {
@@ -164,19 +164,19 @@ liftover.genomic_regions <- function(
       return(!(!e1 & !e2))
     }
     return(
-      expand_genomic_regions(e1) + e2
+      expand_region_set(e1) + e2
     )
   }
   if (is_complement(e2)) {
     return(
-      e1 + expand_genomic_regions(e2)
+      e1 + expand_region_set(e2)
     )
   }
   rbind(e1, e2)
 }
 
 #' @export
-`!.genomic_regions` <- function(
+`!.region_set` <- function(
   x
 ) {
   x <- data.table::copy(x)
@@ -184,11 +184,11 @@ liftover.genomic_regions <- function(
   x
 }
 
-#' Whether a genomic_regions stores its coordinates or their complement
+#' Whether a region_set stores its coordinates or their complement
 #'
 #' `set_complement()` modifies `gregions` in place.
 #'
-#' @param gregions A genomic_regions object
+#' @param gregions A region_set object
 #' @param value TRUE if the rows are stored as the set's complement
 #' @return `is_complement()` returns whether the rows are stored as the set's
 #'   complement; `set_complement()` returns `gregions`, invisibly.
@@ -205,7 +205,7 @@ set_complement <- function(gregions, value) {
 }
 
 #' @export
-`-.genomic_regions` <- function(
+`-.region_set` <- function(
   e1,
   e2 = NULL
 ) {
@@ -216,13 +216,13 @@ set_complement <- function(gregions, value) {
 }
 
 #' @export
-`==.genomic_regions` <- function(
+`==.region_set` <- function(
   e1,
   e2
 ) {
-  e1 <- expand_genomic_regions(e1)
+  e1 <- expand_region_set(e1)
   e2 <- liftover(e2, build(e1)) |>
-    expand_genomic_regions()
+    expand_region_set()
 
   if (nrow(e1) != nrow(e2)) {
     return(FALSE)
@@ -231,7 +231,7 @@ set_complement <- function(gregions, value) {
   identical(data.table::as.data.table(e1), data.table::as.data.table(e2))
 }
 
-expand_genomic_regions <- function(
+expand_region_set <- function(
   gregions,
   ordered_chr = 1:22
 ) {
@@ -239,23 +239,23 @@ expand_genomic_regions <- function(
     return(gregions)
   }
   if (nrow(gregions) == 0) {
-    return(full_genomic_regions(build = build(gregions)))
+    return(full_region_set(build = build(gregions)))
   }
   if (1 < nrow(gregions)) {
     return(
       lapply(
         seq_len(nrow(gregions)),
         \(index) {
-          expand_genomic_regions(gregions[index], ordered_chr)
+          expand_region_set(gregions[index], ordered_chr)
         }
       ) |>
         Reduce(f = "&")
     )
   }
   if (is.na(gregions$chr)) {
-    full_chrs <- empty_genomic_regions(build = build(gregions))
+    full_chrs <- empty_region_set(build = build(gregions))
   } else {
-    full_chrs <- new_genomic_regions(
+    full_chrs <- new_region_set(
       chr = setdiff(ordered_chr, drop_chr_prefix(gregions$chr)),
       build = build(gregions)
     )
@@ -291,25 +291,25 @@ expand_genomic_regions <- function(
     after_fragment
   ) |>
     data.table::rbindlist() |>
-    as_genomic_regions(build = build(gregions)) |>
+    as_region_set(build = build(gregions)) |>
     rbind(full_chrs)
 }
 
-#' Combine genomic_regions by rows
+#' Combine region_set by rows
 #'
-#' @param ... genomic_regions objects to combine
+#' @param ... region_set objects to combine
 #' @param canonicalize If TRUE, reduce the regions to their canonical
 #'   form: sorted and pairwise disjoint.
-#' @return Combined genomic_regions
+#' @return Combined region_set
 #' @export
-rbind.genomic_regions <- function(
+rbind.region_set <- function(
   ...,
   canonicalize = TRUE
 ) {
   dots <- list(...)
   if (!all(sapply(dots, is_complement) == is_complement(dots[[1]]))) {
     stop(
-      "Attempting to rbind genomic_regions that are stored differently ",
+      "Attempting to rbind region_set objects that are stored differently ",
       "(one holding its coordinates, the other their complement)."
     )
   }
@@ -331,25 +331,25 @@ rbind.genomic_regions <- function(
       target = build(dots[[1]])
     ) |>
     data.table::rbindlist(use.names = TRUE, fill = TRUE) |>
-    as_genomic_regions(
+    as_region_set(
       build = build(dots[[1]]),
       complement = is_complement(dots[[1]]),
       canonicalize = canonicalize
     )
 }
 
-#' Union operator for genomic_regions
+#' Union operator for region_set
 #'
-#' Alias for `+.genomic_regions` - combines regions from both sets.
+#' Alias for `+.region_set` - combines regions from both sets.
 #' When used as filter conditions, OR means "match any of these regions".
 #'
-#' @param e1,e2 genomic_regions objects
-#' @return Combined genomic_regions
-#' @name or-.genomic_regions
+#' @param e1,e2 region_set objects
+#' @return Combined region_set
+#' @name or-.region_set
 #' @export
-`|.genomic_regions` <- `+.genomic_regions`
+`|.region_set` <- `+.region_set`
 
-#' Intersection of genomic_regions
+#' Intersection of region_set
 #'
 #' Finds overlapping portions between two sets of genomic regions.
 #' Uses data.table::foverlaps for efficient overlap detection.
@@ -359,17 +359,17 @@ rbind.genomic_regions <- function(
 #' - Empty regions (returns empty)
 #' - Different builds (auto-lifts second argument)
 #'
-#' @param e1,e2 genomic_regions objects
-#' @return genomic_regions containing only overlapping portions
+#' @param e1,e2 region_set objects
+#' @return region_set containing only overlapping portions
 #' @export
-`&.genomic_regions` <- function(
+`&.region_set` <- function(
   e1,
   e2
 ) {
   # Ensure same build
   if (!identical(build(e1), build(e2))) {
     warning(
-      "The genomic_regions do not have the same build, ",
+      "The region_set objects do not have the same build, ",
       "converting the second."
     )
     e2 <- liftover(e2, build(e1))
@@ -380,18 +380,18 @@ rbind.genomic_regions <- function(
       return(rbind(e1, e2))
     }
     return(
-      expand_genomic_regions(e1) & e2
+      expand_region_set(e1) & e2
     )
   }
   if (is_complement(e2)) {
     return(
-      e1 & expand_genomic_regions(e2)
+      e1 & expand_region_set(e2)
     )
   }
 
   # Intersection with empty set = empty set
   if (is.null(e1) || is.null(e2) || nrow(e1) == 0 || nrow(e2) == 0) {
-    return(empty_genomic_regions(build = build(e1)))
+    return(empty_region_set(build = build(e1)))
   }
 
   # Handle mixed NA chromosomes by splitting and recursing
@@ -402,8 +402,8 @@ rbind.genomic_regions <- function(
     return((e1 & e2[is.na(chr)]) + (e1 & e2[!is.na(chr)]))
   }
 
-  e1_safe <- copy_genomic_regions(e1)
-  e2_safe <- copy_genomic_regions(e2)
+  e1_safe <- copy_region_set(e1)
+  e2_safe <- copy_region_set(e2)
 
   # Expand NA chr to match specific chromosomes from other set
   if (is.na(e1_safe$chr[1]) != is.na(e2_safe$chr[1])) {
@@ -431,12 +431,12 @@ rbind.genomic_regions <- function(
     .SDcols = -c("start", "end", "i.start", "i.end")
   ] |>
     replace_sentinel_with_na() |>
-    as_genomic_regions(build = build(e1))
+    as_region_set(build = build(e1))
 }
 
-#' Check if genomic_regions has both NA and non-NA chromosomes
+#' Check if region_set has both NA and non-NA chromosomes
 #'
-#' @param gregions A genomic_regions object
+#' @param gregions A region_set object
 #' @return TRUE if some rows have NA chr and others don't
 #' @keywords internal
 chr_has_mixed_na <- function(
@@ -447,13 +447,13 @@ chr_has_mixed_na <- function(
 
 #' Expand NA chromosome regions to all chromosomes in reference
 #'
-#' When a genomic_regions has NA chromosome (meaning "any"), this expands
-#' it to explicitly list all chromosomes found in the second genomic_regions.
+#' When a region_set has NA chromosome (meaning "any"), this expands
+#' it to explicitly list all chromosomes found in the second region_set.
 #'
-#' @param gregions1 genomic_regions with NA chr (to expand)
-#' @param gregions2 Second genomic_regions (for chromosome list)
+#' @param gregions1 region_set with NA chr (to expand)
+#' @param gregions2 Second region_set (for chromosome list)
 #'
-#' @return Expanded genomic_regions with explicit chromosomes
+#' @return Expanded region_set with explicit chromosomes
 #' @keywords internal
 expand_na_chr <- function(
   gregions1,
@@ -471,7 +471,7 @@ expand_na_chr <- function(
     .SDcols = -"chr",
     by = .I
   ][, -"I"] |>
-    as_genomic_regions(build = build(gregions1))
+    as_region_set(build = build(gregions1))
 }
 
 # Sentinel Value Handling for Overlap Operations
@@ -488,17 +488,17 @@ expand_na_chr <- function(
 #' Converts an NA end to `end_sentinel`, the concrete bound an overlap
 #' operation reads in its place.
 #'
-#' @param genomic_regions data.table with a potential NA end
+#' @param region_set data.table with a potential NA end
 #' @param end_sentinel Value to use for NA end
 #'
 #' @return Copy with NAs replaced by sentinels, keyed on `chr`, `start`
 #'   and `end`, the key `data.table::foverlaps` requires of its `y`.
 #' @keywords internal
 replace_na_with_sentinel <- function(
-  genomic_regions,
+  region_set,
   end_sentinel = END_SENTINEL
 ) {
-  copy_genomic_regions(genomic_regions)[
+  copy_region_set(region_set)[
     is.na(end),
     end := end_sentinel
   ][] |>
@@ -509,16 +509,16 @@ replace_na_with_sentinel <- function(
 #'
 #' Converts `end_sentinel` back to NA after overlap operations.
 #'
-#' @param genomic_regions data.table with sentinel values
+#' @param region_set data.table with sentinel values
 #' @param end_sentinel Value used for NA end
 #'
 #' @return Copy with sentinels replaced by NAs
 #' @keywords internal
 replace_sentinel_with_na <- function(
-  genomic_regions,
+  region_set,
   end_sentinel = END_SENTINEL
 ) {
-  copy_genomic_regions(genomic_regions)[
+  copy_region_set(region_set)[
     end == end_sentinel,
     end := NA_integer_
   ][] |>
@@ -527,25 +527,25 @@ replace_sentinel_with_na <- function(
     data.table::setkey("chr", "start", "end")
 }
 
-#' Return the smallest equivalent genomic_regions representation
+#' Return the smallest equivalent region_set representation
 #'
 #' Compares the input against both stored forms — its rows expanded, and the
 #' complement of its negation expanded — and returns whichever has the fewest
 #' rows. Output is semantically equivalent to the input - it represents the
 #' same set of genomic positions.
 #'
-#' @param gregions A genomic_regions object
-#' @return A genomic_regions object with the same coverage as `gregions`
+#' @param gregions A region_set object
+#' @return A region_set object with the same coverage as `gregions`
 #'   but with the minimum number of rows
 #' @export
 #' @examples
 #' \dontrun{
-#' gregions <- new_genomic_regions(chr = 1:20, build = "b38")
+#' gregions <- new_region_set(chr = 1:20, build = "b38")
 #' compact(gregions)
 #' }
 compact <- function(gregions) {
-  expanded_gregions <- expand_genomic_regions(gregions)
-  expanded_ngregions <- !expand_genomic_regions(!gregions)
+  expanded_gregions <- expand_region_set(gregions)
+  expanded_ngregions <- !expand_region_set(!gregions)
   if (nrow(expanded_ngregions) < nrow(expanded_gregions) &&
     nrow(expanded_ngregions) < nrow(gregions)) {
     return(expanded_ngregions)

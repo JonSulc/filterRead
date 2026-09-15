@@ -7,7 +7,7 @@
 post_process(x, finterface)
 }
 \arguments{
-\item{x}{A `filter_condition` (any subclass) or a `genomic_regions`
+\item{x}{A `filter_condition` (any subclass) or a `region_set`
 object.}
 
 \item{finterface}{The associated file_interface. Defaults to the one
@@ -26,7 +26,7 @@ chromosome prefixes, and similar adjustments that depend on the
 file_interface's column metadata. Comparison atoms (`<`, `<=`, `>`, `>=`)
 pass through unchanged; equality (`==`, `!=`) and membership (`%in%`)
 atoms evaluate their right-hand side and run it through
-[check_post_processing()]. The `genomic_regions` method normalizes
+[check_post_processing()]. The `region_set` method normalizes
 chromosome values (strips any `"chr"` prefix, then re-applies the file's
 actual prefix and quoting from `column_info`) so the awk pattern matches
 the file's format.
