@@ -50,8 +50,8 @@ liftover.region_set <- function(
     return(x)
   }
   if (data.table::is.data.table(target)) {
-    chain_dt <- target
-    target <- attr(chain_dt, "to")
+    chain <- target
+    target <- attr(chain, "to")
   } else {
     if (is.null(build(x))) {
       if (is.null(target)) {
@@ -72,7 +72,7 @@ liftover.region_set <- function(
     if (build(x) == target) {
       return(x)
     }
-    chain_dt <- get_shared_chain(
+    chain <- get_shared_chain(
       from = build(x),
       to = target
     )
@@ -103,7 +103,7 @@ liftover.region_set <- function(
           is.na(chr),
           c(
             .(
-              chr = unique(chain_dt$chr)
+              chr = unique(chain$chr)
             ),
             .SD
           ),
@@ -124,7 +124,7 @@ liftover.region_set <- function(
     # An open end is one the overlap join has no notion of; the sentinel
     # states it as a concrete interval.
     replace_na_with_sentinel(expanded_x),
-    chain_dt
+    chain
   ) |>
     as_region_set(
       build = build(target),

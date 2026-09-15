@@ -4,13 +4,13 @@
 \alias{set_chain_index}
 \title{Set the index the overlap join reads}
 \usage{
-set_chain_index(chain_dt)
+set_chain_index(chain)
 }
 \arguments{
-\item{chain_dt}{A chain data.table.}
+\item{chain}{A chain data.table.}
 }
 \value{
-`chain_dt`, invisibly.
+`chain`, invisibly.
 }
 \description{
 Repairs the internal attributes a data.table read back from RDS carries,

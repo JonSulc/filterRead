@@ -159,7 +159,7 @@ test_that("liftover.data.table preserves non-coordinate columns", {
 
 test_that("lift_chain_overlap reverse-complements named allele columns on minus-strand blocks", {
   # Two source blocks on chr1: [100,199] forward, [200,299] reverse.
-  chain_dt <- data.table::data.table(
+  chain <- data.table::data.table(
     start   = c(100L, 200L),
     end     = c(199L, 299L),
     width   = c(100L, 100L),
@@ -168,7 +168,7 @@ test_that("lift_chain_overlap reverse-complements named allele columns on minus-
     new_chr = c("chr1", "chr1"),
     rev     = c(FALSE, TRUE)
   )
-  data.table::setkey(chain_dt, chr, start, end)
+  data.table::setkey(chain, chr, start, end)
 
   positions <- data.table::data.table(
     I     = 1:2,
@@ -181,7 +181,7 @@ test_that("lift_chain_overlap reverse-complements named allele columns on minus-
   data.table::setkey(positions, chr, start, end)
 
   lifted <- lift_chain_overlap(
-    positions, chain_dt, mult = "first", nomatch = 0L,
+    positions, chain, mult = "first", nomatch = 0L,
     allele_cols = c("ref", "alt")
   )
   lifted <- lifted[order(I)]

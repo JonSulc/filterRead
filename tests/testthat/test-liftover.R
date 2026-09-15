@@ -1,14 +1,14 @@
 test_that("liftover matches known coordinates across builds", {
-  chain_dt_b36_b37 <- get_chain(
+  chain_b36_b37 <- get_chain(
     from = "b36",
     to = "b37"
   ) |>
     suppressWarnings() # rtracklayer loading has a warning
-  chain_dt_b37_b38 <- get_chain(
+  chain_b37_b38 <- get_chain(
     from = "b37",
     to = "b38"
   )
-  chain_dt_b38_b37 <- get_chain(
+  chain_b38_b37 <- get_chain(
     from = "b38",
     to = "b37"
   )
@@ -35,21 +35,21 @@ test_that("liftover matches known coordinates across builds", {
   expect_equal(
     liftover(
       region_set_b36,
-      chain_dt_b36_b37
+      chain_b36_b37
     ),
     region_set_b37
   )
   expect_equal(
     liftover(
       region_set_b37,
-      chain_dt_b37_b38
+      chain_b37_b38
     ),
     region_set_b38
   )
   expect_equal(
     liftover(
       region_set_b38,
-      chain_dt_b38_b37
+      chain_b38_b37
     ),
     region_set_b37
   )
@@ -116,19 +116,19 @@ test_that("split regions return additional rows", {
     end = c(7304078, 101687294),
     build = "b38"
   )
-  chain_dt <- get_chain(from = "b37", to = "b38")
+  chain <- get_chain(from = "b37", to = "b38")
 
   expect_equal(
     liftover(
       region_set_b37_split,
-      chain_dt
+      chain
     ),
     expected_regions_b38
   )
   expect_equal(
     liftover(
       region_set_b37,
-      chain_dt
+      chain
     ),
     expected_regions_b38
   )
@@ -160,16 +160,16 @@ test_that("full chromosome liftover works", {
     chr = "chr1",
     build = "b37"
   )
-  chain_dt <- get_chain(
+  chain <- get_chain(
     from = "b37",
     to = "b38"
   )
-  expected <- chain_dt[
+  expected <- chain[
     "chr1",
     .(chr, start, end)
   ] |>
     as_region_set() |>
-    liftover(chain_dt)
+    liftover(chain)
   expect_equal(
     liftover(
       regions,
@@ -184,12 +184,12 @@ test_that("chromosome-free liftover works", {
     end = 1e7,
     build = "b37"
   )
-  chain_dt <- get_chain(
+  chain <- get_chain(
     from = "b37",
     to = "b38"
   )
   expected <- new_region_set(
-    chr = unique(chain_dt$chr),
+    chr = unique(chain$chr),
     start = 1,
     end = 1e7,
     build = "b37"
@@ -223,9 +223,9 @@ test_that("empty region_set returns empty", {
 })
 
 test_that("reverse strand liftover coordinates are correct", {
-  chain_dt <- get_chain(from = "b37", to = "b38")
+  chain <- get_chain(from = "b37", to = "b38")
   # Find a region with reverse strand mapping
-  rev_chain <- chain_dt[rev == TRUE]
+  rev_chain <- chain[rev == TRUE]
   skip_if(nrow(rev_chain) == 0, "No reverse strand regions in chain")
 
   # Use the first reverse strand region
@@ -236,7 +236,7 @@ test_that("reverse strand liftover coordinates are correct", {
     end = test_region$end,
     build = "b37"
   )
-  result <- liftover(input_region, chain_dt)
+  result <- liftover(input_region, chain)
 
   # Verify result exists and has expected chromosome
   expect_equal(nrow(result), 1)
@@ -461,8 +461,8 @@ local_chain_path <- function(.local_envir = parent.frame()) {
 
 test_that("clear_chain_cache removes cached RDS files", {
   tmp <- withr::local_tempdir()
-  rds1 <- file.path(tmp, "b37_to_b38.chain_dt.rds")
-  rds2 <- file.path(tmp, "b38_to_b37.chain_dt.rds")
+  rds1 <- file.path(tmp, "b37_to_b38.chain.rds")
+  rds2 <- file.path(tmp, "b38_to_b37.chain.rds")
   saveRDS(list(), rds1)
   saveRDS(list(), rds2)
 
@@ -556,17 +556,17 @@ test_that("lifting leaves the shared chain untouched", {
   invalidate_chain_cache()
   withr::defer(invalidate_chain_cache())
 
-  fingerprint <- function(chain_dt) {
+  fingerprint <- function(chain) {
     internal <- c(".internal.selfref", "index", "row.names")
     list(
-      nrow       = nrow(chain_dt),
-      names      = names(chain_dt),
-      key        = data.table::key(chain_dt),
-      indices    = data.table::indices(chain_dt),
-      attributes = attributes(chain_dt)[
-        setdiff(names(attributes(chain_dt)), internal)
+      nrow       = nrow(chain),
+      names      = names(chain),
+      key        = data.table::key(chain),
+      indices    = data.table::indices(chain),
+      attributes = attributes(chain)[
+        setdiff(names(attributes(chain)), internal)
       ],
-      columns    = data.table::copy(as.list(chain_dt))
+      columns    = data.table::copy(as.list(chain))
     )
   }
   before <- fingerprint(get_shared_chain("b37", "b38"))
@@ -596,7 +596,7 @@ test_that("a chain written to RDS carries the overlap join's index", {
   )
   invisible(get_chain(from = "b37", to = "b38", auto_download = FALSE))
 
-  from_disk <- readRDS(file.path(tmp, "b37_to_b38.chain_dt.rds"))
+  from_disk <- readRDS(file.path(tmp, "b37_to_b38.chain.rds"))
   expect_equal(data.table::indices(from_disk), "chr__start__end")
 })
 
@@ -778,15 +778,15 @@ test_that("get_chain parses chain file and writes RDS cache", {
     chain_file
   )
 
-  rds_file <- file.path(tmp, "b37_to_b38.chain_dt.rds")
+  rds_file <- file.path(tmp, "b37_to_b38.chain.rds")
   expect_false(file.exists(rds_file))
 
-  chain_dt <- get_chain(from = "b37", to = "b38", auto_download = FALSE)
+  chain <- get_chain(from = "b37", to = "b38", auto_download = FALSE)
 
-  expect_s3_class(chain_dt, "data.table")
-  expect_equal(nrow(chain_dt), 3)
-  expect_equal(attr(chain_dt, "from"), "b37")
-  expect_equal(attr(chain_dt, "to"), "b38")
+  expect_s3_class(chain, "data.table")
+  expect_equal(nrow(chain), 3)
+  expect_equal(attr(chain, "from"), "b37")
+  expect_equal(attr(chain, "to"), "b38")
   expect_true(file.exists(rds_file))
 })
 
@@ -803,14 +803,14 @@ test_that("get_chain regenerates from chain file when RDS cache is invalid", {
     chain_file
   )
 
-  rds_file <- file.path(tmp, "b37_to_b38.chain_dt.rds")
+  rds_file <- file.path(tmp, "b37_to_b38.chain.rds")
   saveRDS(list(invalid = TRUE), rds_file)
 
   expect_warning(
-    chain_dt <- get_chain(from = "b37", to = "b38", auto_download = FALSE),
+    chain <- get_chain(from = "b37", to = "b38", auto_download = FALSE),
     "Invalid chain cache"
   )
-  expect_s3_class(chain_dt, "data.table")
+  expect_s3_class(chain, "data.table")
   expect_true(file.exists(rds_file))
 })
 
@@ -832,7 +832,7 @@ test_that("normalize_build is still strict by default", {
 })
 
 test_that("liftover keeps a complement-stored set complement-stored", {
-  chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
+  chain <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
   regions <- !new_region_set(
     chr = 1,
     start = 100,
@@ -840,13 +840,13 @@ test_that("liftover keeps a complement-stored set complement-stored", {
     build = "b37"
   )
 
-  lifted <- liftover(regions, chain_dt)
+  lifted <- liftover(regions, chain)
   expect_true(is_complement(lifted))
   expect_equal(build(lifted), "b38")
 })
 
 test_that("liftover keeps a directly stored set directly stored", {
-  chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
+  chain <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
   regions <- new_region_set(
     chr = 1,
     start = 100,
@@ -854,5 +854,5 @@ test_that("liftover keeps a directly stored set directly stored", {
     build = "b37"
   )
 
-  expect_false(is_complement(liftover(regions, chain_dt)))
+  expect_false(is_complement(liftover(regions, chain)))
 })

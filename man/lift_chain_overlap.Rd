@@ -6,7 +6,7 @@
 \usage{
 lift_chain_overlap(
   positions_dt,
-  chain_dt,
+  chain,
   mult = "all",
   nomatch = 0L,
   allele_cols = character()
@@ -20,7 +20,7 @@ hold `NA`: the join accepts such rows and returns them with `NA`
 coordinates (or drops them, under `nomatch = 0L`) rather than
 signalling.}
 
-\item{chain_dt}{The session's shared chain for the desired
+\item{chain}{The session's shared chain for the desired
 source-to-target build pair, from [get_shared_chain()]. Held
 read-only: it is the cached object every other caller sees, so
 modifying it corrupts every later lift in the session. It carries a

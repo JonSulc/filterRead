@@ -24,7 +24,7 @@ get_chain_filename <- function(from, to) {
 get_chain_rds_filename <- function(from, to) {
   from <- normalize_build(from, allow_null = FALSE)
   to <- normalize_build(to, allow_null = FALSE)
-  sprintf("%s_to_%s.chain_dt.rds", from, to)
+  sprintf("%s_to_%s.chain.rds", from, to)
 }
 
 #' Get chain file download URLs and filenames
@@ -124,7 +124,7 @@ setup_chain_files <- function(
         message("  Caching parsed chain file...")
         from_build <- normalize_build(pair$from)
         to_build <- normalize_build(pair$to)
-        chain_dt <- parse_chain_file(dest_file) |>
+        chain <- parse_chain_file(dest_file) |>
           data.table::setattr("from", from_build) |>
           data.table::setattr("to", to_build) |>
           set_chain_index()
@@ -132,7 +132,7 @@ setup_chain_files <- function(
           path,
           get_chain_rds_filename(from_build, to_build)
         )
-        saveRDS(chain_dt, rds_file)
+        saveRDS(chain, rds_file)
 
         message("  Complete")
         TRUE
@@ -182,7 +182,8 @@ setup_chain_files <- function(
 #' @export
 clear_chain_cache <- function(path = get_chain_path(warn = FALSE)) {
   invalidate_chain_cache()
-  rds_files <- list.files(path, "\\.chain_dt\\.rds$", full.names = TRUE)
+  # Matches get_chain_rds_filename()'s extension.
+  rds_files <- list.files(path, "\\.chain\\.rds$", full.names = TRUE)
   if (length(rds_files) > 0) {
     file.remove(rds_files)
     message("Removed ", length(rds_files), " cached chain files")
@@ -256,13 +257,13 @@ parse_chain_blocks <- function(
   blocks
 ) {
   if (length(blocks) == 1) {
-    chain_dt <- data.table::data.table(
+    chain <- data.table::data.table(
       width = as.integer(blocks[[1]]),
       dt = NA_integer_,
       dq = NA_integer_
     )
   } else {
-    chain_dt <- rbindlist(
+    chain <- rbindlist(
       blocks |>
         sapply(as.integer) |>
         lapply(as.list),
@@ -272,7 +273,7 @@ parse_chain_blocks <- function(
       setNames(c("width", "dt", "dq"))
   }
 
-  chain_dt[
+  chain[
     ,
     start := as.integer(chain_header$tStart) +
       cumsum(shift(dt, n = 1L, type = "lag", fill = 0L)) +
@@ -355,7 +356,7 @@ parse_chain_file <- function(path) {
     "id"
   )
 
-  chain_dt <- lapply(
+  chain <- lapply(
     seq_along(header_idx),
     \(idx) {
       chain_header <- strsplit(lines[header_idx[idx]], "\\s+")[[1]] |>
@@ -370,9 +371,9 @@ parse_chain_file <- function(path) {
     }
   ) |>
     data.table::rbindlist()
-  data.table::setkey(chain_dt, chr, start, end)
-  data.table::setcolorder(chain_dt)
-  chain_dt
+  data.table::setkey(chain, chr, start, end)
+  data.table::setcolorder(chain)
+  chain
 }
 
 #' Convert genomic coordinates between genome builds
@@ -406,7 +407,7 @@ liftover <- function(
 #'   hold `NA`: the join accepts such rows and returns them with `NA`
 #'   coordinates (or drops them, under `nomatch = 0L`) rather than
 #'   signalling.
-#' @param chain_dt The session's shared chain for the desired
+#' @param chain The session's shared chain for the desired
 #'   source-to-target build pair, from [get_shared_chain()]. Held
 #'   read-only: it is the cached object every other caller sees, so
 #'   modifying it corrupts every later lift in the session. It carries a
@@ -427,13 +428,13 @@ liftover <- function(
 #' @keywords internal
 lift_chain_overlap <- function(
   positions_dt,
-  chain_dt,
+  chain,
   mult = "all",
   nomatch = 0L,
   allele_cols = character()
 ) {
   extra_cols <- setdiff(names(positions_dt), c("chr", "start", "end"))
-  lifted <- chain_dt[
+  lifted <- chain[
     positions_dt,
     c(
       list(
@@ -575,7 +576,7 @@ liftover.data.table <- function(
     return(x_work)
   }
 
-  chain_dt <- get_shared_chain(from, target)
+  chain <- get_shared_chain(from, target)
 
   positions <- data.table::data.table(
     I     = seq_len(nrow(x_work)),
@@ -612,7 +613,7 @@ liftover.data.table <- function(
 
   lifted <- lift_chain_overlap(
     positions,
-    chain_dt,
+    chain,
     mult        = multi_match,
     nomatch     = NA,
     allele_cols = allele_cols

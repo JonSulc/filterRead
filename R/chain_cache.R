@@ -33,18 +33,18 @@ get_shared_chain <- function(
   }
 
   rds_file <- file.path(chain_path, get_chain_rds_filename(from, to))
-  chain_dt <- NULL
+  chain <- NULL
   if (file.exists(rds_file)) {
     from_rds <- readRDS(rds_file)
     if (data.table::is.data.table(from_rds) &&
       all(c("chr", "start", "end") %in% names(from_rds))) {
-      chain_dt <- from_rds
+      chain <- from_rds
     } else {
       warning("Invalid chain cache, regenerating: ", rds_file)
       file.remove(rds_file)
     }
   }
-  if (is.null(chain_dt)) {
+  if (is.null(chain)) {
     ucsc_file <- file.path(chain_path, get_chain_filename(from, to))
     if (!file.exists(ucsc_file)) {
       if (!auto_download) {
@@ -65,14 +65,14 @@ get_shared_chain <- function(
       # setup_chain_files parses what it downloads and writes the RDS, so
       # the chain is already on disk in its parsed form.
       if (file.exists(rds_file)) {
-        chain_dt <- readRDS(rds_file)
+        chain <- readRDS(rds_file)
       }
     }
-    if (is.null(chain_dt)) {
-      chain_dt <- read_chain_file(from, to) |>
+    if (is.null(chain)) {
+      chain <- read_chain_file(from, to) |>
         set_chain_index()
       tryCatch(
-        saveRDS(chain_dt, rds_file),
+        saveRDS(chain, rds_file),
         error = function(e) {
           warning("Failed to cache chain file as RDS: ", e$message)
         }
@@ -80,9 +80,9 @@ get_shared_chain <- function(
     }
   }
 
-  chain_dt <- set_chain_index(chain_dt)
-  assign(key, chain_dt, envir = .filterread_env$chain_cache)
-  chain_dt
+  chain <- set_chain_index(chain)
+  assign(key, chain, envir = .filterread_env$chain_cache)
+  chain
 }
 
 #' Set the index the overlap join reads
@@ -94,13 +94,13 @@ get_shared_chain <- function(
 #' enters the session cache, so a chain file written before the index existed
 #' is readied on load.
 #'
-#' @param chain_dt A chain data.table.
-#' @return `chain_dt`, invisibly.
+#' @param chain A chain data.table.
+#' @return `chain`, invisibly.
 #' @keywords internal
-set_chain_index <- function(chain_dt) {
-  data.table::setDT(chain_dt)
-  data.table::setindexv(chain_dt, c("chr", "start", "end"))
-  invisible(chain_dt)
+set_chain_index <- function(chain) {
+  data.table::setDT(chain)
+  data.table::setindexv(chain, c("chr", "start", "end"))
+  invisible(chain)
 }
 
 #' Drop every chain held in the session cache
