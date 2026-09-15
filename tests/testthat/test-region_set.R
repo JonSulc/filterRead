@@ -157,7 +157,7 @@ test_that("merging overlapping regions works", {
       start = c(123, 345),
       end = c(234, 456)
     ) |>
-      merge_contiguous_regions(),
+      merge_rules(),
     new_region_set(
       chr = "chr1",
       start = c(123, 345),
@@ -170,7 +170,7 @@ test_that("merging overlapping regions works", {
       start = c(123, 123),
       end = c(234, 456)
     ) |>
-      merge_contiguous_regions(),
+      merge_rules(),
     new_region_set(
       chr = c("chr1", "chr2"),
       start = c(123, 123),
@@ -211,7 +211,7 @@ test_that("merging preserves attributes", {
     canonicalize = FALSE,
     complement = TRUE
   )
-  merged <- merge_contiguous_regions(regions)
+  merged <- merge_rules(regions)
   expect_equal(
     build(merged),
     "b37"
@@ -1853,11 +1853,11 @@ test_that("region_set construction coerces coordinates to integer", {
   expect_type(gr$end, "integer")
 })
 
-# subtract_regions_dt tests -------------------------------------------------
+# subtract_rule_set tests -------------------------------------------------
 
-test_that("subtract_regions_dt keeps a row outside everything it removes", {
+test_that("subtract_rule_set keeps a row outside everything it removes", {
   expect_equal(
-    subtract_regions_dt(
+    subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 200L),
       data.table::data.table(chr = "chr1", start = 300L, end = 400L)
     ),
@@ -1865,9 +1865,9 @@ test_that("subtract_regions_dt keeps a row outside everything it removes", {
   )
 })
 
-test_that("subtract_regions_dt ignores a region to remove on another chr", {
+test_that("subtract_rule_set ignores a region to remove on another chr", {
   expect_equal(
-    subtract_regions_dt(
+    subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 200L),
       data.table::data.table(chr = "chr2", start = 100L, end = 200L)
     ),
@@ -1875,9 +1875,9 @@ test_that("subtract_regions_dt ignores a region to remove on another chr", {
   )
 })
 
-test_that("subtract_regions_dt drops a row it removes entirely", {
+test_that("subtract_rule_set drops a row it removes entirely", {
   expect_equal(
-    subtract_regions_dt(
+    subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 200L),
       data.table::data.table(chr = "chr1", start = 50L, end = 250L)
     ),
@@ -1889,16 +1889,16 @@ test_that("subtract_regions_dt drops a row it removes entirely", {
   )
 })
 
-test_that("subtract_regions_dt trims a row it removes part of", {
+test_that("subtract_rule_set trims a row it removes part of", {
   expect_equal(
-    subtract_regions_dt(
+    subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 300L),
       data.table::data.table(chr = "chr1", start = 50L, end = 150L)
     ),
     data.table::data.table(chr = "chr1", start = 151L, end = 300L)
   )
   expect_equal(
-    subtract_regions_dt(
+    subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 300L),
       data.table::data.table(chr = "chr1", start = 250L, end = 400L)
     ),
@@ -1906,10 +1906,10 @@ test_that("subtract_regions_dt trims a row it removes part of", {
   )
 })
 
-test_that("subtract_regions_dt splits a row it removes the middle of", {
+test_that("subtract_rule_set splits a row it removes the middle of", {
   expect_equal(
     data.table::setorder(
-      subtract_regions_dt(
+      subtract_rule_set(
         data.table::data.table(chr = "chr1", start = 100L, end = 300L),
         data.table::data.table(chr = "chr1", start = 150L, end = 200L)
       ),
@@ -1923,10 +1923,10 @@ test_that("subtract_regions_dt splits a row it removes the middle of", {
   )
 })
 
-test_that("subtract_regions_dt applies an NA-chromosome row to every row", {
+test_that("subtract_rule_set applies an NA-chromosome row to every row", {
   expect_equal(
     data.table::setorder(
-      subtract_regions_dt(
+      subtract_rule_set(
         data.table::data.table(
           chr = c("chr1", "chr2"),
           start = c(100L, 100L),
@@ -1948,9 +1948,9 @@ test_that("subtract_regions_dt applies an NA-chromosome row to every row", {
   )
 })
 
-test_that("subtract_regions_dt reads an NA end as an open end", {
+test_that("subtract_rule_set reads an NA end as an open end", {
   expect_equal(
-    subtract_regions_dt(
+    subtract_rule_set(
       data.table::data.table(
         chr = "chr1",
         start = 1L,
@@ -1966,10 +1966,10 @@ test_that("subtract_regions_dt reads an NA end as an open end", {
   )
 })
 
-test_that("subtract_regions_dt removes each region in turn", {
+test_that("subtract_rule_set removes each region in turn", {
   expect_equal(
     data.table::setorder(
-      subtract_regions_dt(
+      subtract_rule_set(
         data.table::data.table(chr = "chr1", start = 100L, end = 500L),
         data.table::data.table(
           chr = "chr1",
@@ -1987,9 +1987,9 @@ test_that("subtract_regions_dt removes each region in turn", {
   )
 })
 
-test_that("subtract_regions_dt keeps every row when nothing is removed", {
+test_that("subtract_rule_set keeps every row when nothing is removed", {
   expect_equal(
-    subtract_regions_dt(
+    subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 200L),
       data.table::data.table(
         chr = character(),
@@ -2001,9 +2001,9 @@ test_that("subtract_regions_dt keeps every row when nothing is removed", {
   )
 })
 
-test_that("subtract_regions_dt returns no rows when given none", {
+test_that("subtract_rule_set returns no rows when given none", {
   expect_equal(
-    subtract_regions_dt(
+    subtract_rule_set(
       data.table::data.table(
         chr = character(),
         start = integer(),
@@ -2019,10 +2019,10 @@ test_that("subtract_regions_dt returns no rows when given none", {
   )
 })
 
-test_that("subtract_regions_dt removes what the general rules cover", {
+test_that("subtract_rule_set removes what the general rules cover", {
   expect_equal(
     data.table::setorder(
-      subtract_regions_dt(
+      subtract_rule_set(
         data.table::data.table(
           chr = c("chr1", "chr2"),
           start = c(1L, 1L),
@@ -2044,9 +2044,9 @@ test_that("subtract_regions_dt removes what the general rules cover", {
   )
 })
 
-test_that("subtract_regions_dt rejects an unrepresentable difference", {
+test_that("subtract_rule_set rejects an unrepresentable difference", {
   expect_error(
-    subtract_regions_dt(
+    subtract_rule_set(
       data.table::data.table(
         chr = NA_character_,
         start = 100L,

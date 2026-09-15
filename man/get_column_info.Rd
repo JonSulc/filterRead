@@ -7,7 +7,7 @@
 get_column_info(
   finterface,
   standard_names_dt = summary_stats_standard_names_dt,
-  nrows_to_check = 500
+  nrecords_to_check = 500
 )
 }
 \arguments{
@@ -15,7 +15,7 @@ get_column_info(
 
 \item{standard_names_dt}{Data.table mapping input names to standard names}
 
-\item{nrows_to_check}{Number of rows to sample for pattern detection}
+\item{nrecords_to_check}{Number of records to sample for pattern detection}
 }
 \value{
 data.table with complete column metadata

@@ -723,8 +723,8 @@ test_that("parse_chain_file handles multiple chains separated by blank line", {
   expect_setequal(unique(result$new_chr), c("chr20", "chr21"))
 })
 
-test_that("make_single_chain_dt handles a single-block chain on forward strand", {
-  result <- make_single_chain_dt(
+test_that("parse_chain_blocks handles a single-block chain on forward strand", {
+  result <- parse_chain_blocks(
     chain_header = list(
       tName = "chr1", tStart = "100",
       qName = "chr20", qStart = "40",
@@ -742,8 +742,8 @@ test_that("make_single_chain_dt handles a single-block chain on forward strand",
   expect_false(result$rev)
 })
 
-test_that("make_single_chain_dt handles a single-block chain on reverse strand", {
-  result <- make_single_chain_dt(
+test_that("parse_chain_blocks handles a single-block chain on reverse strand", {
+  result <- parse_chain_blocks(
     chain_header = list(
       tName = "chr1", tStart = "100",
       qName = "chr20", qStart = "200",

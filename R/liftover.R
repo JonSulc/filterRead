@@ -127,7 +127,7 @@ setup_chain_files <- function(
         chain_dt <- parse_chain_file(dest_file) |>
           data.table::setattr("from", from_build) |>
           data.table::setattr("to", to_build) |>
-          prepare_chain_dt()
+          set_chain_index()
         rds_file <- file.path(
           path,
           get_chain_rds_filename(from_build, to_build)
@@ -239,19 +239,19 @@ read_chain_file <- function(
 }
 
 
-#' Convert a single chain block to data.table format
+#' Parse one chain-file entry into its chain blocks
 #'
-#' Parses alignment blocks from a UCSC chain file and computes coordinate
-#' mappings. Handles both forward and reverse strand alignments.
+#' Reads the alignment block lines under one chain header and computes each
+#' block's coordinates. Handles both forward and reverse strand alignments.
 #'
 #' @param chain_header Named list with chain header fields (tName, tStart,
 #'   tEnd, qName, qStart, qEnd, qStrand, qSize, etc.)
 #' @param blocks List of character vectors, each containing alignment block
 #'   data (width, dt, dq triplets)
-#' @return data.table with columns: start, end, width, chr, offset, new_chr,
-#'   rev
+#' @return data.table of chain blocks with columns: start, end, width, chr,
+#'   offset, new_chr, rev
 #' @keywords internal
-make_single_chain_dt <- function(
+parse_chain_blocks <- function(
   chain_header,
   blocks
 ) {
@@ -363,7 +363,7 @@ parse_chain_file <- function(path) {
         setNames(header_names)
       blocks <- lines[(header_idx[idx] + 1L):end_idx[idx]] |>
         strsplit("\\s+")
-      make_single_chain_dt(
+      parse_chain_blocks(
         chain_header,
         blocks
       )
@@ -391,9 +391,9 @@ liftover <- function(
   UseMethod("liftover")
 }
 
-#' Translate genomic intervals through a UCSC chain
+#' Translate genomic regions through a UCSC chain
 #'
-#' Maps `(chr, start, end)` intervals from one reference genome to
+#' Maps `(chr, start, end)` regions from one reference genome to
 #' another by overlapping them with a UCSC chain data.table and
 #' applying each chain block's offset and strand. The shared core for
 #' [liftover.region_set()] and [liftover.data.table()]; not called

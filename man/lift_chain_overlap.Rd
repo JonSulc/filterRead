@@ -2,7 +2,7 @@
 % Please edit documentation in R/liftover.R
 \name{lift_chain_overlap}
 \alias{lift_chain_overlap}
-\title{Translate genomic intervals through a UCSC chain}
+\title{Translate genomic regions through a UCSC chain}
 \usage{
 lift_chain_overlap(
   positions_dt,
@@ -44,7 +44,7 @@ data.table with lifted `chr`, `start`, `end` (in the target
   build) plus any extra columns from `positions_dt`.
 }
 \description{
-Maps `(chr, start, end)` intervals from one reference genome to
+Maps `(chr, start, end)` regions from one reference genome to
 another by overlapping them with a UCSC chain data.table and
 applying each chain block's offset and strand. The shared core for
 [liftover.region_set()] and [liftover.data.table()]; not called

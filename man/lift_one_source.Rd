@@ -2,26 +2,26 @@
 % Please edit documentation in R/variant_set_class.R
 \name{lift_one_source}
 \alias{lift_one_source}
-\title{Lift a group of variant rows from one source build}
+\title{Lift a group of variants from one source build}
 \usage{
-lift_one_source(rows, from, target, multi_match)
+lift_one_source(variants, from, target, multi_match)
 }
 \arguments{
-\item{rows}{A data.table of variant rows that share a source build.}
+\item{variants}{A data.table of variants that share a source build.}
 
-\item{from}{Source build, or NA for rows with no usable source.}
+\item{from}{Source build, or NA for variants with no usable source.}
 
 \item{target}{Target build.}
 
 \item{multi_match}{Forwarded to [liftover.data.table()].}
 }
 \value{
-The rows lifted to `target`, all columns preserved.
+The variants lifted to `target`, all columns preserved.
 }
 \description{
-Sets the rows' canonical coordinates to source build `from`'s recorded
+Sets the variants' canonical coordinates to source build `from`'s recorded
 columns and lifts them to `target`, carrying every other column through and
-fanning out under `multi_match = "all"`. Chain-gap rows are kept with NA
-coordinates. `from = NA` returns the rows with NA coordinates.
+fanning out under `multi_match = "all"`. Chain-gap variants are kept with
+NA coordinates. `from = NA` returns the variants with NA coordinates.
 }
 \keyword{internal}

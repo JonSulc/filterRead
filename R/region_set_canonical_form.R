@@ -13,20 +13,20 @@
 canonicalize_region_set <- function(
   regions
 ) {
-  merge_contiguous_regions(regions) |>
+  merge_rules(regions) |>
     trim_specific_rules()
 }
 
-#' Merge overlapping and contiguous genomic regions
+#' Merge the rules that overlap or abut
 #'
-#' Combines regions that overlap or are adjacent (end + 1 == start) into
-#' single regions. A region with an open end reaches the end of its
-#' chromosome, so it merges with whatever it meets there.
+#' Combines rules on one chromosome whose positions overlap or are adjacent
+#' (end + 1 == start) into single rules. A rule with an open end reaches the
+#' end of its chromosome, so it merges with whatever it meets there.
 #'
 #' @param regions A region_set object
-#' @return region_set with overlapping regions merged
+#' @return region_set with its overlapping rules merged
 #' @keywords internal
-merge_contiguous_regions <- function(
+merge_rules <- function(
   regions
 ) {
   if (nrow(regions) == 0) {
@@ -97,7 +97,7 @@ trim_specific_rules <- function(
   general_rules <- rows[is.na(chr)]
   list(
     general_rules,
-    subtract_regions_dt(rows[!is.na(chr)], general_rules)
+    subtract_rule_set(rows[!is.na(chr)], general_rules)
   ) |>
     data.table::rbindlist() |>
     as_region_set(
@@ -107,76 +107,76 @@ trim_specific_rules <- function(
     )
 }
 
-#' Subtract one set of region rows from another
+#' Subtract one set of rules from another
 #'
-#' Removes the coverage of `to_remove` from the rows of `regions_dt`. A row
-#' is kept when `to_remove` does not reach it, dropped when `to_remove`
-#' covers it, trimmed when the two overlap at one end, and split into two
-#' when an interval of `to_remove` lands inside it. A row of `to_remove`
-#' whose `chr` is NA applies to every row, and one whose `end` is NA reaches
-#' the end of the chromosome. A start is always a position.
+#' Removes from `rules` the positions `to_remove` selects. A rule is kept
+#' when `to_remove` does not reach it, dropped when `to_remove` selects all
+#' of it, trimmed when the two overlap at one end, and split into two when a
+#' rule of `to_remove` lands inside it. A rule of `to_remove` whose `chr` is
+#' NA applies to every rule, and one whose `end` is NA reaches the end of the
+#' chromosome. A start is always a position.
 #'
-#' Both arguments are plain region tables of `chr`, `start` and `end`, read
-#' as the positions they cover — there is no complement bit — and the result
-#' is one too, with its rows in no particular order.
+#' Both arguments are plain rule tables of `chr`, `start` and `end`, read as
+#' the positions they select — there is no complement bit — and the result is
+#' one too, with its rules in no particular order.
 #'
-#' @param regions_dt,to_remove data.tables of region rows
-#' @return The rows of `regions_dt` that `to_remove` does not cover
+#' @param rules,to_remove data.tables of rules
+#' @return The positions of `rules` that `to_remove` does not select
 #' @keywords internal
-subtract_regions_dt <- function(
-  regions_dt,
+subtract_rule_set <- function(
+  rules,
   to_remove
 ) {
-  if (nrow(regions_dt) == 0L || nrow(to_remove) == 0L) {
-    return(regions_dt[, .(chr, start, end)])
+  if (nrow(rules) == 0L || nrow(to_remove) == 0L) {
+    return(rules[, .(chr, start, end)])
   }
-  rows <- data.table::data.table(
-    chr = regions_dt$chr,
-    start = regions_dt$start,
-    end = data.table::fcoalesce(regions_dt$end, END_SENTINEL)
+  remaining <- data.table::data.table(
+    chr = rules$chr,
+    start = rules$start,
+    end = data.table::fcoalesce(rules$end, END_SENTINEL)
   )
   for (index in seq_len(nrow(to_remove))) {
-    rows <- subtract_interval_coverage(rows, to_remove[index])
+    remaining <- subtract_rule(remaining, to_remove[index])
   }
-  rows[
+  remaining[
     end == END_SENTINEL,
     end := NA_integer_
   ][]
 }
 
-#' Remove one interval's coverage from a set of region rows
+#' Subtract one rule from a set of rules
 #'
-#' Every row the interval reaches contributes the part of itself before the
-#' interval and the part after, and the empty ones are dropped. Rows the
-#' interval does not reach pass through untouched, so carving the intervals
-#' one at a time is correct even when they overlap each other.
+#' Every rule `to_remove` reaches contributes the part of itself before it
+#' and the part after, and the empty ones are dropped. Rules `to_remove` does
+#' not reach pass through untouched, so subtracting one rule at a time is
+#' correct even when they overlap each other.
 #'
-#' @param rows Region rows carrying the end sentinel in place of an NA end
-#' @param interval A one-row data.table of `chr`, `start` and `end`, whose
-#'   start is always a position
-#' @return The rows with the interval's coverage removed
+#' @param rules Rules carrying the end sentinel in place of an NA end
+#' @param to_remove A one-row data.table of `chr`, `start` and `end`, whose
+#'   start is always a position and whose `chr` may be NA
+#' @return The rules with the positions `to_remove` selects removed
 #' @keywords internal
-subtract_interval_coverage <- function(
-  rows,
-  interval
+subtract_rule <- function(
+  rules,
+  to_remove
 ) {
-  cut_start <- interval$start
-  cut_end <- data.table::fcoalesce(interval$end, END_SENTINEL)
-  reaches <- cut_start <= rows$end & rows$start <= cut_end
-  if (is.na(interval$chr)) {
+  cut_start <- to_remove$start
+  cut_end <- data.table::fcoalesce(to_remove$end, END_SENTINEL)
+  reaches <- cut_start <= rules$end & rules$start <= cut_end
+  if (is.na(to_remove$chr)) {
     carved <- reaches
   } else {
-    if (any(reaches & is.na(rows$chr))) {
+    if (any(reaches & is.na(rules$chr))) {
       stop(
         "Cannot subtract a named chromosome from a region covering every ",
         "chromosome without enumerating the chromosomes."
       )
     }
-    carved <- reaches & rows$chr == interval$chr
+    carved <- reaches & rules$chr == to_remove$chr
   }
-  touched <- rows[carved]
+  touched <- rules[carved]
   list(
-    rows[!carved],
+    rules[!carved],
     touched[, .(chr, start, end = pmin(end, cut_start - 1L))][start <= end],
     touched[, .(chr, start = pmax(start, cut_end + 1L), end)][start <= end]
   ) |>

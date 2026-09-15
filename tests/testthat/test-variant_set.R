@@ -666,7 +666,7 @@ test_that("liftover on a mixed-build variant_set returns integer pos", {
       qSize = "248000000", qStrand = "+", qStart = "0", qEnd = "100000",
       id = "1"
     )
-    ch <- make_single_chain_dt(header, list("100000"))
+    ch <- parse_chain_blocks(header, list("100000"))
     data.table::setkey(ch, chr, start, end)
     data.table::setattr(ch, "from", from)
     data.table::setattr(ch, "to", to)

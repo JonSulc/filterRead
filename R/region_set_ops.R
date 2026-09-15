@@ -1,14 +1,15 @@
 # Sentinel value for NA replacement during overlap operations
-# This must stay in sync between replace_na_with_sentinel and
-# replace_sentinel_with_na. It covers the end axis of the foverlaps join;
-# chr joins on equality and a start is always a position.
+# Every site that substitutes it in or back out must agree on the value:
+# replace_na_with_sentinel and replace_sentinel_with_na, and subtract_rule_set
+# and subtract_rule, which substitute inline. It covers the end axis of the
+# foverlaps join; chr joins on equality and a start is always a position.
 #
 # END_SENTINEL is calibrated so that `END_SENTINEL + 1L` equals
 # .Machine$integer.max exactly — no overflow. Every arithmetic site that
 # adds to `end` uses `+ 1L`:
 # - data.table::foverlaps adds 1 internally to convert to half-open ranges
-# - merge_contiguous_regions: shift(end + 1L, fill = 0)
-# - subtract_interval_coverage: pmax(start, cut_end + 1L)
+# - merge_rules: shift(end + 1L, fill = 0)
+# - subtract_rule: pmax(start, cut_end + 1L)
 # - expand_region_set (negation): start = end + 1L
 # Any future code that adds more than 1 to `end` must lower this sentinel
 # accordingly, otherwise it will silently overflow to NA on sentinel rows.

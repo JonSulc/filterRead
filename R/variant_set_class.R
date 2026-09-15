@@ -295,33 +295,33 @@ build_column <- function(x, base, b) {
   }
 }
 
-#' Lift a group of variant rows from one source build
+#' Lift a group of variants from one source build
 #'
-#' Sets the rows' canonical coordinates to source build `from`'s recorded
+#' Sets the variants' canonical coordinates to source build `from`'s recorded
 #' columns and lifts them to `target`, carrying every other column through and
-#' fanning out under `multi_match = "all"`. Chain-gap rows are kept with NA
-#' coordinates. `from = NA` returns the rows with NA coordinates.
+#' fanning out under `multi_match = "all"`. Chain-gap variants are kept with
+#' NA coordinates. `from = NA` returns the variants with NA coordinates.
 #'
-#' @param rows A data.table of variant rows that share a source build.
-#' @param from Source build, or NA for rows with no usable source.
+#' @param variants A data.table of variants that share a source build.
+#' @param from Source build, or NA for variants with no usable source.
 #' @param target Target build.
 #' @param multi_match Forwarded to [liftover.data.table()].
-#' @return The rows lifted to `target`, all columns preserved.
+#' @return The variants lifted to `target`, all columns preserved.
 #' @keywords internal
-lift_one_source <- function(rows, from, target, multi_match) {
-  rows <- data.table::copy(rows)
+lift_one_source <- function(variants, from, target, multi_match) {
+  variants <- data.table::copy(variants)
   if (is.na(from)) {
     for (col in coordinate_columns()) {
-      rows[, (col) := if (col == "pos") NA_integer_ else NA_character_]
+      variants[, (col) := if (col == "pos") NA_integer_ else NA_character_]
     }
-    return(rows)
+    return(variants)
   }
   for (col in coordinate_columns()) {
-    rows[, (col) := build_column(rows, col, from)]
+    variants[, (col) := build_column(variants, col, from)]
   }
-  set_build(rows, from)
+  set_build(variants, from)
   liftover.data.table(
-    rows,
+    variants,
     target        = target,
     drop_unlifted = FALSE,
     multi_match   = multi_match,

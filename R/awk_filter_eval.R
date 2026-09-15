@@ -155,7 +155,7 @@ eval_region_set_from_fc <- function(
   # Convert each row to an awk condition, combine with ||
   regions_fcs <- regions[
     ,
-    single_genomic_region_to_fc(
+    single_rule_to_fc(
       .(chr = chr, start = start, end = end),
       column_indices
     ),
@@ -175,30 +175,30 @@ eval_region_set_from_fc <- function(
   regions_fcs
 }
 
-#' Convert single genomic region to awk condition
+#' Convert one rule to an awk condition
 #'
-#' Creates awk condition for one region: chr equality and position bounds.
+#' Creates the awk condition for one rule: chr equality and position bounds.
 #' A general rule, an open end and a start of 1 are each skipped: none of
 #' them restricts anything, so there is nothing for awk to test.
 #'
-#' @param region_row List with chr, start, end (chr and end possibly NA)
+#' @param rule List with chr, start, end (chr and end possibly NA)
 #' @param column_indices Named list with chr and pos column refs
 #'
 #' @return Character string like `$1 == "1" && 1000 <= $2 && $2 <= 2000`
 #' @keywords internal
-single_genomic_region_to_fc <- function(
-  region_row,
+single_rule_to_fc <- function(
+  rule,
   column_indices
 ) {
   all_fc <- c(
-    if (!is.na(region_row$chr)) {
-      eq_filter_condition(column_indices$chr, region_row$chr)
+    if (!is.na(rule$chr)) {
+      eq_filter_condition(column_indices$chr, rule$chr)
     },
-    if (1L < region_row$start) {
-      lte_filter_condition(region_row$start, column_indices$pos)
+    if (1L < rule$start) {
+      lte_filter_condition(rule$start, column_indices$pos)
     },
-    if (!is.na(region_row$end)) {
-      lte_filter_condition(column_indices$pos, region_row$end)
+    if (!is.na(rule$end)) {
+      lte_filter_condition(column_indices$pos, rule$end)
     }
   )
   if (is.null(all_fc)) {

@@ -70,7 +70,7 @@ get_shared_chain <- function(
     }
     if (is.null(chain_dt)) {
       chain_dt <- read_chain_file(from, to) |>
-        prepare_chain_dt()
+        set_chain_index()
       tryCatch(
         saveRDS(chain_dt, rds_file),
         error = function(e) {
@@ -80,12 +80,12 @@ get_shared_chain <- function(
     }
   }
 
-  chain_dt <- prepare_chain_dt(chain_dt)
+  chain_dt <- set_chain_index(chain_dt)
   assign(key, chain_dt, envir = .filterread_env$chain_cache)
   chain_dt
 }
 
-#' Ready a chain for the overlap join
+#' Set the index the overlap join reads
 #'
 #' Repairs the internal attributes a data.table read back from RDS carries,
 #' and puts a secondary index on the block coordinates: the overlap join reads
@@ -97,7 +97,7 @@ get_shared_chain <- function(
 #' @param chain_dt A chain data.table.
 #' @return `chain_dt`, invisibly.
 #' @keywords internal
-prepare_chain_dt <- function(chain_dt) {
+set_chain_index <- function(chain_dt) {
   data.table::setDT(chain_dt)
   data.table::setindexv(chain_dt, c("chr", "start", "end"))
   invisible(chain_dt)

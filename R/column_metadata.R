@@ -85,14 +85,14 @@ redundant_decoded_names <- function(
 #'
 #' @param finterface File interface object
 #' @param standard_names_dt Data.table mapping input names to standard names
-#' @param nrows_to_check Number of rows to sample for pattern detection
+#' @param nrecords_to_check Number of records to sample for pattern detection
 #'
 #' @return data.table with complete column metadata
 #' @keywords internal
 get_column_info <- function(
   finterface,
   standard_names_dt = summary_stats_standard_names_dt,
-  nrows_to_check = 500
+  nrecords_to_check = 500
 ) {
   # Create base column info from headers
   column_info <- get_base_column_info(
@@ -101,7 +101,7 @@ get_column_info <- function(
   )
 
   # Sample data for pattern detection
-  data_to_check <- head(finterface, nrows_to_check)
+  data_to_check <- head(finterface, nrecords_to_check)
 
   # Apply detection functions in sequence
   column_info <- filter_regex_matches(column_info, data_to_check)
@@ -154,14 +154,14 @@ get_base_column_info <- function(
   ]
 }
 
-#' Make a column unencoded
+#' Drop a column's encoding
 #'
 #' @param column_rows The `column_info` rows for one input name, one per
 #'   candidate encoding pattern.
 #' @return A single `column_info` row with the encoding fields
 #'   (`pattern`, `regex`, `encoded_names`, `delimiter`) cleared.
 #' @keywords internal
-make_column_unencoded <- function(column_rows) {
+drop_encoding <- function(column_rows) {
   column_rows[1][
     ,
     c("pattern", "regex", "encoded_names", "delimiter") := .(
@@ -193,14 +193,14 @@ filter_regex_matches <- function(
         if (length(data_to_check[[input_name]]) == 0L) {
           # No values to match a pattern against: decoding would be a
           # guess, so the column is read as the file holds it.
-          make_column_unencoded(.SD)
+          drop_encoding(.SD)
         } else {
           # Check which regex patterns match all values in the column
           row_match <- .SD[
             resolve_single_column_regex(regex, data_to_check[[input_name]])
           ]
           if (nrow(row_match) == 0) {
-            make_column_unencoded(.SD)
+            drop_encoding(.SD)
           } else if (1 < nrow(row_match)) {
             warning(
               "Column ", input_name, " matches multiple regex patterns:\n",

@@ -355,13 +355,13 @@ test_that("use_cache = FALSE bypasses the round-trip cache and re-lifts", {
   expect_equal(liftover(dt, "b37", use_cache = FALSE)$pos, 150L) # chain lift (200 - 50)
 })
 
-test_that("make_single_chain_dt parses coordinates as integer", {
+test_that("parse_chain_blocks parses coordinates as integer", {
   header <- list(
     chain = "chain", score = "1000", tName = "chr1", tSize = "249000000",
     tStrand = "+", tStart = "1000", tEnd = "2000", qName = "chr1",
     qSize = "248000000", qStrand = "+", qStart = "900", qEnd = "1900", id = "1"
   )
-  ch <- make_single_chain_dt(header, list("1000"))
+  ch <- parse_chain_blocks(header, list("1000"))
   expect_type(ch$start, "integer")
   expect_type(ch$end, "integer")
   expect_type(ch$offset, "integer")
@@ -375,7 +375,7 @@ test_that("liftover.data.table returns integer pos through a parser-built chain"
       qSize = "248000000", qStrand = "+", qStart = "0", qEnd = "100000",
       id = "1"
     )
-    ch <- make_single_chain_dt(header, list("100000"))
+    ch <- parse_chain_blocks(header, list("100000"))
     data.table::setkey(ch, chr, start, end)
     data.table::setattr(ch, "from", from)
     data.table::setattr(ch, "to", to)

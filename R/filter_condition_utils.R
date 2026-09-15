@@ -368,45 +368,49 @@ get_pos_condition <- function(
   }
   NULL
 }
-# Operator mappings for position condition conversion
-# When pos is on left (pos OP val): list(field, adjustment)
-# When pos is on right (val OP pos): the comparison is effectively flipped
-POS_OP_LEFT_MAP <- list(
-  lt_filter_condition = list(field = "end", adj = -1L),
-  lte_filter_condition = list(field = "end", adj = 0L),
-  gt_filter_condition = list(field = "start", adj = 1L),
-  gte_filter_condition = list(field = "start", adj = 0L)
+# The interval each position comparison denotes, by operator and by which
+# operand `pos` is. An interval's bounds are inclusive, so a strict
+# comparison moves the bound one position: `pos < 100` reaches to 99.
+POS_OP_VAL_TO_INTERVAL <- list(
+  lt_filter_condition = \(val) interval_to(val - 1L),
+  lte_filter_condition = \(val) interval_to(val),
+  gt_filter_condition = \(val) interval_from(val + 1L),
+  gte_filter_condition = \(val) interval_from(val)
 )
-POS_OP_RIGHT_MAP <- list(
-  lt_filter_condition = list(field = "start", adj = 1L),
-  lte_filter_condition = list(field = "start", adj = 0L),
-  gt_filter_condition = list(field = "end", adj = -1L),
-  gte_filter_condition = list(field = "end", adj = 0L)
+VAL_OP_POS_TO_INTERVAL <- list(
+  lt_filter_condition = \(val) interval_from(val + 1L),
+  lte_filter_condition = \(val) interval_from(val),
+  gt_filter_condition = \(val) interval_to(val - 1L),
+  gte_filter_condition = \(val) interval_to(val)
 )
 
-#' Create a genomic region data.table from a position boundary
+#' Build the interval reaching from a lower bound
 #'
-#' @param field Either "start" or "end"
-#' @param value The position value
-#' @return A data.table with the specified boundary
+#' @param start Lower bound on the positions the interval covers
+#' @return A one-row data.table carrying `start` and no `end`
 #' @keywords internal
-make_pos_region <- function(field, value) {
-  if (field == "start") {
-    data.table::data.table(start = value)
-  } else {
-    data.table::data.table(end = value)
-  }
+interval_from <- function(start) {
+  data.table::data.table(start = start)
 }
 
-#' Convert a position condition to a genomic region
+#' Build the interval reaching to an upper bound
+#'
+#' @param end Upper bound on the positions the interval covers
+#' @return A one-row data.table carrying `end` and no `start`
+#' @keywords internal
+interval_to <- function(end) {
+  data.table::data.table(end = end)
+}
+
+#' Convert a position condition to an interval
 #'
 #' Translates position comparison operators (pos < x, pos >= y, etc.) into
-#' genomic region boundaries (start, end).
+#' the `(start, end)` bounds they place on the position axis.
 #'
 #' @param fcondition A position filter_condition
 #' @return A data.table with start and/or end columns
 #' @keywords internal
-pos_condition_to_genomic_region <- function(
+pos_condition_to_interval <- function(
   fcondition
 ) {
   fcondition <- strip_parentheses(fcondition)
@@ -415,9 +419,8 @@ pos_condition_to_genomic_region <- function(
   # Handle pos on left side (pos OP val)
   if (fcondition[[2]] == as.symbol("pos")) {
     val <- fcondition[[3]]
-    if (op_name %in% names(POS_OP_LEFT_MAP)) {
-      m <- POS_OP_LEFT_MAP[[op_name]]
-      return(make_pos_region(m$field, val + m$adj))
+    if (op_name %in% names(POS_OP_VAL_TO_INTERVAL)) {
+      return(POS_OP_VAL_TO_INTERVAL[[op_name]](val))
     }
     if (op_name %in% c("eq_filter_condition", "in_filter_condition")) {
       return(data.table::data.table(start = val, end = val))
@@ -427,9 +430,8 @@ pos_condition_to_genomic_region <- function(
   # Handle pos on right side (val OP pos)
   if (fcondition[[3]] == as.symbol("pos")) {
     val <- fcondition[[2]]
-    if (op_name %in% names(POS_OP_RIGHT_MAP)) {
-      m <- POS_OP_RIGHT_MAP[[op_name]]
-      return(make_pos_region(m$field, val + m$adj))
+    if (op_name %in% names(VAL_OP_POS_TO_INTERVAL)) {
+      return(VAL_OP_POS_TO_INTERVAL[[op_name]](val))
     }
     if (op_name %in% c("eq_filter_condition", "in_filter_condition")) {
       return(data.table::data.table(start = val, end = val))
@@ -439,14 +441,14 @@ pos_condition_to_genomic_region <- function(
   # Handle composite conditions
   if (fcondition[[1]] == as.symbol("or_filter_condition")) {
     return(
-      lapply(fcondition[-1], pos_condition_to_genomic_region) |>
+      lapply(fcondition[-1], pos_condition_to_interval) |>
         data.table::rbindlist(fill = TRUE, use.names = TRUE)
     )
   }
   if (fcondition[[1]] == as.symbol("and_filter_condition")) {
     return(
-      pos_condition_to_genomic_region(fcondition[[2]]) &
-        pos_condition_to_genomic_region(fcondition[[3]])
+      pos_condition_to_interval(fcondition[[2]]) &
+        pos_condition_to_interval(fcondition[[3]])
     )
   }
   NULL
