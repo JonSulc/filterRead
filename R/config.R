@@ -90,17 +90,6 @@ get_config_file <- function() {
   file.path(get_config_dir(), "config.rds")
 }
 
-#' Load config
-#' @keywords internal
-get_config <- function(force = FALSE, warn = FALSE) {
-  if (force) {
-    # Load from disk (auto cached in env)
-    load_config()
-  }
-
-  .filterread_env$config
-}
-
 #' Get package config
 #' @keywords internal
 load_config <- function() {
