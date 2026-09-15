@@ -130,7 +130,7 @@ variant_id_values <- function(chr, pos, ref, alt, build) {
 #'   `x$variant_id`, to avoid re-parsing on a hot path.
 #' @return `x`, invisibly.
 #' @export
-check_variant_id <- function(x, build = NULL, parsed = NULL) {
+validate_variant_id <- function(x, build = NULL, parsed = NULL) {
   stopifnot(data.table::is.data.table(x), "variant_id" %in% names(x))
   build <- build %||% build(x)
   parsed <- parsed %||% parse_variant_id(x$variant_id)

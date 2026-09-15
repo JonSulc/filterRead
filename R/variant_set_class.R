@@ -147,7 +147,7 @@ new_variant_set_from_variant_id <- function(x, build) {
   }
   resolved <- normalize_build(resolved, allow_null = FALSE,
                               allow_unsupported = TRUE)
-  check_variant_id(x, resolved, parsed = parsed)
+  validate_variant_id(x, resolved, parsed = parsed)
   for (col in coordinate_columns()) {
     decoded <- parsed[[col]]
     if (col %in% names(x)) {
