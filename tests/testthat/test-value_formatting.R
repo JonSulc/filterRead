@@ -1,4 +1,4 @@
-test_that("check_post_processing normalizes chr prefix to the file's form", {
+test_that("resolve_post_processing normalizes chr prefix to the file's form", {
   prefixed <- local_file_interface(
     filename = "prefixed.csv",
     dt = data.table::data.table(
@@ -16,18 +16,18 @@ test_that("check_post_processing normalizes chr prefix to the file's form", {
     build = "b38"
   )
   expect_equal(
-    check_post_processing(c("chr1", "1"), "chr", prefixed, to_write = TRUE),
+    resolve_post_processing(c("chr1", "1"), "chr", prefixed, to_write = TRUE),
     c("chr1", "chr1")
   )
   expect_equal(
-    check_post_processing(c("chr1", "1"), "chr", bare, to_write = TRUE),
+    resolve_post_processing(c("chr1", "1"), "chr", bare, to_write = TRUE),
     c("1", "1")
   )
 })
 
-test_that("check_prefix does not prefix a blank or missing value", {
+test_that("resolve_prefix does not prefix a blank or missing value", {
   expect_equal(
-    check_prefix(c("1", "", NA, "chr2"), "chr"),
+    resolve_prefix(c("1", "", NA, "chr2"), "chr"),
     c("chr1", "", NA, "chr2")
   )
 })

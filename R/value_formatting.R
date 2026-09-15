@@ -13,19 +13,19 @@
 #' @param column_symbol Symbol representing the column being matched
 #' @param finterface File interface with column metadata
 #' @param to_write If TRUE, use write mode for quotes (for temp files)
-#' @param check_quotes_function Quote handling function to use
+#' @param resolve_quotes_function Quote handling function to use
 #'
 #' @return Processed values ready for awk condition or file writing
 #' @keywords internal
-check_post_processing <- function(
+resolve_post_processing <- function(
   values,
   column_symbol,
   finterface,
   to_write = FALSE,
-  check_quotes_function = ifelse(
+  resolve_quotes_function = ifelse(
     to_write,
-    check_quotes_to_write,
-    check_quotes
+    resolve_quotes_to_write,
+    resolve_quotes
   )
 ) {
   column_name <- as.character(column_symbol)
@@ -52,8 +52,8 @@ check_post_processing <- function(
 
   # Apply prefix first, then quote handling
   values |>
-    check_prefix(post_processing_to_check$prefix) |>
-    check_quotes_function(post_processing_to_check$quoted)
+    resolve_prefix(post_processing_to_check$prefix) |>
+    resolve_quotes_function(post_processing_to_check$quoted)
 }
 
 #' Add prefix to values if missing
@@ -68,8 +68,8 @@ check_post_processing <- function(
 #' @keywords internal
 #'
 #' @examples
-#' # check_prefix(c("1", "chr2"), "chr") returns c("chr1", "chr2")
-check_prefix <- function(
+#' # resolve_prefix(c("1", "chr2"), "chr") returns c("chr1", "chr2")
+resolve_prefix <- function(
   values,
   prefix
 ) {
@@ -99,7 +99,7 @@ check_prefix <- function(
 #' @details
 #' For quoted columns, generates awk syntax like `"\"value\""` to match
 #' values that appear as `"value"` in the file.
-check_quotes <- function(
+resolve_quotes <- function(
   values,
   quoted
 ) {
@@ -130,7 +130,7 @@ check_quotes <- function(
 #'
 #' @return Formatted values for temp file writing
 #' @keywords internal
-check_quotes_to_write <- function(
+resolve_quotes_to_write <- function(
   values,
   quoted
 ) {

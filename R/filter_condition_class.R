@@ -703,7 +703,7 @@ format.filter_condition <- function(
 #' file_interface's column metadata. Comparison atoms (`<`, `<=`, `>`, `>=`)
 #' pass through unchanged; equality (`==`, `!=`) and membership (`%in%`)
 #' atoms evaluate their right-hand side and run it through
-#' [check_post_processing()]. The `region_set` method normalizes
+#' [resolve_post_processing()]. The `region_set` method normalizes
 #' chromosome values (strips any `"chr"` prefix, then re-applies the file's
 #' actual prefix and quoting from `column_info`) so the awk pattern matches
 #' the file's format.
@@ -769,10 +769,10 @@ post_process.eq_filter_condition <- function(
   )
   if (is_column_name[1] & !is_column_name[2]) {
     x[[3]] <- eval(x[[3]], env) |>
-      check_post_processing(x[[2]], finterface)
+      resolve_post_processing(x[[2]], finterface)
   } else if (is_column_name[2] & !is_column_name[3]) {
     x[[2]] <- eval(x[[2]], env) |>
-      check_post_processing(x[[3]], finterface)
+      resolve_post_processing(x[[3]], finterface)
   }
   x
 }
@@ -785,7 +785,7 @@ post_process.in_filter_condition <- function(
 ) {
   env <- attr(x, "context")$env
   x[[3]] <- eval(x[[3]], env) |>
-    check_post_processing(x[[2]], finterface, to_write = TRUE)
+    resolve_post_processing(x[[2]], finterface, to_write = TRUE)
   x
 }
 #' @export
@@ -795,7 +795,7 @@ post_process.region_set <- function(
 ) {
   copy_region_set(x)[
     !is.na(chr),
-    chr := check_post_processing(chr, "chr", finterface)
+    chr := resolve_post_processing(chr, "chr", finterface)
   ][] |>
     as_region_set(complement = is_complement(x))
 }

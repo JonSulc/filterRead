@@ -197,7 +197,7 @@ filter_regex_matches <- function(
         } else {
           # Check which regex patterns match all values in the column
           row_match <- .SD[
-            check_single_column_regex(regex, data_to_check[[input_name]])
+            resolve_single_column_regex(regex, data_to_check[[input_name]])
           ]
           if (nrow(row_match) == 0) {
             make_column_unencoded(.SD)
@@ -218,14 +218,14 @@ filter_regex_matches <- function(
   ]
 }
 
-#' Check if all column values match a regex pattern
+#' Resolve which regex patterns every column value matches
 #'
 #' @param regexes Vector of regex patterns to test
 #' @param column_data Vector of values from the column
 #'
 #' @return Logical vector: TRUE for patterns matching all values
 #' @keywords internal
-check_single_column_regex <- function(
+resolve_single_column_regex <- function(
   regexes,
   column_data
 ) {
@@ -293,7 +293,7 @@ add_prefix_column <- function(
     prefix := character(0)
   ][
     !is.na(possible_prefixes),
-    prefix := check_single_column_prefix(
+    prefix := resolve_single_column_prefix(
       possible_prefixes,
       data_to_check[[input_name]]
     ),
@@ -302,14 +302,14 @@ add_prefix_column <- function(
     invisible()
 }
 
-#' Check if all column values have a prefix
+#' Resolve the prefix every column value carries
 #'
 #' @param prefixes Vector of possible prefixes to check
 #' @param column_data Vector of values from the column
 #'
 #' @return First matching prefix, or NULL if none match
 #' @keywords internal
-check_single_column_prefix <- function(
+resolve_single_column_prefix <- function(
   prefixes,
   column_data
 ) {

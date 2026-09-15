@@ -87,11 +87,13 @@ test_that("Quoted column detection works", {
 
 test_that("Prefix detection works", {
   summary_stats <- dummy_summary_stats()
-  expect_null(check_single_column_prefix(prefixes = "chr", summary_stats[[1]]))
+  expect_null(
+    resolve_single_column_prefix(prefixes = "chr", summary_stats[[1]])
+  )
 
   summary_stats <- dummy_summary_stats(prefixes = list(chr = "chr"))
   expect_equal(
-    check_single_column_prefix(prefixes = "chr", summary_stats[[1]]),
+    resolve_single_column_prefix(prefixes = "chr", summary_stats[[1]]),
     "chr"
   )
 })

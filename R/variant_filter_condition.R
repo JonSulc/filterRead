@@ -49,7 +49,7 @@ require_variant_columns <- function(finterface) {
 #'
 #' Lifts `variants` to `build`, then formats each `(chr, pos, ref, alt)`
 #' component to match the file's on-disk representation (chr prefix, allele
-#' upper-casing, quoting) via [check_post_processing()]. Rows missing any
+#' upper-casing, quoting) via [resolve_post_processing()]. Rows missing any
 #' component (an unmapped `pos` after the lift, or a missing allele) cannot form
 #' a key and are dropped, with a `warning`. Both allele orderings
 #' (`chr_pos_ref_alt` and `chr_pos_alt_ref`) are emitted so the awk side stays
@@ -67,7 +67,7 @@ variant_keyset <- function(variants, finterface, build) {
     , .(chr, pos, ref, alt)
   ][
     , Map(
-      \(values, column) check_post_processing(
+      \(values, column) resolve_post_processing(
         values, column, finterface, to_write = TRUE
       ),
       .SD, names(.SD)
