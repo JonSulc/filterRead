@@ -1,4 +1,4 @@
-# tests/testthat/helper-variants.R
+# tests/testthat/helper-variant_set.R
 # Attach a complete provenance snapshot for a build other than the current one:
 # chr/pos/ref/alt plus variant_id, matching what record_build writes when that
 # build is current. For mixed-build fixtures a single liftover cannot produce.
