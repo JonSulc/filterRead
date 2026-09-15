@@ -216,7 +216,7 @@ full_genomic_regions <- function(
   )
 }
 
-#' Create genomic_regions covering every position from a lower bound
+#' Build the general rule covering every position from a lower bound
 #'
 #' A bound outside the position axis resolves against it: a bound below the
 #' first position is clamped to it, and a bound above every position —
@@ -224,10 +224,10 @@ full_genomic_regions <- function(
 #'
 #' @param start Lower bound on the positions covered
 #' @param build Genome build identifier
-#' @return genomic_regions on every chromosome from the resolved bound on,
-#'   with no rows when the bound lies above every position
+#' @return genomic_regions holding the one general rule from the resolved
+#'   bound on, with no rows when the bound lies above every position
 #' @keywords internal
-genomic_regions_from <- function(
+general_rule_from <- function(
   start,
   build = NULL
 ) {
@@ -240,7 +240,7 @@ genomic_regions_from <- function(
   )
 }
 
-#' Create genomic_regions covering every position up to an upper bound
+#' Build the general rule covering every position up to an upper bound
 #'
 #' A bound outside the position axis resolves against it: a bound below the
 #' first position covers no position, and a bound above every position —
@@ -248,10 +248,10 @@ genomic_regions_from <- function(
 #'
 #' @param end Upper bound on the positions covered
 #' @param build Genome build identifier
-#' @return genomic_regions on every chromosome up to the resolved bound, with
-#'   no rows when the bound lies below every position
+#' @return genomic_regions holding the one general rule up to the resolved
+#'   bound, with no rows when the bound lies below every position
 #' @keywords internal
-genomic_regions_to <- function(
+general_rule_to <- function(
   end,
   build = NULL
 ) {

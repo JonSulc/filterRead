@@ -154,12 +154,12 @@ as_genomic_regions.lt_filter_condition <- function(
   }
   if (x[[2]] == as.symbol("pos")) {
     return(
-      genomic_regions_to(x[[3]] - 1, build = build)
+      general_rule_to(x[[3]] - 1, build = build)
     )
   }
   if (x[[3]] == as.symbol("pos")) {
     return(
-      genomic_regions_from(x[[2]] + 1, build = build)
+      general_rule_from(x[[2]] + 1, build = build)
     )
   }
   if (x[[2]] == as.symbol("chr")) {
@@ -202,12 +202,12 @@ as_genomic_regions.lte_filter_condition <- function(
   }
   if (x[[2]] == as.symbol("pos")) {
     return(
-      genomic_regions_to(x[[3]], build = build)
+      general_rule_to(x[[3]], build = build)
     )
   }
   if (x[[3]] == as.symbol("pos")) {
     return(
-      genomic_regions_from(x[[2]], build = build)
+      general_rule_from(x[[2]], build = build)
     )
   }
   if (x[[2]] == as.symbol("chr")) {
@@ -250,12 +250,12 @@ as_genomic_regions.gt_filter_condition <- function(
   }
   if (x[[2]] == as.symbol("pos")) {
     return(
-      genomic_regions_from(x[[3]] + 1, build = build)
+      general_rule_from(x[[3]] + 1, build = build)
     )
   }
   if (x[[3]] == as.symbol("pos")) {
     return(
-      genomic_regions_to(x[[2]] - 1, build = build)
+      general_rule_to(x[[2]] - 1, build = build)
     )
   }
   if (x[[2]] == as.symbol("chr")) {
@@ -298,12 +298,12 @@ as_genomic_regions.gte_filter_condition <- function(
   }
   if (x[[2]] == as.symbol("pos")) {
     return(
-      genomic_regions_from(x[[3]], build = build)
+      general_rule_from(x[[3]], build = build)
     )
   }
   if (x[[3]] == as.symbol("pos")) {
     return(
-      genomic_regions_to(x[[2]], build = build)
+      general_rule_to(x[[2]], build = build)
     )
   }
   if (x[[2]] == as.symbol("chr")) {
