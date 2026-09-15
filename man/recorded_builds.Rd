@@ -2,12 +2,12 @@
 % Please edit documentation in R/variants_class.R
 \name{recorded_builds}
 \alias{recorded_builds}
-\title{Builds for which a variants table carries coordinates}
+\title{Builds for which a variant set carries coordinates}
 \usage{
 recorded_builds(x)
 }
 \arguments{
-\item{x}{A `variants`.}
+\item{x}{A `variant_set`.}
 }
 \value{
 Character vector of build names.

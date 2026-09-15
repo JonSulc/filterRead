@@ -1,18 +1,23 @@
-test_that("new_variants/as_variants resolve default build without recursing", {
-  dt <- data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G")
-  data.table::setattr(dt, "build", "b38")
-  v <- as_variants(dt)
-  expect_s3_class(v, "variants")
-  expect_equal(build(v), "b38")
-  expect_equal(build(new_variants(dt)), "b38")
-})
+test_that(
+  "new_variant_set/as_variant_set resolve default build without recursing",
+  {
+    dt <- data.table::data.table(
+      chr = "chr1", pos = 100L, ref = "A", alt = "G"
+    )
+    data.table::setattr(dt, "build", "b38")
+    v <- as_variant_set(dt)
+    expect_s3_class(v, "variant_set")
+    expect_equal(build(v), "b38")
+    expect_equal(build(new_variant_set(dt)), "b38")
+  }
+)
 
-test_that("new_variants validates required columns and sets class + build", {
+test_that("new_variant_set validates required columns and sets class + build", {
   dt <- data.table::data.table(
     chr = "chr1", pos = 100L, ref = "A", alt = "G"
   )
-  v <- new_variants(dt, build = "b38")
-  expect_s3_class(v, "variants")
+  v <- new_variant_set(dt, build = "b38")
+  expect_s3_class(v, "variant_set")
   expect_true(data.table::is.data.table(v))
   expect_equal(build(v), "b38")
   # Provenance + variant_id + defining_build stamped on construction.
@@ -21,47 +26,55 @@ test_that("new_variants validates required columns and sets class + build", {
   expect_equal(v$defining_build, "b38")
 })
 
-test_that("new_variants errors when an identity column is missing", {
+test_that("new_variant_set errors when an identity column is missing", {
   dt <- data.table::data.table(chr = "chr1", pos = 100L, ref = "A")
-  expect_error(new_variants(dt, build = "b38"), "alt")
+  expect_error(new_variant_set(dt, build = "b38"), "alt")
 })
 
 test_that("coordinate_columns returns only the canonical identity columns", {
   expect_equal(coordinate_columns(), c("chr", "pos", "ref", "alt"))
 })
 
-test_that("liftover.variants preserves class and round-trips alleles via provenance", {
-  v <- new_variants(
-    data.table::data.table(chr = "chr19", pos = 45411941L, ref = "A", alt = "G"),
-    build = "b37"
-  )
-  lifted <- liftover(v, "b38")
-  expect_s3_class(lifted, "variants")
-  expect_equal(build(lifted), "b38")
-  expect_equal(lifted$pos, 44908684L)
-  # Original b37 coordinates retained as provenance.
-  expect_equal(lifted$pos_b37, 45411941L)
+test_that(
+  "liftover.variant_set preserves class and round-trips alleles via provenance",
+  {
+    v <- new_variant_set(
+      data.table::data.table(
+        chr = "chr19", pos = 45411941L, ref = "A", alt = "G"
+      ),
+      build = "b37"
+    )
+    lifted <- liftover(v, "b38")
+    expect_s3_class(lifted, "variant_set")
+    expect_equal(build(lifted), "b38")
+    expect_equal(lifted$pos, 44908684L)
+    # Original b37 coordinates retained as provenance.
+    expect_equal(lifted$pos_b37, 45411941L)
 
-  back <- liftover(lifted, "b37")
-  expect_equal(back$pos, 45411941L)
-  expect_equal(back$ref, "A")
-  expect_equal(back$alt, "G")
-})
+    back <- liftover(lifted, "b37")
+    expect_equal(back$pos, 45411941L)
+    expect_equal(back$ref, "A")
+    expect_equal(back$alt, "G")
+  }
+)
 
-test_that("unique.variants dedups on identity, ignoring provenance columns", {
-  v <- new_variants(
-    data.table::data.table(
-      chr = c("chr1", "chr1"),
-      pos = c(100L, 100L),
-      ref = c("A", "A"),
-      alt = c("G", "G")
-    ),
-    build = "b38"
-  )
-  # Add a divergent provenance column to prove it is excluded from identity.
-  v[, pos_b37 := c(50L, 60L)]
-  expect_equal(nrow(unique(v)), 1L)
-})
+test_that(
+  "unique.variant_set dedups on identity, ignoring provenance columns",
+  {
+    v <- new_variant_set(
+      data.table::data.table(
+        chr = c("chr1", "chr1"),
+        pos = c(100L, 100L),
+        ref = c("A", "A"),
+        alt = c("G", "G")
+      ),
+      build = "b38"
+    )
+    # Add a divergent provenance column to prove it is excluded from identity.
+    v[, pos_b37 := c(50L, 60L)]
+    expect_equal(nrow(unique(v)), 1L)
+  }
+)
 
 test_that("best-source liftover recovers rows NA in the current build via a newer build", {
   chains <- list(
@@ -75,7 +88,7 @@ test_that("best-source liftover recovers rows NA in the current build via a newe
   )
 
   # Currently in b37; row B failed b38->b37 (b37 NA) but keeps b38 provenance.
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr1"),
       pos = c(900L, NA_integer_),
@@ -96,7 +109,7 @@ test_that("best-source liftover recovers rows NA in the current build via a newe
 })
 
 test_that("select_source_build picks the defining build then falls back", {
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr1"), pos = c(100L, NA_integer_),
       ref = c("A", "C"), alt = c("G", "T")
@@ -123,7 +136,7 @@ test_that("source = 'current' does not recover NA-at-current rows", {
   testthat::local_mocked_bindings(
     get_shared_chain_dt = function(from, to) make_fwd_chain(800L, 1000L, 100L, "b37", "b36")
   )
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr1"),
       pos = c(900L, NA_integer_),
@@ -145,7 +158,7 @@ test_that("source = 'current' does not recover NA-at-current rows", {
 
 test_that("best-source liftover restores a recorded build from the cache (no chain lift)", {
   # Target b38 is already recorded, so it is used verbatim with no chain.
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr1"),
       pos = c(800L, 1800L),
@@ -195,7 +208,7 @@ test_that("source selects the build to lift from (best / current / named)", {
 
   # Declared in b37, then lifted to b38 (the lift keeps b37 as defining_build).
   v <- liftover(
-    new_variants(
+    new_variant_set(
       data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
       build = "b37"
     ),
@@ -233,7 +246,7 @@ test_that("a chain-gap row is not retried from another build (source fixed by co
     }
   )
 
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 999L, ref = "A", alt = "G"),
     build = "b37"
   )
@@ -265,7 +278,7 @@ test_that("source = 'best', multi_match = 'all' fans out multi-mapped variants i
   }
   testthat::local_mocked_bindings(get_shared_chain_dt = function(from, to) overlapping())
 
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr1"),
       pos = c(150L, 190L),
@@ -285,38 +298,44 @@ test_that("source = 'best', multi_match = 'all' fans out multi-mapped variants i
   expect_equal(nrow(one), 2L)
 })
 
-test_that("liftover.variants rejects forwarded liftover.data.table arguments", {
-  v <- new_variants(
-    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
-    build = "b37"
-  )
-  expect_error(
-    liftover(v, "b38", drop_unlifted = FALSE),
-    "forwards no extra arguments"
-  )
-})
+test_that(
+  "liftover.variant_set rejects forwarded liftover.data.table arguments",
+  {
+    v <- new_variant_set(
+      data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+      build = "b37"
+    )
+    expect_error(
+      liftover(v, "b38", drop_unlifted = FALSE),
+      "forwards no extra arguments"
+    )
+  }
+)
 
-test_that("liftover.variants records the target build's provenance columns", {
-  testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to)
-      make_fwd_chain(1L, 1000L, -4900L, from, to)   # 100 -> 5000
-  )
+test_that(
+  "liftover.variant_set records the target build's provenance columns",
+  {
+    testthat::local_mocked_bindings(
+      get_shared_chain_dt = function(from, to)
+        make_fwd_chain(1L, 1000L, -4900L, from, to)   # 100 -> 5000
+    )
 
-  v <- new_variants(
-    data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
-    build = "b37"
-  )
-  lifted <- liftover(v, "b38")
+    v <- new_variant_set(
+      data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
+      build = "b37"
+    )
+    lifted <- liftover(v, "b38")
 
-  # The target build's provenance must be stamped, not just the source's, so a
-  # later lift can source from b38 directly.
-  expect_true(all(
-    c("chr_b38", "pos_b38", "ref_b38", "alt_b38", "variant_id_b38") %in%
-      names(lifted)
-  ))
-  expect_equal(lifted$pos_b38, 5000L)
-  expect_equal(lifted$variant_id, "chr1_5000_A_G_b38")
-})
+    # The target build's provenance must be stamped, not just the source's,
+    # so a later lift can source from b38 directly.
+    expect_true(all(
+      c("chr_b38", "pos_b38", "ref_b38", "alt_b38", "variant_id_b38") %in%
+        names(lifted)
+    ))
+    expect_equal(lifted$pos_b38, 5000L)
+    expect_equal(lifted$variant_id, "chr1_5000_A_G_b38")
+  }
+)
 
 test_that("a file-interface read coerces to variants carrying its inferred build", {
   dt <- data.table::data.table(
@@ -332,13 +351,13 @@ test_that("a file-interface read coerces to variants carrying its inferred build
     withr::with_output_sink(new = "/dev/null")
 
   result <- finterface[]
-  v <- as_variants(result, build = "b38")
-  expect_s3_class(v, "variants")
+  v <- as_variant_set(result, build = "b38")
+  expect_s3_class(v, "variant_set")
   expect_equal(build(v), "b38")
   expect_equal(v$variant_id, c("chr1_100_A_G_b38", "chr1_200_C_T_b38"))
 })
 
-test_that("liftover.variants reverse-complements alleles on strand flip", {
+test_that("liftover.variant_set reverse-complements alleles on strand flip", {
   # A minus-strand (rev = TRUE) block: the b37 forward alleles are expressed
   # as their reverse complement in b38. Strand-driven, so palindrome-safe.
   rev_chain <- function() {
@@ -355,7 +374,7 @@ test_that("liftover.variants reverse-complements alleles on strand flip", {
     get_shared_chain_dt = function(from, to) rev_chain()
   )
 
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C"),
     build = "b37"
   )
@@ -374,9 +393,9 @@ test_that("liftover.variants reverse-complements alleles on strand flip", {
   expect_equal(back$pos, 200L)
 })
 
-test_that("new_variants scaffolds an empty table into a 0-row variants", {
-  v <- as_variants(data.table::data.table(), build = "b38")
-  expect_s3_class(v, "variants")
+test_that("new_variant_set scaffolds an empty table into a 0-row variant_set", {
+  v <- as_variant_set(data.table::data.table(), build = "b38")
+  expect_s3_class(v, "variant_set")
   expect_equal(nrow(v), 0L)
   expect_equal(build(v), "b38")
   expect_true(all(c("chr", "pos", "ref", "alt", "variant_id",
@@ -385,8 +404,8 @@ test_that("new_variants scaffolds an empty table into a 0-row variants", {
   expect_type(v$pos, "integer")
 })
 
-test_that("new_variants scaffolds coordinates while keeping other columns", {
-  v <- as_variants(
+test_that("new_variant_set scaffolds coordinates while keeping other columns", {
+  v <- as_variant_set(
     data.table::data.table(gene_id = character(0)), build = "b38"
   )
   expect_equal(nrow(v), 0L)
@@ -394,15 +413,18 @@ test_that("new_variants scaffolds coordinates while keeping other columns", {
   expect_true(all(c("chr", "pos", "ref", "alt") %in% names(v)))
 })
 
-test_that("new_variants still errors on a non-empty input missing coordinates", {
-  expect_error(
-    new_variants(data.table::data.table(gene_id = "X"), build = "b38"),
-    "chr"
-  )
-})
+test_that(
+  "new_variant_set still errors on a non-empty input missing coordinates",
+  {
+    expect_error(
+      new_variant_set(data.table::data.table(gene_id = "X"), build = "b38"),
+      "chr"
+    )
+  }
+)
 
-test_that("new_variants constructs with a non-native build", {
-  v <- as_variants(
+test_that("new_variant_set constructs with a non-native build", {
+  v <- as_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "dahu42"
   )
@@ -412,37 +434,37 @@ test_that("new_variants constructs with a non-native build", {
 })
 
 test_that("liftover of a non-native build errors", {
-  v <- as_variants(
+  v <- as_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "dahu42"
   )
   expect_error(liftover(v, "b38"), "[Uu]nknown build")
 })
 
-test_that("new_variants accepts a base data.frame", {
-  v <- new_variants(
+test_that("new_variant_set accepts a base data.frame", {
+  v <- new_variant_set(
     data.frame(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
-  expect_s3_class(v, "variants")
+  expect_s3_class(v, "variant_set")
   expect_true(data.table::is.data.table(v))
   expect_equal(v$variant_id, "chr1_100_A_G_b38")
 })
 
-test_that("as_variants accepts a data.frame", {
-  v <- as_variants(
+test_that("as_variant_set accepts a data.frame", {
+  v <- as_variant_set(
     data.frame(chr = "chr2", pos = 200L, ref = "C", alt = "T"),
     build = "b38"
   )
-  expect_s3_class(v, "variants")
+  expect_s3_class(v, "variant_set")
   expect_equal(build(v), "b38")
 })
 
-test_that("new_variants builds from a variant_id-only table", {
-  v <- as_variants(
+test_that("new_variant_set builds from a variant_id-only table", {
+  v <- as_variant_set(
     data.table::data.table(variant_id = "chr5_49861645_A_G_b38")
   )
-  expect_s3_class(v, "variants")
+  expect_s3_class(v, "variant_set")
   expect_equal(build(v), "b38")
   expect_equal(v$chr, "chr5")
   expect_equal(v$pos, 49861645L)
@@ -456,57 +478,60 @@ test_that("variant_id backfill coerces a double pos and factor chr", {
     chr = factor("chr1"), pos = 100, ref = "A", alt = "G",
     variant_id = "chr1_100_A_G_b38"
   )
-  v <- new_variants(dt, build = "b38")
+  v <- new_variant_set(dt, build = "b38")
   expect_type(v$pos, "integer")
   expect_equal(v$pos, 100L)
   expect_equal(v$chr, "chr1")
 })
 
-test_that("new_variants builds from a non-native variant_id", {
-  v <- as_variants(
+test_that("new_variant_set builds from a non-native variant_id", {
+  v <- as_variant_set(
     data.table::data.table(variant_id = "chr2_3000_C_T_dahu42")
   )
   expect_equal(build(v), "dahu42")
   expect_equal(v$pos, 3000L)
 })
 
-test_that("new_variants backfills a mixed table and validates present values", {
-  dt <- data.table::data.table(
-    chr = c("chr1", NA, "chr3"),
-    pos = c(100L, NA, 300L),
-    ref = c("A", NA, "G"),
-    alt = c("G", NA, "A"),
-    variant_id = c(NA, "chr2_200_C_T_b38", "chr3_300_G_A_b38")
-  )
-  v <- new_variants(dt, build = "b38")
-  expect_equal(v$chr, c("chr1", "chr2", "chr3"))
-  expect_equal(v$pos, c(100L, 200L, 300L))
-  expect_equal(
-    v$variant_id,
-    c("chr1_100_A_G_b38", "chr2_200_C_T_b38", "chr3_300_G_A_b38")
-  )
-})
+test_that(
+  "new_variant_set backfills a mixed table and validates present values",
+  {
+    dt <- data.table::data.table(
+      chr = c("chr1", NA, "chr3"),
+      pos = c(100L, NA, 300L),
+      ref = c("A", NA, "G"),
+      alt = c("G", NA, "A"),
+      variant_id = c(NA, "chr2_200_C_T_b38", "chr3_300_G_A_b38")
+    )
+    v <- new_variant_set(dt, build = "b38")
+    expect_equal(v$chr, c("chr1", "chr2", "chr3"))
+    expect_equal(v$pos, c(100L, 200L, 300L))
+    expect_equal(
+      v$variant_id,
+      c("chr1_100_A_G_b38", "chr2_200_C_T_b38", "chr3_300_G_A_b38")
+    )
+  }
+)
 
-test_that("new_variants preserves a non-canonical id and fills NA ids", {
+test_that("new_variant_set preserves a non-canonical id and fills NA ids", {
   dt <- data.table::data.table(
     chr = c("chr1", "chr2"), pos = c(100L, 200L),
     ref = c("A", "C"), alt = c("G", "T"),
     variant_id = c("rs1", NA)
   )
-  v <- new_variants(dt, build = "b38")
+  v <- new_variant_set(dt, build = "b38")
   expect_equal(v$variant_id, c("rs1", "chr2_200_C_T_b38"))
 })
 
-test_that("new_variants derives build from the variant_id suffix", {
-  v <- new_variants(
+test_that("new_variant_set derives build from the variant_id suffix", {
+  v <- new_variant_set(
     data.table::data.table(variant_id = "chr1_10_A_T_b37")
   )
   expect_equal(build(v), "b37")
 })
 
-test_that("new_variants errors when build conflicts with the id suffix", {
+test_that("new_variant_set errors when build conflicts with the id suffix", {
   expect_error(
-    new_variants(
+    new_variant_set(
       data.table::data.table(variant_id = "chr5_49861645_A_G_b38"),
       build = "b37"
     ),
@@ -520,10 +545,10 @@ test_that("a multi-build variant_id table splits and lifts to the first build", 
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )
-  v <- as_variants(data.table::data.table(
+  v <- as_variant_set(data.table::data.table(
     variant_id = c("chr1_1000_A_G_b37", "chr1_2000_C_T_b38")
   ))
-  expect_s3_class(v, "variants")
+  expect_s3_class(v, "variant_set")
   expect_equal(build(v), "b37")
   expect_equal(v$defining_build, c("b37", "b38"))
   # row 1 already b37; row 2 lifts b38 -> b37 (new = old - offset = 1950)
@@ -532,7 +557,7 @@ test_that("a multi-build variant_id table splits and lifts to the first build", 
 })
 
 test_that("set_build sets the build attribute by reference, normalized", {
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -545,10 +570,10 @@ test_that("set_build sets the build attribute by reference, normalized", {
 test_that("set_build avoids the shallow-copy warning that build<- triggers", {
   # Control: `build(x) <- ` then a `:=` in the same frame warns, because the
   # replacement-form rebind bumps the reference count. That is the hazard the
-  # variants core avoids by using set_build in finalize_variants /
-  # liftover.variants; the no-warning check below confirms set_build does not
+  # variants core avoids by using set_build in finalize_variant_set /
+  # liftover.variant_set; the no-warning check below confirms set_build does not
   # reintroduce it in that same-frame pattern.
-  v_replace <- new_variants(
+  v_replace <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -561,7 +586,7 @@ test_that("set_build avoids the shallow-copy warning that build<- triggers", {
   )
   # set_build sets by reference (no rebind), so the same sequence is
   # warning-free.
-  v_set <- new_variants(
+  v_set <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -571,8 +596,8 @@ test_that("set_build avoids the shallow-copy warning that build<- triggers", {
   })
 })
 
-test_that("new_variants canonicalizes coordinate types (coordinate path)", {
-  v <- new_variants(
+test_that("new_variant_set canonicalizes coordinate types (coordinate path)", {
+  v <- new_variant_set(
     data.frame(chr = factor("chr1"), pos = 100, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -583,19 +608,19 @@ test_that("new_variants canonicalizes coordinate types (coordinate path)", {
   expect_equal(v$variant_id, "chr1_100_A_G_b38")
 })
 
-test_that("as_variants errors when build conflicts with a variants' build", {
-  v <- new_variants(
+test_that("as_variant_set errors when build conflicts with a variants' build", {
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
-  expect_error(as_variants(v, build = "b37"), "conflict")
-  expect_s3_class(as_variants(v, build = "b38"), "variants")  # match
-  expect_s3_class(as_variants(v, build = "hg38"), "variants")  # synonym
-  expect_s3_class(as_variants(v), "variants")  # no build
+  expect_error(as_variant_set(v, build = "b37"), "conflict")
+  expect_s3_class(as_variant_set(v, build = "b38"), "variant_set")  # match
+  expect_s3_class(as_variant_set(v, build = "hg38"), "variant_set")  # synonym
+  expect_s3_class(as_variant_set(v), "variant_set")  # no build
 })
 
-test_that("new_variants prefixes a bare integer chr", {
-  v <- new_variants(
+test_that("new_variant_set prefixes a bare integer chr", {
+  v <- new_variant_set(
     data.table::data.table(chr = 1L, pos = 12345L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -603,8 +628,8 @@ test_that("new_variants prefixes a bare integer chr", {
   expect_equal(v$variant_id, "chr1_12345_A_G_b38")
 })
 
-test_that("new_variants prefixes only the chr values that lack the prefix", {
-  v <- new_variants(
+test_that("new_variant_set prefixes only the chr values that lack the prefix", {
+  v <- new_variant_set(
     data.table::data.table(chr = c(1, "chr2"), pos = c(10L, 20L),
                            ref = c("A", "C"), alt = c("G", "T")),
     build = "b38"
@@ -612,8 +637,8 @@ test_that("new_variants prefixes only the chr values that lack the prefix", {
   expect_equal(v$chr, c("chr1", "chr2"))
 })
 
-test_that("new_variants leaves an already-prefixed chr unchanged", {
-  v <- new_variants(
+test_that("new_variant_set leaves an already-prefixed chr unchanged", {
+  v <- new_variant_set(
     data.table::data.table(chr = c("chr1", "chrX"), pos = c(100L, 200L),
                            ref = c("A", "C"), alt = c("G", "T")),
     build = "b38"
@@ -622,8 +647,8 @@ test_that("new_variants leaves an already-prefixed chr unchanged", {
   expect_false(any(grepl("^chrchr", v$chr)))
 })
 
-test_that("new_variants prefixes bare chr while preserving NA", {
-  v <- new_variants(
+test_that("new_variant_set prefixes bare chr while preserving NA", {
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("2", NA_character_), pos = c(5L, NA_integer_),
       ref = c("A", "C"), alt = c("G", "T")
@@ -633,7 +658,7 @@ test_that("new_variants prefixes bare chr while preserving NA", {
   expect_equal(v$chr, c("chr2", NA_character_))
 })
 
-test_that("liftover on a mixed-build variants returns integer pos", {
+test_that("liftover on a mixed-build variant_set returns integer pos", {
   chain_via_parser <- function(from, to) {
     header <- list(
       chain = "chain", score = "1", tName = "chr1", tSize = "249000000",
@@ -653,13 +678,13 @@ test_that("liftover on a mixed-build variants returns integer pos", {
 
   # Two rows declared in different builds -> mixed defining_build. Binding to
   # b37 lifts the b38 row, and lifting the result to b38 sub-lifts per build.
-  v <- rbindlist_variants(
+  v <- rbindlist_variant_sets(
     list(
-      new_variants(
+      new_variant_set(
         data.table::data.table(chr = "chr1", pos = 1000L, ref = "A", alt = "G"),
         build = "b37"
       ),
-      new_variants(
+      new_variant_set(
         data.table::data.table(chr = "chr1", pos = 2000L, ref = "C", alt = "T"),
         build = "b38"
       )
@@ -669,19 +694,19 @@ test_that("liftover on a mixed-build variants returns integer pos", {
   expect_equal(v$defining_build, c("b37", "b38"))
 
   lifted <- liftover(v, "b38")
-  expect_s3_class(lifted, "variants")
+  expect_s3_class(lifted, "variant_set")
   expect_type(lifted$pos, "integer")
   # row1 lifts b37 -> b38 (1000 - 50); row2 sources its recorded b38 value
   expect_equal(lifted$pos, c(950L, 2000L))
   expect_equal(build(lifted), "b38")
 })
 
-test_that("liftover.variants lifts a zero-row table across builds", {
+test_that("liftover.variant_set lifts a zero-row table across builds", {
   testthat::local_mocked_bindings(
     get_shared_chain_dt = function(from, to)
       make_fwd_chain(1L, 1000L, -4900L, from, to)
   )
-  populated <- new_variants(
+  populated <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b37"
   )
@@ -691,8 +716,8 @@ test_that("liftover.variants lifts a zero-row table across builds", {
   expect_equal(lifted_empty, lifted_populated[0])
 })
 
-test_that("liftover.variants validates source on a zero-row table", {
-  empty <- new_variants(
+test_that("liftover.variant_set validates source on a zero-row table", {
+  empty <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b37"
   )[0]

@@ -7,7 +7,7 @@
 select_source_build(x, target, source)
 }
 \arguments{
-\item{x}{A `variants`.}
+\item{x}{A `variant_set`.}
 
 \item{target}{Target build.}
 

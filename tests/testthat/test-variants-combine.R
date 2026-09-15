@@ -1,37 +1,40 @@
 mk <- function(chr, pos, ref, alt, build, ...) {
-  new_variants(
+  new_variant_set(
     data.table::data.table(chr = chr, pos = pos, ref = ref, alt = alt, ...),
     build = build
   )
 }
 
-test_that("rbindlist_variants binds same-build variants, preserving class", {
-  out <- rbindlist_variants(list(
-    mk("chr1", 100L, "A", "G", "b38"),
-    mk("chr2", 200L, "C", "T", "b38")
-  ))
-  expect_s3_class(out, "variants")
-  expect_equal(build(out), "b38")
-  expect_equal(out$pos, c(100L, 200L))
-  expect_equal(out$defining_build, c("b38", "b38"))
-})
+test_that(
+  "rbindlist_variant_sets binds same-build variants, preserving class",
+  {
+    out <- rbindlist_variant_sets(list(
+      mk("chr1", 100L, "A", "G", "b38"),
+      mk("chr2", 200L, "C", "T", "b38")
+    ))
+    expect_s3_class(out, "variant_set")
+    expect_equal(build(out), "b38")
+    expect_equal(out$pos, c(100L, 200L))
+    expect_equal(out$defining_build, c("b38", "b38"))
+  }
+)
 
-test_that("rbind.variants is the pairwise convenience", {
+test_that("rbind.variant_set is the pairwise convenience", {
   out <- rbind(
     mk("chr1", 100L, "A", "G", "b38"),
     mk("chr2", 200L, "C", "T", "b38")
   )
-  expect_s3_class(out, "variants")
+  expect_s3_class(out, "variant_set")
   expect_equal(nrow(out), 2L)
 })
 
-test_that("rbindlist_variants lifts inputs to the first input's build", {
+test_that("rbindlist_variant_sets lifts inputs to the first input's build", {
   testthat::local_mocked_bindings(
     get_shared_chain_dt = function(from, to) {
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )
-  out <- rbindlist_variants(list(
+  out <- rbindlist_variant_sets(list(
     mk("chr1", 1000L, "A", "G", "b37"),
     mk("chr1", 2000L, "C", "T", "b38")
   ))
@@ -47,7 +50,7 @@ test_that("target overrides the first input's build", {
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )
-  out <- rbindlist_variants(
+  out <- rbindlist_variant_sets(
     list(mk("chr1", 1000L, "A", "G", "b37")),
     target = "b38"
   )
@@ -56,25 +59,25 @@ test_that("target overrides the first input's build", {
   expect_equal(out$pos, 950L)
 })
 
-test_that("rbindlist_variants accepts data.tables with a build", {
+test_that("rbindlist_variant_sets accepts data.tables with a build", {
   dt <- data.table::data.table(chr = "chr2", pos = 200L, ref = "C", alt = "T")
   build(dt) <- "b38"
-  out <- rbindlist_variants(list(mk("chr1", 100L, "A", "G", "b38"), dt))
+  out <- rbindlist_variant_sets(list(mk("chr1", 100L, "A", "G", "b38"), dt))
   expect_equal(nrow(out), 2L)
 })
 
-test_that("rbindlist_variants rejects a build-less data.table", {
+test_that("rbindlist_variant_sets rejects a build-less data.table", {
   bare <- data.table::data.table(
     chr = "chr3", pos = 300L, ref = "G", alt = "A"
   )
   expect_error(
-    rbindlist_variants(list(mk("chr1", 100L, "A", "G", "b38"), bare)),
+    rbindlist_variant_sets(list(mk("chr1", 100L, "A", "G", "b38"), bare)),
     "build"
   )
 })
 
-test_that("rbindlist_variants forwards rbindlist options like idcol", {
-  out <- rbindlist_variants(
+test_that("rbindlist_variant_sets forwards rbindlist options like idcol", {
+  out <- rbindlist_variant_sets(
     list(
       mk("chr1", 100L, "A", "G", "b38"),
       mk("chr2", 200L, "C", "T", "b38")
@@ -86,7 +89,7 @@ test_that("rbindlist_variants forwards rbindlist options like idcol", {
 
 test_that("fill = FALSE on ragged inputs surfaces rbindlist's error", {
   expect_error(
-    rbindlist_variants(
+    rbindlist_variant_sets(
       list(
         mk("chr1", 100L, "A", "G", "b38"),
         mk("chr2", 200L, "C", "T", "b38", gene = "X")
@@ -96,12 +99,12 @@ test_that("fill = FALSE on ragged inputs surfaces rbindlist's error", {
   )
 })
 
-test_that("rbindlist_variants on an empty list needs a target", {
-  expect_error(rbindlist_variants(list()), "empty list")
+test_that("rbindlist_variant_sets on an empty list needs a target", {
+  expect_error(rbindlist_variant_sets(list()), "empty list")
 })
 
-test_that("rbindlist_variants binds non-native variants", {
-  out <- rbindlist_variants(list(
+test_that("rbindlist_variant_sets binds non-native variants", {
+  out <- rbindlist_variant_sets(list(
     mk("chr1", 100L, "A", "G", "dahu42"),
     mk("chr2", 200L, "C", "T", "dahu42")
   ))
@@ -109,9 +112,12 @@ test_that("rbindlist_variants binds non-native variants", {
   expect_equal(out$pos, c(100L, 200L))
 })
 
-test_that("rbindlist_variants on an empty list with target is a 0-row variants", {
-  out <- rbindlist_variants(list(), target = "b38")
-  expect_s3_class(out, "variants")
-  expect_equal(nrow(out), 0L)
-  expect_equal(build(out), "b38")
-})
+test_that(
+  "rbindlist_variant_sets on an empty list with target is a 0-row variant_set",
+  {
+    out <- rbindlist_variant_sets(list(), target = "b38")
+    expect_s3_class(out, "variant_set")
+    expect_equal(nrow(out), 0L)
+    expect_equal(build(out), "b38")
+  }
+)

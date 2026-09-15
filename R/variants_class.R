@@ -10,23 +10,25 @@ coordinate_columns <- function() {
   c("chr", "pos", "ref", "alt")
 }
 
-#' (Re)apply the `variants` class to a data.table in place
+#' Reclass a data.table as a `variant_set`
 #'
-#' @param x A data.table.
-#' @return `x` with class `c("variants", "data.table", "data.frame")`.
+#' A data.table operation drops the S3 class; this puts it back.
+#'
+#' @param x A data.table holding variants.
+#' @return `x` with class `c("variant_set", "data.table", "data.frame")`.
 #' @keywords internal
-set_variants_class <- function(x) {
+reclass_as_variant_set <- function(x) {
   data.table::setattr(
     x, "class",
-    c("variants", class(data.table::data.table())) |> unique()
+    c("variant_set", class(data.table::data.table())) |> unique()
   )
   x[]
 }
 
-#' Construct a build-aware variants table
+#' Construct a build-aware variant set
 #'
 #' Wraps a data.frame or data.table of variants (`chr`, `pos`, `ref`, `alt`)
-#' as a `variants`: an S3-classed data.table carrying a `build` attribute, a
+#' as a `variant_set`: an S3-classed data.table carrying a `build` attribute, a
 #' `chr_pos_ref_alt_<build>` `variant_id`, per-build provenance columns, and
 #' a `defining_build` column recording the build each variant was declared in.
 #' Liftover always sources from that defining build, so every target is
@@ -43,9 +45,9 @@ set_variants_class <- function(x) {
 #' @param build Genome build string; native builds are `"b36"`, `"b37"`,
 #'   `"b38"` (and their synonyms). Non-native builds are accepted and
 #'   carried through, but cannot be lifted over.
-#' @return A `variants` object (S3-classed data.table).
+#' @return A `variant_set` object (S3-classed data.table).
 #' @export
-new_variants <- function(x, build = NULL) {
+new_variant_set <- function(x, build = NULL) {
   stopifnot(is.data.frame(x))
   build <- build %||% build(x)
   x <- if (data.table::is.data.table(x)) {
@@ -55,19 +57,19 @@ new_variants <- function(x, build = NULL) {
   }
   x <- coerce_coordinate_types(x)
   if ("variant_id" %in% names(x)) {
-    return(new_variants_from_variant_id(x, build))
+    return(new_variant_set_from_variant_id(x, build))
   }
   missing_cols <- setdiff(coordinate_columns(), names(x))
   if (length(missing_cols) > 0) {
     if (nrow(x) > 0) {
       stop(
-        "`x` is missing column(s) required for a variants table: ",
+        "`x` is missing column(s) required for a variant set: ",
         paste(missing_cols, collapse = ", ")
       )
     }
     x <- scaffold_coordinate_columns(x, missing_cols)
   }
-  finalize_variants(x, build)
+  finalize_variant_set(x, build)
 }
 
 #' Add empty type-correct coordinate columns to a 0-row table
@@ -110,7 +112,7 @@ coerce_coordinate_types <- function(x) {
 #' requires that), so it is canonicalized leniently.
 #'
 #' @keywords internal
-finalize_variants <- function(v, build) {
+finalize_variant_set <- function(v, build) {
   if (is.null(build)) {
     stop("Cannot construct variants without a build.")
   }
@@ -121,18 +123,19 @@ finalize_variants <- function(v, build) {
   }
   v <- add_variant_id(v, build = build)
   v <- record_build(v, build = build)
-  set_variants_class(v)
+  reclass_as_variant_set(v)
 }
 
 #' Construct variants from a table carrying a variant_id column
 #'
 #' Parses coordinates from `variant_id`, validates any present coordinates and
 #' the embedded build against it, backfills the rest, and fills NA ids. A
-#' supplied id is never clobbered. The build need not be native. `new_variants`
-#' has already coerced and copied `x`, so this mutates it in place.
+#' supplied id is never clobbered. The build need not be native.
+#' `new_variant_set` has already coerced and copied `x`, so this mutates it
+#' in place.
 #'
 #' @keywords internal
-new_variants_from_variant_id <- function(x, build) {
+new_variant_set_from_variant_id <- function(x, build) {
   parsed <- parse_variant_id(x$variant_id)
   embedded <- unique(parsed$build[!is.na(parsed$build)])
   if (is.null(build) && 1 < length(embedded)) {
@@ -156,14 +159,14 @@ new_variants_from_variant_id <- function(x, build) {
   }
   computed <- variant_id_values(x$chr, x$pos, x$ref, x$alt, resolved)
   x[, variant_id := data.table::fcoalesce(variant_id, computed)]
-  finalize_variants(x, resolved)
+  finalize_variant_set(x, resolved)
 }
 
 #' Split a mixed-build variant_id table by build and recombine
 #'
 #' Each row is constructed in its embedded build (rows with an unparseable id
 #' default to the first parseable row's build), then the per-build groups are
-#' recombined through [rbindlist_variants()] targeting the first parseable
+#' recombined through [rbindlist_variant_sets()] targeting the first parseable
 #' row's build, preserving input row order. Each row keeps its embedded build
 #' as `defining_build`.
 #'
@@ -173,8 +176,10 @@ combine_by_embedded_build <- function(x, parsed) {
   row_build <- parsed$build
   row_build[is.na(row_build)] <- target
   idx <- split(seq_len(nrow(x)), row_build)
-  parts <- lapply(names(idx), function(b) new_variants(x[idx[[b]]], build = b))
-  combined <- rbindlist_variants(parts, target = target)
+  parts <- lapply(names(idx), function(b) {
+    new_variant_set(x[idx[[b]]], build = b)
+  })
+  combined <- rbindlist_variant_sets(parts, target = target)
   # Restore input row order: split() sorts groups alphabetically, so combined
   # has rows in the order of unlist(idx). Compute the inverse permutation.
   original_order <- order(unlist(idx, use.names = FALSE))
@@ -186,15 +191,15 @@ combine_by_embedded_build <- function(x, parsed) {
 #' @param x A data.frame, data.table, or tibble to coerce.
 #' @param build Genome build; defaults to `build(x)`.
 #' @param ... Unused.
-#' @return A `variants` object.
+#' @return A `variant_set` object.
 #' @export
-as_variants <- function(x, build = NULL, ...) {
-  UseMethod("as_variants")
+as_variant_set <- function(x, build = NULL, ...) {
+  UseMethod("as_variant_set")
 }
 
-#' @rdname as_variants
+#' @rdname as_variant_set
 #' @export
-as_variants.variants <- function(x, build = NULL, ...) {
+as_variant_set.variant_set <- function(x, build = NULL, ...) {
   if (!is.null(build)) {
     build <- normalize_build(
       build,
@@ -212,10 +217,10 @@ as_variants.variants <- function(x, build = NULL, ...) {
   x
 }
 
-#' @rdname as_variants
+#' @rdname as_variant_set
 #' @export
-as_variants.data.frame <- function(x, build = NULL, ...) {
-  new_variants(x, build = build)
+as_variant_set.data.frame <- function(x, build = NULL, ...) {
+  new_variant_set(x, build = build)
 }
 
 #' Set a data.table's genome build by reference
@@ -228,7 +233,7 @@ as_variants.data.frame <- function(x, build = NULL, ...) {
 #' count where it found it and the table keeps its over-allocation. That
 #' makes it the form to reach for on the way to a `:=`, which reads both.
 #'
-#' @param x A data.table: a `variants`, a `region_set`, or a plain one.
+#' @param x A data.table: a `variant_set`, a `region_set`, or a plain one.
 #' @param value Build name or synonym (non-native tags pass through); NULL is
 #'   an error.
 #' @return `x`, invisibly.
@@ -244,22 +249,22 @@ set_build <- function(x, value) {
 }
 
 #' @export
-build.variants <- function(x) {
+build.variant_set <- function(x) {
   attr(x, "build")
 }
 
 #' @export
-`build<-.variants` <- function(x, value) {
+`build<-.variant_set` <- function(x, value) {
   set_build(x, value)
   x
 }
 
-#' Builds for which a variants table carries coordinates
+#' Builds for which a variant set carries coordinates
 #'
 #' The current build (canonical columns) plus any build with a
 #' `chr_<build>` provenance column present.
 #'
-#' @param x A `variants`.
+#' @param x A `variant_set`.
 #' @return Character vector of build names.
 #' @keywords internal
 recorded_builds <- function(x) {
@@ -273,7 +278,7 @@ recorded_builds <- function(x) {
 #' vector (integer for `pos`, character otherwise) when `b` is not recorded.
 #' Always returns a vector of length `nrow(x)`.
 #'
-#' @param x A `variants`.
+#' @param x A `variant_set`.
 #' @param base One of "chr", "pos", "ref", "alt".
 #' @param b A build name.
 #' @return A vector of length `nrow(x)`.
@@ -334,7 +339,7 @@ lift_one_source <- function(rows, from, target, multi_match) {
 #' where the row has no coordinates in it). Reads recorded coordinates only;
 #' performs no liftover.
 #'
-#' @param x A `variants`.
+#' @param x A `variant_set`.
 #' @param target Target build.
 #' @param source `"best"`, `"current"`, or a build name.
 #' @return Character vector of length `nrow(x)`; each element a build name
@@ -393,10 +398,11 @@ select_source_build <- function(x, target, source) {
 #'
 #' `multi_match = "first"` (default) gives one output row per input variant;
 #' `"all"` keeps every target position the chosen source maps a variant to,
-#' fanning those out in place. `liftover.variants` manages the lift parameters
-#' itself; for raw liftover options use [liftover.data.table()] directly.
+#' fanning those out in place. `liftover.variant_set` manages the lift
+#' parameters itself; for raw liftover options use [liftover.data.table()]
+#' directly.
 #'
-#' @param x A `variants`.
+#' @param x A `variant_set`.
 #' @param target Target build.
 #' @param source Which build to lift each row from: `"best"` (default; the
 #'   `defining_build`, chosen per row with fallback), `"current"`
@@ -405,19 +411,19 @@ select_source_build <- function(x, target, source) {
 #' @param multi_match How a position that maps to several target positions is
 #'   resolved: `"first"` (default, one row per input variant), `"last"`, or
 #'   `"all"` (one output row per target position the source maps to).
-#' @param ... Must be empty; `liftover.variants` manages the lift parameters.
+#' @param ... Must be empty; `liftover.variant_set` manages the lift parameters.
 #'   Use [liftover.data.table()] directly for raw liftover options.
-#' @return A `variants` in the target build. With `multi_match = "all"` a
+#' @return A `variant_set` in the target build. With `multi_match = "all"` a
 #'   variant that maps to several positions contributes several rows,
 #'   inserted in input order immediately after one another.
 #' @export
-liftover.variants <- function(x, target, source = "best",
-                             multi_match = c("first", "last", "all"), ...) {
+liftover.variant_set <- function(x, target, source = "best",
+                                 multi_match = c("first", "last", "all"), ...) {
   multi_match <- match.arg(multi_match)
   target <- normalize_build(target, allow_null = FALSE)
   if (...length() > 0L) {
     stop(
-      "liftover.variants forwards no extra arguments; `source` selects the ",
+      "liftover.variant_set forwards no extra arguments; `source` selects the ",
       "build to lift from. Use liftover.data.table() directly for raw ",
       "liftover options."
     )
@@ -452,22 +458,22 @@ liftover.variants <- function(x, target, source = "best",
   set_build(result, target)
   result <- add_variant_id(result, build = target, overwrite = TRUE)
   result <- record_build(result, build = target)
-  set_variants_class(result)
+  reclass_as_variant_set(result)
 }
 
 #' @export
-unique.variants <- function(x, ...) {
+unique.variant_set <- function(x, ...) {
   result <- data.table::as.data.table(x)[
     !duplicated(x, by = coordinate_columns())
   ]
   set_build(result, build(x))
-  set_variants_class(result)
+  reclass_as_variant_set(result)
 }
 
 #' @export
-print.variants <- function(x, ...) {
+print.variant_set <- function(x, ...) {
   cat(sprintf(
-    "<variants: %d row(s), build %s>\n",
+    "<variant_set: %d variant(s), build %s>\n",
     nrow(x), attr(x, "build") %||% "unset"
   ))
   NextMethod()

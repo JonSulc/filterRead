@@ -7,7 +7,7 @@
 set_build(x, value)
 }
 \arguments{
-\item{x}{A data.table: a `variants`, a `region_set`, or a plain one.}
+\item{x}{A data.table: a `variant_set`, a `region_set`, or a plain one.}
 
 \item{value}{Build name or synonym (non-native tags pass through); NULL is
 an error.}

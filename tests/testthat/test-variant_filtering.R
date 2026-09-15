@@ -72,7 +72,7 @@ test_that("require_variant_columns rejects rsid-indexed files", {
 
 test_that("variant_keyset builds both allele orderings, upper-cased", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = "chr1", pos = 100L, ref = "a", alt = "g"
     ),
@@ -91,7 +91,7 @@ test_that("variant_keyset matches a bare-chr file's representation", {
     ),
     build = "b38"
   )
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = "chr1", pos = 100L, ref = "A", alt = "G"
     ),
@@ -103,7 +103,7 @@ test_that("variant_keyset matches a bare-chr file's representation", {
 
 test_that("variant_keyset drops incomplete rows with a warning", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr2"),
       pos = c(100L, NA_integer_),
@@ -119,7 +119,7 @@ test_that("variant_keyset drops incomplete rows with a warning", {
 
 test_that("finterface[v] matches on chr/pos/ref/alt", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -132,7 +132,7 @@ test_that("finterface[v] matches on chr/pos/ref/alt", {
 test_that("finterface[v] excludes a different allele at the same position", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
   # file row chr1:200 is C/T; ask for chr1:200 A/G -> no match
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -142,7 +142,7 @@ test_that("finterface[v] excludes a different allele at the same position", {
 test_that("finterface[v] includes a swapped allele order", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
   # file row chr2:300 is G/A; ask for chr2:300 A/G (swapped) -> match
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr2", pos = 300L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -154,11 +154,11 @@ test_that("finterface[v] includes a swapped allele order", {
 test_that("finterface[v] with empty v matches nothing without awk", {
   testthat::local_mocked_bindings(
     fcondition_to_awk = function(...) {
-      stop("fcondition_to_awk should not be called for an empty variants set")
+      stop("fcondition_to_awk should not be called for an empty variant_set")
     }
   )
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = character(), pos = integer(),
       ref = character(), alt = character()
@@ -178,7 +178,7 @@ test_that("finterface[v] with all rows dropped matches nothing, no awk", {
     }
   )
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr2"),
       pos = c(NA_integer_, NA_integer_),
@@ -196,7 +196,7 @@ test_that("finterface[v] errors on a ref-absent file", {
     dt = data.table::data.table(chr = "chr1", pos = 100L, pval = 0.1),
     build = "b38"
   )
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -205,9 +205,10 @@ test_that("finterface[v] errors on a ref-absent file", {
 
 test_that("finterface[v] composes with a column condition", {
   # `v & pval < X` is a composite: the pval arm references a file column, the v
-  # arm dispatches to new_filter_condition_impl.variants, and the two are ANDed.
+  # arm dispatches to new_filter_condition_impl.variant_set, and the two are
+  # ANDed.
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr2"), pos = c(100L, 300L),
       ref = c("A", "A"), alt = c("G", "G")
@@ -235,7 +236,7 @@ test_that("finterface[v] lifts v across builds and matches swapped alleles", {
   )
 
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 150L, ref = "G", alt = "A"),
     build = "b37"
   )
@@ -249,7 +250,7 @@ test_that("finterface[v] lifts v across builds and matches swapped alleles", {
 
 test_that("finterface[v] equals variant_id %in% both orderings", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr2"),
       pos = c(100L, 300L),
@@ -280,7 +281,7 @@ test_that("finterface[v] matches on a bare-chr file", {
     ),
     build = "b38"
   )
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -292,7 +293,7 @@ test_that("finterface[v] matches on a bare-chr file", {
 
 test_that("finterface[v] matches on a quoted-value file", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38", quote = TRUE)
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -311,7 +312,7 @@ test_that("finterface[v] matches with an encoded parent beside real chr/pos", {
     ),
     build = "b38"
   )
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -332,7 +333,7 @@ test_that("finterface[v] keeps positions on the right chromosome", {
     ),
     build = "b38"
   )
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr2", pos = 100L, ref = "C", alt = "T"),
     build = "b38"
   )
@@ -346,7 +347,7 @@ test_that("finterface[v] matches on a tab-separated file", {
     dt = ss_dt(), build = "b38",
     filename = "data.tsv", sep = "\t"
   )
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -357,7 +358,7 @@ test_that("finterface[v] matches on a tab-separated file", {
 
 test_that("finterface[v] compiles the position filter to a hash membership", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )
@@ -368,7 +369,7 @@ test_that("finterface[v] compiles the position filter to a hash membership", {
 
 test_that("finterface[v] emits the match branch exactly once", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  v <- new_variants(
+  v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
     build = "b38"
   )

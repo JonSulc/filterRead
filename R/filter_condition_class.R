@@ -369,7 +369,7 @@ as_fc_context <- function(finterface, x) {
 #'   column lookup and build inference.
 #' @param build Optional genome build (`"b36"`, `"b37"`, `"b38"`). When
 #'   `NULL` (the default), it is inferred from `finterface`, falling back to
-#'   the build of `x` itself for `region_set`/`variants` inputs.
+#'   the build of `x` itself for `region_set`/`variant_set` inputs.
 #' @param ... Reserved for method-specific arguments.
 #' @param env Environment in which to evaluate a bare-symbol condition `x`
 #'   (used by the `name` method); defaults to the caller's frame.

@@ -45,7 +45,7 @@ require_variant_columns <- function(finterface) {
   invisible(finterface)
 }
 
-#' Build the position set and both-orderings key set for a variants object
+#' Build the position set and both-orderings key set for a variant set
 #'
 #' Lifts `variants` to `build`, then formats each `(chr, pos, ref, alt)`
 #' component to match the file's on-disk representation (chr prefix, allele
@@ -55,7 +55,7 @@ require_variant_columns <- function(finterface) {
 #' (`chr_pos_ref_alt` and `chr_pos_alt_ref`) are emitted so the awk side stays
 #' one key, one lookup for efficiency.
 #'
-#' @param variants A `variants` object.
+#' @param variants A `variant_set` object.
 #' @param finterface A file_interface object.
 #' @param build Target build; `variants` is lifted to it (a no-op when it is
 #'   already in that build).
@@ -117,7 +117,12 @@ variant_key_expr <- function(finterface) {
 #'
 #' @keywords internal
 #' @export
-new_filter_condition_impl.variants <- function(x, context, build = NULL, ...) {
+new_filter_condition_impl.variant_set <- function(
+  x,
+  context,
+  build = NULL,
+  ...
+) {
   finterface <- context$finterface
   build <- build %||% build(finterface) %||% build(x)
 

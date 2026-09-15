@@ -15,7 +15,7 @@ column lookup and build inference.}
 
 \item{build}{Optional genome build (`"b36"`, `"b37"`, `"b38"`). When
 `NULL` (the default), it is inferred from `finterface`, falling back to
-the build of `x` itself for `region_set`/`variants` inputs.}
+the build of `x` itself for `region_set`/`variant_set` inputs.}
 
 \item{...}{Reserved for method-specific arguments.}
 

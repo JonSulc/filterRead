@@ -2,12 +2,12 @@
 % Please edit documentation in R/variant_filter_condition.R
 \name{variant_keyset}
 \alias{variant_keyset}
-\title{Build the position set and both-orderings key set for a variants object}
+\title{Build the position set and both-orderings key set for a variant set}
 \usage{
 variant_keyset(variants, finterface, build)
 }
 \arguments{
-\item{variants}{A `variants` object.}
+\item{variants}{A `variant_set` object.}
 
 \item{finterface}{A file_interface object.}
 

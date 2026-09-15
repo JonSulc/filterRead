@@ -7,7 +7,7 @@
 build_column(x, base, b)
 }
 \arguments{
-\item{x}{A `variants`.}
+\item{x}{A `variant_set`.}
 
 \item{base}{One of "chr", "pos", "ref", "alt".}
 
