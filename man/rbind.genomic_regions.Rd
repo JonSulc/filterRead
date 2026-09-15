@@ -4,12 +4,12 @@
 \alias{rbind.genomic_regions}
 \title{Combine genomic_regions by rows}
 \usage{
-\method{rbind}{genomic_regions}(..., normalize_regions = TRUE)
+\method{rbind}{genomic_regions}(..., canonicalize = TRUE)
 }
 \arguments{
 \item{...}{genomic_regions objects to combine}
 
-\item{normalize_regions}{If TRUE, reduce the regions to their canonical
+\item{canonicalize}{If TRUE, reduce the regions to their canonical
 form: sorted and pairwise disjoint.}
 }
 \value{

@@ -11,7 +11,7 @@ as_genomic_regions(x, build = NULL, ...)
   x,
   build = NULL,
   complement = NULL,
-  normalize_regions = TRUE,
+  canonicalize = TRUE,
   ...
 )
 }
@@ -27,7 +27,7 @@ as_genomic_regions(x, build = NULL, ...)
 excludes (TRUE) rather than those it covers (FALSE). NULL inherits the
 input's `complement` attribute, defaulting to FALSE.}
 
-\item{normalize_regions}{If TRUE, reduce the regions to their canonical
+\item{canonicalize}{If TRUE, reduce the regions to their canonical
 form: sorted and pairwise disjoint.}
 }
 \value{

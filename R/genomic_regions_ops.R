@@ -298,13 +298,13 @@ expand_genomic_regions <- function(
 #' Combine genomic_regions by rows
 #'
 #' @param ... genomic_regions objects to combine
-#' @param normalize_regions If TRUE, reduce the regions to their canonical
+#' @param canonicalize If TRUE, reduce the regions to their canonical
 #'   form: sorted and pairwise disjoint.
 #' @return Combined genomic_regions
 #' @export
 rbind.genomic_regions <- function(
   ...,
-  normalize_regions = TRUE
+  canonicalize = TRUE
 ) {
   dots <- list(...)
   if (!all(sapply(dots, is_complement) == is_complement(dots[[1]]))) {
@@ -334,7 +334,7 @@ rbind.genomic_regions <- function(
     as_genomic_regions(
       build = build(dots[[1]]),
       complement = is_complement(dots[[1]]),
-      normalize_regions = normalize_regions
+      canonicalize = canonicalize
     )
 }
 

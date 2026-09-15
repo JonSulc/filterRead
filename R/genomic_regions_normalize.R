@@ -1,16 +1,16 @@
 # The canonical form of a genomic_regions
 #
-# Every object is reduced to this form on construction: rows sorted and
-# pairwise disjoint. Row count and row shape are therefore facts about the set
-# and how it is stored, which is what lets `==` compare by rows, `compact()`
-# choose by row count, and the tabix builder emit one token per row.
+# Every object is canonicalized on construction: rows sorted and pairwise
+# disjoint. Row count and row shape are therefore facts about the set and how
+# it is stored, which is what lets `==` compare by rows, `compact()` choose by
+# row count, and the tabix builder emit one token per row.
 
 #' Reduce a genomic_regions to its canonical form
 #'
 #' @param gregions A genomic_regions object
 #' @return A genomic_regions covering the same positions, in canonical form
 #' @keywords internal
-normalize_genomic_regions <- function(
+canonicalize_genomic_regions <- function(
   gregions
 ) {
   merge_contiguous_regions(gregions) |>
@@ -64,7 +64,7 @@ merge_contiguous_regions <- function(
     as_genomic_regions(
       build = build(gregions),
       complement = is_complement(gregions),
-      normalize_regions = FALSE
+      canonicalize = FALSE
     )
 }
 
@@ -103,7 +103,7 @@ trim_specific_rules <- function(
     as_genomic_regions(
       build = build(gregions),
       complement = is_complement(gregions),
-      normalize_regions = FALSE
+      canonicalize = FALSE
     )
 }
 

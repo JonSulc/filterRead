@@ -12,7 +12,7 @@
 #' @param complement Whether the rows describe the coordinates the set
 #'   excludes (TRUE) rather than those it covers (FALSE). NULL inherits the
 #'   input's `complement` attribute, defaulting to FALSE.
-#' @param normalize_regions If TRUE, reduce the regions to their canonical
+#' @param canonicalize If TRUE, reduce the regions to their canonical
 #'   form: sorted and pairwise disjoint.
 #' @param ... Additional arguments passed to methods
 #' @return A genomic_regions object
@@ -31,7 +31,7 @@ as_genomic_regions.data.frame <- function(
   x,
   build = NULL,
   complement = NULL,
-  normalize_regions = TRUE,
+  canonicalize = TRUE,
   ...
 ) {
   build <- build %||% build(x)
@@ -69,9 +69,9 @@ as_genomic_regions.data.frame <- function(
   validate_genomic_regions(gregions)
   data.table::setkey(gregions, chr, start, end)
 
-  if (!normalize_regions) return(gregions)
+  if (!canonicalize) return(gregions)
 
-  normalize_genomic_regions(gregions)
+  canonicalize_genomic_regions(gregions)
 }
 #' @export
 as_genomic_regions.eq_filter_condition <- function(

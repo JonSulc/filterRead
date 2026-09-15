@@ -30,7 +30,7 @@
 #'   filtering against a build-bearing file requires it (see
 #'   [as_genomic_regions()] and the file-interface `[` method).
 #' @param chr_prefix Prefix to ensure on chromosome names (default "chr").
-#' @param normalize_regions If TRUE, reduce the regions to their canonical
+#' @param canonicalize If TRUE, reduce the regions to their canonical
 #'   form: sorted and pairwise disjoint.
 #' @param complement If TRUE the rows describe the coordinates the set
 #'   excludes rather than those it covers.
@@ -52,7 +52,7 @@ genomic_regions <- function(
   build = NULL,
   chr_prefix = "chr",
   complement = FALSE,
-  normalize_regions = TRUE
+  canonicalize = TRUE
 ) {
   if (data.table::is.data.table(chr)) {
     stop(
@@ -67,7 +67,7 @@ genomic_regions <- function(
     build = build,
     chr_prefix = chr_prefix,
     complement = complement,
-    normalize_regions = normalize_regions
+    canonicalize = canonicalize
   )
 }
 
@@ -92,7 +92,7 @@ genomic_regions <- function(
 #'   (see [expand_na_chr()]); when both have `chr = NA` the NA is kept and
 #'   the position constraints are intersected directly.
 #' - Union (`+`/`|`) combines the rows and reduces them to the canonical
-#'   form when `normalize_regions`: contiguous or overlapping ranges merge,
+#'   form when `canonicalize`: contiguous or overlapping ranges merge,
 #'   and a region with `chr = NA` absorbs the coverage of the regions it
 #'   spans.
 #' @keywords internal
@@ -103,7 +103,7 @@ new_genomic_regions <- function(
   build = NULL,
   chr_prefix = "chr",
   complement = FALSE,
-  normalize_regions = TRUE
+  canonicalize = TRUE
 ) {
   argument_lengths <- list(chr, start, end) |>
     sapply(length)
@@ -129,7 +129,7 @@ new_genomic_regions <- function(
     as_genomic_regions(
       build = build,
       complement = complement,
-      normalize_regions = normalize_regions
+      canonicalize = canonicalize
     )
 }
 
@@ -307,7 +307,7 @@ format_chr <- function(
 #' @keywords internal
 copy_genomic_regions <- function(gregions) {
   data.table::copy(gregions) |>
-    as_genomic_regions(normalize_regions = FALSE)
+    as_genomic_regions(canonicalize = FALSE)
 }
 
 #' Remove prefix from chromosome names

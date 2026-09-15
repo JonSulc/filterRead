@@ -11,7 +11,7 @@ new_genomic_regions(
   build = NULL,
   chr_prefix = "chr",
   complement = FALSE,
-  normalize_regions = TRUE
+  canonicalize = TRUE
 )
 }
 \arguments{
@@ -31,7 +31,7 @@ filtering against a build-bearing file requires it (see
 \item{complement}{If TRUE the rows describe the coordinates the set
 excludes rather than those it covers.}
 
-\item{normalize_regions}{If TRUE, reduce the regions to their canonical
+\item{canonicalize}{If TRUE, reduce the regions to their canonical
 form: sorted and pairwise disjoint.}
 }
 \value{
@@ -55,7 +55,7 @@ Set operations propagate this:
   (see [expand_na_chr()]); when both have `chr = NA` the NA is kept and
   the position constraints are intersected directly.
 - Union (`+`/`|`) combines the rows and reduces them to the canonical
-  form when `normalize_regions`: contiguous or overlapping ranges merge,
+  form when `canonicalize`: contiguous or overlapping ranges merge,
   and a region with `chr = NA` absorbs the coverage of the regions it
   spans.
 }

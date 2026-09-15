@@ -195,7 +195,7 @@ test_that("merging overlapping regions works", {
       chr = "chr1",
       start = c(123, 123),
       end = c(234, 456),
-      normalize_regions = FALSE
+      canonicalize = FALSE
     ) |>
       nrow(),
     2
@@ -208,7 +208,7 @@ test_that("merging preserves attributes", {
     start = c(123, 1234),
     end = c(1234, 2345),
     build = "b37",
-    normalize_regions = FALSE,
+    canonicalize = FALSE,
     complement = TRUE
   )
   merged <- merge_contiguous_regions(gregions)
@@ -1781,7 +1781,7 @@ test_that("compact reduces adjacent regions via negation", {
   adjacent <- rbind(
     new_genomic_regions(chr = 1, start = 100, end = 200, build = "b38"),
     new_genomic_regions(chr = 1, start = 201, end = 300, build = "b38"),
-    normalize_regions = FALSE
+    canonicalize = FALSE
   )
 
   compacted <- compact(adjacent)

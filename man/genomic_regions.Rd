@@ -11,7 +11,7 @@ genomic_regions(
   build = NULL,
   chr_prefix = "chr",
   complement = FALSE,
-  normalize_regions = TRUE
+  canonicalize = TRUE
 )
 }
 \arguments{
@@ -31,7 +31,7 @@ filtering against a build-bearing file requires it (see
 \item{complement}{If TRUE the rows describe the coordinates the set
 excludes rather than those it covers.}
 
-\item{normalize_regions}{If TRUE, reduce the regions to their canonical
+\item{canonicalize}{If TRUE, reduce the regions to their canonical
 form: sorted and pairwise disjoint.}
 }
 \value{
