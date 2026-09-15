@@ -1,11 +1,27 @@
 # The canonical form of a region_set
 #
-# Every object is canonicalized on construction: rows sorted and pairwise
-# disjoint. Row count and row shape are therefore facts about the set and how
+# Every object is canonicalized on construction, which fixes three things
+# about its rules:
+#
+# - they are keyed on `(chr, start, end)`, and the rules on one chromosome
+#   are pairwise disjoint and non-adjacent;
+# - a chromosome carries a specific rule only where it differs from the
+#   general rules, so no specific rule lies inside what a general rule
+#   already selects;
+# - a start is a position, which `validate_region_set()` enforces.
+#
+# The second is minimality, and with the first it makes the form unique:
+# within one build and one stored form, what a set selects fixes its rules
+# exactly. Row count and row shape are therefore facts about the set and how
 # it is stored, which is what lets `==` compare by rows, `compact()` choose by
 # row count, and the tabix builder emit one token per row.
 
 #' Reduce a region_set to its canonical form
+#'
+#' Merges the rules that overlap or abut, then trims each chromosome-specific
+#' rule against the general rules. Two sets in one build and the same stored
+#' form select the same positions if and only if their canonical rules are
+#' identical.
 #'
 #' @param regions A region_set object
 #' @return A region_set covering the same positions, in canonical form

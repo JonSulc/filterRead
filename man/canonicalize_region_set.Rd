@@ -13,6 +13,9 @@ canonicalize_region_set(regions)
 A region_set covering the same positions, in canonical form
 }
 \description{
-Reduce a region_set to its canonical form
+Merges the rules that overlap or abut, then trims each chromosome-specific
+rule against the general rules. Two sets in one build and the same stored
+form select the same positions if and only if their canonical rules are
+identical.
 }
 \keyword{internal}
