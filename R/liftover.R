@@ -192,12 +192,12 @@ clear_chain_cache <- function(path = get_chain_path(warn = FALSE)) {
   invisible(rds_files)
 }
 
-#' Get chain data.table for liftover
+#' Get a caller's own copy of a chain
 #'
-#' Loads or creates a chain data.table for coordinate conversion between
-#' genome builds. Checks for cached RDS first, falls back to parsing the
-#' raw chain file, and auto-downloads if needed.
+#' Returns a copy of the shared chain for a build pair, which the caller may
+#' modify.
 #'
+#' @seealso [get_shared_chain()], which holds the chain this copies.
 #' @param from Source build (b36, b37, b38, or synonyms like hg38)
 #' @param to Target build (b36, b37, b38, or synonyms like hg38)
 #' @param auto_download Logical, whether to automatically download chain
@@ -205,89 +205,37 @@ clear_chain_cache <- function(path = get_chain_path(warn = FALSE)) {
 #' @return data.table with chain alignment data, keyed by (chr, start, end).
 #'   Has attributes `from` and `to` recording the source and target builds.
 #' @keywords internal
-get_chain_dt <- function(
+get_chain <- function(
   from,
   to,
   auto_download = TRUE
 ) {
-  get_shared_chain_dt(from, to, auto_download = auto_download) |>
+  get_shared_chain(from, to, auto_download = auto_download) |>
     data.table::copy()
 }
 
-#' Load a chain data.table from disk
+#' Read a chain from the UCSC chain file
 #'
-#' Reads the cached RDS when it is present and valid, otherwise parses the
-#' raw chain file and writes the RDS, downloading the chain first when it is
-#' absent and `auto_download` is TRUE.
+#' Parses the UCSC chain file for a build pair, which must be present in the
+#' chain directory.
 #'
-#' @seealso [get_shared_chain_dt()] and [get_chain_dt()], which hold the loaded
-#'   chain for the session.
+#' @seealso [get_shared_chain()], which holds the chain for the session.
 #' @param from Source build (b36, b37, b38, or synonyms like hg38)
 #' @param to Target build (b36, b37, b38, or synonyms like hg38)
-#' @param auto_download Logical, whether to automatically download chain
-#'   files if not found. Default TRUE.
-#' @return data.table with chain alignment data, keyed by (chr, start, end).
-#'   Has attributes `from` and `to` recording the source and target builds.
+#' @return data.table with chain alignment data. Has attributes `from` and
+#'   `to` recording the source and target builds.
 #' @keywords internal
-load_chain_dt <- function(
+read_chain_file <- function(
   from,
-  to,
-  auto_download = TRUE
+  to
 ) {
-  chain_path <- get_chain_path(warn = FALSE)
-  chain_file <- file.path(chain_path, get_chain_filename(from, to))
-  rds_file <- file.path(chain_path, get_chain_rds_filename(from, to))
-
-  # Fast path: load from RDS cache
-  if (file.exists(rds_file)) {
-    chain_dt <- readRDS(rds_file)
-    if (data.table::is.data.table(chain_dt) &&
-      all(c("chr", "start", "end") %in% names(chain_dt))) {
-      return(chain_dt)
-    }
-    warning("Invalid chain cache, regenerating: ", rds_file)
-    file.remove(rds_file)
-  }
-
-  # Check for raw chain file
-  if (!file.exists(chain_file)) {
-    if (auto_download) {
-      message(sprintf(
-        "Chain file not found. Downloading %s to %s chain...",
-        from, to
-      ))
-      setup_chain_files(
-        builds = sprintf("%s_to_%s", from, to),
-        path = chain_path
-      )
-      # setup_chain_files now creates RDS, so reload from cache
-      if (file.exists(rds_file)) {
-        return(readRDS(rds_file))
-      }
-    } else {
-      stop(
-        sprintf("Chain file not found: %s\n", chain_file),
-        "Use setup_chain_files() to download, or ",
-        "set_chain_path() to configure the directory."
-      )
-    }
-  }
-
-  # Parse chain file and cache as RDS
-  chain_dt <- chain_file |>
+  file.path(
+    get_chain_path(warn = FALSE),
+    get_chain_filename(from, to)
+  ) |>
     parse_chain_file() |>
     data.table::setattr("from", from) |>
-    data.table::setattr("to", to) |>
-    prepare_chain_dt()
-
-  tryCatch(
-    saveRDS(chain_dt, rds_file),
-    error = function(e) {
-      warning("Failed to cache chain file as RDS: ", e$message)
-    }
-  )
-
-  chain_dt
+    data.table::setattr("to", to)
 }
 
 
@@ -459,7 +407,7 @@ liftover <- function(
 #'   coordinates (or drops them, under `nomatch = 0L`) rather than
 #'   signalling.
 #' @param chain_dt The session's shared chain for the desired
-#'   source-to-target build pair, from [get_shared_chain_dt()]. Held
+#'   source-to-target build pair, from [get_shared_chain()]. Held
 #'   read-only: it is the cached object every other caller sees, so
 #'   modifying it corrupts every later lift in the session. It carries a
 #'   `(chr, start, end)` index, which the overlap join reads; an
@@ -627,7 +575,7 @@ liftover.data.table <- function(
     return(x_work)
   }
 
-  chain_dt <- get_shared_chain_dt(from, target)
+  chain_dt <- get_shared_chain(from, target)
 
   positions <- data.table::data.table(
     I     = seq_len(nrow(x_work)),

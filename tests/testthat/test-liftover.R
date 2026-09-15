@@ -1,14 +1,14 @@
 test_that("liftover matches known coordinates across builds", {
-  chain_dt_b36_b37 <- get_chain_dt(
+  chain_dt_b36_b37 <- get_chain(
     from = "b36",
     to = "b37"
   ) |>
     suppressWarnings() # rtracklayer loading has a warning
-  chain_dt_b37_b38 <- get_chain_dt(
+  chain_dt_b37_b38 <- get_chain(
     from = "b37",
     to = "b38"
   )
-  chain_dt_b38_b37 <- get_chain_dt(
+  chain_dt_b38_b37 <- get_chain(
     from = "b38",
     to = "b37"
   )
@@ -116,7 +116,7 @@ test_that("split regions return additional rows", {
     end = c(7304078, 101687294),
     build = "b38"
   )
-  chain_dt <- get_chain_dt(from = "b37", to = "b38")
+  chain_dt <- get_chain(from = "b37", to = "b38")
 
   expect_equal(
     liftover(
@@ -160,7 +160,7 @@ test_that("full chromosome liftover works", {
     chr = "chr1",
     build = "b37"
   )
-  chain_dt <- get_chain_dt(
+  chain_dt <- get_chain(
     from = "b37",
     to = "b38"
   )
@@ -184,7 +184,7 @@ test_that("chromosome-free liftover works", {
     end = 1e7,
     build = "b37"
   )
-  chain_dt <- get_chain_dt(
+  chain_dt <- get_chain(
     from = "b37",
     to = "b38"
   )
@@ -223,7 +223,7 @@ test_that("empty region_set returns empty", {
 })
 
 test_that("reverse strand liftover coordinates are correct", {
-  chain_dt <- get_chain_dt(from = "b37", to = "b38")
+  chain_dt <- get_chain(from = "b37", to = "b38")
   # Find a region with reverse strand mapping
   rev_chain <- chain_dt[rev == TRUE]
   skip_if(nrow(rev_chain) == 0, "No reverse strand regions in chain")
@@ -485,17 +485,24 @@ test_that("clear_chain_cache reports when no files exist", {
 
 test_that("a chain is parsed once per session", {
   loads <- 0L
+  # Counts how many times the raw chain file is parsed.
   testthat::local_mocked_bindings(
-    load_chain_dt = function(from, to, auto_download = TRUE) {
+    read_chain_file = function(from, to) {
       loads <<- loads + 1L
       make_fwd_chain(1L, 100L, 5L, from, to)
     }
   )
+  tmp <- local_chain_path()
+  # An already-present chain file keeps get_shared_chain from downloading.
+  file.create(file.path(tmp, get_chain_filename("b37", "b38")))
   invalidate_chain_cache()
   withr::defer(invalidate_chain_cache())
 
-  first <- get_shared_chain_dt("b37", "b38")
-  second <- get_shared_chain_dt("b37", "b38")
+  first <- get_shared_chain("b37", "b38")
+  # Stops the second read loading the chain from the RDS, so `loads` staying
+  # at 1 means the session cache served it.
+  file.remove(file.path(tmp, get_chain_rds_filename("b37", "b38")))
+  second <- get_shared_chain("b37", "b38")
 
   expect_equal(loads, 1L)
   expect_true(identical(first, second))
@@ -503,40 +510,49 @@ test_that("a chain is parsed once per session", {
 
 test_that("the cached chain carries the index the overlap join reads", {
   testthat::local_mocked_bindings(
-    load_chain_dt = function(from, to, auto_download = TRUE) {
+    read_chain_file = function(from, to) {
       make_fwd_chain(1L, 100L, 5L, from, to)
     }
   )
+  tmp <- local_chain_path()
+  # An already-present chain file keeps get_shared_chain from downloading.
+  file.create(file.path(tmp, get_chain_filename("b37", "b38")))
   invalidate_chain_cache()
   withr::defer(invalidate_chain_cache())
 
   expect_equal(
-    data.table::indices(get_shared_chain_dt("b37", "b38")),
+    data.table::indices(get_shared_chain("b37", "b38")),
     "chr__start__end"
   )
 })
 
-test_that("get_chain_dt hands out a copy, so callers cannot edit the cache", {
+test_that("get_chain hands out a copy, so callers cannot edit the cache", {
   testthat::local_mocked_bindings(
-    load_chain_dt = function(from, to, auto_download = TRUE) {
+    read_chain_file = function(from, to) {
       make_fwd_chain(1L, 100L, 5L, from, to)
     }
   )
+  tmp <- local_chain_path()
+  # An already-present chain file keeps get_shared_chain from downloading.
+  file.create(file.path(tmp, get_chain_filename("b37", "b38")))
   invalidate_chain_cache()
   withr::defer(invalidate_chain_cache())
 
-  handed_out <- get_chain_dt("b37", "b38")
+  handed_out <- get_chain("b37", "b38")
   handed_out[, offset := 999L]
 
-  expect_equal(get_shared_chain_dt("b37", "b38")$offset, 5L)
+  expect_equal(get_shared_chain("b37", "b38")$offset, 5L)
 })
 
 test_that("lifting leaves the shared chain untouched", {
   testthat::local_mocked_bindings(
-    load_chain_dt = function(from, to, auto_download = TRUE) {
+    read_chain_file = function(from, to) {
       make_fwd_chain(100L, 10000L, 50L, from, to)
     }
   )
+  tmp <- local_chain_path()
+  # An already-present chain file keeps get_shared_chain from downloading.
+  file.create(file.path(tmp, get_chain_filename("b37", "b38")))
   invalidate_chain_cache()
   withr::defer(invalidate_chain_cache())
 
@@ -553,7 +569,7 @@ test_that("lifting leaves the shared chain untouched", {
       columns    = data.table::copy(as.list(chain_dt))
     )
   }
-  before <- fingerprint(get_shared_chain_dt("b37", "b38"))
+  before <- fingerprint(get_shared_chain("b37", "b38"))
 
   dt <- data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C")
   build(dt) <- "b37"
@@ -563,7 +579,7 @@ test_that("lifting leaves the shared chain untouched", {
     "b38"
   )
 
-  expect_equal(fingerprint(get_shared_chain_dt("b37", "b38")), before)
+  expect_equal(fingerprint(get_shared_chain("b37", "b38")), before)
 })
 
 test_that("a chain written to RDS carries the overlap join's index", {
@@ -578,7 +594,7 @@ test_that("a chain written to RDS carries the overlap join's index", {
     ),
     chain_file
   )
-  invisible(get_chain_dt(from = "b37", to = "b38", auto_download = FALSE))
+  invisible(get_chain(from = "b37", to = "b38", auto_download = FALSE))
 
   from_disk <- readRDS(file.path(tmp, "b37_to_b38.chain_dt.rds"))
   expect_equal(data.table::indices(from_disk), "chr__start__end")
@@ -587,17 +603,20 @@ test_that("a chain written to RDS carries the overlap join's index", {
 test_that("repointing the chain directory drops the cached chains", {
   loads <- 0L
   testthat::local_mocked_bindings(
-    load_chain_dt = function(from, to, auto_download = TRUE) {
+    read_chain_file = function(from, to) {
       loads <<- loads + 1L
       make_fwd_chain(1L, 100L, 5L, from, to)
     }
   )
   invalidate_chain_cache()
 
-  local_chain_path()
-  get_shared_chain_dt("b37", "b38")
-  local_chain_path()
-  get_shared_chain_dt("b37", "b38")
+  tmp <- local_chain_path()
+  # An already-present chain file keeps get_shared_chain from downloading.
+  file.create(file.path(tmp, get_chain_filename("b37", "b38")))
+  get_shared_chain("b37", "b38")
+  tmp <- local_chain_path()
+  file.create(file.path(tmp, get_chain_filename("b37", "b38")))
+  get_shared_chain("b37", "b38")
 
   expect_equal(loads, 2L)
 })
@@ -605,17 +624,19 @@ test_that("repointing the chain directory drops the cached chains", {
 test_that("clear_chain_cache drops the cached chains", {
   loads <- 0L
   testthat::local_mocked_bindings(
-    load_chain_dt = function(from, to, auto_download = TRUE) {
+    read_chain_file = function(from, to) {
       loads <<- loads + 1L
       make_fwd_chain(1L, 100L, 5L, from, to)
     }
   )
   tmp <- local_chain_path()
+  # An already-present chain file keeps get_shared_chain from downloading.
+  file.create(file.path(tmp, get_chain_filename("b37", "b38")))
   invalidate_chain_cache()
 
-  get_shared_chain_dt("b37", "b38")
-  expect_message(clear_chain_cache(tmp), "No cached chain files")
-  get_shared_chain_dt("b37", "b38")
+  get_shared_chain("b37", "b38")
+  expect_message(clear_chain_cache(tmp), "Removed 1 cached chain files")
+  get_shared_chain("b37", "b38")
 
   expect_equal(loads, 2L)
 })
@@ -623,7 +644,7 @@ test_that("clear_chain_cache drops the cached chains", {
 test_that("setup_chain_files drops the cached chains", {
   loads <- 0L
   testthat::local_mocked_bindings(
-    load_chain_dt = function(from, to, auto_download = TRUE) {
+    read_chain_file = function(from, to) {
       loads <<- loads + 1L
       make_fwd_chain(1L, 100L, 5L, from, to)
     }
@@ -633,12 +654,15 @@ test_that("setup_chain_files drops the cached chains", {
   file.create(file.path(tmp, get_chain_filename("b37", "b38")))
   invalidate_chain_cache()
 
-  get_shared_chain_dt("b37", "b38")
+  get_shared_chain("b37", "b38")
   expect_message(
     setup_chain_files(builds = "b37_to_b38", path = tmp),
     "Chain file exists"
   )
-  get_shared_chain_dt("b37", "b38")
+  # setup_chain_files drops the session cache but not the RDS beside the
+  # chain file, which would otherwise serve the reload.
+  file.remove(file.path(tmp, get_chain_rds_filename("b37", "b38")))
+  get_shared_chain("b37", "b38")
 
   expect_equal(loads, 2L)
 })
@@ -733,15 +757,15 @@ test_that("make_single_chain_dt handles a single-block chain on reverse strand",
   expect_true(result$rev)
 })
 
-test_that("get_chain_dt errors when auto_download=FALSE and no chain file", {
+test_that("get_chain errors when auto_download=FALSE and no chain file", {
   local_chain_path()
   expect_error(
-    get_chain_dt(from = "b37", to = "b38", auto_download = FALSE),
+    get_chain(from = "b37", to = "b38", auto_download = FALSE),
     "Chain file not found"
   )
 })
 
-test_that("get_chain_dt parses chain file and writes RDS cache", {
+test_that("get_chain parses chain file and writes RDS cache", {
   tmp <- local_chain_path()
   chain_file <- file.path(tmp, "hg19ToHg38.over.chain")
   writeLines(
@@ -757,7 +781,7 @@ test_that("get_chain_dt parses chain file and writes RDS cache", {
   rds_file <- file.path(tmp, "b37_to_b38.chain_dt.rds")
   expect_false(file.exists(rds_file))
 
-  chain_dt <- get_chain_dt(from = "b37", to = "b38", auto_download = FALSE)
+  chain_dt <- get_chain(from = "b37", to = "b38", auto_download = FALSE)
 
   expect_s3_class(chain_dt, "data.table")
   expect_equal(nrow(chain_dt), 3)
@@ -766,7 +790,7 @@ test_that("get_chain_dt parses chain file and writes RDS cache", {
   expect_true(file.exists(rds_file))
 })
 
-test_that("get_chain_dt regenerates from chain file when RDS cache is invalid", {
+test_that("get_chain regenerates from chain file when RDS cache is invalid", {
   tmp <- local_chain_path()
   chain_file <- file.path(tmp, "hg19ToHg38.over.chain")
   writeLines(
@@ -783,7 +807,7 @@ test_that("get_chain_dt regenerates from chain file when RDS cache is invalid", 
   saveRDS(list(invalid = TRUE), rds_file)
 
   expect_warning(
-    chain_dt <- get_chain_dt(from = "b37", to = "b38", auto_download = FALSE),
+    chain_dt <- get_chain(from = "b37", to = "b38", auto_download = FALSE),
     "Invalid chain cache"
   )
   expect_s3_class(chain_dt, "data.table")

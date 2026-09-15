@@ -21,7 +21,7 @@ coordinates (or drops them, under `nomatch = 0L`) rather than
 signalling.}
 
 \item{chain_dt}{The session's shared chain for the desired
-source-to-target build pair, from [get_shared_chain_dt()]. Held
+source-to-target build pair, from [get_shared_chain()]. Held
 read-only: it is the cached object every other caller sees, so
 modifying it corrupts every later lift in the session. It carries a
 `(chr, start, end)` index, which the overlap join reads; an

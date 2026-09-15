@@ -206,7 +206,7 @@ test_that("liftover.data.table reverse-complements alleles across a minus-strand
   data.table::setattr(rev_chain, "from", "b37")
   data.table::setattr(rev_chain, "to", "b38")
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) rev_chain
+    get_shared_chain = function(from, to) rev_chain
   )
 
   dt <- data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C")
@@ -259,7 +259,7 @@ test_that("multi_match = 'all' duplicates a variant that maps to two chain block
     ch
   }
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) overlapping_blocks()
+    get_shared_chain = function(from, to) overlapping_blocks()
   )
 
   dt <- data.table::data.table(chr = "chr1", pos = 150L, id = "x")
@@ -288,7 +288,7 @@ test_that("drop_unlifted = FALSE preserves NA-input rows, not just chain-gap row
     ch
   }
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) fwd_chain()
+    get_shared_chain = function(from, to) fwd_chain()
   )
 
   dt <- data.table::data.table(
@@ -316,7 +316,7 @@ test_that("drop_unlifted = FALSE fans out multi-mappings and keeps unmapped rows
     ch
   }
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) overlapping_blocks()
+    get_shared_chain = function(from, to) overlapping_blocks()
   )
 
   dt <- data.table::data.table(
@@ -342,7 +342,7 @@ test_that("use_cache = FALSE bypasses the round-trip cache and re-lifts", {
     ch
   }
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) fwd_chain()
+    get_shared_chain = function(from, to) fwd_chain()
   )
 
   # Bogus recorded b37 columns: the cache would return them verbatim.
@@ -382,7 +382,7 @@ test_that("liftover.data.table returns integer pos through a parser-built chain"
     ch
   }
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) chain_via_parser(from, to)
+    get_shared_chain = function(from, to) chain_via_parser(from, to)
   )
 
   dt <- data.table::data.table(chr = "chr1", pos = 2000L)
@@ -395,7 +395,7 @@ test_that("liftover.data.table returns integer pos through a parser-built chain"
 
 test_that("liftover returns a table that keeps its over-allocation", {
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) {
+    get_shared_chain = function(from, to) {
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )
@@ -419,7 +419,7 @@ test_that("liftover returns a table that keeps its over-allocation", {
 
 test_that("liftover leaves the caller's table alone", {
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) {
+    get_shared_chain = function(from, to) {
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )

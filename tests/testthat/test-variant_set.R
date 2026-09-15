@@ -82,7 +82,7 @@ test_that("best-source liftover recovers rows NA in the current build via a newe
     b38_b36 = make_fwd_chain(500L, 2500L, 200L, "b38", "b36")   # covers row B (b38 2000)
   )
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) {
+    get_shared_chain = function(from, to) {
       chains[[paste(from, to, sep = "_")]]
     }
   )
@@ -134,7 +134,7 @@ test_that("select_source_build picks the defining build then falls back", {
 
 test_that("source = 'current' does not recover NA-at-current rows", {
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) make_fwd_chain(800L, 1000L, 100L, "b37", "b36")
+    get_shared_chain = function(from, to) make_fwd_chain(800L, 1000L, 100L, "b37", "b36")
   )
   v <- new_variant_set(
     data.table::data.table(
@@ -201,7 +201,7 @@ test_that("source selects the build to lift from (best / current / named)", {
     data.table::setattr(chains[[nm]], "to", parts[2])
   }
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) {
+    get_shared_chain = function(from, to) {
       chains[[paste(from, to, sep = "_")]]
     }
   )
@@ -241,7 +241,7 @@ test_that("a chain-gap row is not retried from another build (source fixed by co
     data.table::setattr(chains[[nm]], "to", parts[2])
   }
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) {
+    get_shared_chain = function(from, to) {
       chains[[paste(from, to, sep = "_")]]
     }
   )
@@ -276,7 +276,7 @@ test_that("source = 'best', multi_match = 'all' fans out multi-mapped variants i
     data.table::setattr(ch, "to", "b38")
     ch
   }
-  testthat::local_mocked_bindings(get_shared_chain_dt = function(from, to) overlapping())
+  testthat::local_mocked_bindings(get_shared_chain = function(from, to) overlapping())
 
   v <- new_variant_set(
     data.table::data.table(
@@ -316,7 +316,7 @@ test_that(
   "liftover.variant_set records the target build's provenance columns",
   {
     testthat::local_mocked_bindings(
-      get_shared_chain_dt = function(from, to)
+      get_shared_chain = function(from, to)
         make_fwd_chain(1L, 1000L, -4900L, from, to)   # 100 -> 5000
     )
 
@@ -371,7 +371,7 @@ test_that("liftover.variant_set reverse-complements alleles on strand flip", {
     ch
   }
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) rev_chain()
+    get_shared_chain = function(from, to) rev_chain()
   )
 
   v <- new_variant_set(
@@ -541,7 +541,7 @@ test_that("new_variant_set errors when build conflicts with the id suffix", {
 
 test_that("a multi-build variant_id table splits and lifts to the first build", {
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) {
+    get_shared_chain = function(from, to) {
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )
@@ -673,7 +673,7 @@ test_that("liftover on a mixed-build variant_set returns integer pos", {
     ch
   }
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) chain_via_parser(from, to)
+    get_shared_chain = function(from, to) chain_via_parser(from, to)
   )
 
   # Two rows declared in different builds -> mixed defining_build. Binding to
@@ -703,7 +703,7 @@ test_that("liftover on a mixed-build variant_set returns integer pos", {
 
 test_that("liftover.variant_set lifts a zero-row table across builds", {
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to)
+    get_shared_chain = function(from, to)
       make_fwd_chain(1L, 1000L, -4900L, from, to)
   )
   populated <- new_variant_set(

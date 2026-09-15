@@ -30,7 +30,7 @@ test_that("rbind.variant_set is the pairwise convenience", {
 
 test_that("rbindlist_variant_sets lifts inputs to the first input's build", {
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) {
+    get_shared_chain = function(from, to) {
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )
@@ -46,7 +46,7 @@ test_that("rbindlist_variant_sets lifts inputs to the first input's build", {
 
 test_that("target overrides the first input's build", {
   testthat::local_mocked_bindings(
-    get_shared_chain_dt = function(from, to) {
+    get_shared_chain = function(from, to) {
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )

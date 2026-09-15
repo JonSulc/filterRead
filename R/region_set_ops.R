@@ -71,7 +71,7 @@ liftover.region_set <- function(
     if (build(x) == target) {
       return(x)
     }
-    chain_dt <- get_shared_chain_dt(
+    chain_dt <- get_shared_chain(
       from = build(x),
       to = target
     )
