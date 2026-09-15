@@ -4,13 +4,13 @@
 \alias{compact}
 \title{Return the smallest equivalent region_set representation}
 \usage{
-compact(gregions)
+compact(regions)
 }
 \arguments{
-\item{gregions}{A region_set object}
+\item{regions}{A region_set object}
 }
 \value{
-A region_set object with the same coverage as `gregions`
+A region_set object with the same coverage as `regions`
   but with the minimum number of rows
 }
 \description{
@@ -21,7 +21,7 @@ same set of genomic positions.
 }
 \examples{
 \dontrun{
-gregions <- new_region_set(chr = 1:20, build = "b38")
-compact(gregions)
+regions <- new_region_set(chr = 1:20, build = "b38")
+compact(regions)
 }
 }

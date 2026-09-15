@@ -4,10 +4,10 @@
 \alias{chr_has_mixed_na}
 \title{Check if region_set has both NA and non-NA chromosomes}
 \usage{
-chr_has_mixed_na(gregions)
+chr_has_mixed_na(regions)
 }
 \arguments{
-\item{gregions}{A region_set object}
+\item{regions}{A region_set object}
 }
 \value{
 TRUE if some rows have NA chr and others don't

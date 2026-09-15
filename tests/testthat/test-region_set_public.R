@@ -18,10 +18,10 @@ test_that("finterface[region_set(...)] returns in-range rows", {
     ),
     build = "b38"
   )
-  gregions <- region_set(
+  regions <- region_set(
     chr = "1", start = 150L, end = 350L, build = "b38"
   )
-  result <- fi[gregions]
+  result <- fi[regions]
   expect_equal(result$pos, 200L)
   expect_equal(result$chr, "chr1")
 })
@@ -55,7 +55,7 @@ test_that("buildless empty region_set matches nothing without awk", {
   expect_equal(nrow(fi[empty]), 0)
 })
 
-test_that("finterface[gregions] lifts the regions to the file build", {
+test_that("finterface[regions] lifts the regions to the file build", {
   testthat::local_mocked_bindings(
     get_shared_chain_dt = function(from, to) make_fwd_chain(100L, 200L, 50L, "b37", "b38")
   )
@@ -70,35 +70,35 @@ test_that("finterface[gregions] lifts the regions to the file build", {
     build = "b38"
   )
   # b37 chr1:140-160 lifts (offset 50) to b38 chr1:90-110, matching pos 100.
-  gregions <- region_set(
+  regions <- region_set(
     chr = "1", start = 140L, end = 160L, build = "b37"
   )
-  result <- fi[gregions]
+  result <- fi[regions]
   expect_equal(result$pos, 100L)
 })
 
-test_that("finterface[gregions] errors when the region has no build but the file does", {
+test_that("finterface[regions] errors when the region has no build but the file does", {
   fi <- local_file_interface(
     dt = data.table::data.table(
       chr = "chr1", pos = 100L, ref = "A", alt = "G", pval = 0.1
     ),
     build = "b38"
   )
-  gregions <- region_set(chr = "1", start = 90L, end = 110L)
-  expect_error(fi[gregions], "no build")
+  regions <- region_set(chr = "1", start = 90L, end = 110L)
+  expect_error(fi[regions], "no build")
 })
 
-test_that("finterface[gregions] errors when the file has no build but the region does", {
+test_that("finterface[regions] errors when the file has no build but the region does", {
   fi <- local_file_interface(
     dt = data.table::data.table(
       chr = "chr1", pos = 100L, ref = "A", alt = "G", pval = 0.1
     ),
     build = NULL
   )
-  gregions <- region_set(
+  regions <- region_set(
     chr = "1", start = 90L, end = 110L, build = "b37"
   )
-  expect_error(fi[gregions], "no declared build")
+  expect_error(fi[regions], "no declared build")
 })
 
 test_that("as_region_set() reports each missing coordinate column", {

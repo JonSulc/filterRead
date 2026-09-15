@@ -4,10 +4,10 @@
 \alias{single_genomic_region_to_fc}
 \title{Convert single genomic region to awk condition}
 \usage{
-single_genomic_region_to_fc(gregion_row, column_indices)
+single_genomic_region_to_fc(region_row, column_indices)
 }
 \arguments{
-\item{gregion_row}{List with chr, start, end (chr and end possibly NA)}
+\item{region_row}{List with chr, start, end (chr and end possibly NA)}
 
 \item{column_indices}{Named list with chr and pos column refs}
 }

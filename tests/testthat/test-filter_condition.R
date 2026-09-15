@@ -602,14 +602,14 @@ test_that("AND code block handling works", {
       rlang::quo(chr == 1 | chr == 2),
       finterface
     ) |>
-      eval_fcondition_w_gregions()
+      eval_fcondition_w_regions()
   )
   expect_no_error(
     new_filter_condition(
       rlang::quo(pval < .05 & (chr == 1 | chr == 2)),
       finterface
     ) |>
-      eval_fcondition_w_gregions()
+      eval_fcondition_w_regions()
   )
 })
 
@@ -1155,11 +1155,11 @@ test_that("eval_region_set_from_fc honors the complement bit", {
   finterface <- local_summary_stats_interface(prefixes = c(chr = "chr"))
   fc_complement <- new_filter_condition(rlang::quo(chr != 1), finterface)
   fc_direct <- new_filter_condition(rlang::quo(chr == 1), finterface)
-  cond_complement <- eval_fcondition_w_gregions(
+  cond_complement <- eval_fcondition_w_regions(
     fc_complement,
     finterface = finterface
   )$condition
-  cond_direct <- eval_fcondition_w_gregions(
+  cond_direct <- eval_fcondition_w_regions(
     fc_direct,
     finterface = finterface
   )$condition
@@ -1211,12 +1211,12 @@ test_that("new_filter_condition stores a {finterface, env} context", {
   expect_identical(quosure_context$finterface, finterface)
   expect_identical(quosure_context$env, rlang::quo_get_env(quosure))
 
-  gregions <- new_region_set(chr = "1", start = 100, end = 200,
+  regions <- new_region_set(chr = "1", start = 100, end = 200,
     build = "b38")
-  gregions_fcondition <- new_filter_condition(gregions, finterface)
-  gregions_context <- attr(gregions_fcondition, "context")
-  expect_identical(gregions_context$finterface, finterface)
-  expect_null(gregions_context$env)
+  regions_fcondition <- new_filter_condition(regions, finterface)
+  regions_context <- attr(regions_fcondition, "context")
+  expect_identical(regions_context$finterface, finterface)
+  expect_null(regions_context$env)
 })
 
 test_that("build resolves from the interface without an explicit build", {
@@ -1239,13 +1239,13 @@ test_that("non-literal RHS is evaluated from the caller environment", {
 test_that("new_filter_condition evaluates a bare name in the caller frame", {
   finterface <- local_summary_stats_interface(build = "b36")
 
-  gregions <- new_region_set(chr = "1", start = 100, end = 200,
+  regions <- new_region_set(chr = "1", start = 100, end = 200,
     build = "b36")
 
-  fcondition <- new_filter_condition(as.name("gregions"), finterface)
+  fcondition <- new_filter_condition(as.name("regions"), finterface)
 
   expect_true(is.filter_condition(fcondition))
-  expect_equal(genomic_constraint(fcondition), gregions)
+  expect_equal(genomic_constraint(fcondition), regions)
 })
 
 test_that("as_fc_context normalizes an interface and is idempotent", {
@@ -1257,10 +1257,10 @@ test_that("as_fc_context normalizes an interface and is idempotent", {
   expect_identical(context$finterface, finterface)
   expect_identical(context$env, rlang::quo_get_env(quosure))
 
-  gregions <- new_region_set(chr = "1", start = 1, end = 2, build = "b38")
-  gregions_context <- as_fc_context(finterface, gregions)
-  expect_identical(gregions_context$finterface, finterface)
-  expect_null(gregions_context$env)
+  regions <- new_region_set(chr = "1", start = 1, end = 2, build = "b38")
+  regions_context <- as_fc_context(finterface, regions)
+  expect_identical(regions_context$finterface, finterface)
+  expect_null(regions_context$env)
 
   expect_identical(as_fc_context(context, quosure), context)
 })
@@ -1609,17 +1609,17 @@ test_that("a genomic constraint beside a parenthesized OR filters the read", {
 
 test_that("a region_set beside a parenthesized OR filters the read", {
   finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr   = 1,
     end   = 250,
     build = build(finterface)
   )
   expect_match(
-    finterface[gregions & (ref == "A" | alt == "G"), return_only_cmd = TRUE],
+    finterface[regions & (ref == "A" | alt == "G"), return_only_cmd = TRUE],
     'if ((($3 == "A" || $4 == "G")) && $1 == "chr1" && $2 <= 250) {',
     fixed = TRUE
   )
-  result <- finterface[gregions & (ref == "A" | alt == "G")]
+  result <- finterface[regions & (ref == "A" | alt == "G")]
   expect_equal(result$chr, c("chr1", "chr1"))
   expect_equal(result$pos, c(100L, 200L))
 })
@@ -1641,14 +1641,14 @@ test_that("a repeated constraint is emitted once, not at every node", {
 
 test_that("a repeated region_set is emitted once", {
   finterface <- local_file_interface(dt = dummy_fixed_summary_stats())
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr   = c(1, 2),
     end   = c(250, 250),
     build = build(finterface)
   )
   expect_match(
     finterface[
-      gregions & (ref == "A" | alt == "G") & (pval < 0.5 | alt == "T"),
+      regions & (ref == "A" | alt == "G") & (pval < 0.5 | alt == "T"),
       return_only_cmd = TRUE
     ],
     paste0(
@@ -1687,14 +1687,14 @@ test_that("has_position_condition detects a constraint on either bound", {
 })
 
 test_that("constraint combinators treat NULL as the full genome", {
-  gregions <- new_region_set(chr = 1, build = "b38")
+  regions <- new_region_set(chr = 1, build = "b38")
 
-  expect_equal(and_constraints(NULL, gregions), gregions)
-  expect_equal(and_constraints(gregions, NULL), gregions)
+  expect_equal(and_constraints(NULL, regions), regions)
+  expect_equal(and_constraints(regions, NULL), regions)
   expect_null(and_constraints(NULL, NULL))
 
-  expect_null(or_constraints(NULL, gregions))
-  expect_null(or_constraints(gregions, NULL))
+  expect_null(or_constraints(NULL, regions))
+  expect_null(or_constraints(regions, NULL))
   expect_null(or_constraints(NULL, NULL))
 })
 

@@ -4,10 +4,10 @@
 \alias{merge_contiguous_regions}
 \title{Merge overlapping and contiguous genomic regions}
 \usage{
-merge_contiguous_regions(gregions)
+merge_contiguous_regions(regions)
 }
 \arguments{
-\item{gregions}{A region_set object}
+\item{regions}{A region_set object}
 }
 \value{
 region_set with overlapping regions merged

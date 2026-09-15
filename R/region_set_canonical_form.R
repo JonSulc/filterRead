@@ -7,13 +7,13 @@
 
 #' Reduce a region_set to its canonical form
 #'
-#' @param gregions A region_set object
+#' @param regions A region_set object
 #' @return A region_set covering the same positions, in canonical form
 #' @keywords internal
 canonicalize_region_set <- function(
-  gregions
+  regions
 ) {
-  merge_contiguous_regions(gregions) |>
+  merge_contiguous_regions(regions) |>
     trim_specific_rules()
 }
 
@@ -23,16 +23,16 @@ canonicalize_region_set <- function(
 #' single regions. A region leaving a position unconstrained reaches the
 #' end of its chromosome, so it merges with whatever it meets there.
 #'
-#' @param gregions A region_set object
+#' @param regions A region_set object
 #' @return region_set with overlapping regions merged
 #' @keywords internal
 merge_contiguous_regions <- function(
-  gregions
+  regions
 ) {
-  if (nrow(gregions) == 0) {
-    return(gregions)
+  if (nrow(regions) == 0) {
+    return(regions)
   }
-  replace_na_with_sentinel(gregions) |>
+  replace_na_with_sentinel(regions) |>
     # The merging below requires sorted rows
     data.table::setkey(chr, start, end) |>
     _[
@@ -62,8 +62,8 @@ merge_contiguous_regions <- function(
     ] |>
     replace_sentinel_with_na() |>
     as_region_set(
-      build = build(gregions),
-      complement = is_complement(gregions),
+      build = build(regions),
+      complement = is_complement(regions),
       canonicalize = FALSE
     )
 }
@@ -79,20 +79,20 @@ merge_contiguous_regions <- function(
 #' This is the minimality half of the canonical form: a chromosome carries a
 #' specific rule only where it differs from the general rules.
 #'
-#' @param gregions A region_set object with merged rows
+#' @param regions A region_set object with merged rows
 #' @return A region_set selecting the same positions, with pairwise
 #'   disjoint rows
 #' @keywords internal
 trim_specific_rules <- function(
-  gregions
+  regions
 ) {
-  if (!anyNA(gregions$chr)) {
-    return(gregions)
+  if (!anyNA(regions$chr)) {
+    return(regions)
   }
   rows <- data.table::data.table(
-    chr = gregions$chr,
-    start = gregions$start,
-    end = gregions$end
+    chr = regions$chr,
+    start = regions$start,
+    end = regions$end
   )
   general_rules <- rows[is.na(chr)]
   list(
@@ -101,8 +101,8 @@ trim_specific_rules <- function(
   ) |>
     data.table::rbindlist() |>
     as_region_set(
-      build = build(gregions),
-      complement = is_complement(gregions),
+      build = build(regions),
+      complement = is_complement(regions),
       canonicalize = FALSE
     )
 }

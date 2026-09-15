@@ -19,7 +19,7 @@
 #'   - variable_arrays: awk code for loading %in% arrays
 #'   - additional_files: temp files that need to be passed to awk
 #' @keywords internal
-eval_fcondition_w_gregions <- function(
+eval_fcondition_w_regions <- function(
   fcondition,
   finterface = get_file_interface(fcondition),
   column_indices = get_column_indices(finterface)
@@ -30,16 +30,16 @@ eval_fcondition_w_gregions <- function(
       get(fcondition[[1]]),
       lapply(
         fcondition[-1],
-        eval_fcondition_w_gregions,
+        eval_fcondition_w_regions,
         column_indices = column_indices
       )
     )
-    gregions_condition <- eval_region_set_from_fc(
+    regions_condition <- eval_region_set_from_fc(
       fcondition,
       finterface = finterface,
       column_indices = column_indices
     )
-    if (length(gregions_condition) != 0L) {
+    if (length(regions_condition) != 0L) {
       # or_filter_condition joins its operands with a bare ||, so the
       # children's condition is parenthesized to keep && from binding to
       # the last operand alone.
@@ -47,7 +47,7 @@ eval_fcondition_w_gregions <- function(
         if (length(awk_conditions$condition) != 0L) {
           sprintf("(%s)", awk_conditions$condition)
         },
-        gregions_condition
+        regions_condition
       ) |>
         paste(collapse = " && ")
     }
@@ -142,10 +142,10 @@ eval_region_set_from_fc <- function(
   if (is_unconstrained(gconstraint)) {
     return()
   }
-  gregions <- post_process(gconstraint, finterface = finterface)
+  regions <- post_process(gconstraint, finterface = finterface)
   # A set no row can satisfy matches nothing on an RSID-indexed file as on
   # any other, so coverage is decided before the RSID bail below.
-  if (is_empty_genome(gregions)) {
+  if (is_empty_genome(regions)) {
     return("0")
   }
   # Positions on an RSID-indexed file are handled through the index
@@ -153,7 +153,7 @@ eval_region_set_from_fc <- function(
     return()
   }
   # Convert each row to an awk condition, combine with ||
-  gregions_fcs <- gregions[
+  regions_fcs <- regions[
     ,
     single_genomic_region_to_fc(
       .(chr = chr, start = start, end = end),
@@ -162,17 +162,17 @@ eval_region_set_from_fc <- function(
     by = .I # Could be improved if vectorized
   ][, -"I"] |>
     unlist()
-  gregions_fcs <- paste(gregions_fcs, collapse = " || ")
+  regions_fcs <- paste(regions_fcs, collapse = " || ")
   # Wrap multiple regions in parentheses for correct precedence
-  if (1 < nrow(gregions)) {
-    gregions_fcs <- sprintf("(%s)", gregions_fcs)
+  if (1 < nrow(regions)) {
+    regions_fcs <- sprintf("(%s)", regions_fcs)
   }
   # A set stored as its complement inverts the match: keep the rows that
   # fall outside its rows.
-  if (is_complement(gregions)) {
-    gregions_fcs <- sprintf("!(%s)", gregions_fcs)
+  if (is_complement(regions)) {
+    regions_fcs <- sprintf("!(%s)", regions_fcs)
   }
-  gregions_fcs
+  regions_fcs
 }
 
 #' Convert single genomic region to awk condition
@@ -181,24 +181,24 @@ eval_region_set_from_fc <- function(
 #' An NA chr or end is skipped, as is a start of 1: each leaves its axis
 #' unconstrained, so there is nothing for awk to test.
 #'
-#' @param gregion_row List with chr, start, end (chr and end possibly NA)
+#' @param region_row List with chr, start, end (chr and end possibly NA)
 #' @param column_indices Named list with chr and pos column refs
 #'
 #' @return Character string like `$1 == "1" && 1000 <= $2 && $2 <= 2000`
 #' @keywords internal
 single_genomic_region_to_fc <- function(
-  gregion_row,
+  region_row,
   column_indices
 ) {
   all_fc <- c(
-    if (!is.na(gregion_row$chr)) {
-      eq_filter_condition(column_indices$chr, gregion_row$chr)
+    if (!is.na(region_row$chr)) {
+      eq_filter_condition(column_indices$chr, region_row$chr)
     },
-    if (1L < gregion_row$start) {
-      lte_filter_condition(gregion_row$start, column_indices$pos)
+    if (1L < region_row$start) {
+      lte_filter_condition(region_row$start, column_indices$pos)
     },
-    if (!is.na(gregion_row$end)) {
-      lte_filter_condition(column_indices$pos, gregion_row$end)
+    if (!is.na(region_row$end)) {
+      lte_filter_condition(column_indices$pos, region_row$end)
     }
   )
   if (is.null(all_fc)) {

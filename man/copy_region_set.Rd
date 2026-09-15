@@ -4,10 +4,10 @@
 \alias{copy_region_set}
 \title{Deep copy region_set}
 \usage{
-copy_region_set(gregions)
+copy_region_set(regions)
 }
 \arguments{
-\item{gregions}{A region_set object}
+\item{regions}{A region_set object}
 }
 \value{
 A copy with class preserved

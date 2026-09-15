@@ -1,18 +1,18 @@
 test_that("empty initialization works", {
-  gregions <- new_region_set()
+  regions <- new_region_set()
   expect_equal(
-    nrow(gregions),
+    nrow(regions),
     0
   )
   expect_true(
-    is_region_set(gregions)
+    is_region_set(regions)
   )
   expect_equal(
-    colnames(gregions),
+    colnames(regions),
     c("chr", "start", "end")
   )
   expect_null(
-    attr(gregions, "build")
+    attr(regions, "build")
   )
 
   region_set_b38 <- new_region_set(build = "b38")
@@ -64,13 +64,13 @@ test_that("construction rejects an end before its start", {
 })
 
 test_that("construction converts a column it can read", {
-  gregions <- as_region_set(
+  regions <- as_region_set(
     data.table::data.table(chr = 1, start = "100", end = 200)
   )
 
-  expect_equal(gregions$chr, "1")
-  expect_equal(gregions$start, 100L)
-  expect_equal(gregions$end, 200L)
+  expect_equal(regions$chr, "1")
+  expect_equal(regions$start, 100L)
+  expect_equal(regions$end, 200L)
 })
 
 test_that("construction rejects a column it cannot read", {
@@ -89,13 +89,13 @@ test_that("construction rejects a column it cannot read", {
 })
 
 test_that("initialization works", {
-  region_set <- new_region_set(
+  regions <- new_region_set(
     chr = "chr1",
     start = 21,
     end = 42
   )
   expect_equal(
-    region_set,
+    regions,
     data.table::data.table(
       chr = "chr1",
       start = 21,
@@ -104,8 +104,8 @@ test_that("initialization works", {
     ignore_attr = TRUE
   )
   expect_equal(
-    attributes(region_set)[
-      setdiff(names(attributes(region_set)), ".internal.selfref")
+    attributes(regions)[
+      setdiff(names(attributes(regions)), ".internal.selfref")
     ],
     list(
       names = c("chr", "start", "end"),
@@ -117,12 +117,12 @@ test_that("initialization works", {
     list_as_map = TRUE # Ignore order
   )
 
-  region_set <- new_region_set(
+  regions <- new_region_set(
     chr = "chr1",
     start = 42
   )
   expect_equal(
-    region_set,
+    regions,
     data.table::data.table(
       chr = "chr1",
       start = 42,
@@ -131,8 +131,8 @@ test_that("initialization works", {
     ignore_attr = TRUE
   )
   expect_equal(
-    attributes(region_set)[
-      setdiff(names(attributes(region_set)), ".internal.selfref")
+    attributes(regions)[
+      setdiff(names(attributes(regions)), ".internal.selfref")
     ],
     list(
       names = c("chr", "start", "end"),
@@ -146,7 +146,7 @@ test_that("initialization works", {
 })
 
 test_that("merging overlapping regions works", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = "chr1",
     start = c(123, 123),
     end = c(234, 456)
@@ -203,7 +203,7 @@ test_that("merging overlapping regions works", {
 })
 
 test_that("merging preserves attributes", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = c(123, 1234),
     end = c(1234, 2345),
@@ -211,7 +211,7 @@ test_that("merging preserves attributes", {
     canonicalize = FALSE,
     complement = TRUE
   )
-  merged <- merge_contiguous_regions(gregions)
+  merged <- merge_contiguous_regions(regions)
   expect_equal(
     build(merged),
     "b37"
@@ -222,42 +222,42 @@ test_that("merging preserves attributes", {
 })
 
 test_that("merging keeps rows separated by an unconstrained position", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = c(1, 1),
     start = c(1, 200),
     end = c(100, NA),
     build = "b38"
   )
-  expect_equal(nrow(gregions), 2)
-  expect_equal(gregions$start, c(1L, 200L))
-  expect_equal(gregions$end, c(100L, NA_integer_))
+  expect_equal(nrow(regions), 2)
+  expect_equal(regions$start, c(1L, 200L))
+  expect_equal(regions$end, c(100L, NA_integer_))
 })
 
 test_that("merging joins rows that meet across an unconstrained position", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = c(1, 1),
     start = c(1, 101),
     end = c(100, NA),
     build = "b38"
   )
-  expect_equal(nrow(gregions), 1)
-  expect_equal(gregions$start, 1L)
-  expect_true(is.na(gregions$end))
+  expect_equal(nrow(regions), 1)
+  expect_equal(regions$start, 1L)
+  expect_true(is.na(regions$end))
 })
 
 test_that("addition works", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 123,
     end = 234
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr1",
     start = 345,
     end = 456
   )
   expect_equal(
-    gregions1 + gregions2,
+    regions1 + regions2,
     new_region_set(
       chr = "chr1",
       start = c(123, 345),
@@ -279,9 +279,9 @@ test_that("as_region_set converts data.table", {
     start = 100L,
     end = 200L
   )
-  gregions <- as_region_set(dt, build = "b38")
-  expect_true(is_region_set(gregions))
-  expect_equal(attr(gregions, "build"), "b38")
+  regions <- as_region_set(dt, build = "b38")
+  expect_true(is_region_set(regions))
+  expect_equal(attr(regions, "build"), "b38")
 })
 
 test_that("as_region_set errors on invalid input", {
@@ -292,138 +292,138 @@ test_that("as_region_set errors on invalid input", {
 })
 
 test_that("subsetting preserves build attribute", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = c("chr1", "chr2"),
     start = c(100, 200),
     end = c(150, 250),
     build = "b38"
   )
-  subset <- gregions[1]
+  subset <- regions[1]
   expect_true(is_region_set(subset))
   expect_equal(attr(subset, "build"), "b38")
 })
 
 test_that("union operator is equivalent to addition", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr1",
     start = 300,
     end = 400
   )
-  expect_equal(gregions1 | gregions2, gregions1 + gregions2)
+  expect_equal(regions1 | regions2, regions1 + regions2)
 })
 
 test_that("union merges overlapping regions", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 250
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr1",
     start = 200,
     end = 400
   )
-  result <- gregions1 | gregions2
+  result <- regions1 | regions2
   expect_equal(nrow(result), 1)
   expect_equal(result$start, 100)
   expect_equal(result$end, 400)
 })
 
 test_that("intersection returns overlapping portion", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 300
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr1",
     start = 200,
     end = 400
   )
-  result <- gregions1 & gregions2
+  result <- regions1 & regions2
   expect_equal(result$start, 200)
   expect_equal(result$end, 300)
 })
 
 test_that("intersection returns empty for non-overlapping same chr", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr1",
     start = 300,
     end = 400
   )
-  result <- gregions1 & gregions2
+  result <- regions1 & regions2
   expect_equal(nrow(result), 0)
 })
 
 test_that("intersection returns empty for different chromosomes", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr2",
     start = 100,
     end = 200
   )
-  result <- gregions1 & gregions2
+  result <- regions1 & regions2
   expect_equal(nrow(result), 0)
 })
 
 test_that("intersection handles NA values", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 1L,
     end = 300
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr1",
     start = 200,
     end = NA_integer_
   )
-  result <- gregions1 & gregions2
+  result <- regions1 & regions2
   expect_equal(result$start, 200)
   expect_equal(result$end, 300)
 })
 
 test_that("intersection handles entire chromosomes", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1"
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr2"
   )
   expect_equal(
-    gregions1 & gregions1,
-    gregions1
+    regions1 & regions1,
+    regions1
   )
   expect_equal(
-    gregions1 & gregions2,
+    regions1 & regions2,
     new_region_set()
   )
 })
 
 test_that("intersection handles partial chromosomes", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     end = 234
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr1",
     start = 123
   )
   expect_equal(
-    gregions1 & gregions2,
+    regions1 & regions2,
     new_region_set(
       chr = "chr1",
       start = 123,
@@ -433,16 +433,16 @@ test_that("intersection handles partial chromosomes", {
 })
 
 test_that("addition handles partial chromosomes", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     end = 234
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr1",
     start = 123
   )
   expect_equal(
-    gregions1 + gregions2,
+    regions1 + regions2,
     new_region_set(
       chr = "chr1"
     )
@@ -450,18 +450,18 @@ test_that("addition handles partial chromosomes", {
 })
 
 test_that("rbind combines region_set", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200,
     build = "b37"
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr2",
     start = 300,
     end = 400
   )
-  result <- rbind(gregions1, gregions2) |>
+  result <- rbind(regions1, regions2) |>
     suppressWarnings()
   expect_equal(nrow(result), 2)
   expect_true(is_region_set(result))
@@ -498,68 +498,68 @@ test_that("constructor accepts NA as the any-chromosome wildcard", {
 })
 
 test_that("constructor allows length-1 recycling", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = "chr1",
     start = c(100, 200),
     end = c(150, 250)
   )
-  expect_equal(nrow(gregions), 2)
-  expect_equal(unique(gregions$chr), "chr1")
+  expect_equal(nrow(regions), 2)
+  expect_equal(unique(regions$chr), "chr1")
 })
 
 test_that("addition with empty regions works", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200
   )
   g_empty <- new_region_set()
-  expect_equal(gregions1 + g_empty, gregions1)
+  expect_equal(regions1 + g_empty, regions1)
 })
 
 test_that("intersection with empty regions returns empty", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200
   )
   g_empty <- new_region_set()
-  result <- gregions1 & g_empty
+  result <- regions1 & g_empty
   expect_equal(
-    gregions1 & g_empty,
+    regions1 & g_empty,
     g_empty
   )
 })
 
 test_that("addition merges overlapping regions", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 250
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = "chr1",
     start = 200,
     end = 400
   )
-  result <- gregions1 + gregions2
+  result <- regions1 + regions2
   expect_equal(nrow(result), 1)
   expect_equal(result$start, 100)
   expect_equal(result$end, 400)
 })
 
 test_that("intersection handles multi-row region_set", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = c("chr1", "chr2"),
     start = c(123, 345),
     end = c(234, 456)
   )
   expect_equal(
-    gregions1 & gregions1,
-    gregions1
+    regions1 & regions1,
+    regions1
   )
   expect_equal(
-    gregions1 & new_region_set(
+    regions1 & new_region_set(
       chr = "chr1",
       start = 42,
       end = 421
@@ -571,7 +571,7 @@ test_that("intersection handles multi-row region_set", {
     )
   )
   expect_equal(
-    gregions1 & new_region_set(
+    regions1 & new_region_set(
       chr = c("chr1", "chr2"),
       start = c(142, 342),
       end = c(242, 442)
@@ -664,52 +664,52 @@ test_that("adjacent regions merge", {
 
 test_that("intersection with different builds warns", {
   # TODO This now does a liftover of the second, need to test this
-  gregions_b37 <- new_region_set(
+  regions_b37 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200,
     build = "b37"
   )
-  gregions_b38 <- new_region_set(
+  regions_b38 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200,
     build = "b38"
   )
   expect_warning(
-    gregions_b37 & gregions_b38,
+    regions_b37 & regions_b38,
     "same build"
   )
 })
 
 test_that("intersection with NA chr matches any chromosome", {
-  gregions_any <- new_region_set(
+  regions_any <- new_region_set(
     chr = NA_character_,
     start = 100,
     end = 200
   )
-  gregions_chr1 <- new_region_set(
+  regions_chr1 <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200
   )
   expect_equal(
-    gregions_any & gregions_chr1,
-    gregions_chr1
+    regions_any & regions_chr1,
+    regions_chr1
   )
 
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = c(NA_character_, "chr1"),
     start = c(1, 1001),
     end = c(100, 1100)
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = c(NA_character_, "chr2", NA_character_),
     start = c(1042, 42, 21),
     end = c(1142, 142, 42)
   )
   expect_equal(
-    gregions1 & gregions2,
+    regions1 & regions2,
     new_region_set(
       chr = c(NA_character_, "chr1", "chr2"),
       start = c(21, 1042, 43),
@@ -719,7 +719,7 @@ test_that("intersection with NA chr matches any chromosome", {
 })
 
 test_that("empty subsetting preserves class and build", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = "chr1",
     start = 100,
     end = 200,
@@ -728,14 +728,14 @@ test_that("empty subsetting preserves class and build", {
 
   # Subset with 0 should return empty but preserve attributes
 
-  empty_subset <- gregions[0]
+  empty_subset <- regions[0]
   expect_equal(nrow(empty_subset), 0)
   expect_true(is_region_set(empty_subset))
   expect_equal(attr(empty_subset, "build"), "b38")
 
   # Subset with FALSE should also preserve attributes
 
-  empty_logical <- gregions[FALSE]
+  empty_logical <- regions[FALSE]
   expect_equal(nrow(empty_logical), 0)
   expect_true(is_region_set(empty_logical))
   expect_equal(attr(empty_logical, "build"), "b38")
@@ -1057,19 +1057,19 @@ test_that("complete containment intersection returns inner region", {
 })
 
 test_that("`+` handles a complement-stored region_set", {
-  gregions1 <- new_region_set(
+  regions1 <- new_region_set(
     chr = 1,
     start = 123,
     complement = TRUE
   )
-  gregions2 <- new_region_set(
+  regions2 <- new_region_set(
     chr = 1,
     end = 234,
     complement = TRUE
   )
 
   expect_equal(
-    gregions1 + gregions2,
+    regions1 + regions2,
     new_region_set(
       chr = 1,
       start = 123,
@@ -1084,15 +1084,15 @@ test_that("`+` handles a complement-stored region_set", {
 # Basic `!` operator tests ---------------------------------------------------
 
 test_that("`!` marks a directly stored set as its complement", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     build = "b38"
   )
-  expect_false(is_complement(gregions))
+  expect_false(is_complement(regions))
 
-  negated <- !gregions
+  negated <- !regions
   expect_true(is_complement(negated))
   expect_equal(nrow(negated), 1)
   expect_equal(negated$chr, "chr1")
@@ -1101,105 +1101,105 @@ test_that("`!` marks a directly stored set as its complement", {
 })
 
 test_that("`!` marks a complement-stored set as directly stored", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     complement = TRUE
   )
-  expect_true(is_complement(gregions))
+  expect_true(is_complement(regions))
 
-  negated <- !gregions
+  negated <- !regions
   expect_false(is_complement(negated))
 })
 
 test_that("double negation returns equivalent to original", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     build = "b38"
   )
-  double_negated <- !!gregions
+  double_negated <- !!regions
 
-  expect_equal(is_complement(double_negated), is_complement(gregions))
-  expect_equal(double_negated$chr, gregions$chr)
-  expect_equal(double_negated$start, gregions$start)
-  expect_equal(double_negated$end, gregions$end)
-  expect_equal(build(double_negated), build(gregions))
+  expect_equal(is_complement(double_negated), is_complement(regions))
+  expect_equal(double_negated$chr, regions$chr)
+  expect_equal(double_negated$start, regions$start)
+  expect_equal(double_negated$end, regions$end)
+  expect_equal(build(double_negated), build(regions))
 })
 
 test_that("`!` preserves build attribute", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     build = "b37"
   )
-  negated <- !gregions
+  negated <- !regions
   expect_equal(build(negated), "b37")
 })
 
 # is_complement accessor tests -----------------------------------------------
 
 test_that("is_complement returns FALSE for a directly stored set", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200
   )
-  expect_false(is_complement(gregions))
+  expect_false(is_complement(regions))
 })
 
 test_that("is_complement returns TRUE for a complement-stored set", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     complement = TRUE
   )
-  expect_true(is_complement(gregions))
+  expect_true(is_complement(regions))
 })
 
 test_that("set_complement can set the attribute", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200
   )
-  expect_false(is_complement(gregions))
+  expect_false(is_complement(regions))
 
-  set_complement(gregions, TRUE)
-  expect_true(is_complement(gregions))
+  set_complement(regions, TRUE)
+  expect_true(is_complement(regions))
 
-  set_complement(gregions, FALSE)
-  expect_false(is_complement(gregions))
+  set_complement(regions, FALSE)
+  expect_false(is_complement(regions))
 })
 
 # Unary `-` operator tests ---------------------------------------------------
 
 test_that("unary `-` is equivalent to `!`", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     build = "b38"
   )
 
-  expect_equal(is_complement(-gregions), is_complement(!gregions))
-  expect_equal((-gregions)$chr, (!gregions)$chr)
-  expect_equal((-gregions)$start, (!gregions)$start)
-  expect_equal((-gregions)$end, (!gregions)$end)
+  expect_equal(is_complement(-regions), is_complement(!regions))
+  expect_equal((-regions)$chr, (!regions)$chr)
+  expect_equal((-regions)$start, (!regions)$start)
+  expect_equal((-regions)$end, (!regions)$end)
 })
 
 test_that("unary `-` preserves build attribute", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     build = "b37"
   )
-  negated <- -gregions
+  negated <- -regions
   expect_equal(build(negated), "b37")
 })
 
@@ -1501,25 +1501,25 @@ test_that("a directly stored set is returned unchanged by expansion", {
 # String and print representation tests --------------------------------------
 
 test_that("str() shows a `!` prefix for a complement-stored set", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     complement = TRUE
   )
 
-  str_output <- str(gregions)
+  str_output <- str(regions)
   expect_true(grepl("^!", str_output))
 })
 
 test_that("str() shows no prefix for a directly stored set", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200
   )
 
-  str_output <- str(gregions)
+  str_output <- str(regions)
   expect_false(grepl("^!", str_output))
 })
 
@@ -1545,13 +1545,13 @@ test_that("negation of full genome region", {
 
 test_that("negation with NA chromosome", {
   # NA chromosome means "any chromosome"
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = NA_character_,
     start = 100,
     end = 200,
     build = "b38"
   )
-  negated <- !gregions
+  negated <- !regions
 
   expect_true(is_complement(negated))
   expect_true(is.na(negated$chr))
@@ -1561,7 +1561,7 @@ test_that("negation with NA chromosome", {
 
 test_that("a single-position complement-stored region works", {
   # !chr1:100-100
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 100,
@@ -1569,7 +1569,7 @@ test_that("a single-position complement-stored region works", {
     complement = TRUE
   )
 
-  expanded <- expand_region_set(gregions)
+  expanded <- expand_region_set(regions)
   expect_false(is_complement(expanded))
   chr1_rows <- expanded[chr == "chr1"]
   expect_equal(nrow(chr1_rows), 2)
@@ -2219,7 +2219,7 @@ test_that("intersecting complementary halves of the genome matches nothing", {
 })
 
 test_that("absorption keeps a complement-stored set complemented", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = c(NA_character_, "chr1"),
     start = c(100, 1),
     end = c(200, 1000),
@@ -2227,11 +2227,11 @@ test_that("absorption keeps a complement-stored set complemented", {
     build = "b38"
   )
 
-  expect_true(is_complement(gregions))
-  expect_equal(build(gregions), "b38")
-  expect_equal(gregions$chr, c(NA, "chr1", "chr1"))
-  expect_equal(gregions$start, c(100L, 1L, 201L))
-  expect_equal(gregions$end, c(200L, 99L, 1000L))
+  expect_true(is_complement(regions))
+  expect_equal(build(regions), "b38")
+  expect_equal(regions$chr, c(NA, "chr1", "chr1"))
+  expect_equal(regions$start, c(100L, 1L, 201L))
+  expect_equal(regions$end, c(200L, 99L, 1000L))
 })
 
 test_that("source_regions returns the whole condition's regions", {
@@ -2274,7 +2274,7 @@ test_that("source_regions rejects an object that is not a condition", {
 test_that("region_set constructors and operators keep over-allocation", {
   # A shallow copy comes back with truelength 0, and data.table takes another
   # shallow copy — warning in the caller — on its next `:=`.
-  gregions <- region_set(chr = 1, start = 1L, end = 10L, build = "b37")
+  regions <- region_set(chr = 1, start = 1L, end = 10L, build = "b37")
   other <- region_set(chr = 1, start = 20L, end = 30L, build = "b37")
   converted <- as_region_set(
     data.frame(chr = "chr1", start = 1L, end = 10L),
@@ -2284,58 +2284,58 @@ test_that("region_set constructors and operators keep over-allocation", {
     chr = character(), start = integer(), end = integer(), build = "b37"
   )
 
-  expect_true(data.table::truelength(gregions) != 0L)
+  expect_true(data.table::truelength(regions) != 0L)
   expect_true(data.table::truelength(converted) != 0L)
-  expect_true(data.table::truelength(!gregions) != 0L)
-  expect_true(data.table::truelength(gregions | other) != 0L)
-  expect_true(data.table::truelength(gregions & other) != 0L)
-  expect_true(data.table::truelength(liftover(gregions, "b38")) != 0L)
+  expect_true(data.table::truelength(!regions) != 0L)
+  expect_true(data.table::truelength(regions | other) != 0L)
+  expect_true(data.table::truelength(regions & other) != 0L)
+  expect_true(data.table::truelength(liftover(regions, "b38")) != 0L)
   expect_true(data.table::truelength(liftover(empty, "b38")) != 0L)
 })
 
 test_that("negation leaves its operand's complement bit alone", {
-  gregions <- region_set(chr = 1, start = 1L, end = 10L, build = "b37")
-  negated <- !gregions
+  regions <- region_set(chr = 1, start = 1L, end = 10L, build = "b37")
+  negated <- !regions
 
   expect_true(is_complement(negated))
-  expect_false(is_complement(gregions))
+  expect_false(is_complement(regions))
 })
 
 test_that("lifting an empty region_set to no target keeps its build", {
-  gregions <- region_set(
+  regions <- region_set(
     chr = character(), start = integer(), end = integer(), build = "b37"
   )
 
-  expect_equal(build(liftover(gregions, NULL)), "b37")
+  expect_equal(build(liftover(regions, NULL)), "b37")
 })
 
 test_that("lifting an empty region_set leaves its operand's build alone", {
-  gregions <- region_set(
+  regions <- region_set(
     chr = character(), start = integer(), end = integer(), build = "b37"
   )
-  lifted <- liftover(gregions, "b38")
+  lifted <- liftover(regions, "b38")
 
   expect_equal(build(lifted), "b38")
-  expect_equal(build(gregions), "b37")
+  expect_equal(build(regions), "b37")
 })
 
 test_that("as_region_set keeps a blank chromosome name", {
-  gregions <- as_region_set(
+  regions <- as_region_set(
     data.table::data.table(
       chr = c("chr1", ""), start = 1000L, end = 2000L
     ),
     build = "b38"
   )
-  expect_equal(gregions$chr, c("", "chr1"))
+  expect_equal(regions$chr, c("", "chr1"))
 })
 
 test_that("intersection matches a blank chromosome name only to itself", {
-  gregions <- region_set(chr = c("", "1"), start = 1000L, end = 2000L,
-                         build = "b38")
+  regions <- region_set(chr = c("", "1"), start = 1000L, end = 2000L,
+                        build = "b38")
   named_only <- region_set(chr = "1", start = 1500L, end = 2500L,
                            build = "b38")
   named_and_blank <- region_set(chr = c("", "1"), start = 1500L,
                                 end = 2500L, build = "b38")
-  expect_equal((gregions & named_only)$chr, "chr1")
-  expect_equal((gregions & named_and_blank)$chr, c("", "chr1"))
+  expect_equal((regions & named_only)$chr, "chr1")
+  expect_equal((regions & named_and_blank)$chr, c("", "chr1"))
 })

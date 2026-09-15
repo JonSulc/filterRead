@@ -4,13 +4,13 @@
 \alias{is_empty_genome}
 \title{Check if region_set covers no position at all}
 \usage{
-is_empty_genome(gregions)
+is_empty_genome(regions)
 }
 \arguments{
-\item{gregions}{A region_set object}
+\item{regions}{A region_set object}
 }
 \value{
-TRUE if no row can satisfy gregions
+TRUE if no row can satisfy regions
 }
 \description{
 Check if region_set covers no position at all

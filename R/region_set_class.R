@@ -139,19 +139,19 @@ new_region_set <- function(
 #' `end` columns, each of its own type; a start on every row that is a
 #' position; and an end either unconstrained or at or after its start.
 #'
-#' @param gregions Object to validate
+#' @param regions Object to validate
 #' @return The input invisibly; stops with error if invalid
 #' @keywords internal
 validate_region_set <- function(
-  gregions
+  regions
 ) {
-  if (!data.table::is.data.table(gregions)) {
+  if (!data.table::is.data.table(regions)) {
     stop(
       "Object does not inherit the data.table class.\n",
-      "Actual class: ", class(gregions)
+      "Actual class: ", class(regions)
     )
   }
-  missing_cols <- setdiff(c("chr", "start", "end"), names(gregions))
+  missing_cols <- setdiff(c("chr", "start", "end"), names(regions))
   if (length(missing_cols) != 0L) {
     stop(
       "Genomic regions require columns `chr`, `start`, and `end`; ",
@@ -160,9 +160,9 @@ validate_region_set <- function(
     )
   }
   wrong_type <- c(
-    chr = !is.character(gregions$chr),
-    start = !is.integer(gregions$start),
-    end = !is.integer(gregions$end)
+    chr = !is.character(regions$chr),
+    start = !is.integer(regions$start),
+    end = !is.integer(regions$end)
   )
   if (any(wrong_type)) {
     offending <- names(wrong_type)[wrong_type]
@@ -171,22 +171,22 @@ validate_region_set <- function(
       "integer.\nGot: ",
       paste0(
         offending, " ",
-        sapply(offending, \(col) class(gregions[[col]])[1]),
+        sapply(offending, \(col) class(regions[[col]])[1]),
         collapse = ", "
       )
     )
   }
-  not_a_position <- is.na(gregions$start) | gregions$start < 1L
+  not_a_position <- is.na(regions$start) | regions$start < 1L
   if (any(not_a_position)) {
     stop(
       "A region's start must be a position of at least 1.\n",
-      "Got: ", paste(gregions$start[not_a_position], collapse = ", ")
+      "Got: ", paste(regions$start[not_a_position], collapse = ", ")
     )
   }
-  if (any(gregions$end < gregions$start, na.rm = TRUE)) {
+  if (any(regions$end < regions$start, na.rm = TRUE)) {
     stop("start must be less than end.")
   }
-  invisible(gregions)
+  invisible(regions)
 }
 
 #' Create empty region_set (no regions)
@@ -302,11 +302,11 @@ format_chr <- function(
 
 #' Deep copy region_set
 #'
-#' @param gregions A region_set object
+#' @param regions A region_set object
 #' @return A copy with class preserved
 #' @keywords internal
-copy_region_set <- function(gregions) {
-  data.table::copy(gregions) |>
+copy_region_set <- function(regions) {
+  data.table::copy(regions) |>
     as_region_set(canonicalize = FALSE)
 }
 
@@ -325,26 +325,26 @@ drop_chr_prefix <- function(
 
 #' Check if region_set covers the whole genome
 #'
-#' @param gregions A region_set object
-#' @return TRUE if gregions constrains no position
+#' @param regions A region_set object
+#' @return TRUE if regions constrains no position
 #' @keywords internal
-is_full_genome <- function(gregions) {
-  if (is_complement(gregions)) {
-    return(nrow(gregions) == 0L)
+is_full_genome <- function(regions) {
+  if (is_complement(regions)) {
+    return(nrow(regions) == 0L)
   }
-  nrow(gregions) == 1L &&
-    is.na(gregions$chr) &&
-    gregions$start == 1L &&
-    is.na(gregions$end)
+  nrow(regions) == 1L &&
+    is.na(regions$chr) &&
+    regions$start == 1L &&
+    is.na(regions$end)
 }
 
 #' Check if region_set covers no position at all
 #'
-#' @param gregions A region_set object
-#' @return TRUE if no row can satisfy gregions
+#' @param regions A region_set object
+#' @return TRUE if no row can satisfy regions
 #' @keywords internal
-is_empty_genome <- function(gregions) {
-  is_full_genome(!gregions)
+is_empty_genome <- function(regions) {
+  is_full_genome(!regions)
 }
 
 

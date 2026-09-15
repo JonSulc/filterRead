@@ -4,13 +4,13 @@
 \alias{is_full_genome}
 \title{Check if region_set covers the whole genome}
 \usage{
-is_full_genome(gregions)
+is_full_genome(regions)
 }
 \arguments{
-\item{gregions}{A region_set object}
+\item{regions}{A region_set object}
 }
 \value{
-TRUE if gregions constrains no position
+TRUE if regions constrains no position
 }
 \description{
 Check if region_set covers the whole genome

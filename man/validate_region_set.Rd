@@ -4,10 +4,10 @@
 \alias{validate_region_set}
 \title{Validate a region_set}
 \usage{
-validate_region_set(gregions)
+validate_region_set(regions)
 }
 \arguments{
-\item{gregions}{Object to validate}
+\item{regions}{Object to validate}
 }
 \value{
 The input invisibly; stops with error if invalid

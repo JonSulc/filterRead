@@ -8,11 +8,11 @@ format_sentinel_regions <- function(rows) {
   )
 }
 
-expect_canonical <- function(gregions) {
+expect_canonical <- function(regions) {
   rows <- data.table::data.table(
-    chr = gregions$chr,
-    start = gregions$start,
-    end = data.table::fcoalesce(gregions$end, END_SENTINEL)
+    chr = regions$chr,
+    start = regions$start,
+    end = data.table::fcoalesce(regions$end, END_SENTINEL)
   )
 
   sorted <- data.table::copy(rows) |>

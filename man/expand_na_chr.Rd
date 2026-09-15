@@ -4,12 +4,12 @@
 \alias{expand_na_chr}
 \title{Expand NA chromosome regions to all chromosomes in reference}
 \usage{
-expand_na_chr(gregions1, gregions2)
+expand_na_chr(regions1, regions2)
 }
 \arguments{
-\item{gregions1}{region_set with NA chr (to expand)}
+\item{regions1}{region_set with NA chr (to expand)}
 
-\item{gregions2}{Second region_set (for chromosome list)}
+\item{regions2}{Second region_set (for chromosome list)}
 }
 \value{
 Expanded region_set with explicit chromosomes

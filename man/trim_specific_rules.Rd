@@ -4,10 +4,10 @@
 \alias{trim_specific_rules}
 \title{Trim the chromosome-specific rules against the general rules}
 \usage{
-trim_specific_rules(gregions)
+trim_specific_rules(regions)
 }
 \arguments{
-\item{gregions}{A region_set object with merged rows}
+\item{regions}{A region_set object with merged rows}
 }
 \value{
 A region_set selecting the same positions, with pairwise

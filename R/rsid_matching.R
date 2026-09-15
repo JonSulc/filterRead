@@ -502,7 +502,7 @@ lp_filter_condition <- function(
 
 #' Build the array-load table for a filter condition's awk output
 #'
-#' @param awk_conditions List from `eval_fcondition_w_gregions()`, carrying
+#' @param awk_conditions List from `eval_fcondition_w_regions()`, carrying
 #'   `variable_arrays` (awk code loading each `\%in\%` array) and
 #'   `additional_files` (their temp-file paths).
 #' @return A two-column `data.table` (`array_load_code`, `temp_file`) with one
@@ -562,7 +562,7 @@ fcondition_and_rsid_to_awk <- function(
   if (!rsid_indexed
     || positions_match_everything
     || positions_match_nothing) {
-    awk_conditions <- eval_fcondition_w_gregions(
+    awk_conditions <- eval_fcondition_w_regions(
       fcondition,
       finterface = get_file_interface(fcondition)
     )
@@ -595,7 +595,7 @@ fcondition_and_rsid_to_awk <- function(
   # 1. Query dbSNP via tabix for RSIDs in the region
   # 2. Generate awk code to load RSIDs into array
   # 3. Generate condition to filter by RSID membership
-  awk_conditions <- eval_fcondition_w_gregions(
+  awk_conditions <- eval_fcondition_w_regions(
     fcondition,
     finterface = get_file_interface(fcondition)
   )

@@ -133,10 +133,10 @@ liftover.region_set <- function(
 
 #' @export
 `[.region_set` <- function(
-  gregions,
+  regions,
   ...
 ) {
-  gr_attributes <- attributes(gregions)
+  gr_attributes <- attributes(regions)
   NextMethod() |>
     data.table::setattr("build", gr_attributes$build)
 }
@@ -186,22 +186,22 @@ liftover.region_set <- function(
 
 #' Whether a region_set stores its coordinates or their complement
 #'
-#' `set_complement()` modifies `gregions` in place.
+#' `set_complement()` modifies `regions` in place.
 #'
-#' @param gregions A region_set object
+#' @param regions A region_set object
 #' @param value TRUE if the rows are stored as the set's complement
 #' @return `is_complement()` returns whether the rows are stored as the set's
-#'   complement; `set_complement()` returns `gregions`, invisibly.
+#'   complement; `set_complement()` returns `regions`, invisibly.
 #' @keywords internal
-is_complement <- function(gregions) {
-  attr(gregions, "complement")
+is_complement <- function(regions) {
+  attr(regions, "complement")
 }
 #' @rdname is_complement
 #' @keywords internal
-set_complement <- function(gregions, value) {
+set_complement <- function(regions, value) {
   stopifnot(is.logical(value))
-  data.table::setattr(gregions, "complement", value)
-  invisible(gregions)
+  data.table::setattr(regions, "complement", value)
+  invisible(regions)
 }
 
 #' @export
@@ -232,39 +232,39 @@ set_complement <- function(gregions, value) {
 }
 
 expand_region_set <- function(
-  gregions,
+  regions,
   ordered_chr = 1:22
 ) {
-  if (!is_complement(gregions)) {
-    return(gregions)
+  if (!is_complement(regions)) {
+    return(regions)
   }
-  if (nrow(gregions) == 0) {
-    return(full_region_set(build = build(gregions)))
+  if (nrow(regions) == 0) {
+    return(full_region_set(build = build(regions)))
   }
-  if (1 < nrow(gregions)) {
+  if (1 < nrow(regions)) {
     return(
       lapply(
-        seq_len(nrow(gregions)),
+        seq_len(nrow(regions)),
         \(index) {
-          expand_region_set(gregions[index], ordered_chr)
+          expand_region_set(regions[index], ordered_chr)
         }
       ) |>
         Reduce(f = "&")
     )
   }
-  if (is.na(gregions$chr)) {
-    full_chrs <- empty_region_set(build = build(gregions))
+  if (is.na(regions$chr)) {
+    full_chrs <- empty_region_set(build = build(regions))
   } else {
     full_chrs <- new_region_set(
-      chr = setdiff(ordered_chr, drop_chr_prefix(gregions$chr)),
-      build = build(gregions)
+      chr = setdiff(ordered_chr, drop_chr_prefix(regions$chr)),
+      build = build(regions)
     )
   }
-  if (1 < gregions$start) {
+  if (1 < regions$start) {
     before_fragment <- data.table::data.table(
-      chr = gregions$chr,
+      chr = regions$chr,
       start = 1L,
-      end = gregions$start - 1
+      end = regions$start - 1
     )
   } else {
     before_fragment <- data.table::data.table(
@@ -273,10 +273,10 @@ expand_region_set <- function(
       end = integer(0)
     )
   }
-  if (!is.na(gregions$end)) {
+  if (!is.na(regions$end)) {
     after_fragment <- data.table::data.table(
-      chr = gregions$chr,
-      start = gregions$end + 1,
+      chr = regions$chr,
+      start = regions$end + 1,
       end = NA_integer_
     )
   } else {
@@ -291,7 +291,7 @@ expand_region_set <- function(
     after_fragment
   ) |>
     data.table::rbindlist() |>
-    as_region_set(build = build(gregions)) |>
+    as_region_set(build = build(regions)) |>
     rbind(full_chrs)
 }
 
@@ -436,13 +436,13 @@ rbind.region_set <- function(
 
 #' Check if region_set has both NA and non-NA chromosomes
 #'
-#' @param gregions A region_set object
+#' @param regions A region_set object
 #' @return TRUE if some rows have NA chr and others don't
 #' @keywords internal
 chr_has_mixed_na <- function(
-  gregions
+  regions
 ) {
-  length(unique(is.na(gregions$chr))) == 2
+  length(unique(is.na(regions$chr))) == 2
 }
 
 #' Expand NA chromosome regions to all chromosomes in reference
@@ -450,28 +450,28 @@ chr_has_mixed_na <- function(
 #' When a region_set has NA chromosome (meaning "any"), this expands
 #' it to explicitly list all chromosomes found in the second region_set.
 #'
-#' @param gregions1 region_set with NA chr (to expand)
-#' @param gregions2 Second region_set (for chromosome list)
+#' @param regions1 region_set with NA chr (to expand)
+#' @param regions2 Second region_set (for chromosome list)
 #'
 #' @return Expanded region_set with explicit chromosomes
 #' @keywords internal
 expand_na_chr <- function(
-  gregions1,
-  gregions2
+  regions1,
+  regions2
 ) {
-  stopifnot(build(gregions1) == build(gregions2))
-  stopifnot(all(is.na(gregions1$chr)))
-  # Cross join: each row of gregions1 x each unique chr from gregions2
-  gregions1[
+  stopifnot(build(regions1) == build(regions2))
+  stopifnot(all(is.na(regions1$chr)))
+  # Cross join: each row of regions1 x each unique chr from regions2
+  regions1[
     ,
     .(
-      chr = unique(gregions2$chr)
+      chr = unique(regions2$chr)
     ) |>
       c(.SD),
     .SDcols = -"chr",
     by = .I
   ][, -"I"] |>
-    as_region_set(build = build(gregions1))
+    as_region_set(build = build(regions1))
 }
 
 # Sentinel Value Handling for Overlap Operations
@@ -488,17 +488,17 @@ expand_na_chr <- function(
 #' Converts an NA end to `end_sentinel`, the concrete bound an overlap
 #' operation reads in its place.
 #'
-#' @param region_set data.table with a potential NA end
+#' @param regions A region_set with a potentially NA end
 #' @param end_sentinel Value to use for NA end
 #'
 #' @return Copy with NAs replaced by sentinels, keyed on `chr`, `start`
 #'   and `end`, the key `data.table::foverlaps` requires of its `y`.
 #' @keywords internal
 replace_na_with_sentinel <- function(
-  region_set,
+  regions,
   end_sentinel = END_SENTINEL
 ) {
-  copy_region_set(region_set)[
+  copy_region_set(regions)[
     is.na(end),
     end := end_sentinel
   ][] |>
@@ -509,16 +509,16 @@ replace_na_with_sentinel <- function(
 #'
 #' Converts `end_sentinel` back to NA after overlap operations.
 #'
-#' @param region_set data.table with sentinel values
+#' @param regions A region_set carrying sentinel values
 #' @param end_sentinel Value used for NA end
 #'
 #' @return Copy with sentinels replaced by NAs
 #' @keywords internal
 replace_sentinel_with_na <- function(
-  region_set,
+  regions,
   end_sentinel = END_SENTINEL
 ) {
-  copy_region_set(region_set)[
+  copy_region_set(regions)[
     end == end_sentinel,
     end := NA_integer_
   ][] |>
@@ -534,24 +534,24 @@ replace_sentinel_with_na <- function(
 #' rows. Output is semantically equivalent to the input - it represents the
 #' same set of genomic positions.
 #'
-#' @param gregions A region_set object
-#' @return A region_set object with the same coverage as `gregions`
+#' @param regions A region_set object
+#' @return A region_set object with the same coverage as `regions`
 #'   but with the minimum number of rows
 #' @export
 #' @examples
 #' \dontrun{
-#' gregions <- new_region_set(chr = 1:20, build = "b38")
-#' compact(gregions)
+#' regions <- new_region_set(chr = 1:20, build = "b38")
+#' compact(regions)
 #' }
-compact <- function(gregions) {
-  expanded_gregions <- expand_region_set(gregions)
-  expanded_ngregions <- !expand_region_set(!gregions)
-  if (nrow(expanded_ngregions) < nrow(expanded_gregions) &&
-    nrow(expanded_ngregions) < nrow(gregions)) {
-    return(expanded_ngregions)
+compact <- function(regions) {
+  expanded_regions <- expand_region_set(regions)
+  expanded_complement <- !expand_region_set(!regions)
+  if (nrow(expanded_complement) < nrow(expanded_regions) &&
+    nrow(expanded_complement) < nrow(regions)) {
+    return(expanded_complement)
   }
-  if (nrow(expanded_gregions) < nrow(gregions)) {
-    return(expanded_gregions)
+  if (nrow(expanded_regions) < nrow(regions)) {
+    return(expanded_regions)
   }
-  gregions
+  regions
 }

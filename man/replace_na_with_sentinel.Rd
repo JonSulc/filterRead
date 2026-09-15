@@ -4,10 +4,10 @@
 \alias{replace_na_with_sentinel}
 \title{Replace NA values with sentinel values for overlap operations}
 \usage{
-replace_na_with_sentinel(region_set, end_sentinel = END_SENTINEL)
+replace_na_with_sentinel(regions, end_sentinel = END_SENTINEL)
 }
 \arguments{
-\item{region_set}{data.table with a potential NA end}
+\item{regions}{A region_set with a potentially NA end}
 
 \item{end_sentinel}{Value to use for NA end}
 }

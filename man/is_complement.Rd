@@ -5,20 +5,20 @@
 \alias{set_complement}
 \title{Whether a region_set stores its coordinates or their complement}
 \usage{
-is_complement(gregions)
+is_complement(regions)
 
-set_complement(gregions, value)
+set_complement(regions, value)
 }
 \arguments{
-\item{gregions}{A region_set object}
+\item{regions}{A region_set object}
 
 \item{value}{TRUE if the rows are stored as the set's complement}
 }
 \value{
 `is_complement()` returns whether the rows are stored as the set's
-  complement; `set_complement()` returns `gregions`, invisibly.
+  complement; `set_complement()` returns `regions`, invisibly.
 }
 \description{
-`set_complement()` modifies `gregions` in place.
+`set_complement()` modifies `regions` in place.
 }
 \keyword{internal}

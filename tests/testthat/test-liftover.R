@@ -56,7 +56,7 @@ test_that("liftover matches known coordinates across builds", {
 })
 
 test_that("liftover to the same build returns the object", {
-  region_set <- new_region_set(
+  regions <- new_region_set(
     chr = "chr19",
     start = 45411941, # rs429358, b37
     end = 45412079, # rs7412, b37
@@ -65,15 +65,15 @@ test_that("liftover to the same build returns the object", {
 
   expect_equal(
     liftover(
-      region_set,
+      regions,
       target = "b37"
     ),
-    region_set
+    regions
   )
 })
 
 test_that("liftover produces a warning if no build is configured", {
-  region_set <- new_region_set(
+  regions <- new_region_set(
     chr = "chr19",
     start = 45411941,
     end = 45412079
@@ -81,18 +81,18 @@ test_that("liftover produces a warning if no build is configured", {
 
   expect_warning(
     liftover(
-      region_set,
+      regions,
       target = "b37"
     ),
     "No build"
   )
   expect_equal(
     liftover(
-      region_set,
+      regions,
       target = "b37"
     ) |>
       suppressWarnings(),
-    region_set
+    regions
   )
 })
 
@@ -135,7 +135,7 @@ test_that("split regions return additional rows", {
 })
 
 test_that("Flipped regions work", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = c(317721, 421000),
     end = c(317742, 421421),
@@ -143,7 +143,7 @@ test_that("Flipped regions work", {
   )
   expect_equal(
     liftover(
-      gregions,
+      regions,
       "b38"
     ),
     new_region_set(
@@ -156,7 +156,7 @@ test_that("Flipped regions work", {
 })
 
 test_that("full chromosome liftover works", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = "chr1",
     build = "b37"
   )
@@ -172,7 +172,7 @@ test_that("full chromosome liftover works", {
     liftover(chain_dt)
   expect_equal(
     liftover(
-      gregions,
+      regions,
       target = "b38"
     ),
     expected
@@ -180,7 +180,7 @@ test_that("full chromosome liftover works", {
 })
 
 test_that("chromosome-free liftover works", {
-  gregions <- new_region_set(
+  regions <- new_region_set(
     end = 1e7,
     build = "b37"
   )
@@ -196,7 +196,7 @@ test_that("chromosome-free liftover works", {
   ) |>
     liftover("b38")
   expect_equal(
-    gregions |>
+    regions |>
       liftover("b38"),
     expected
   )
@@ -809,26 +809,26 @@ test_that("normalize_build is still strict by default", {
 
 test_that("liftover keeps a complement-stored set complement-stored", {
   chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
-  gregions <- !new_region_set(
+  regions <- !new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     build = "b37"
   )
 
-  lifted <- liftover(gregions, chain_dt)
+  lifted <- liftover(regions, chain_dt)
   expect_true(is_complement(lifted))
   expect_equal(build(lifted), "b38")
 })
 
 test_that("liftover keeps a directly stored set directly stored", {
   chain_dt <- make_fwd_chain(1L, 300000000L, 0L, "b37", "b38")
-  gregions <- new_region_set(
+  regions <- new_region_set(
     chr = 1,
     start = 100,
     end = 200,
     build = "b37"
   )
 
-  expect_false(is_complement(liftover(gregions, chain_dt)))
+  expect_false(is_complement(liftover(regions, chain_dt)))
 })

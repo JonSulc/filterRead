@@ -36,42 +36,42 @@ as_region_set.data.frame <- function(
 ) {
   build <- build %||% build(x)
   complement <- complement %||% is_complement(x) %||% FALSE
-  gregions <- data.table::as.data.table(x) |>
+  regions <- data.table::as.data.table(x) |>
     data.table::copy()
-  if ("chr" %in% names(gregions) && !is.character(gregions$chr)) {
+  if ("chr" %in% names(regions) && !is.character(regions$chr)) {
     data.table::set(
-      gregions,
+      regions,
       j = "chr",
-      value = as.character(gregions$chr)
+      value = as.character(regions$chr)
     )
   }
-  for (col in intersect(c("start", "end"), names(gregions))) {
-    value <- gregions[[col]]
+  for (col in intersect(c("start", "end"), names(regions))) {
+    value <- regions[[col]]
     if (!is.integer(value)) {
       as_integer <- suppressWarnings(as.integer(value))
       # An NA introduced by conversion should not read as unconstrained,
       # so leave a column the conversion cannot read for the validator to name
       if (!any(!is.na(value) & is.na(as_integer))) {
-        data.table::set(gregions, j = col, value = as_integer)
+        data.table::set(regions, j = col, value = as_integer)
       }
     }
   }
   if (!is.null(build)) {
-    set_build(gregions, build)
+    set_build(regions, build)
   }
-  set_complement(gregions, complement)
+  set_complement(regions, complement)
   data.table::setattr(
-    gregions,
+    regions,
     "class",
-    c("region_set", class(gregions)) |>
+    c("region_set", class(regions)) |>
       unique()
   )
-  validate_region_set(gregions)
-  data.table::setkey(gregions, chr, start, end)
+  validate_region_set(regions)
+  data.table::setkey(regions, chr, start, end)
 
-  if (!canonicalize) return(gregions)
+  if (!canonicalize) return(regions)
 
-  canonicalize_region_set(gregions)
+  canonicalize_region_set(regions)
 }
 #' @export
 as_region_set.eq_filter_condition <- function(

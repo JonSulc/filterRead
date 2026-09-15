@@ -4,10 +4,10 @@
 \alias{replace_sentinel_with_na}
 \title{Restore NA values from sentinel values after an overlap operation}
 \usage{
-replace_sentinel_with_na(region_set, end_sentinel = END_SENTINEL)
+replace_sentinel_with_na(regions, end_sentinel = END_SENTINEL)
 }
 \arguments{
-\item{region_set}{data.table with sentinel values}
+\item{regions}{A region_set carrying sentinel values}
 
 \item{end_sentinel}{Value used for NA end}
 }

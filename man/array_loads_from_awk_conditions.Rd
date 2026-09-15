@@ -7,7 +7,7 @@
 array_loads_from_awk_conditions(awk_conditions)
 }
 \arguments{
-\item{awk_conditions}{List from `eval_fcondition_w_gregions()`, carrying
+\item{awk_conditions}{List from `eval_fcondition_w_regions()`, carrying
 `variable_arrays` (awk code loading each `\%in\%` array) and
 `additional_files` (their temp-file paths).}
 }

@@ -4,10 +4,10 @@
 \alias{canonicalize_region_set}
 \title{Reduce a region_set to its canonical form}
 \usage{
-canonicalize_region_set(gregions)
+canonicalize_region_set(regions)
 }
 \arguments{
-\item{gregions}{A region_set object}
+\item{regions}{A region_set object}
 }
 \value{
 A region_set covering the same positions, in canonical form
