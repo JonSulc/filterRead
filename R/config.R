@@ -70,7 +70,7 @@ makeActiveBinding(
       .filterread_env$config_loaded <- TRUE
       save_config(new)
     } else if (!.filterread_env$config_loaded) {
-      .filterread_env$config_data <- load_config()
+      .filterread_env$config_data <- read_config()
       .filterread_env$config_loaded <- TRUE
     }
     .filterread_env$config_data
@@ -90,9 +90,9 @@ get_config_file <- function() {
   file.path(get_config_dir(), "config.rds")
 }
 
-#' Get package config
+#' Read the config file from disk
 #' @keywords internal
-load_config <- function() {
+read_config <- function() {
   config_file <- get_config_file()
   if (!file.exists(config_file)) {
     return(list())
