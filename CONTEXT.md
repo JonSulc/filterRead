@@ -4,28 +4,54 @@ filterRead loads and filters large tab/comma-separated genomic files by
 translating R-style conditions into awk, reading a file by scan or by indexed
 read. This glossary fixes the vocabulary of the filtering interface.
 
-## Language
+Every noun below belongs to one layer. A **file** holds **records**; a
+**query** is built from **conditions**; coordinates live in a **space** of
+**positions**, **intervals** and **regions**, collected into a **region
+set**; and a read **emits** awk **clauses** and tabix **region arguments**.
+
+The coordinate nouns compose: an interval is a pair of positions, a region is
+an interval on a chromosome, and a rule is a region whose chromosome may be
+absent.
+
+```
+position                                one coordinate on a chromosome
+interval    (start, end)                a run of positions, on no chromosome
+region      (chr, start, end)           an interval on a chromosome
+rule        (chr, start, end)           a region a set selects, or — where
+                                        the chromosome is absent — one
+                                        region per chromosome
+```
+
+Only a rule may leave the chromosome out, and one that does names a family of
+regions it cannot enumerate. That is where the design lives.
+
+A verb may be shared across layers where the meaning is the same: a condition
+selects records, a region set selects positions.
+
+## User vocabulary
+
+What the public API exposes. Changing it is a breaking change.
 
 **Positional filtering**:
-Selecting file rows whose `(chr, pos)` fall within a set of coordinate ranges,
-with no allele constraint.
+Selecting records whose `(chr, pos)` fall within a region set, with no allele
+constraint.
 _Avoid_: region filtering, range query
 
 **Scan**:
-Reading every row of a file and deciding each one against the condition. The
-way any file can be read, and the only way an unindexed one can.
+Reading every record of a file and deciding each one against the condition.
+The way any file can be read, and the only way an unindexed one can.
 _Avoid_: full read, sequential read
 
 **Indexed read**:
 Reading only the parts of a file its index reports as able to match, in place
-of a scan. Returns what a scan returns; it selects no rows itself.
+of a scan. Returns what a scan returns; it selects no records itself.
 _Avoid_: tabix query (names the mechanism, not the read), index path, seek
 
 **Source regions**:
 The region set covering everything a condition can select, used to narrow what
-an indexed read reads. Never decides which rows match — that stays with the
+an indexed read reads. Never decides which records match — that stays with the
 condition — so covering too much only costs speed, while covering too little
-loses rows. Follow from the genomic constraints of a condition and of every
+loses records. Follow from the genomic constraints of a condition and of every
 condition it combines.
 _Avoid_: query regions, filter regions, envelope
 
@@ -38,7 +64,7 @@ constraining nothing are the same state: neither narrows a read.
 _Avoid_: positional constraint, node regions, attached regions
 
 **Pure genomic condition**:
-A condition that restricts rows by coordinate and nothing else: whatever it
+A condition that restricts records by coordinate and nothing else: whatever it
 narrows, it narrows through its genomic constraint. `chr == 1` and
 `chr == 1 | chr == 2` are pure; `chr == 1 & pval < 0.5` carries a genomic
 constraint but is not pure. Purity is a property of what a condition selects,
@@ -47,13 +73,13 @@ unconstrained condition is the limiting case, narrowing by nothing at all.
 _Avoid_: empty condition (empty of expression, never of meaning)
 
 **Unconstrained condition**:
-A condition that selects every row: it carries no expression, and its genomic
-constraint covers the full genome. The limiting case of a pure genomic
+A condition that selects every record: it carries no expression, and its genomic
+constraint is the full region set. The limiting case of a pure genomic
 condition, and what a read given no condition carries.
 _Avoid_: empty condition, null condition, no condition
 
 **Single genomic scope**:
-What a condition has when one region set governs every row it can select, so
+What a condition has when one region set governs every record it can select, so
 its source regions apply to the condition as a whole rather than separately to
 each condition it combines. Combining with AND intersects constraints to one
 scope; combining with OR need not, since each side may reach coordinates the
@@ -67,50 +93,68 @@ where an indexed read only restricts what is read.
 _Avoid_: tabix query (names the mechanism, not the lookup), dbSNP query
 
 **Variant-identity filtering**:
-Selecting file rows matching given variants on `(chr, pos)` and the unordered
+Selecting records matching given variants on `(chr, pos)` and the unordered
 allele pair `{ref, alt}` — the same variant in either column order. Unlike
 positional filtering, it constrains alleles.
 _Avoid_: variant filtering (ambiguous — name which)
 
-**Genomic regions**:
-A set of `(chr, start, end)` coordinate ranges in one reference build; the unit
-of positional filtering.
-_Avoid_: intervals, ranges, loci
+**Region**:
+A chromosome together with a start and an end. The unit of what a region set
+selects. A region always names a chromosome; leaving it out gives a rule that
+is not a region.
+_Avoid_: interval (that is the chromosome-free pair), rule (that is what a
+set stores, and its chromosome may be absent), range, locus
 
-**Complement bit**:
-Whether a region set stores the coordinates it covers directly or stores their
-complement. A representation, not a meaning: negating a set flips the bit and
-leaves the rows alone, which is what keeps the complement of a chromosome
-independent of which chromosomes exist.
-_Avoid_: included regions, excluded regions, negative regions, blacklist
+**Region set**:
+What a read is narrowed to: the regions it selects, in one reference build. It
+stores them as rules — defined under Implementation vocabulary — and a rule
+naming no chromosome selects on every chromosome — `str()` prints `*` there —
+alongside rules that name one, which state how those chromosomes differ. Its
+regions therefore cannot be listed without a list of chromosomes, which is the
+point.
+_Avoid_: source regions (one particular region set — the one a condition can
+select within — not a synonym for the concept)
 
-**Unconstrained axis**:
-An `NA` on a region's `chr` or `end`, meaning the region restricts nothing
-there: every chromosome, or to the end of the chromosome. A start carries no
-`NA` — it is always a position, and 1 leaves the lower bound unconstrained.
-The set algebra reads all three as coverage, so a region with an
-unconstrained chromosome absorbs any region it covers, and two regions that
-meet across an unconstrained position merge.
-_Avoid_: wildcard, missing value, blank
+**Chromosome**:
+The value of a region's `chr` axis — the name of a sequence in the reference
+build. Usually a chromosome; a reference may also hold scaffolds and alternate
+sequences, which the package treats identically and does not distinguish.
+_Avoid_: contig (reserved for a reference's own sequence list), sequence,
+locus
 
-**Canonical region set**:
-The form a region set is reduced to on construction: rows sorted and pairwise
-disjoint. One per stored form, so row count and row shape are facts about the
-set and how it is stored, and two sets are comparable by their rows only when
-the complement bit agrees. It fixes the rows, not the choice between the two
-stored forms: the whole genome and the empty set each have a spelling in both.
-_Avoid_: normalized form, minimal form (that is `compact()`)
+**Record**:
+One row of the file being filtered. What a condition selects and a read
+returns.
+_Avoid_: row (says which table only by context), line, entry, variant (that is
+a record's identity, not the record)
 
-**Full genome / empty genome**:
-The two extremes of what a region set covers — every position of every
-chromosome, or no position at all. Coverage, not row shape: each has a
-spelling in both stored forms, and the full genome has a third — a condition
-that records no genomic constraint at all.
-_Avoid_: empty regions, no regions
+**Variant**:
+A `(chr, pos, ref, alt)` identity, independent of any file. A record may carry
+one; a record is not one.
+_Avoid_: SNP (a variant need not be a substitution), marker, site (that is a
+position)
+
+**Variant set**:
+The variants a read is matched against, in one reference build. What
+`finterface[variants]` takes, and the unit of variant-identity filtering.
+_Avoid_: variant list, variant table
+
+**Open end**:
+A region that reaches to the end of its chromosome, written `NA` on the end
+axis. The package holds no chromosome lengths, so an end is the one bound that
+cannot be written as a number; a start always can, the first position being 1.
+_Avoid_: missing value (the end is not missing, it is open), blank
+
+**Full region set / empty region set**:
+The two extremes — every position of every chromosome, or no position at all.
+Each has a spelling in both stored forms, and the full region set has a
+third — a condition that records no genomic constraint at all.
+_Avoid_: full genome, empty genome (what is full or empty is the set, not the
+genome), empty regions, no regions
 
 **Read schema**:
 The columns a read returns, fixed by the file interface and the query together
-rather than by how many rows matched.
+rather than by how many records matched.
 _Avoid_: output columns, result shape
 
 **Encoded column / decoded columns**:
@@ -180,3 +224,68 @@ The build a lift starts from, as against the target build it produces. Unrelated
 to source regions, which name a read-narrowing envelope; the `source` argument
 of a variants lift selects the origin build.
 _Avoid_: source build (collides with source regions), from build
+
+## Implementation vocabulary
+
+What a maintainer meets. Changing it is a refactor.
+
+**Rule**:
+One row of a region set: `(chr, start, end)`, the chromosome optionally
+absent. A chromosome-specific rule names exactly one region. A general rule
+names one region per chromosome — a family it cannot enumerate, which is why
+a region set cannot be expanded without a list of chromosomes.
+_Avoid_: region (a region always names a chromosome, so no region is a
+general rule), row, entry, record (that is a file row)
+
+**General rule**:
+A rule naming no chromosome. It applies on every chromosome, including those
+that carry rules of their own, which state how they differ rather than what
+replaces the general rules.
+_Avoid_: default rule, global rule (both suggest the general rules stop where
+a chromosome is named), wildcard (`str()` prints `*` for the chromosome, but a
+general rule states coverage that specific rules adjust, where a wildcard only
+matches), generic (an S3 generic in R)
+
+**Chromosome-specific rule**:
+A rule naming one chromosome, stating how that chromosome differs from the
+general rules. A chromosome carries one only where it differs, which is what
+makes the canonical form minimal.
+_Avoid_: override (suggests it replaces the general rules there), exception,
+local rule
+
+**Interval**:
+A `(start, end)` pair with no chromosome. An **interval set** is the intervals
+a set selects on one chromosome, sorted, pairwise disjoint and non-adjacent.
+_Avoid_: span, range, region (that carries a chromosome)
+
+**Canonical form**:
+The rules a region set is reduced to on construction: within one build and one
+stored form, what it selects fixes its rules exactly, so two such sets select
+the same positions if and only if their rules are identical. Rules are keyed
+on `(chr, start, end)`, pairwise disjoint on a chromosome, and a chromosome
+carries a specific rule only where it differs from the general rules.
+_Avoid_: normal form, normalized form (a normal form need not be unique to
+what it represents, and uniqueness is the whole of this one), minimal form
+(that is `compact()`; minimality is a property of the canonical form's rules,
+not a name for the form)
+
+**Complement bit**:
+Whether a region set stores the positions it selects directly or stores their
+complement. These are its two **stored forms**. A representation, not a
+meaning: negating a set flips the bit and leaves the rules alone, which is what
+keeps the complement of a chromosome independent of which chromosomes exist.
+Two sets are comparable by their rules only when the bit agrees. `complement`
+is also an argument of the exported `region_set()` and `as_region_set()`, so
+renaming it is a breaking change.
+_Avoid_: excluded regions, negative regions, blacklist
+
+**End sentinel**:
+`END_SENTINEL`, standing in for an open end where an operation needs a
+concrete integer — `data.table::foverlaps()` rejects an `NA` in an interval
+column. Substituted in before the operation and back out after.
+
+**Canonicalize**:
+Reduce a region set to its canonical form. The standing verb for the
+operation, in prose and in `canonicalize_region_set()`. `canonicalize` is also
+an argument of the exported `region_set()`, `as_region_set()` and
+`rbind.region_set()`, so renaming it is a breaking change.
