@@ -80,9 +80,9 @@ region_set <- function(
 #'
 #' @return A `region_set` object.
 #' @section NA semantics:
-#' A row's `chr` and `end` may be NA, meaning "unconstrained on this axis":
-#' - `chr = NA` matches every chromosome.
-#' - `end = NA` extends to the end of the chromosome.
+#' A row's `chr` and `end` may be NA:
+#' - `chr = NA` states a general rule, matching every chromosome.
+#' - `end = NA` is an open end, reaching the end of the chromosome.
 #'
 #' A start is always a position.
 #'
@@ -137,7 +137,7 @@ new_region_set <- function(
 #'
 #' Checks the invariants every region_set holds: the `chr`, `start` and
 #' `end` columns, each of its own type; a start on every row that is a
-#' position; and an end either unconstrained or at or after its start.
+#' position; and an end either open or at or after its start.
 #'
 #' @param regions Object to validate
 #' @return The input invisibly; stops with error if invalid

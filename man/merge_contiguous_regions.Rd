@@ -14,7 +14,7 @@ region_set with overlapping regions merged
 }
 \description{
 Combines regions that overlap or are adjacent (end + 1 == start) into
-single regions. A region leaving a position unconstrained reaches the
-end of its chromosome, so it merges with whatever it meets there.
+single regions. A region with an open end reaches the end of its
+chromosome, so it merges with whatever it meets there.
 }
 \keyword{internal}

@@ -16,7 +16,7 @@ Character string like `$1 == "1" && 1000 <= $2 && $2 <= 2000`
 }
 \description{
 Creates awk condition for one region: chr equality and position bounds.
-An NA chr or end is skipped, as is a start of 1: each leaves its axis
-unconstrained, so there is nothing for awk to test.
+A general rule, an open end and a start of 1 are each skipped: none of
+them restricts anything, so there is nothing for awk to test.
 }
 \keyword{internal}

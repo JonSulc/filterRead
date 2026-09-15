@@ -120,8 +120,8 @@ liftover.region_set <- function(
   ][]
 
   lift_chain_overlap(
-    # An NA end is unconstrained, which the overlap join has no notion of;
-    # the sentinel states it as a concrete interval.
+    # An open end is one the overlap join has no notion of; the sentinel
+    # states it as a concrete interval.
     replace_na_with_sentinel(expanded_x),
     chain_dt
   ) |>
@@ -477,11 +477,10 @@ expand_na_chr <- function(
 # Sentinel Value Handling for Overlap Operations
 #
 # An overlap operation over region sets — data.table::foverlaps under
-# `&`, the non-equi join under a lift — has no notion of an unconstrained
-# axis, and foverlaps rejects an NA in an interval column outright. An NA
-# end is replaced with a sentinel value, which states the unconstrained
-# axis as a concrete interval, and can be substituted back for NA once the
-# overlap is done.
+# `&`, the non-equi join under a lift — has no notion of an open end, and
+# foverlaps rejects an NA in an interval column outright. An open end is
+# replaced with a sentinel value, which states it as a concrete interval,
+# and can be substituted back for NA once the overlap is done.
 
 #' Replace NA values with sentinel values for overlap operations
 #'

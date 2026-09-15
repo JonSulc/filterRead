@@ -20,8 +20,8 @@ canonicalize_region_set <- function(
 #' Merge overlapping and contiguous genomic regions
 #'
 #' Combines regions that overlap or are adjacent (end + 1 == start) into
-#' single regions. A region leaving a position unconstrained reaches the
-#' end of its chromosome, so it merges with whatever it meets there.
+#' single regions. A region with an open end reaches the end of its
+#' chromosome, so it merges with whatever it meets there.
 #'
 #' @param regions A region_set object
 #' @return region_set with overlapping regions merged

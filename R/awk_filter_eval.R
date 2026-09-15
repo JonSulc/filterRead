@@ -178,8 +178,8 @@ eval_region_set_from_fc <- function(
 #' Convert single genomic region to awk condition
 #'
 #' Creates awk condition for one region: chr equality and position bounds.
-#' An NA chr or end is skipped, as is a start of 1: each leaves its axis
-#' unconstrained, so there is nothing for awk to test.
+#' A general rule, an open end and a start of 1 are each skipped: none of
+#' them restricts anything, so there is nothing for awk to test.
 #'
 #' @param region_row List with chr, start, end (chr and end possibly NA)
 #' @param column_indices Named list with chr and pos column refs

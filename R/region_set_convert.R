@@ -49,7 +49,7 @@ as_region_set.data.frame <- function(
     value <- regions[[col]]
     if (!is.integer(value)) {
       as_integer <- suppressWarnings(as.integer(value))
-      # An NA introduced by conversion should not read as unconstrained,
+      # An NA introduced by conversion should not read as an open end,
       # so leave a column the conversion cannot read for the validator to name
       if (!any(!is.na(value) & is.na(as_integer))) {
         data.table::set(regions, j = col, value = as_integer)

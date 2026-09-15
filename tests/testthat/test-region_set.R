@@ -221,7 +221,7 @@ test_that("merging preserves attributes", {
   )
 })
 
-test_that("merging keeps rows separated by an unconstrained position", {
+test_that("merging keeps a gap between a bounded rule and an open-ended one", {
   regions <- new_region_set(
     chr = c(1, 1),
     start = c(1, 200),
@@ -233,7 +233,7 @@ test_that("merging keeps rows separated by an unconstrained position", {
   expect_equal(regions$end, c(100L, NA_integer_))
 })
 
-test_that("merging joins rows that meet across an unconstrained position", {
+test_that("merging joins abutting rules into one open end", {
   regions <- new_region_set(
     chr = c(1, 1),
     start = c(1, 101),
@@ -1948,7 +1948,7 @@ test_that("subtract_regions_dt applies an NA-chromosome row to every row", {
   )
 })
 
-test_that("subtract_regions_dt reads an NA end as unconstrained", {
+test_that("subtract_regions_dt reads an NA end as an open end", {
   expect_equal(
     subtract_regions_dt(
       data.table::data.table(

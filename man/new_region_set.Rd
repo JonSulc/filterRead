@@ -43,9 +43,9 @@ names, and optionally reduces the regions to their canonical form.
 }
 \section{NA semantics}{
 
-A row's `chr` and `end` may be NA, meaning "unconstrained on this axis":
-- `chr = NA` matches every chromosome.
-- `end = NA` extends to the end of the chromosome.
+A row's `chr` and `end` may be NA:
+- `chr = NA` states a general rule, matching every chromosome.
+- `end = NA` is an open end, reaching the end of the chromosome.
 
 A start is always a position.
 

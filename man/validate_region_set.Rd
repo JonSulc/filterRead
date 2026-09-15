@@ -15,6 +15,6 @@ The input invisibly; stops with error if invalid
 \description{
 Checks the invariants every region_set holds: the `chr`, `start` and
 `end` columns, each of its own type; a start on every row that is a
-position; and an end either unconstrained or at or after its start.
+position; and an end either open or at or after its start.
 }
 \keyword{internal}
