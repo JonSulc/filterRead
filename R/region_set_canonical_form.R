@@ -39,9 +39,9 @@ merge_rules <- function(
       ,
       c(
         .SD,
-        # Where the largest end so far + 1 is less than the start, the rows
-        # are disjoint and a new group begins; otherwise the row meets or
-        # overlaps that group and joins it, to be merged into one region
+        # Where the largest end so far + 1 is less than the start, the rules
+        # are disjoint and a new group begins; otherwise the rule meets or
+        # overlaps that group and joins it, to be merged into one rule
         .(group = cumsum(
           cummax(data.table::shift(end + 1L, fill = 0L)) < start
         ))
@@ -168,8 +168,8 @@ subtract_rule <- function(
   } else {
     if (any(reaches & is.na(rules$chr))) {
       stop(
-        "Cannot subtract a named chromosome from a region covering every ",
-        "chromosome without enumerating the chromosomes."
+        "Cannot subtract a named chromosome from a general rule without ",
+        "enumerating the chromosomes."
       )
     }
     carved <- reaches & rules$chr == to_remove$chr
