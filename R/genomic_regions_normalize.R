@@ -14,7 +14,7 @@ normalize_genomic_regions <- function(
   gregions
 ) {
   merge_contiguous_regions(gregions) |>
-    subtract_unconstrained_chr_coverage()
+    trim_specific_rules()
 }
 
 #' Merge overlapping and contiguous genomic regions
@@ -68,20 +68,22 @@ merge_contiguous_regions <- function(
     )
 }
 
-#' Remove from the named rows what the unconstrained-chromosome rows cover
+#' Trim the chromosome-specific rules against the general rules
 #'
-#' A row whose `chr` is NA covers every chromosome, so a named row keeps only
-#' the positions that row leaves. Trimming can split a named row, so the
-#' result may carry more rows than the input.
+#' A rule naming no chromosome applies on every chromosome, so a rule that
+#' names one keeps only the positions the general rules leave. The general
+#' rules are kept intact and the set selects the same positions; only its
+#' rules change. Trimming can split a chromosome-specific rule, so the result
+#' may carry more rows than the input.
 #'
-#' The complement bit does not enter into it. Reducing the rows as a set is
-#' right for a set stored as its complement too, since De Morgan makes the
-#' complement of a union the intersection of the complements.
+#' This is the minimality half of the canonical form: a chromosome carries a
+#' specific rule only where it differs from the general rules.
 #'
 #' @param gregions A genomic_regions object with merged rows
-#' @return A genomic_regions with pairwise disjoint rows
+#' @return A genomic_regions selecting the same positions, with pairwise
+#'   disjoint rows
 #' @keywords internal
-subtract_unconstrained_chr_coverage <- function(
+trim_specific_rules <- function(
   gregions
 ) {
   if (!anyNA(gregions$chr)) {
@@ -92,10 +94,10 @@ subtract_unconstrained_chr_coverage <- function(
     start = gregions$start,
     end = gregions$end
   )
-  unconstrained <- rows[is.na(chr)]
+  general_rules <- rows[is.na(chr)]
   list(
-    unconstrained,
-    subtract_regions_dt(rows[!is.na(chr)], unconstrained)
+    general_rules,
+    subtract_regions_dt(rows[!is.na(chr)], general_rules)
   ) |>
     data.table::rbindlist() |>
     as_genomic_regions(

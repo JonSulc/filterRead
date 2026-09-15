@@ -2019,7 +2019,7 @@ test_that("subtract_regions_dt returns no rows when given none", {
   )
 })
 
-test_that("subtract_regions_dt removes every unconstrained-chromosome region", {
+test_that("subtract_regions_dt removes what the general rules cover", {
   expect_equal(
     data.table::setorder(
       subtract_regions_dt(
@@ -2058,7 +2058,7 @@ test_that("subtract_regions_dt rejects an unrepresentable difference", {
   )
 })
 
-# Absorption by an unconstrained chromosome ----------------------------------
+# Absorption by a general rule -----------------------------------------------
 
 test_that("a region on every chromosome absorbs one it covers", {
   expect_equal(
@@ -2136,7 +2136,7 @@ test_that("construction leaves the rows canonical", {
   )
 })
 
-# Complement of an unconstrained chromosome ----------------------------------
+# Complement of a general rule -----------------------------------------------
 
 test_that("the complement of the whole genome matches nothing", {
   expect_equal(
