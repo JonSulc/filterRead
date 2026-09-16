@@ -12,9 +12,10 @@
 #
 # The second is minimality, and with the first it makes the form unique:
 # within one build and one stored form, what a set selects fixes its rules
-# exactly. Row count and row shape are therefore facts about the set and how
-# it is stored, which is what lets `==` compare by rows, `compact()` choose by
-# row count, and the tabix builder emit one token per row.
+# exactly. How many rules a set holds, and where each begins and ends, are
+# therefore facts about the set and how it is stored — which is what lets
+# `==` compare rule by rule, `compact()` choose the form with fewer rules,
+# and the tabix builder emit one token per rule.
 
 #' Reduce a region_set to its canonical form
 #'
@@ -49,7 +50,7 @@ merge_rules <- function(
     return(regions)
   }
   replace_na_with_sentinel(regions) |>
-    # The merging below requires sorted rows
+    # The merging below requires sorted rules
     data.table::setkey(chr, start, end) |>
     _[
       ,
@@ -90,14 +91,14 @@ merge_rules <- function(
 #' names one keeps only the positions the general rules leave. The general
 #' rules are kept intact and the set selects the same positions; only its
 #' rules change. Trimming can split a chromosome-specific rule, so the result
-#' may carry more rows than the input.
+#' may carry more rules than the input.
 #'
 #' This is the minimality half of the canonical form: a chromosome carries a
 #' specific rule only where it differs from the general rules.
 #'
-#' @param regions A region_set object with merged rows
+#' @param regions A region_set object with merged rules
 #' @return A region_set selecting the same positions, with pairwise
-#'   disjoint rows
+#'   disjoint rules
 #' @keywords internal
 trim_specific_rules <- function(
   regions

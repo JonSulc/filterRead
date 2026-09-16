@@ -9,7 +9,7 @@
 #' @param x Object to convert
 #' @param build Reference build the coordinates are expressed in ("b36",
 #'   "b37", "b38", or a synonym).
-#' @param complement Whether the rows describe the coordinates the set
+#' @param complement Whether the rules describe the coordinates the set
 #'   excludes (TRUE) rather than those it covers (FALSE). NULL inherits the
 #'   input's `complement` attribute, defaulting to FALSE.
 #' @param canonicalize If TRUE, reduce the regions to their canonical

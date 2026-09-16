@@ -152,7 +152,7 @@ eval_region_set_from_fc <- function(
   if (needs_rsid_matching(finterface)) {
     return()
   }
-  # Convert each row to an awk condition, combine with ||
+  # Convert each rule to an awk condition, combine with ||
   regions_fcs <- regions[
     ,
     single_rule_to_fc(

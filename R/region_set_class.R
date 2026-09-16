@@ -33,7 +33,7 @@
 #' @param chr_prefix Prefix to ensure on chromosome names (default "chr").
 #' @param canonicalize If TRUE, reduce the regions to their canonical
 #'   form: sorted and pairwise disjoint.
-#' @param complement If TRUE the rows describe the coordinates the set
+#' @param complement If TRUE the rules describe the coordinates the set
 #'   excludes rather than those it covers.
 #'
 #' @return A `region_set` object.
@@ -81,7 +81,7 @@ region_set <- function(
 #'
 #' @return A `region_set` object.
 #' @section NA semantics:
-#' A row's `chr` and `end` may be NA:
+#' A rule's `chr` and `end` may be NA:
 #' - `chr = NA` states a general rule, matching every chromosome.
 #' - `end = NA` is an open end, reaching the end of the chromosome.
 #'
@@ -136,8 +136,8 @@ new_region_set <- function(
 #' Validate a region_set
 #'
 #' Checks the invariants every region_set holds: the `chr`, `start` and
-#' `end` columns, each of its own type; a start on every row that is a
-#' position; and an end either open or at or after its start.
+#' `end` columns, each of its own type; a start that is a position on every
+#' rule; and an end either open or at or after its start.
 #'
 #' @param regions Object to validate
 #' @return The input invisibly; stops with error if invalid
@@ -192,7 +192,7 @@ validate_region_set <- function(
 #' Create empty region_set (no regions)
 #'
 #' @param build Genome build identifier
-#' @return Empty region_set (0 rows)
+#' @return Empty region_set (0 rules)
 #' @keywords internal
 empty_region_set <- function(
   build = NULL
@@ -225,7 +225,7 @@ full_region_set <- function(
 #' @param start Lower bound on the positions covered
 #' @param build Genome build identifier
 #' @return region_set holding the one general rule from the resolved
-#'   bound on, with no rows when the bound lies above every position
+#'   bound on, with no rules when the bound lies above every position
 #' @keywords internal
 general_rule_from <- function(
   start,
@@ -249,7 +249,7 @@ general_rule_from <- function(
 #' @param end Upper bound on the positions covered
 #' @param build Genome build identifier
 #' @return region_set holding the one general rule up to the resolved
-#'   bound, with no rows when the bound lies below every position
+#'   bound, with no rules when the bound lies below every position
 #' @keywords internal
 general_rule_to <- function(
   end,

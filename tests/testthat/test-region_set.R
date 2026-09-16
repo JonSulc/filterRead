@@ -1477,7 +1477,7 @@ test_that("a single complement-stored row expands to its complement", {
 
   expanded <- expand_region_set(complemented)
   expect_false(is_complement(expanded))
-  # Should have rows for chr2-chr22 (21 rows) plus chr1:1-99 and chr1:201-end
+  # Should have rules for chr2-chr22 (21 rules) plus chr1:1-99 and chr1:201-end
   expect_true(nrow(expanded) >= 23)
   # Check chr1 portions exist
   chr1_rows <- expanded[chr == "chr1"]
@@ -1617,7 +1617,7 @@ test_that("a complement-stored region at a chromosome start expands", {
   expanded <- expand_region_set(complemented)
   expect_false(is_complement(expanded))
   chr1_rows <- expanded[chr == "chr1"]
-  # Should only have one row for chr1 (101 to end), no row for before
+  # Should only have one rule for chr1 (101 to end), no rule for before
   expect_equal(nrow(chr1_rows), 1)
   expect_equal(chr1_rows$start, 101)
   expect_true(is.na(chr1_rows$end))
@@ -1636,7 +1636,7 @@ test_that("a complement-stored region at a chromosome end expands", {
   expanded <- expand_region_set(complemented)
   expect_false(is_complement(expanded))
   chr1_rows <- expanded[chr == "chr1"]
-  # Should only have one row for chr1 (1 to 999), no row for after
+  # Should only have one rule for chr1 (1 to 999), no rule for after
   expect_equal(nrow(chr1_rows), 1)
   expect_equal(chr1_rows$start, 1L)
   expect_equal(chr1_rows$end, 999)
@@ -1793,7 +1793,7 @@ test_that("compact reduces adjacent regions via negation", {
 })
 
 test_that("compact prefers the complement-stored form when it has fewer rows", {
-  # A region covering most chromosomes has fewer rows as a complement
+  # A region covering most chromosomes has fewer rules as a complement
   # E.g., "all of chr1-chr21" can be represented as "!chr22"
   many_chrs <- new_region_set(chr = 1:21)
 

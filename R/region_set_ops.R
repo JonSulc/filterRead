@@ -12,7 +12,7 @@
 # - subtract_rule: pmax(start, cut_end + 1L)
 # - expand_region_set (negation): start = end + 1L
 # Any future code that adds more than 1 to `end` must lower this sentinel
-# accordingly, otherwise it will silently overflow to NA on sentinel rows.
+# accordingly, otherwise it will silently overflow to NA on sentinel rules.
 END_SENTINEL <- .Machine$integer.max - 1L
 
 #' Liftover region_set to a different genome build
@@ -189,8 +189,8 @@ liftover.region_set <- function(
 #' `set_complement()` modifies `regions` in place.
 #'
 #' @param regions A region_set object
-#' @param value TRUE if the rows are stored as the set's complement
-#' @return `is_complement()` returns whether the rows are stored as the set's
+#' @param value TRUE if the rules are stored as the set's complement
+#' @return `is_complement()` returns whether the rules are stored as the set's
 #'   complement; `set_complement()` returns `regions`, invisibly.
 #' @keywords internal
 is_complement <- function(regions) {
@@ -437,7 +437,7 @@ rbind.region_set <- function(
 #' Check if region_set has both NA and non-NA chromosomes
 #'
 #' @param regions A region_set object
-#' @return TRUE if some rows have NA chr and others don't
+#' @return TRUE if some rules have NA chr and others don't
 #' @keywords internal
 chr_has_mixed_na <- function(
   regions
@@ -461,7 +461,7 @@ expand_na_chr <- function(
 ) {
   stopifnot(build(regions1) == build(regions2))
   stopifnot(all(is.na(regions1$chr)))
-  # Cross join: each row of regions1 x each unique chr from regions2
+  # Cross join: each rule of regions1 x each unique chr from regions2
   regions1[
     ,
     .(
@@ -528,7 +528,7 @@ replace_sentinel_with_na <- function(
 
 #' Return the smallest equivalent region_set representation
 #'
-#' Compares the input against both stored forms — its rows expanded, and the
+#' Compares the input against both stored forms — its rules expanded, and the
 #' complement of its negation expanded — and returns whichever has the fewest
 #' rows. Output is semantically equivalent to the input - it represents the
 #' same set of genomic positions.
