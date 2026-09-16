@@ -61,7 +61,7 @@ encoded_array_refs <- function(encoded_column_index, positions) {
 #' Decoded names of an encoded column that a real column already supplies
 #'
 #' Returns the decoded names to drop for a non-allele encoded column (those a
-#' real column provides); empty for any other row.
+#' real column provides); empty for any other column_info row.
 #'
 #' @param encoded_names Character vector of decoded names, or NULL.
 #' @param real_standard_names Standard names supplied by real columns.
@@ -477,8 +477,8 @@ expand_encoded_columns <- function(
     standard_name
   ]
 
-  # The chr/pos rows synthesized below are the only output columns a read
-  # cannot obtain from the file itself.
+  # The chr/pos column_info rows synthesized below are the only output
+  # columns a read cannot obtain from the file itself.
   column_info[, from_rsid_index := FALSE][]
 
   column_info[
@@ -588,7 +588,7 @@ column_names <- function(
   }
 
   # Return standardized names, preferring standard_name over input_name.
-  # Every encoded parent is kept, so all rows contribute a column.
+  # Every encoded parent is kept, so every column_info row adds a column.
   col_info[, data.table::fcoalesce(standard_name, input_name)]
 }
 

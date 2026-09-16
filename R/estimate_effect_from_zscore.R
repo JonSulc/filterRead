@@ -8,8 +8,8 @@
 #'   effect    = zscore * effect_se
 #'
 #' All inputs must be the same length, or length 1 to apply that single
-#' value to every row. NA in any input propagates to NA on both outputs
-#' for the corresponding row.
+#' value to every element. NA in any input propagates to NA on both outputs
+#' at the same index.
 #'
 #' @param zscore Numeric vector of z-scores.
 #' @param af Numeric vector of allele frequencies in `[0, 1]`.

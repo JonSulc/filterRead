@@ -430,7 +430,7 @@ head.file_interface <- function(
   }
 
   # When column_info does not exist, head() is called for data.table::fread()
-  # to parse column names, in which case we need to return one additional row
+  # to parse column names, in which case we need to return one additional line
   # (the header), otherwise the header is skipped
   has_column_info <- "column_info" %in% names(x)
   effective_nlines <- nlines + !has_column_info
