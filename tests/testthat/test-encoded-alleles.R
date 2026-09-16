@@ -59,7 +59,7 @@ test_that("SNPAlleles + SNPEffectAllele yields a single effect-driven ref/alt", 
   # MetaBrain carries both the unordered pair (SNPAlleles) and the effect
   # allele (SNPEffectAllele). alt must come from the effect allele and ref
   # from the other member, regardless of the order within SNPAlleles. The
-  # second row has the effect allele FIRST in SNPAlleles to prove the
+  # second record has the effect allele FIRST in SNPAlleles to prove the
   # assignment is order-independent.
   dt <- data.table::data.table(
     Gene            = c("ENSG1", "ENSG2"),

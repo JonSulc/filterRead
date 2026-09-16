@@ -335,9 +335,10 @@ as_region_set.gte_filter_condition <- function(
 }
 #' Regions a filter condition can match within
 #'
-#' The smallest set of regions covering every row the condition could select
-#' when its non-genomic constraints are ignored. Combines the condition's own
-#' genomic constraint with those of every condition it combines.
+#' The smallest set of regions covering every record the condition could
+#' select when its non-genomic constraints are ignored. Combines the
+#' condition's own genomic constraint with those of every condition it
+#' combines.
 #'
 #' @param fcondition A filter_condition object
 #' @return A region_set object, in the build the condition carries

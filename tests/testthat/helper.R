@@ -256,7 +256,7 @@ local_summary_stats_interface <- function(
   new_file_interface(filename, build = build)
 }
 
-# A file with a valid header and no data rows.
+# A file with a valid header and no records.
 local_header_only_interface <- function(
   filename = "empty.csv",
   build = "b38",
@@ -467,11 +467,11 @@ test_in_fc <- function(
   )
 }
 
-# An eight-row fixture whose chromosome, position, allele and p-value columns
-# each select a different subset, so a constraint dropped from the emitted awk
-# changes the row set rather than passing unnoticed. Chromosomes are stored
-# prefixed, as a read returns them, so a condition holds the same values on
-# either side of the comparison.
+# An eight-record fixture whose chromosome, position, allele and p-value
+# columns each select a different subset, so a constraint dropped from the
+# emitted awk changes the record set rather than passing unnoticed.
+# Chromosomes are stored prefixed, as a read returns them, so a condition
+# holds the same values on either side of the comparison.
 dummy_fixed_summary_stats <- function() {
   data.table::data.table(
     chr  = rep(c("chr1", "chr2"), each = 4),
@@ -483,10 +483,11 @@ dummy_fixed_summary_stats <- function() {
 }
 
 # Reads `fcall` through awk and evaluates the same expression in R over the
-# rows the interface returns unfiltered, so the two sides differ only in the
-# rows the condition selects. Both are compared as sets of chr:pos keys.
-# Deriving the expected rows from the interface keeps column formatting out of
-# the comparison, which the tests in test-chr_prefix.R cover instead.
+# records the interface returns unfiltered, so the two sides differ only in
+# the records the condition selects. Both are compared as sets of chr:pos
+# keys. Deriving the expected records from the interface keeps column
+# formatting out of the comparison, which the tests in test-chr_prefix.R cover
+# instead.
 expect_read_matches_r <- function(
   finterface,
   fcall,

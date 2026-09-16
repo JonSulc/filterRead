@@ -134,7 +134,7 @@ test_that("finterface[v] matches on chr/pos/ref/alt", {
 
 test_that("finterface[v] excludes a different allele at the same position", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  # file row chr1:200 is C/T; ask for chr1:200 A/G -> no match
+  # file record chr1:200 is C/T; ask for chr1:200 A/G -> no match
   v <- new_variant_set(
     data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "G"),
     build = "b38"
@@ -144,7 +144,7 @@ test_that("finterface[v] excludes a different allele at the same position", {
 
 test_that("finterface[v] includes a swapped allele order", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
-  # file row chr2:300 is G/A; ask for chr2:300 A/G (swapped) -> match
+  # file record chr2:300 is G/A; ask for chr2:300 A/G (swapped) -> match
   v <- new_variant_set(
     data.table::data.table(chr = "chr2", pos = 300L, ref = "A", alt = "G"),
     build = "b38"
@@ -230,7 +230,7 @@ test_that("finterface[v] lifts v across builds and matches swapped alleles", {
   # chain files, mirroring tests/testthat/test-liftover-dt.R. The block maps
   # b37 chr1[100,200] onto b38 by subtracting offset 50, so b37 chr1:150 lifts
   # to b38 chr1:100. The lift is forward-strand, so alleles carry through
-  # unchanged: v arrives as G/A while the ss_dt() row chr1:100 is A/G,
+  # unchanged: v arrives as G/A while the ss_dt() record chr1:100 is A/G,
   # exercising the cross-build lift and swapped-allele-order match together.
   testthat::local_mocked_bindings(
     get_shared_chain = function(from, to) {
@@ -246,7 +246,8 @@ test_that("finterface[v] lifts v across builds and matches swapped alleles", {
   result <- fi[v]
   expect_equal(nrow(result), 1)
   expect_equal(result$pos, 100L)
-  # The returned row is the file's, in the file's allele order (A/G), not v's.
+  # The returned record is the file's, in the file's allele order (A/G),
+  # not v's.
   expect_equal(result$ref, "A")
   expect_equal(result$alt, "G")
 })
@@ -264,7 +265,7 @@ test_that("finterface[v] equals variant_id %in% both orderings", {
   )
   by_variant <- fi[v][order(pos)]
   # The fixtures carry no variant_id column, so the reference set is built in R
-  # as the file rows whose (chr, pos, ref, alt) match v in either allele
+  # as the file records whose (chr, pos, ref, alt) match v in either allele
   # order -- the identity semantics finterface[v] implements.
   ref_rows <- ss_dt()[
     (chr == "chr1" & pos == 100L &

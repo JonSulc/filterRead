@@ -1,7 +1,7 @@
 test_that("EXTRA is read as character even when most rows are NA", {
-  # REGENIE writes an optional EXTRA column that is NA on most rows.
-  # Without the class override, fread infers it as logical and rbind
-  # across files breaks.
+  # REGENIE writes an optional EXTRA column that is NA on most
+  # records. Without the class override, fread infers it as logical
+  # and rbind across files breaks.
   dt <- data.table::data.table(
     chr    = paste0("chr", 1:5),
     pos    = c(100L, 200L, 300L, 400L, 500L),

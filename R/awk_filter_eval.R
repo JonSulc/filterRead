@@ -167,8 +167,8 @@ eval_region_set_from_fc <- function(
   if (1 < nrow(regions)) {
     regions_fcs <- sprintf("(%s)", regions_fcs)
   }
-  # A set stored as its complement inverts the match: keep the rows that
-  # fall outside its rows.
+  # A set stored as its complement inverts the match: keep the records that
+  # fall outside its rules.
   if (is_complement(regions)) {
     regions_fcs <- sprintf("!(%s)", regions_fcs)
   }

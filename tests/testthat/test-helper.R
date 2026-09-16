@@ -143,7 +143,7 @@ test_that("switch_alt_ref_to_a1_a2 produces correct columns and values", {
   expect_true(all(c("allele1", "allele2", "alt") %in% names(result)))
   expect_false("ref" %in% names(result))
 
-  # For each row, alt should match one of the alleles
+  # For each record, alt should match one of the alleles
   expect_true(all(result$alt == result$allele1 | result$alt == result$allele2))
 
   # Check randomness: about half the time allele1 == alt

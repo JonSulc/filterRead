@@ -1,7 +1,8 @@
 test_that("awk returns the rows R returns for every filter expression", {
   # Every filter expression is read through awk and evaluated in R over the
-  # same rows, so a constraint the generator drops shows up as a row-set
-  # difference rather than needing an expected awk string per expression.
+  # same records, so a constraint the generator drops shows up as a
+  # record-set difference rather than needing an expected awk string per
+  # expression.
   condition_fcalls <- list(
     quote(chr == "chr1" & pos <= 200),
     quote(chr == "chr1" | chr == "chr2"),

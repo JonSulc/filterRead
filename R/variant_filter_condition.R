@@ -4,7 +4,7 @@
 #' any is absent. Each must map to a real input column: a coordinate available
 #' only via an encoded parent (e.g. a `chr:pos` field split into virtual
 #' `chr`/`pos` with no real column of their own) is rejected, because the
-#' codegen does not split such a column, so a match would return no rows; a
+#' codegen does not split such a column, so a match would return no records; a
 #' coordinate that also has its own real column is accepted. rsid-indexed files,
 #' which lack `chr`/`pos`, are rejected too.
 #'
@@ -93,7 +93,7 @@ variant_keyset <- function(variants, finterface, build) {
   )
 }
 
-#' Awk expression that builds a row's composite variant key
+#' Awk expression that builds a record's composite variant key
 #'
 #' @param finterface A file_interface object.
 #' @return A string like `$1 "_" $2 "_" $3 "_" $4`.
@@ -108,12 +108,12 @@ variant_key_expr <- function(finterface) {
 
 #' `new_filter_condition_impl` method for variant-identity filtering
 #'
-#' Lowers `v` to a position-membership pre-filter AND a composite-key
-#' membership test (both allele orderings), matching file rows on
-#' `(chr, pos, \{ref, alt\})` after lifting `v` to the file's build. `context` is
-#' the normalized context env built by `as_fc_context()` in the public
-#' `new_filter_condition()` wrapper, so the interface is read from
-#' `context$finterface`, mirroring `new_filter_condition_impl.region_set`.
+#' Lowers `v` to a position-membership pre-filter AND a composite-key membership
+#' test (both allele orderings), matching file records on `(chr, pos, \{ref,
+#' alt\})` after lifting `v` to the file's build. `context` is the normalized
+#' context env built by `as_fc_context()` in the public `new_filter_condition()`
+#' wrapper, so the interface is read from `context$finterface`, mirroring
+#' `new_filter_condition_impl.region_set`.
 #'
 #' @keywords internal
 #' @export
@@ -141,9 +141,9 @@ new_filter_condition_impl.variant_set <- function(
   key_expr <- variant_key_expr(finterface)
 
   # The position pre-filter is an optimization: awk `&&` short-circuits, so the
-  # per-row `$1 "_" $2 "_" $3 "_" $4` key string is built only for rows whose
-  # position is in `posset`, skipping the string concatenation for rows at no
-  # candidate position.
+  # per-record `$1 "_" $2 "_" $3 "_" $4` key string is built only for records
+  # whose position is in `posset`, skipping the string concatenation for
+  # records at no candidate position.
   in_membership_atom(pos_expr, keyset$positions, context, build) &
     in_membership_atom(key_expr, keyset$keys, context, build)
 }

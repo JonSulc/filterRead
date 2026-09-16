@@ -61,9 +61,9 @@ is_regex_filter_condition <- function(fcondition) {
 
 #' Create a pure genomic condition
 #'
-#' A pure genomic condition restricts rows by coordinate and nothing else: it
-#' carries no expression, so its genomic constraint is the whole of what it
-#' narrows.
+#' A pure genomic condition restricts records by coordinate and nothing else:
+#' it carries no expression, so its genomic constraint is the whole of what
+#' it narrows.
 #'
 #' @param genomic_constraint The region set the condition selects within, or
 #'   NULL for a full region set
@@ -87,12 +87,12 @@ pure_genomic_condition <- function(
 #' Create a filter condition that restricts nothing
 #'
 #' What a read given no condition carries: no expression and no genomic
-#' constraint, so every row matches. The limiting case of a pure genomic
-#' condition.
+#' constraint, so every record matches. The limiting case of a pure
+#' genomic condition.
 #'
 #' @param build Optional genome build (b36, b37, b38)
 #' @param context Environment carrying $finterface and $env for the condition
-#' @return A filter_condition object selecting every row
+#' @return A filter_condition object selecting every record
 #' @keywords internal
 unconstrained_condition <- function(
   build = NULL,
@@ -357,10 +357,10 @@ as_fc_context <- function(finterface, x) {
 #' Construct a filter_condition
 #'
 #' S3 generic that turns an R expression into a filter_condition - the
-#' package's internal representation of a row filter that is later compiled
-#' to awk. Methods are dispatched on the type of `x`; the most common entry
-#' point is the `[.file_interface` operator, which calls this with a
-#' quosure produced by `rlang::enquo()`. Pass a `region_set` object
+#' package's internal representation of a record filter that is later
+#' compiled to awk. Methods are dispatched on the type of `x`; the most
+#' common entry point is the `[.file_interface` operator, which calls this
+#' with a quosure produced by `rlang::enquo()`. Pass a `region_set` object
 #' to filter on chromosome/position ranges directly.
 #'
 #' @param x A quosure (typically produced by `rlang::enquo()` or

@@ -257,8 +257,8 @@ add_quoted_column <- function(
 
 #' Detect which columns have quoted values
 #'
-#' Reads first row with quote="" to preserve quotes, then checks each
-#' column for presence of double quotes.
+#' Reads first record with quote="" to preserve quotes, then checks
+#' each column for presence of double quotes.
 #'
 #' @param finterface File interface object
 #'
@@ -386,7 +386,7 @@ add_encoding_columns <- function(
   ]
 
   # Dropping the encoding of a column already covered by real columns lets it
-  # pass through plainly, avoiding the per-row split.
+  # pass through plainly, avoiding the per-record split.
   fully_redundant <- sapply(
     column_info$encoded_names,
     function(encoded) {

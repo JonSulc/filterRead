@@ -27,7 +27,7 @@ get_build_from_file_interface <- function(
 
 #' Infer genome build from a file
 #'
-#' Reads the first nsnps rows from a file and infers the genome build.
+#' Reads the first nsnps records from a file and infers the genome build.
 #'
 #' @param finterface A file_interface object
 #' @param nsnps Number of SNPs to read for inference

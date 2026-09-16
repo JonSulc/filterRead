@@ -374,7 +374,7 @@ muffle_empty_read_warning <- function(w) {
 
 #' Build a zero-row result carrying a read's schema
 #'
-#' Stands in for the table a read returns when there is no data row to
+#' Stands in for the table a read returns when there is no record to
 #' read. Every column is `logical`; the package declares no type per
 #' standard column.
 #'
@@ -388,23 +388,23 @@ empty_read_result <- function(read_columns) {
     data.table::setDT()
 }
 
-#' Return first rows of a file interface
+#' Return first records of a file interface
 #'
-#' S3 method for head() that reads the first n rows from a file (in addition to
-#' the header) using the file interface. Column names are converted to standard
-#' column names and transformed if necessary.
+#' S3 method for head() that reads the first n records from a file (in addition
+#' to the header) using the file interface. Column names are converted to
+#' standard column names and transformed if necessary.
 #'
 #' @param x A file_interface object.
-#' @param nlines Integer. Number of rows to read. Default is 1.
+#' @param nlines Integer. Number of records to read. Default is 1.
 #' @param return_only_cmd Logical. If TRUE, returns the awk command
 #'   string instead of executing it. Useful for debugging or piping
 #'   to other commands. Default is FALSE.
 #' @param ... Additional arguments passed to data.table::fread().
 #' @param sep Field separator for the read. Defaults to the separator
-#'   detected for the file: awk preserves it, and the handful of rows a
-#'   read emits is too small a sample to detect it from, since a comma
-#'   inside a single field is enough to make fread split on the wrong
-#'   character.
+#'   detected for the file: awk preserves it, and the handful of
+#'   records a read emits is too small a sample to detect it from,
+#'   since a comma inside a single field is enough to make fread split
+#'   on the wrong character.
 #'
 #' @return A data.table containing the first nrows of the file.
 #'
@@ -424,7 +424,7 @@ head.file_interface <- function(
 ) {
   # nlines = 0 cannot be served via awk: empty fread input warns and
   # returns NULL. column_info does not record column types, so read one
-  # row to let fread infer them, then drop it.
+  # record to let fread infer them, then drop it.
   if (nlines == 0 && !return_only_cmd) {
     return(head(x, 1L, ...)[0])
   }
@@ -468,8 +468,8 @@ head.file_interface <- function(
     warning = muffle_empty_read_warning
   )
 
-  # fread returns a 0-column table when the file holds no data rows,
-  # leaving no row for it to infer types from.
+  # fread returns a 0-column table when the file holds no records,
+  # leaving fread no record to infer types from.
   if (ncol(result) == 0L) {
     return(empty_read_result(read_columns))
   }
@@ -479,7 +479,7 @@ head.file_interface <- function(
 #' Build a zero-row result for a query that matched nothing
 #'
 #' Takes the file's own columns from `head(finterface, 0)`, which reads
-#' a real row so `fread` infers their types, and adds the columns a
+#' a real record so `fread` infers their types, and adds the columns a
 #' positional query on an rsid-indexed file draws from the tabix index.
 #'
 #' @param finterface File interface object.
@@ -522,21 +522,21 @@ empty_read_for_query <- function(
 #' @param conditions R expression specifying filter conditions. Can
 #'   use column names, comparison operators (&lt;, &gt;, ==, !=, etc.),
 #'   and logical operators (&, |). Examples: \code{pval < 5e-8},
-#'   \code{chr == 1 & pos > 1000000}. If NULL, returns all rows.
+#'   \code{chr == 1 & pos > 1000000}. If NULL, returns all records.
 #' @param nlines Optional integer cap on the number of matching lines to
 #'   return. NULL or `integer(0)` means no cap.
 #' @param ... Additional arguments passed to data.table::fread().
 #' @param sep Field separator for the read. Defaults to the separator
-#'   detected for the file: awk preserves it, and the handful of rows a
-#'   read emits is too small a sample to detect it from, since a comma
-#'   inside a single field is enough to make fread split on the wrong
-#'   character.
+#'   detected for the file: awk preserves it, and the handful of
+#'   records a read emits is too small a sample to detect it from,
+#'   since a comma inside a single field is enough to make fread split
+#'   on the wrong character.
 #' @param return_only_cmd Logical. If TRUE, returns the awk command
 #'   string instead of executing it. Useful for debugging or piping
 #'   to other commands. Default is FALSE.
 #'
 #' @return If return_only_cmd is FALSE (default), returns a data.table
-#'   with filtered rows. If return_only_cmd is TRUE, returns a
+#'   with filtered records. If return_only_cmd is TRUE, returns a
 #'   character string containing the awk command.
 #'
 #' @examples

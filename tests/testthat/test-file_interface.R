@@ -533,7 +533,7 @@ test_that("nlines parameter limits output rows", {
     head(dummy_dt()[num < 5], 3)
   )
 
-  # nlines larger than file returns all rows
+  # nlines larger than file returns all records
   expect_equal(
     finterface[nlines = 100],
     dummy_dt()
@@ -554,7 +554,7 @@ test_that("nlines parameter limits output rows", {
 test_that("Empty brackets read full file", {
   finterface <- local_file_interface("data.csv")
 
-  # Empty brackets return all rows
+  # Empty brackets return all records
   expect_equal(
     finterface[],
     dummy_dt()
@@ -578,7 +578,7 @@ test_that("Empty brackets read full file", {
 test_that("read_file_interface reads full file", {
   finterface <- local_file_interface("data.csv")
 
-  # read_file_interface returns all rows
+  # read_file_interface returns all records
   expect_equal(
     read_file_interface(finterface),
     dummy_dt()

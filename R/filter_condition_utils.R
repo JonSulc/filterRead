@@ -244,8 +244,8 @@ has_position_condition <- function(
 
 #' Check whether a filter condition selects by coordinate alone
 #'
-#' A pure genomic condition restricts rows by coordinate and nothing else, so
-#' its genomic constraint is the whole of what it narrows.
+#' A pure genomic condition restricts records by coordinate and nothing else,
+#' so its genomic constraint is the whole of what it narrows.
 #'
 #' @param fcondition A filter_condition object
 #' @return Logical indicating whether the condition selects by coordinate alone
@@ -375,12 +375,12 @@ strip_parentheses <- function(
 
 #' Check whether a filter condition has a single genomic scope
 #'
-#' One region set governs every row the condition can select, so its source
-#' regions apply to the condition as a whole rather than separately to each
-#' condition it combines.
+#' One region set governs every record the condition can select, so its
+#' source regions apply to the condition as a whole rather than separately
+#' to each condition it combines.
 #'
 #' @param fcondition A filter_condition object
-#' @return Logical indicating whether one region set governs every row
+#' @return Logical indicating whether one region set governs every record
 #' @keywords internal
 has_single_genomic_scope <- function(
   fcondition

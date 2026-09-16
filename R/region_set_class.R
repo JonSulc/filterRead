@@ -19,7 +19,7 @@
 #'
 #' Builds a `region_set` object — the regions a read is narrowed to, in one
 #' reference build — from parallel vectors. Pass the result as a `[`
-#' subscript to a `file_interface` to filter its rows by position:
+#' subscript to a `file_interface` to filter its records by position:
 #' `finterface[region_set(...)]`. To build regions from an existing
 #' `data.table` of `chr`/`start`/`end`, use [as_region_set()].
 #'
@@ -341,7 +341,7 @@ is_full_region_set <- function(regions) {
 #' Check if a region_set selects no position at all
 #'
 #' @param regions A region_set object
-#' @return TRUE if no row can satisfy regions
+#' @return TRUE if `regions` selects no position
 #' @keywords internal
 is_empty_region_set <- function(regions) {
   is_full_region_set(!regions)

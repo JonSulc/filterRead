@@ -23,7 +23,7 @@ gwas_vcf_indicator_keys <- c("ES", "SE", "LP", "EZ", "SI", "NC")
 #' Parsing specification for a GWAS-VCF file
 #'
 #' Returns the encoded-column parsing specification when the file's
-#' header and first row describe a GWAS-VCF file.
+#' header and first record describe a GWAS-VCF file.
 #'
 #' @param finterface A file_interface object whose `column_info` is not
 #'   yet set

@@ -1122,7 +1122,7 @@ test_that("pos %in% set keeps exactly the listed positions", {
     finterface[pos %in% c(12345, 23456)]$pos,
     c(12345L, 23456L)
   )
-  # The chr2:12345 row matches pos but must be excluded by the chr term.
+  # The chr2:12345 record matches pos but must be excluded by the chr term.
   expect_equal(
     finterface[chr == "chr1" & pos %in% c(12345, 23456)][, .(chr, pos)],
     data.table::data.table(

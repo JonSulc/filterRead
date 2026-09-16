@@ -340,8 +340,8 @@ test_that("a FORMAT naming ID decodes four columns", {
 })
 
 test_that("a row omitting a trailing sub-field decodes it as NA", {
-  # VCF permits a sample value to drop trailing sub-fields, so a row
-  # naming fewer values than FORMAT does is well formed.
+  # VCF permits a sample value to drop trailing sub-fields, so a
+  # record naming fewer values than FORMAT does is well formed.
   dropped_field_data <- create_gwas_vcf_data(
     trait_name = "ukbb-neale",
     trait_data = c("0.1:0.05:2.3", "0.2:0.06", "-0.1:0.04:3.2")

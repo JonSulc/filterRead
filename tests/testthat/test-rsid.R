@@ -90,7 +90,8 @@ test_that("File reading works", {
     c("chr", "pos", "rsid", "ref", "alt", "effect", "pval")
   )
   # The file's own columns keep the types fread inferred from a real
-  # row; only chr and pos, which come from the index, are best-guess.
+  # record; only chr and pos, which come from the index, are
+  # best-guess.
   expect_equal(
     vapply(empty_positional, class, character(1)),
     c(

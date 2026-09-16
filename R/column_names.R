@@ -232,9 +232,9 @@ summary_stats_rsid_dt <- data.table::data.table(
 )
 
 # Per-column type overrides for `fread`. REGENIE's optional `EXTRA`
-# column is NA on most rows, so data.table infers it as logical; that
-# breaks rbind across multiple REGENIE files. Pinning it as character
-# fixes the inference.
+# column is NA on most records, so data.table infers it as logical;
+# that breaks rbind across multiple REGENIE files. Pinning it as
+# character fixes the inference.
 summary_stats_column_classes_dt <- data.table::data.table(
   input_name = "EXTRA",
   class      = "character"
