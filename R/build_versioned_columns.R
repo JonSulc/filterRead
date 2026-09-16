@@ -100,7 +100,7 @@ parse_variant_id <- function(x) {
 
 #' Build variant_id values from coordinate vectors
 #'
-#' Shared formatter for the `chr_pos_ref_alt_<build>` id. Rows where any
+#' Shared formatter for the `chr_pos_ref_alt_<build>` id. Variants where any
 #' component (`chr`, `pos`, `ref`, `alt`, `build`) is NA get `NA`.
 #'
 #' @param chr,pos,ref,alt Coordinate vectors of equal length.
@@ -117,12 +117,12 @@ variant_id_values <- function(chr, pos, ref, alt, build) {
 
 #' Validate a variant_id column against coordinates and build
 #'
-#' For every row whose `variant_id` parses (see [parse_variant_id()]), each
-#' non-NA `chr`/`pos`/`ref`/`alt` value must equal the decoded component and
-#' the embedded build must equal `build` (compared after canonicalizing known
-#' synonyms). NA coordinate cells and rows with an unparseable `variant_id`
-#' impose no constraint. Errors listing the offending rows; otherwise returns
-#' `x` invisibly.
+#' For every variant whose `variant_id` parses (see [parse_variant_id()]),
+#' each non-NA `chr`/`pos`/`ref`/`alt` value must equal the decoded component
+#' and the embedded build must equal `build` (compared after canonicalizing
+#' known synonyms). NA coordinate cells and variants with an unparseable
+#' `variant_id` impose no constraint. Errors listing the offending variants;
+#' otherwise returns `x` invisibly.
 #'
 #' @param x A data.table with a `variant_id` column.
 #' @param build Build the ids are expected to embed. Defaults to `build(x)`.
@@ -178,8 +178,8 @@ validate_variant_id <- function(x, build = NULL, parsed = NULL) {
 #' Construct variant_id from chr / pos / ref / alt
 #'
 #' Adds a `variant_id` column shaped as `chr_pos_ref_alt_<build>`
-#' (e.g. `chr1_12345_A_G_b38`). Rows where any of `chr`, `pos`, `ref`, or `alt`
-#' is NA get `NA` for `variant_id`. Modifies `dt` by reference.
+#' (e.g. `chr1_12345_A_G_b38`). Variants where any of `chr`, `pos`, `ref`, or
+#' `alt` is NA get `NA` for `variant_id`. Modifies `dt` by reference.
 #'
 #' @param dt A data.table with `chr`, `pos`, `ref`, `alt` columns.
 #' @param build Build name used in the suffix. Defaults to `build(dt)`.

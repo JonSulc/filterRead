@@ -78,8 +78,10 @@ test_that(
 
 test_that("best-source liftover recovers rows NA in the current build via a newer build", {
   chains <- list(
-    b37_b36 = make_fwd_chain(800L, 1000L, 100L, "b37", "b36"),  # covers row A (b37 900)
-    b38_b36 = make_fwd_chain(500L, 2500L, 200L, "b38", "b36")   # covers row B (b38 2000)
+    # covers variant A (b37 900)
+    b37_b36 = make_fwd_chain(800L, 1000L, 100L, "b37", "b36"),
+    # covers variant B (b38 2000)
+    b38_b36 = make_fwd_chain(500L, 2500L, 200L, "b38", "b36")
   )
   testthat::local_mocked_bindings(
     get_shared_chain = function(from, to) {
@@ -87,7 +89,8 @@ test_that("best-source liftover recovers rows NA in the current build via a newe
     }
   )
 
-  # Currently in b37; row B failed b38->b37 (b37 NA) but keeps b38 provenance.
+  # Currently in b37; variant B failed b38->b37 (b37 NA) but keeps b38
+  # provenance.
   v <- new_variant_set(
     data.table::data.table(
       chr = c("chr1", "chr1"),
@@ -102,8 +105,8 @@ test_that("best-source liftover recovers rows NA in the current build via a newe
   )
 
   lifted <- liftover(v, "b36")  # source = "best" by default
-  # Row A lifts from the current build (b37); row B, NA in b37, is recovered
-  # directly from its recorded b38 coordinates.
+  # Variant A lifts from the current build (b37); variant B, NA in b37, is
+  # recovered directly from its recorded b38 coordinates.
   expect_equal(lifted$pos, c(800L, 1800L))
   expect_equal(build(lifted), "b36")
 })
@@ -120,12 +123,12 @@ test_that("select_source_build picks the defining build then falls back", {
     v, "b38", c("chr1", "chr1"), c(500L, 600L), c("A", "C"), c("G", "T")
   )
 
-  # Row 1 is defined in its defining_build b37; row 2 is NA in b37 and falls
-  # back to b38.
+  # Variant 1 is defined in its defining_build b37; variant 2 is NA in b37
+  # and falls back to b38.
   expect_equal(select_source_build(v, "b36", "best"), c("b37", "b38"))
-  # A fixed source applies to every row that has coordinates there.
+  # A fixed source applies to every variant that has coordinates there.
   expect_equal(select_source_build(v, "b36", "b38"), c("b38", "b38"))
-  # Rows with no coordinates in the requested build are NA.
+  # Variants with no coordinates in the requested build are NA.
   expect_equal(
     select_source_build(v, "b36", "current"),
     c("b37", NA_character_)
@@ -150,8 +153,8 @@ test_that("source = 'current' does not recover NA-at-current rows", {
   )
 
   lifted <- liftover(v, "b36", source = "current")
-  # Source fixed to the current build (b37): row A lifts; row B is NA in b37
-  # and is kept with NA coordinates.
+  # Source fixed to the current build (b37): variant A lifts; variant B is
+  # NA in b37 and is kept with NA coordinates.
   expect_equal(nrow(lifted), 2L)
   expect_equal(lifted$pos, c(800L, NA))
 })
@@ -253,7 +256,8 @@ test_that("a chain-gap row is not retried from another build (source fixed by co
   record_extra_build(v, "b38", "chr1", 5000L, "A", "G")
 
   lifted <- liftover(v, "b36")
-  # b37 is the source and gaps here, so the row is kept with NA coordinates.
+  # b37 is the source and gaps here, so the variant is kept with NA
+  # coordinates.
   expect_equal(nrow(lifted), 1L)
   expect_true(is.na(lifted$pos))
 })
@@ -551,7 +555,8 @@ test_that("a multi-build variant_id table splits and lifts to the first build", 
   expect_s3_class(v, "variant_set")
   expect_equal(build(v), "b37")
   expect_equal(v$defining_build, c("b37", "b38"))
-  # row 1 already b37; row 2 lifts b38 -> b37 (new = old - offset = 1950)
+  # variant 1 already b37; variant 2 lifts b38 -> b37
+  # (new = old - offset = 1950)
   expect_equal(v$pos, c(1000L, 1950L))
   expect_equal(v$ref, c("A", "C"))
 })
@@ -676,8 +681,9 @@ test_that("liftover on a mixed-build variant_set returns integer pos", {
     get_shared_chain = function(from, to) chain_via_parser(from, to)
   )
 
-  # Two rows declared in different builds -> mixed defining_build. Binding to
-  # b37 lifts the b38 row, and lifting the result to b38 sub-lifts per build.
+  # Two variants declared in different builds -> mixed defining_build.
+  # Binding to b37 lifts the b38 variant, and lifting the result to b38
+  # sub-lifts per build.
   v <- rbindlist_variant_sets(
     list(
       new_variant_set(
@@ -696,7 +702,8 @@ test_that("liftover on a mixed-build variant_set returns integer pos", {
   lifted <- liftover(v, "b38")
   expect_s3_class(lifted, "variant_set")
   expect_type(lifted$pos, "integer")
-  # row1 lifts b37 -> b38 (1000 - 50); row2 sources its recorded b38 value
+  # variant1 lifts b37 -> b38 (1000 - 50); variant2 sources its recorded
+  # b38 value
   expect_equal(lifted$pos, c(950L, 2000L))
   expect_equal(build(lifted), "b38")
 })

@@ -39,7 +39,8 @@ test_that("rbindlist_variant_sets lifts inputs to the first input's build", {
     mk("chr1", 2000L, "C", "T", "b38")
   ))
   expect_equal(build(out), "b37")
-  # row 1 already b37 (no lift); row 2 lifts b38 -> b37 (new = old - 50 = 1950)
+  # variant 1 already b37 (no lift); variant 2 lifts b38 -> b37
+  # (new = old - 50 = 1950)
   expect_equal(out$pos, c(1000L, 1950L))
   expect_equal(out$defining_build, c("b37", "b38"))
 })

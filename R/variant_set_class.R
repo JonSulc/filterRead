@@ -164,11 +164,11 @@ new_variant_set_from_variant_id <- function(x, build) {
 
 #' Split a mixed-build variant_id table by build and recombine
 #'
-#' Each row is constructed in its embedded build (rows with an unparseable id
-#' default to the first parseable row's build), then the per-build groups are
-#' recombined through [rbindlist_variant_sets()] targeting the first parseable
-#' row's build, preserving input row order. Each row keeps its embedded build
-#' as `defining_build`.
+#' Each variant enters the set in its embedded build (an unparseable id
+#' falls back to the first parseable build), then the per-build groups are
+#' recombined through [rbindlist_variant_sets()] targeting that build,
+#' preserving input row order. Each variant keeps its embedded build as
+#' `defining_build`.
 #'
 #' @keywords internal
 combine_by_embedded_build <- function(x, parsed) {
@@ -330,14 +330,14 @@ lift_one_source <- function(variants, from, target, multi_match) {
   )
 }
 
-#' Choose each row's source build for liftover
+#' Choose each variant's source build for liftover
 #'
 #' For `source = "best"` the source is the highest-precedence build with
-#' non-NA coordinates: an already-recorded target, the
-#' `defining_build`, the current build, then the newest other recorded build.
-#' For `"current"` or a build name it is that single build for every row (NA
-#' where the row has no coordinates in it). Reads recorded coordinates only;
-#' performs no liftover.
+#' non-NA coordinates: an already-recorded target, the `defining_build`, the
+#' current build, then the newest other recorded build. For `"current"` or a
+#' build name it is that single build for every variant (NA where the variant
+#' has no coordinates in it). Reads recorded coordinates only; performs no
+#' liftover.
 #'
 #' @param x A `variant_set`.
 #' @param target Target build.
@@ -383,39 +383,40 @@ select_source_build <- function(x, target, source) {
   source_of
 }
 
-#' Lift variants to another genome build, selecting the source per row
+#' Lift variants to another genome build, selecting the source per variant
 #'
-#' With `source = "best"` (default) each row is lifted from its defining
-#' build -- the `defining_build` it was declared in -- so a b37-declared variant
-#' lifts from b37 even when currently expressed in another build. Lifting from
-#' the defining build makes the result independent of intermediate lifts
-#' (`b38 -> b37 -> b38 -> b36` equals `b38 -> b36`) and round-trip stable.
-#' The source is the highest-precedence build with non-NA coordinates: an
-#' already-recorded target, else the
-#' `defining_build`, else the current build, else the newest other
-#' recorded build. A row whose source has no mapping at the target is left NA.
-#' `source = "current"` lifts every row from the current build.
+#' With `source = "best"` (default) each variant is lifted from its defining
+#' build -- the `defining_build` it was declared in -- so a b37-declared
+#' variant lifts from b37 even when currently expressed in another build.
+#' Lifting from the defining build makes the result independent of
+#' intermediate lifts (`b38 -> b37 -> b38 -> b36` equals `b38 -> b36`) and
+#' round-trip stable. The source is the highest-precedence build with non-NA
+#' coordinates: an already-recorded target, else the `defining_build`, else
+#' the current build, else the newest other recorded build. A variant whose
+#' source has no mapping at the target is left NA. `source = "current"` lifts
+#' every variant from the current build.
 #'
-#' `multi_match = "first"` (default) gives one output row per input variant;
-#' `"all"` keeps every target position the chosen source maps a variant to,
-#' fanning those out in place. `liftover.variant_set` manages the lift
-#' parameters itself; for raw liftover options use [liftover.data.table()]
-#' directly.
+#' `multi_match = "first"` (default) gives one output variant per input
+#' variant; `"all"` keeps every target position the chosen source maps a
+#' variant to, fanning those out in place. `liftover.variant_set` manages the
+#' lift parameters itself; for raw liftover options use
+#' [liftover.data.table()] directly.
 #'
 #' @param x A `variant_set`.
 #' @param target Target build.
-#' @param source Which build to lift each row from: `"best"` (default; the
-#'   `defining_build`, chosen per row with fallback), `"current"`
+#' @param source Which build to lift each variant from: `"best"` (default;
+#'   the `defining_build`, chosen per variant with fallback), `"current"`
 #'   (the current build), or a build name (`"b36"`/`"b37"`/`"b38"` or a
-#'   synonym) to force that build for every row.
+#'   synonym) to force that build for every variant.
 #' @param multi_match How a position that maps to several target positions is
-#'   resolved: `"first"` (default, one row per input variant), `"last"`, or
-#'   `"all"` (one output row per target position the source maps to).
+#'   resolved: `"first"` (default, one output variant per input variant),
+#'   `"last"`, or `"all"` (one output variant per target position the source
+#'   maps to).
 #' @param ... Must be empty; `liftover.variant_set` manages the lift parameters.
 #'   Use [liftover.data.table()] directly for raw liftover options.
 #' @return A `variant_set` in the target build. With `multi_match = "all"` a
-#'   variant that maps to several positions contributes several rows,
-#'   inserted in input order immediately after one another.
+#'   variant that maps to several positions contributes one variant per
+#'   target position, inserted in input order immediately after one another.
 #' @export
 liftover.variant_set <- function(x, target, source = "best",
                                  multi_match = c("first", "last", "all"), ...) {
@@ -438,9 +439,10 @@ liftover.variant_set <- function(x, target, source = "best",
   if (nrow(x) == 0L) {
     result <- data.table::copy(x)
   } else {
-    # Tag each row with its input position and chosen source, then lift each
-    # source's rows together with `by = .src`; full rows carry all columns and
-    # fan-out through `liftover.data.table`. `.anchor` restores input order.
+    # Tag each variant with its input position and chosen source, then lift
+    # each source's variants together with `by = .src`; every column travels
+    # with its variant, and `liftover.data.table` fans out multi-mappings.
+    # `.anchor` restores input order.
     work <- data.table::copy(x)
     work[, c(".anchor", ".src") := .(
       seq_len(.N), select_source_build(x, target, source)
