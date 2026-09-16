@@ -13,6 +13,5 @@
 Combined region_set with merged overlaps
 }
 \description{
-Combines two sets of genomic regions, merging overlapping/contiguous
-regions.
+Combines two region sets, merging the rules that overlap or abut.
 }

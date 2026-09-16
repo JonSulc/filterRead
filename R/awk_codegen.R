@@ -331,7 +331,7 @@ wrap_main_file_code <- function(
       nlines = nlines
     )
   } else {
-    # Multiple condition blocks (e.g., from OR of genomic regions)
+    # Multiple condition blocks (e.g., from OR of region sets)
     # Each row becomes an else-if branch
     condition_block <- branches[
       ,

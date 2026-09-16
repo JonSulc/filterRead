@@ -392,39 +392,30 @@ liftover <- function(
   UseMethod("liftover")
 }
 
-#' Translate genomic regions through a UCSC chain
+#' Lift regions through a UCSC chain
 #'
-#' Maps `(chr, start, end)` regions from one reference genome to
-#' another by overlapping them with a UCSC chain data.table and
-#' applying each chain block's offset and strand. The shared core for
-#' [liftover.region_set()] and [liftover.data.table()]; not called
-#' directly by users. Columns beyond `chr`/`start`/`end` in
-#' `positions_dt` are carried through unchanged.
+#' Maps `(chr, start, end)` regions from one reference build to another by
+#' overlapping them with a UCSC chain and applying each chain block's offset
+#' and strand.
 #'
-#' @param positions_dt A data.table with at least `chr`, `start`,
-#'   `end` columns in the source build's coordinate system; extra
-#'   columns are carried through. None of `chr`, `start`, `end` may
-#'   hold `NA`: the join accepts such rows and returns them with `NA`
-#'   coordinates (or drops them, under `nomatch = 0L`) rather than
-#'   signalling.
-#' @param chain The session's shared chain for the desired
-#'   source-to-target build pair, from [get_shared_chain()]. Held
-#'   read-only: it is the cached object every other caller sees, so
-#'   modifying it corrupts every later lift in the session. It carries a
-#'   `(chr, start, end)` index, which the overlap join reads; an
-#'   unindexed chain is re-sorted on each call, which takes the join
-#'   over the 53,950-row b37-to-b38 chain from 3.7 ms to 6.2 ms.
+#' @param positions_dt A data.table with at least `chr`, `start` and `end`
+#'   columns in the source build's coordinate system; every other column is
+#'   carried through. None of the three may hold `NA`: the join accepts them
+#'   and returns `NA` coordinates, or drops them under `nomatch = 0L`.
+#' @param chain The chain for the source-to-target build pair, ideally keyed
+#'   to avoid re-sorting.
 #' @param mult How a position overlapping more than one chain block is
-#'   resolved. Forwarded to the overlap join in [data.table::data.table].
+#'   resolved. Forwarded to the overlap join in [data.table::data.table];
+#'   `"all"` fans the position out across every block covering it.
 #' @param nomatch Whether a position no chain block covers is kept, with `NA`
 #'   coordinates, or dropped. Forwarded to the overlap join in
-#'   [data.table::data.table].
-#' @param allele_cols Character vector of `positions_dt` column names to
-#'   reverse-complement on reverse-strand (`rev = TRUE`) blocks. Default
-#'   `character()` (no reverse-complement).
-#'
-#' @return data.table with lifted `chr`, `start`, `end` (in the target
-#'   build) plus any extra columns from `positions_dt`.
+#'   [data.table::data.table]; `0L` drops it.
+#' @param allele_cols Column names of `positions_dt` to reverse-complement on
+#'   reverse-strand chain blocks.
+#' @return A data.table with `chr`, `start` and `end` in the target build,
+#'   plus every other column of `positions_dt`; those named in `allele_cols`
+#'   are reverse-complemented wherever the covering chain block is on the
+#'   reverse strand.
 #' @keywords internal
 lift_chain_overlap <- function(
   positions_dt,

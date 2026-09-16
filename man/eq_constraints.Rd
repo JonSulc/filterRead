@@ -2,18 +2,18 @@
 % Please edit documentation in R/filter_condition_utils.R
 \name{eq_constraints}
 \alias{eq_constraints}
-\title{Compare two genomic constraints, treating NULL as the full genome}
+\title{Compare two genomic constraints, treating NULL as a full region set}
 \usage{
 eq_constraints(left, right)
 }
 \arguments{
-\item{left, right}{A region_set object, or NULL for the full genome}
+\item{left, right}{A region_set, or NULL for a full region set}
 }
 \value{
 Logical indicating whether both constraints cover the same positions
 }
 \description{
-An absent constraint and an explicit full-genome set cover the same
+An absent constraint and an explicit full region set select the same
 positions, so they compare equal.
 }
 \keyword{internal}

@@ -15,7 +15,7 @@ Logical scalar.
 \description{
 Returns TRUE iff the head of the expression is one of the regex
 filter conditions (`grepl_filter_condition`, `like_filter_condition`).
-Used to short-circuit genomic-region extraction so a regex on `chr`
+Used to short-circuit region set extraction so a regex on `chr`
 or `pos` falls through to awk instead of being treated as a tabix
 range. Currently only called on post-substitution quosures and raw
 calls; other inputs are a programmer error and raise.

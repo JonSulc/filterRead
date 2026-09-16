@@ -13,7 +13,7 @@
 region_set containing only overlapping portions
 }
 \description{
-Finds overlapping portions between two sets of genomic regions.
+Finds the positions two region sets both select.
 Uses data.table::foverlaps for efficient overlap detection.
 }
 \details{

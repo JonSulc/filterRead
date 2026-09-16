@@ -128,7 +128,7 @@ as_region_set.in_filter_condition <- function(
   # `%in%` always has the column on the left: in_filter_condition(col, set).
   # Each member becomes a region: a chromosome for `chr`, a single-position
   # interval for `pos`. Combined with the rest of the condition through the
-  # usual genomic-regions set operations.
+  # usual region set operations.
   if (x[[2]] == as.symbol("chr")) {
     return(new_region_set(chr = x[[3]], build = build))
   }

@@ -5,7 +5,8 @@
 #
 # - Represents regions as data.table with chr, start, end columns
 # - Supports set operations: union (|/+), intersection (&)
-# - Handles full-genome queries (an NA chr or end means "any")
+# - Leaves an axis unconstrained: `chr` NA is every chromosome, `end` NA
+#   reaches the end of the chromosome, a `start` of 1 binds nothing
 # - Liftover between genome builds (e.g., b37 -> b38)
 # - Reduces regions to a canonical form on construction
 #
@@ -14,13 +15,13 @@
 # - Generate tabix queries for RSID-indexed files
 # - Combine multiple filtering regions efficiently
 
-#' Construct genomic regions for positional filtering
+#' Construct a region set for positional filtering
 #'
-#' Builds a `region_set` object — a set of `(chr, start, end)`
-#' coordinate ranges in one reference build — from parallel vectors. Pass
-#' the result as a `[` subscript to a `file_interface` to filter its rows by
-#' position: `finterface[region_set(...)]`. To build regions from an
-#' existing `data.table` of `chr`/`start`/`end`, use [as_region_set()].
+#' Builds a `region_set` object — the regions a read is narrowed to, in one
+#' reference build — from parallel vectors. Pass the result as a `[`
+#' subscript to a `file_interface` to filter its rows by position:
+#' `finterface[region_set(...)]`. To build regions from an existing
+#' `data.table` of `chr`/`start`/`end`, use [as_region_set()].
 #'
 #' @param chr Character vector of chromosome names (NA = any chromosome).
 #' @param start Integer vector of start positions.
@@ -91,10 +92,9 @@ region_set <- function(
 #'   expands the NA side to the explicit chromosomes from the other
 #'   (see [expand_na_chr()]); when both have `chr = NA` the NA is kept and
 #'   the position constraints are intersected directly.
-#' - Union (`+`/`|`) combines the rows and reduces them to the canonical
+#' - Union (`+`/`|`) combines the rules and reduces them to the canonical
 #'   form when `canonicalize`: contiguous or overlapping ranges merge,
-#'   and a region with `chr = NA` absorbs the coverage of the regions it
-#'   spans.
+#'   and a general rule absorbs the rules it spans.
 #' @keywords internal
 new_region_set <- function(
   chr = character(),
@@ -200,12 +200,12 @@ empty_region_set <- function(
   new_region_set(build = build)
 }
 
-#' Create full-genome region_set (all positions)
+#' Build a full region set
 #'
 #' Returns a region_set with NA for chr and end, and start = 1.
 #'
 #' @param build Genome build identifier
-#' @return region_set representing the entire genome
+#' @return A full region_set: every position of every chromosome
 #' @keywords internal
 full_region_set <- function(
   build = NULL

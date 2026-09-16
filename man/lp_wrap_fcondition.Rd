@@ -14,7 +14,7 @@ New filter_condition wrapped in lp_filter_condition
 }
 \description{
 Creates a new lp_filter_condition wrapping an existing filter_condition.
-Preserves the build, and takes over the wrapped condition's genomic
-regions so the wrapper alone records them.
+Preserves the build, and takes over the wrapped condition's region set so
+the wrapper alone records it.
 }
 \keyword{internal}

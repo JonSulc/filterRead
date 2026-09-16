@@ -2,7 +2,7 @@
 % Please edit documentation in R/region_set_class.R
 \name{full_region_set}
 \alias{full_region_set}
-\title{Create full-genome region_set (all positions)}
+\title{Build a full region set}
 \usage{
 full_region_set(build = NULL)
 }
@@ -10,7 +10,7 @@ full_region_set(build = NULL)
 \item{build}{Genome build identifier}
 }
 \value{
-region_set representing the entire genome
+A full region_set: every position of every chromosome
 }
 \description{
 Returns a region_set with NA for chr and end, and start = 1.

@@ -9,7 +9,7 @@ genomic_constraint(fcondition) <- value
 \arguments{
 \item{fcondition}{A filter_condition object}
 
-\item{value}{A region_set object, or NULL for the full genome}
+\item{value}{A region_set, or NULL for a full region set}
 }
 \value{
 The modified filter_condition

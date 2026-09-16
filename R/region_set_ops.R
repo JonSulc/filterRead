@@ -150,8 +150,7 @@ liftover.region_set <- function(
 
 #' Union of region_set
 #'
-#' Combines two sets of genomic regions, merging overlapping/contiguous
-#' regions.
+#' Combines two region sets, merging the rules that overlap or abut.
 #'
 #' @param e1,e2 region_set object
 #' @return Combined region_set with merged overlaps
@@ -352,7 +351,7 @@ rbind.region_set <- function(
 
 #' Intersection of region_set
 #'
-#' Finds overlapping portions between two sets of genomic regions.
+#' Finds the positions two region sets both select.
 #' Uses data.table::foverlaps for efficient overlap detection.
 #'
 #' Handles special cases:
@@ -535,8 +534,8 @@ replace_sentinel_with_na <- function(
 #' same set of genomic positions.
 #'
 #' @param regions A region_set object
-#' @return A region_set object with the same coverage as `regions`
-#'   but with the minimum number of rows
+#' @return A region_set selecting the same positions as `regions`, with the
+#'   fewest rows
 #' @export
 #' @examples
 #' \dontrun{

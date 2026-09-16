@@ -3,20 +3,20 @@
 \name{and_constraints}
 \alias{and_constraints}
 \alias{or_constraints}
-\title{Combine genomic constraints, treating NULL as the full genome}
+\title{Combine genomic constraints, treating NULL as a full region set}
 \usage{
 and_constraints(left, right)
 
 or_constraints(left, right)
 }
 \arguments{
-\item{left, right}{A region_set object, or NULL for the full genome}
+\item{left, right}{A region_set, or NULL for a full region set}
 }
 \value{
 A region_set object, or NULL: for `and_constraints()` when
   neither side constrains, for `or_constraints()` when either side does not.
 }
 \description{
-Combine genomic constraints, treating NULL as the full genome
+Combine genomic constraints, treating NULL as a full region set
 }
 \keyword{internal}

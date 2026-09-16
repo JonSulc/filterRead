@@ -1167,7 +1167,7 @@ test_that("A caller's separator reaches both read paths", {
   expect_equal(head(finterface, 1, sep = ","), head(finterface, 1))
 })
 
-test_that("A condition covering the whole genome reads every row", {
+test_that("A condition whose region set is full reads every record", {
   fixture <- dummy_fixed_summary_stats()
   finterface <- local_file_interface(dt = fixture)
   expect_equal(

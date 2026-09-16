@@ -54,10 +54,9 @@ Set operations propagate this:
   expands the NA side to the explicit chromosomes from the other
   (see [expand_na_chr()]); when both have `chr = NA` the NA is kept and
   the position constraints are intersected directly.
-- Union (`+`/`|`) combines the rows and reduces them to the canonical
+- Union (`+`/`|`) combines the rules and reduces them to the canonical
   form when `canonicalize`: contiguous or overlapping ranges merge,
-  and a region with `chr = NA` absorbs the coverage of the regions it
-  spans.
+  and a general rule absorbs the rules it spans.
 }
 
 \keyword{internal}

@@ -9,7 +9,7 @@
 #' Check if file requires RSID-based matching
 #'
 #' Determines if file has RSID column but lacks chr/pos columns,
-#' requiring dbSNP lookup for genomic region filtering.
+#' requiring dbSNP lookup for positional filtering.
 #'
 #' @param finterface File interface object
 #' @param force If TRUE, recalculate even if cached
@@ -437,7 +437,7 @@ tabix_colnames <- c(
 
 #' Build a tabix process substitution command
 #'
-#' Creates a bash process substitution that queries tabix for genomic regions.
+#' Creates a bash process substitution that queries tabix for the regions.
 #'
 #' @param chr Chromosome(s)
 #' @param start Start position(s)

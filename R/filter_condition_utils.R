@@ -31,7 +31,7 @@ is_and_block <- function(
 
 #' Check if non-genomic parts of a condition form an AND block
 #'
-#' Similar to is_and_block but ignores genomic regions, only checking
+#' Similar to is_and_block but ignores the region set, only checking
 #' the structure of non-genomic conditions.
 #'
 #' @param fcondition A filter_condition object
@@ -57,13 +57,12 @@ non_genomic_is_and_block <- function(
 
 #' Check whether a genomic constraint restricts nothing
 #'
-#' A constraint restricts nothing when it is absent or covers the full genome.
+#' A constraint restricts nothing when it is absent or is a full region set.
 #' Either way it narrows no read.
 #'
-#' @param genomic_constraint A region_set object, or NULL for the full
-#'   genome
+#' @param genomic_constraint A region_set, or NULL for a full region set
 #' @return Logical indicating whether the constraint narrows nothing
-#' @seealso [is_overconstrained()] for the opposite pole of coverage.
+#' @seealso [is_overconstrained()], the opposite pole.
 #' @keywords internal
 is_unconstrained <- function(
   genomic_constraint
@@ -76,10 +75,9 @@ is_unconstrained <- function(
 #' A constraint admits no position when it is present and includes no genomic
 #' position.
 #'
-#' @param genomic_constraint A region_set object, or NULL for the full
-#'   genome
+#' @param genomic_constraint A region_set, or NULL for a full region set
 #' @return Logical indicating whether the constraint admits no position
-#' @seealso [is_unconstrained()] for the opposite pole of coverage.
+#' @seealso [is_unconstrained()], the opposite pole.
 #' @keywords internal
 is_overconstrained <- function(
   genomic_constraint
@@ -87,9 +85,9 @@ is_overconstrained <- function(
   !is.null(genomic_constraint) && is_empty_region_set(genomic_constraint)
 }
 
-#' Combine genomic constraints, treating NULL as the full genome
+#' Combine genomic constraints, treating NULL as a full region set
 #'
-#' @param left,right A region_set object, or NULL for the full genome
+#' @param left,right A region_set, or NULL for a full region set
 #' @return A region_set object, or NULL: for `and_constraints()` when
 #'   neither side constrains, for `or_constraints()` when either side does not.
 #' @keywords internal
@@ -118,12 +116,12 @@ or_constraints <- function(
   left | right
 }
 
-#' Compare two genomic constraints, treating NULL as the full genome
+#' Compare two genomic constraints, treating NULL as a full region set
 #'
-#' An absent constraint and an explicit full-genome set cover the same
+#' An absent constraint and an explicit full region set select the same
 #' positions, so they compare equal.
 #'
-#' @param left,right A region_set object, or NULL for the full genome
+#' @param left,right A region_set, or NULL for a full region set
 #' @return Logical indicating whether both constraints cover the same positions
 #' @keywords internal
 eq_constraints <- function(
@@ -159,7 +157,7 @@ genomic_constraint <- function(
 #' Set the genomic constraint of a filter condition
 #'
 #' @param fcondition A filter_condition object
-#' @param value A region_set object, or NULL for the full genome
+#' @param value A region_set, or NULL for a full region set
 #' @return The modified filter_condition
 #' @keywords internal
 `genomic_constraint<-` <- function(

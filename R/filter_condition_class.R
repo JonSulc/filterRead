@@ -38,7 +38,7 @@ regex_fc_names <- c("grepl_filter_condition", "like_filter_condition")
 #'
 #' Returns TRUE iff the head of the expression is one of the regex
 #' filter conditions (`grepl_filter_condition`, `like_filter_condition`).
-#' Used to short-circuit genomic-region extraction so a regex on `chr`
+#' Used to short-circuit region set extraction so a regex on `chr`
 #' or `pos` falls through to awk instead of being treated as a tabix
 #' range. Currently only called on post-substitution quosures and raw
 #' calls; other inputs are a programmer error and raise.
@@ -65,8 +65,8 @@ is_regex_filter_condition <- function(fcondition) {
 #' carries no expression, so its genomic constraint is the whole of what it
 #' narrows.
 #'
-#' @param genomic_constraint Genomic regions the condition selects within, or
-#'   NULL for the full genome
+#' @param genomic_constraint The region set the condition selects within, or
+#'   NULL for a full region set
 #' @param build Optional genome build (b36, b37, b38)
 #' @param context Environment carrying $finterface and $env for the condition
 #' @return A filter_condition object with no expression

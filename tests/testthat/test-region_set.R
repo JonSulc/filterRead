@@ -884,7 +884,7 @@ test_that("source_regions reports the chromosomes a comparison denotes", {
 })
 
 test_that(
-  "source_regions falls back to the full region set off the chromosome range",
+  "source_regions falls back to a full region set off the chromosome range",
   {
     finterface <- local_summary_stats_interface()
     for (fcall in list(rlang::quo(chr < 100), rlang::quo(100 > chr))) {
@@ -906,7 +906,7 @@ test_that("empty_region_set creates valid empty regions", {
   expect_equal(names(empty), c("chr", "start", "end"))
 })
 
-test_that("full_region_set builds the full region set", {
+test_that("full_region_set builds a full region set", {
   full <- full_region_set(build = "b38")
   expect_true(is_region_set(full))
   expect_equal(nrow(full), 1)
@@ -1447,17 +1447,20 @@ test_that("intersection of a direct and a complemented set is commutative", {
 
 # expand_region_set behavior tests --------------------------------------
 
-test_that("a complement-stored set with no rows expands to the whole genome", {
-  empty_neg <- empty_region_set(build = "b38")
-  set_complement(empty_neg, TRUE)
+test_that(
+  "a complement-stored set with no rules expands to a full region set",
+  {
+    empty_neg <- empty_region_set(build = "b38")
+    set_complement(empty_neg, TRUE)
 
-  expanded <- expand_region_set(empty_neg)
-  expect_false(is_complement(expanded))
-  expect_equal(nrow(expanded), 1)
-  expect_true(is.na(expanded$chr))
-  expect_equal(expanded$start, 1L)
-  expect_true(is.na(expanded$end))
-})
+    expanded <- expand_region_set(empty_neg)
+    expect_false(is_complement(expanded))
+    expect_equal(nrow(expanded), 1)
+    expect_true(is.na(expanded$chr))
+    expect_equal(expanded$start, 1L)
+    expect_true(is.na(expanded$end))
+  }
+)
 
 test_that("a single complement-stored row expands to its complement", {
   # !chr1:100-200 should expand to:
@@ -1534,7 +1537,7 @@ test_that("negation of empty region", {
   expect_equal(build(negated), "b38")
 })
 
-test_that("negating the full region set gives the empty one", {
+test_that("negating a full region set gives an empty one", {
   full <- full_region_set(build = "b38")
   negated <- !full
 
@@ -1826,7 +1829,7 @@ test_that("compact handles empty regions", {
   expect_equal(nrow(compacted), 0)
 })
 
-test_that("compact keeps the full region set full", {
+test_that("compact keeps a full region set full", {
   full <- full_region_set(build = "b38")
 
   compacted <- compact(full)
@@ -2096,7 +2099,7 @@ test_that("a region on every chromosome trims one it overlaps", {
   )
 })
 
-test_that("compact keeps the absorbed coverage", {
+test_that("compact keeps a set full after it absorbs a rule", {
   expect_true(
     is_full_region_set(
       compact(
@@ -2138,7 +2141,7 @@ test_that("construction leaves the rows canonical", {
 
 # Complement of a general rule -----------------------------------------------
 
-test_that("the complement of the whole genome matches nothing", {
+test_that("the complement of a full region set matches nothing", {
   expect_equal(
     nrow(expand_region_set(!full_region_set(build = "b38"))),
     0L
@@ -2171,40 +2174,43 @@ test_that("complementing an open-chromosome range enumerates nothing", {
   )
 })
 
-test_that("the empty set equals the complement of the whole genome", {
+test_that("an empty region set equals the complement of a full one", {
   expect_true(
     empty_region_set(build = "b38") ==
       !full_region_set(build = "b38")
   )
 })
 
-test_that("the coverage predicates read the complement bit", {
-  full <- full_region_set(build = "b38")
-  empty <- empty_region_set(build = "b38")
-  chr1 <- new_region_set(chr = 1, build = "b38")
-  blank_chr <- new_region_set(chr = "", build = "b38")
+test_that(
+  "is_full_region_set and is_empty_region_set read the complement bit",
+  {
+    full <- full_region_set(build = "b38")
+    empty <- empty_region_set(build = "b38")
+    chr1 <- new_region_set(chr = 1, build = "b38")
+    blank_chr <- new_region_set(chr = "", build = "b38")
 
-  expect_true(is_full_region_set(full))
-  expect_false(is_empty_region_set(full))
+    expect_true(is_full_region_set(full))
+    expect_false(is_empty_region_set(full))
 
-  expect_false(is_full_region_set(empty))
-  expect_true(is_empty_region_set(empty))
+    expect_false(is_full_region_set(empty))
+    expect_true(is_empty_region_set(empty))
 
-  expect_false(is_full_region_set(!full))
-  expect_true(is_empty_region_set(!full))
+    expect_false(is_full_region_set(!full))
+    expect_true(is_empty_region_set(!full))
 
-  expect_true(is_full_region_set(!empty))
-  expect_false(is_empty_region_set(!empty))
+    expect_true(is_full_region_set(!empty))
+    expect_false(is_empty_region_set(!empty))
 
-  expect_false(is_full_region_set(chr1))
-  expect_false(is_empty_region_set(chr1))
+    expect_false(is_full_region_set(chr1))
+    expect_false(is_empty_region_set(chr1))
 
-  expect_false(is_full_region_set(!chr1))
-  expect_false(is_empty_region_set(!chr1))
+    expect_false(is_full_region_set(!chr1))
+    expect_false(is_empty_region_set(!chr1))
 
-  expect_false(is_full_region_set(blank_chr))
-  expect_false(is_empty_region_set(blank_chr))
-})
+    expect_false(is_full_region_set(blank_chr))
+    expect_false(is_empty_region_set(blank_chr))
+  }
+)
 
 test_that("uniting complementary halves of the genome covers everything", {
   result <- new_region_set(end = 200, build = "b38") |
@@ -2248,7 +2254,7 @@ test_that("source_regions returns the whole condition's regions", {
 })
 
 test_that(
-  "source_regions reports the full region set when nothing is recorded",
+  "source_regions reports a full region set when nothing is recorded",
   {
     fcondition <- as_filter_condition(rlang::quo(chr == 1))
     expect_null(genomic_constraint(fcondition))

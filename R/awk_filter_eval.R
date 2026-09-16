@@ -2,12 +2,12 @@
 # Filter Condition Evaluation (R expression -> awk condition)
 # =============================================================================
 # These functions convert R filter_condition objects into awk condition strings.
-# They handle both regular conditions (pval < 5e-8) and genomic region filters.
+# They handle both regular conditions (pval < 5e-8) and region set filters.
 
-#' Evaluate filter condition with genomic regions to awk code
+#' Evaluate filter condition with its region set to awk code
 #'
-#' Main entry point for converting a filter_condition (with embedded genomic
-#' regions) to awk condition strings. Handles both composite conditions
+#' Main entry point for converting a filter_condition (with an embedded
+#' region set) to awk condition strings. Handles both composite conditions
 #' (AND/OR trees) and atomic conditions.
 #'
 #' @param fcondition A filter_condition object (call-like structure)
@@ -58,7 +58,7 @@ eval_fcondition_w_regions <- function(
     fcondition,
     column_indices = column_indices
   )
-  # Then add genomic region conditions (chr == X && Y <= pos && pos <= Z)
+  # Then add the rule conditions (chr == X && Y <= pos && pos <= Z)
   awk_conditions$condition <- c(
     awk_conditions$condition,
     eval_region_set_from_fc(
@@ -84,7 +84,7 @@ eval_fcondition_w_regions <- function(
 
 #' Evaluate non-genomic filter conditions to awk
 #'
-#' Converts filter_condition expressions (excluding genomic regions) to awk
+#' Converts filter_condition expressions (excluding the region set) to awk
 #' conditions by evaluating them in an environment where column names resolve
 #' to awk column references.
 #'
@@ -143,8 +143,8 @@ eval_region_set_from_fc <- function(
     return()
   }
   regions <- post_process(gconstraint, finterface = finterface)
-  # A set no row can satisfy matches nothing on an RSID-indexed file as on
-  # any other, so coverage is decided before the RSID bail below.
+  # An empty region set matches nothing on an RSID-indexed file as on any
+  # other, so that is checked before the RSID bail below.
   if (is_empty_region_set(regions)) {
     return("0")
   }

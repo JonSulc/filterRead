@@ -7,8 +7,7 @@
 is_overconstrained(genomic_constraint)
 }
 \arguments{
-\item{genomic_constraint}{A region_set object, or NULL for the full
-genome}
+\item{genomic_constraint}{A region_set, or NULL for a full region set}
 }
 \value{
 Logical indicating whether the constraint admits no position
@@ -18,6 +17,6 @@ A constraint admits no position when it is present and includes no genomic
 position.
 }
 \seealso{
-[is_unconstrained()] for the opposite pole of coverage.
+[is_unconstrained()], the opposite pole.
 }
 \keyword{internal}

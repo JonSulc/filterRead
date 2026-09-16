@@ -13,7 +13,7 @@ non_genomic_is_and_block(fcondition)
 Logical indicating whether non-genomic conditions are an AND block
 }
 \description{
-Similar to is_and_block but ignores genomic regions, only checking
+Similar to is_and_block but ignores the region set, only checking
 the structure of non-genomic conditions.
 }
 \keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/awk_filter_eval.R
 \name{eval_fcondition_w_regions}
 \alias{eval_fcondition_w_regions}
-\title{Evaluate filter condition with genomic regions to awk code}
+\title{Evaluate filter condition with its region set to awk code}
 \usage{
 eval_fcondition_w_regions(
   fcondition,
@@ -24,8 +24,8 @@ List with components:
   - additional_files: temp files that need to be passed to awk
 }
 \description{
-Main entry point for converting a filter_condition (with embedded genomic
-regions) to awk condition strings. Handles both composite conditions
+Main entry point for converting a filter_condition (with an embedded
+region set) to awk condition strings. Handles both composite conditions
 (AND/OR trees) and atomic conditions.
 }
 \keyword{internal}

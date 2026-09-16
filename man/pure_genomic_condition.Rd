@@ -7,8 +7,8 @@
 pure_genomic_condition(genomic_constraint, build = NULL, context = NULL)
 }
 \arguments{
-\item{genomic_constraint}{Genomic regions the condition selects within, or
-NULL for the full genome}
+\item{genomic_constraint}{The region set the condition selects within, or
+NULL for a full region set}
 
 \item{build}{Optional genome build (b36, b37, b38)}
 

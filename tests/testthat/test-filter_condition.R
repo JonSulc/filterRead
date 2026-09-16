@@ -300,7 +300,7 @@ test_that("And-block detection works", {
       finterface
     ))
   )
-  # The position operands cover the whole genome, absorbing chr1
+  # The position operands give a full region set, absorbing chr1
   expect_true(
     is_and_block(new_filter_condition(
       rlang::quo(chr == 1 | 123 < pos | pos < 456),
@@ -613,7 +613,7 @@ test_that("AND code block handling works", {
   )
 })
 
-test_that("Getting genomic regions works", {
+test_that("genomic_constraint returns the condition's region set", {
   finterface <- local_summary_stats_interface()
   expect_equal(
     new_filter_condition(
@@ -1686,7 +1686,7 @@ test_that("has_position_condition detects a constraint on either bound", {
   expect_true(detects(rlang::quo(ranged)))
 })
 
-test_that("constraint combinators treat NULL as the full region set", {
+test_that("constraint combinators treat NULL as a full region set", {
   regions <- new_region_set(chr = 1, build = "b38")
 
   expect_equal(and_constraints(NULL, regions), regions)
@@ -1708,11 +1708,14 @@ test_that("a condition that restricts nothing records no constraint", {
   expect_true(is_full_region_set(source_regions(fcondition)))
 })
 
-test_that("is_unconstrained holds for an absent or full-genome constraint", {
-  expect_true(is_unconstrained(NULL))
-  expect_true(is_unconstrained(full_region_set(build = "b38")))
-  expect_false(is_unconstrained(new_region_set(chr = 1, build = "b38")))
-})
+test_that(
+  "is_unconstrained holds for an absent constraint and for a full region set",
+  {
+    expect_true(is_unconstrained(NULL))
+    expect_true(is_unconstrained(full_region_set(build = "b38")))
+    expect_false(is_unconstrained(new_region_set(chr = 1, build = "b38")))
+  }
+)
 
 test_that("is_overconstrained holds only for an empty region set constraint", {
   expect_false(is_overconstrained(NULL))
@@ -1721,7 +1724,7 @@ test_that("is_overconstrained holds only for an empty region set constraint", {
   expect_false(is_overconstrained(new_region_set(chr = 1, build = "b38")))
 })
 
-test_that("eq_constraints reads an absent constraint as the full region set", {
+test_that("eq_constraints reads an absent constraint as a full region set", {
   full <- full_region_set(build = "b38")
   constrained <- new_region_set(chr = 1, build = "b38")
 

@@ -7,17 +7,16 @@
 is_unconstrained(genomic_constraint)
 }
 \arguments{
-\item{genomic_constraint}{A region_set object, or NULL for the full
-genome}
+\item{genomic_constraint}{A region_set, or NULL for a full region set}
 }
 \value{
 Logical indicating whether the constraint narrows nothing
 }
 \description{
-A constraint restricts nothing when it is absent or covers the full genome.
+A constraint restricts nothing when it is absent or is a full region set.
 Either way it narrows no read.
 }
 \seealso{
-[is_overconstrained()] for the opposite pole of coverage.
+[is_overconstrained()], the opposite pole.
 }
 \keyword{internal}

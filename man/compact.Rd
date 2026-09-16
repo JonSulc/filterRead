@@ -10,8 +10,8 @@ compact(regions)
 \item{regions}{A region_set object}
 }
 \value{
-A region_set object with the same coverage as `regions`
-  but with the minimum number of rows
+A region_set selecting the same positions as `regions`, with the
+  fewest rows
 }
 \description{
 Compares the input against both stored forms — its rows expanded, and the

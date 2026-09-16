@@ -171,7 +171,7 @@ get_column_indices <- function(
     setNames(bash_index, name)
   ] |>
     as.list()
-  # RSID-indexed files need special OR handling for genomic region queries
+  # RSID-indexed files need special OR handling for region set queries
   if (needs_rsid_matching(finterface)) {
     column_indices <- c(
       column_indices,

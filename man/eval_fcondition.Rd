@@ -21,7 +21,7 @@ eval_fcondition(
 List with condition string and optional variable_arrays/files
 }
 \description{
-Converts filter_condition expressions (excluding genomic regions) to awk
+Converts filter_condition expressions (excluding the region set) to awk
 conditions by evaluating them in an environment where column names resolve
 to awk column references.
 }

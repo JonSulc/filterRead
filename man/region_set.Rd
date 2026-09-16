@@ -2,7 +2,7 @@
 % Please edit documentation in R/region_set_class.R
 \name{region_set}
 \alias{region_set}
-\title{Construct genomic regions for positional filtering}
+\title{Construct a region set for positional filtering}
 \usage{
 region_set(
   chr = character(),
@@ -38,11 +38,11 @@ form: sorted and pairwise disjoint.}
 A `region_set` object.
 }
 \description{
-Builds a `region_set` object — a set of `(chr, start, end)`
-coordinate ranges in one reference build — from parallel vectors. Pass
-the result as a `[` subscript to a `file_interface` to filter its rows by
-position: `finterface[region_set(...)]`. To build regions from an
-existing `data.table` of `chr`/`start`/`end`, use [as_region_set()].
+Builds a `region_set` object — the regions a read is narrowed to, in one
+reference build — from parallel vectors. Pass the result as a `[`
+subscript to a `file_interface` to filter its rows by position:
+`finterface[region_set(...)]`. To build regions from an existing
+`data.table` of `chr`/`start`/`end`, use [as_region_set()].
 }
 \examples{
 region_set(

@@ -19,6 +19,6 @@ get_tabix_process_substitution(chr, start, end, dbsnp_filename)
 Character string with process substitution command
 }
 \description{
-Creates a bash process substitution that queries tabix for genomic regions.
+Creates a bash process substitution that queries tabix for the regions.
 }
 \keyword{internal}

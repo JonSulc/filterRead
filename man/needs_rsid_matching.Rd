@@ -16,6 +16,6 @@ TRUE if file needs RSID matching for genomic queries
 }
 \description{
 Determines if file has RSID column but lacks chr/pos columns,
-requiring dbSNP lookup for genomic region filtering.
+requiring dbSNP lookup for positional filtering.
 }
 \keyword{internal}

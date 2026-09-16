@@ -73,8 +73,8 @@ unconstrained condition is the limiting case, narrowing by nothing at all.
 _Avoid_: empty condition (empty of expression, never of meaning)
 
 **Unconstrained condition**:
-A condition that selects every record: it carries no expression, and its genomic
-constraint is the full region set. The limiting case of a pure genomic
+A condition that selects every record: it carries no expression, and its
+genomic constraint is a full region set. The limiting case of a pure genomic
 condition, and what a read given no condition carries.
 _Avoid_: empty condition, null condition, no condition
 
@@ -147,8 +147,8 @@ _Avoid_: missing value (the end is not missing, it is open), blank
 
 **Full region set / empty region set**:
 The two extremes — every position of every chromosome, or no position at all.
-Each has a spelling in both stored forms, and the full region set has a
-third — a condition that records no genomic constraint at all.
+Each has a spelling in both stored forms, and a full region set has a third — a
+condition that records no genomic constraint at all.
 _Avoid_: full genome, empty genome (what is full or empty is the set, not the
 genome), empty regions, no regions
 
@@ -243,7 +243,7 @@ that carry rules of their own, which state how they differ rather than what
 replaces the general rules.
 _Avoid_: default rule, global rule (both suggest the general rules stop where
 a chromosome is named), wildcard (`str()` prints `*` for the chromosome, but a
-general rule states coverage that specific rules adjust, where a wildcard only
+general rule states what specific rules adjust, where a wildcard only
 matches), generic (an S3 generic in R)
 
 **Chromosome-specific rule**:
