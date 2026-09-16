@@ -154,7 +154,7 @@ validate_region_set <- function(
   missing_cols <- setdiff(c("chr", "start", "end"), names(regions))
   if (length(missing_cols) != 0L) {
     stop(
-      "Genomic regions require columns `chr`, `start`, and `end`; ",
+      "A region set requires columns `chr`, `start`, and `end`; ",
       "missing: ", paste(missing_cols, collapse = ", "), ".\n",
       "To build regions from vectors, use `region_set()`."
     )

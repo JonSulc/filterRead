@@ -76,7 +76,7 @@ test_that(
   }
 )
 
-test_that("best-source liftover recovers rows NA in the current build via a newer build", {
+test_that("best-source liftover recovers variants NA in the current build", {
   chains <- list(
     # covers variant A (b37 900)
     b37_b36 = make_fwd_chain(800L, 1000L, 100L, "b37", "b36"),
@@ -135,7 +135,7 @@ test_that("select_source_build picks the defining build then falls back", {
   )
 })
 
-test_that("source = 'current' does not recover NA-at-current rows", {
+test_that("source = 'current' does not recover NA-at-current variants", {
   testthat::local_mocked_bindings(
     get_shared_chain = function(from, to) make_fwd_chain(800L, 1000L, 100L, "b37", "b36")
   )
@@ -224,7 +224,7 @@ test_that("source selects the build to lift from (best / current / named)", {
   expect_equal(liftover(v, "b36", source = "current")$pos, 4000L)  # current is b38
 })
 
-test_that("a chain-gap row is not retried from another build (source fixed by coords)", {
+test_that("a chain-gap variant is not retried from another recorded build", {
   # The variant's source build is b37, whose b36 chain gaps at its position.
   # b38 (also recorded) maps, so the NA result shows the source stays b37.
   chains <- list(

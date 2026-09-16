@@ -184,7 +184,7 @@ test_that("Parsing allele1, allele2, alt works", {
   )
 })
 
-test_that("An encoded column with no rows to verify is left packed", {
+test_that("An encoded column with no records to verify is left packed", {
   patterns <- summary_stats_standard_names_dt[!sapply(delimiter, is.na)]
 
   for (index in seq_len(nrow(patterns))) {

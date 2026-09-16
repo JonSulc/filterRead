@@ -147,7 +147,7 @@ validate_variant_id <- function(x, build = NULL, parsed = NULL) {
     bad <- embedded != build
     if (any(bad)) {
       problems <- c(problems, sprintf(
-        "build: row(s) %s embed %s, expected %s",
+        "build: variant(s) %s embed %s, expected %s",
         paste(which(parseable)[bad], collapse = ", "),
         paste(unique(embedded[bad]), collapse = "/"), build
       ))
@@ -161,7 +161,7 @@ validate_variant_id <- function(x, build = NULL, parsed = NULL) {
     bad <- parseable & present & x[[col]] != parsed[[col]]
     if (any(bad)) {
       problems <- c(problems, sprintf(
-        "%s: row(s) %s disagree with variant_id",
+        "%s: variant(s) %s disagree with variant_id",
         col, paste(which(bad), collapse = ", ")
       ))
     }

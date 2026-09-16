@@ -548,7 +548,7 @@ test_that("addition merges overlapping regions", {
   expect_equal(result$end, 400)
 })
 
-test_that("intersection handles multi-row region_set", {
+test_that("intersection handles a multi-rule region_set", {
   regions1 <- new_region_set(
     chr = c("chr1", "chr2"),
     start = c(123, 345),
@@ -1367,7 +1367,7 @@ test_that("union of a direct and a complemented set is commutative", {
 
 # Intersection with complement-stored regions tests --------------------------
 
-test_that("complemented & complemented combines rows and stays complemented", {
+test_that("complemented & complemented combines rules and stays complemented", {
   # !chr1:100-200 & !chr1:150-250 should be !(chr1:100-200 | chr1:150-250)
   # which is !(chr1:100-250) = !chr1:100-250
   neg1 <- new_region_set(
@@ -1397,7 +1397,7 @@ test_that("complemented & complemented combines rows and stays complemented", {
   )
 })
 
-test_that("direct & complemented subtracts the complemented rows", {
+test_that("direct & complemented subtracts the complemented rules", {
   # chr1:100-300 & !chr1:150-200
   # Should give chr1:100-149 and chr1:201-300
   direct <- new_region_set(
@@ -1462,7 +1462,7 @@ test_that(
   }
 )
 
-test_that("a single complement-stored row expands to its complement", {
+test_that("a single complement-stored rule expands to its complement", {
   # !chr1:100-200 should expand to:
   # - All other chromosomes (chr2-chr22)
   # - chr1:1-99
@@ -1580,7 +1580,7 @@ test_that("a single-position complement-stored region works", {
   expect_equal(chr1_rows$end[1], 99)
 })
 
-test_that("a multi-row complement-stored set expands correctly", {
+test_that("a multi-rule complement-stored set expands to its complement", {
   # !{chr1:100-200, chr2:300-400}
   # This is the intersection of !chr1:100-200 and !chr2:300-400
   complemented <- new_region_set(
@@ -1689,7 +1689,7 @@ test_that("`==` returns FALSE for different regions", {
   expect_false(region1 == region2)
 })
 
-test_that("`==` returns FALSE when row counts differ", {
+test_that("`==` returns FALSE when rule counts differ", {
   region1 <- new_region_set(
     chr = 1,
     start = 100,
@@ -1732,7 +1732,7 @@ test_that("`==` returns TRUE for two full region sets", {
   expect_true(full1 == full2)
 })
 
-test_that("`==` returns TRUE for multi-row identical regions", {
+test_that("`==` returns TRUE for identical multi-rule region sets", {
   region1 <- rbind(
     new_region_set(chr = 1, start = 100, end = 200, build = "b38"),
     new_region_set(chr = 2, start = 300, end = 400, build = "b38")
@@ -1792,7 +1792,7 @@ test_that("compact reduces adjacent regions via negation", {
   expect_true(nrow(compacted) <= nrow(adjacent))
 })
 
-test_that("compact prefers the complement-stored form when it has fewer rows", {
+test_that("compact prefers the complement-stored form with fewer rules", {
   # A region covering most chromosomes has fewer rules as a complement
   # E.g., "all of chr1-chr21" can be represented as "!chr22"
   many_chrs <- new_region_set(chr = 1:21)
@@ -1858,7 +1858,7 @@ test_that("region_set construction coerces coordinates to integer", {
 
 # subtract_rule_set tests -------------------------------------------------
 
-test_that("subtract_rule_set keeps a row outside everything it removes", {
+test_that("subtract_rule_set keeps a rule outside everything it removes", {
   expect_equal(
     subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 200L),
@@ -1878,7 +1878,7 @@ test_that("subtract_rule_set ignores a region to remove on another chr", {
   )
 })
 
-test_that("subtract_rule_set drops a row it removes entirely", {
+test_that("subtract_rule_set drops a rule it removes entirely", {
   expect_equal(
     subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 200L),
@@ -1892,7 +1892,7 @@ test_that("subtract_rule_set drops a row it removes entirely", {
   )
 })
 
-test_that("subtract_rule_set trims a row it removes part of", {
+test_that("subtract_rule_set trims a rule it removes part of", {
   expect_equal(
     subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 300L),
@@ -1909,7 +1909,7 @@ test_that("subtract_rule_set trims a row it removes part of", {
   )
 })
 
-test_that("subtract_rule_set splits a row it removes the middle of", {
+test_that("subtract_rule_set splits a rule it removes the middle of", {
   expect_equal(
     data.table::setorder(
       subtract_rule_set(
@@ -1926,7 +1926,7 @@ test_that("subtract_rule_set splits a row it removes the middle of", {
   )
 })
 
-test_that("subtract_rule_set applies an NA-chromosome row to every row", {
+test_that("subtract_rule_set applies a general rule to every rule", {
   expect_equal(
     data.table::setorder(
       subtract_rule_set(
@@ -1990,7 +1990,7 @@ test_that("subtract_rule_set removes each region in turn", {
   )
 })
 
-test_that("subtract_rule_set keeps every row when nothing is removed", {
+test_that("subtract_rule_set keeps every rule when nothing is removed", {
   expect_equal(
     subtract_rule_set(
       data.table::data.table(chr = "chr1", start = 100L, end = 200L),
@@ -2004,7 +2004,7 @@ test_that("subtract_rule_set keeps every row when nothing is removed", {
   )
 })
 
-test_that("subtract_rule_set returns no rows when given none", {
+test_that("subtract_rule_set returns no rules when given none", {
   expect_equal(
     subtract_rule_set(
       data.table::data.table(
@@ -2110,7 +2110,7 @@ test_that("compact keeps a set full after it absorbs a rule", {
   )
 })
 
-test_that("construction leaves the rows canonical", {
+test_that("construction leaves the rules canonical", {
   expect_canonical(new_region_set(
     chr = c(1, 1),
     start = c(1, 200),

@@ -48,7 +48,7 @@ test_that("positional filtering works with a redundant encoded column", {
   expect_equal(result$pos, 100L)
 })
 
-test_that("the demoted parent is read through raw with no per-row split", {
+test_that("the demoted parent is read through raw with no per-record split", {
   fi <- local_file_interface(dt = real_and_encoded_dt(), build = "b38")
   arrays <- get_awk_column_arrays(fi)
   expect_false(any(grepl("encoded1", unlist(arrays))))

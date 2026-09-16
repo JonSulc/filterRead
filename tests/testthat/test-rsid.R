@@ -575,7 +575,7 @@ test_that("A condition with no positions scans instead of indexing", {
   expect_true(nrow(finterface[pval < 0.5]) != 0L)
 })
 
-test_that("An unsatisfiable condition emits a command matching no rows", {
+test_that("An unsatisfiable condition emits a command matching no records", {
   finterface <- local_rsid_summary_stats_interface(build = "b38")
   command <- finterface[chr == 1 & chr == 2 & pval < 0.5,
     return_only_cmd = TRUE
@@ -587,7 +587,7 @@ test_that("An unsatisfiable condition emits a command matching no rows", {
   expect_equal(nrow(finterface[chr == 1 & chr == 2 & pval < 0.5]), 0)
 })
 
-test_that("an unsatisfiable OR of RSID-indexed regions matches no rows", {
+test_that("an unsatisfiable OR of RSID-indexed regions matches no records", {
   finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_false(
     grepl(

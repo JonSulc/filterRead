@@ -96,7 +96,7 @@ test_that("liftover produces a warning if no build is configured", {
   )
 })
 
-test_that("split regions return additional rows", {
+test_that("split regions return additional rules", {
   # There is a mismatch between assemblies at 19:7304090+ (b37)
   region_set_b37 <- new_region_set(
     chr = "chr19",

@@ -18,7 +18,7 @@ test_that("SNPAlleles encodes (ref, alt) virtual columns end-to-end", {
   expect_equal(result$alt, c("G", "T", "A", "C"))
 })
 
-test_that("filter on encoded ref/alt picks the right rows", {
+test_that("filter on encoded ref/alt picks the right records", {
   dt <- data.table::data.table(
     chr        = paste0("chr", 1:4),
     pos        = c(100L, 200L, 300L, 400L),

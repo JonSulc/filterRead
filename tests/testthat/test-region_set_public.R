@@ -7,7 +7,7 @@ test_that("region_set() errors on a data.table and points at as_region_set", {
   )
 })
 
-test_that("finterface[region_set(...)] returns in-range rows", {
+test_that("finterface[region_set(...)] returns in-range records", {
   fi <- local_file_interface(
     dt = data.table::data.table(
       chr  = c("chr1", "chr1", "chr2"),
@@ -128,7 +128,7 @@ test_that("as_region_set() reports each missing coordinate column", {
   )
 })
 
-test_that("a blank chromosome name selects rows whose chromosome is blank", {
+test_that("a blank chromosome name selects records whose chromosome is blank", {
   fi <- local_file_interface(
     dt = data.table::data.table(
       chr  = c("chr1", "", "chr2"),

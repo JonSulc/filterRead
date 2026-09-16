@@ -20,7 +20,7 @@ expect_canonical <- function(regions) {
   expect(
     identical(rows, sorted),
     sprintf(
-      "Rows are not sorted.\n  got:    %s\n  sorted: %s",
+      "Rules are not sorted.\n  got:    %s\n  sorted: %s",
       format_sentinel_regions(rows),
       format_sentinel_regions(sorted)
     )
@@ -35,7 +35,7 @@ expect_canonical <- function(regions) {
   expect(
     nrow(touching) == 0L,
     sprintf(
-      "Rows on %s overlap or abut: %s",
+      "Rules on %s overlap or abut: %s",
       touching$chr[1],
       format_sentinel_regions(rows[chr %in% touching$chr[1]])
     )

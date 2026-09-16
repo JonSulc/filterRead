@@ -44,7 +44,7 @@ test_that("add_variant_id and record_build accept a non-native build", {
   expect_true("chr_dahu42" %in% names(dt))
 })
 
-test_that("validate_variant_id passes consistent rows and skips NA cells", {
+test_that("validate_variant_id passes consistent variants and skips NA cells", {
   dt <- data.table::data.table(
     chr = c("chr5", NA), pos = c(49861645L, NA),
     ref = c("A", NA), alt = c("G", NA),

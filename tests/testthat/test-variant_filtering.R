@@ -104,7 +104,7 @@ test_that("variant_keyset matches a bare-chr file's representation", {
   expect_setequal(ks$keys, c("1_100_A_G", "1_100_G_A"))
 })
 
-test_that("variant_keyset drops incomplete rows with a warning", {
+test_that("variant_keyset drops incomplete variants with a warning", {
   fi <- local_file_interface(dt = ss_dt(), build = "b38")
   v <- new_variant_set(
     data.table::data.table(
@@ -171,7 +171,7 @@ test_that("finterface[v] with empty v matches nothing without awk", {
   expect_equal(nrow(fi[v]), 0)
 })
 
-test_that("finterface[v] with all rows dropped matches nothing, no awk", {
+test_that("finterface[v] with all variants dropped matches nothing, no awk", {
   # A non-empty v whose variants all carry an unmappable (NA) pos:
   # variant_keyset drops them all (with a warning), leaving an empty keyset
   # that takes the same empty-region_set short-circuit as the 0-row case.

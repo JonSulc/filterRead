@@ -510,7 +510,7 @@ test_that("Encoded columns are correctly parsed and loaded", {
   )
 })
 
-test_that("nlines parameter limits output rows", {
+test_that("nlines parameter limits output records", {
   finterface <- local_file_interface("data.csv")
 
   # nlines with no filtering
@@ -785,7 +785,7 @@ test_that("A no-match read on a populated file keeps fread's types", {
   )
 })
 
-test_that("A row of only character fields is read as data", {
+test_that("A record of only character fields is read as data", {
   dt <- data.table::data.table(
     chr = c("chr1", "chr2"),
     ref = c("A", "G"),
@@ -962,7 +962,7 @@ test_that("A prose comment sharing the header's comma count is a comment", {
   expect_equal(nrow(read_file_interface(finterface)), 1L)
 })
 
-test_that("A prefixed header above a comma-rich data row is a header", {
+test_that("A prefixed header above a comma-rich data record is a header", {
   local_file_with_comments(
     "comma_rich_info.vcf",
     comment_lines = character(0),
@@ -1075,7 +1075,7 @@ test_that("A metacharacter header's prefix is stripped from the names", {
   expect_equal(nrow(read_file_interface(finterface)), 2L)
 })
 
-test_that("A single comma-rich data row reads with the detected separator", {
+test_that("A single comma-rich data record reads with the detected separator", {
   local_file_with_comments(
     "single_comma_rich_row.vcf",
     comment_lines = character(0),
@@ -1129,7 +1129,7 @@ test_that("Every read path agrees on a comma-rich file", {
   expect_equal(nrow(finterface[5000 < pos]), 0L)
 })
 
-test_that("head does not split a row on a separator inside a field", {
+test_that("head does not split a record on a separator inside a field", {
   local_file_with_comments(
     "semicolon_field.tsv",
     comment_lines = character(0),

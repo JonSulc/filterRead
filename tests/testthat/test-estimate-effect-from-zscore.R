@@ -19,7 +19,7 @@ test_that("vectorized inputs of equal length produce vector outputs", {
   expect_equal(result$effect, zscore * expected_se, tolerance = 1e-8)
 })
 
-test_that("length-1 inputs apply to every row", {
+test_that("length-1 inputs apply to every element", {
   zscore <- c(2.5, -1.8, 0.5)
   result <- estimate_effect_from_zscore(zscore, af = 0.3, sample_size = 10000)
   expected_se <- 1 / sqrt((10000 + zscore^2) * 2 * 0.3 * 0.7)
@@ -38,7 +38,7 @@ test_that("mismatched non-1 lengths error", {
   )
 })
 
-test_that("NA in any input propagates to NA outputs for that row", {
+test_that("NA in any input propagates to NA outputs at the same index", {
   result <- estimate_effect_from_zscore(
     zscore      = c(2.5, NA, 0.5),
     af          = c(0.3, 0.1, NA),

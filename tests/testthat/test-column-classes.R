@@ -1,4 +1,4 @@
-test_that("EXTRA is read as character even when most rows are NA", {
+test_that("EXTRA is read as character even when it is NA on most records", {
   # REGENIE writes an optional EXTRA column that is NA on most
   # records. Without the class override, fread infers it as logical
   # and rbind across files breaks.
