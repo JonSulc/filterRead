@@ -7,18 +7,18 @@
 trim_specific_rules(regions)
 }
 \arguments{
-\item{regions}{A region_set object with merged rows}
+\item{regions}{A region_set object with merged rules}
 }
 \value{
 A region_set selecting the same positions, with pairwise
-  disjoint rows
+  disjoint rules
 }
 \description{
 A rule naming no chromosome applies on every chromosome, so a rule that
 names one keeps only the positions the general rules leave. The general
 rules are kept intact and the set selects the same positions; only its
 rules change. Trimming can split a chromosome-specific rule, so the result
-may carry more rows than the input.
+may carry more rules than the input.
 }
 \details{
 This is the minimality half of the canonical form: a chromosome carries a

@@ -28,7 +28,7 @@ filtering against a build-bearing file requires it (see
 
 \item{chr_prefix}{Prefix to ensure on chromosome names (default "chr").}
 
-\item{complement}{If TRUE the rows describe the coordinates the set
+\item{complement}{If TRUE the rules describe the coordinates the set
 excludes rather than those it covers.}
 
 \item{canonicalize}{If TRUE, reduce the regions to their canonical
@@ -43,7 +43,7 @@ names, and optionally reduces the regions to their canonical form.
 }
 \section{NA semantics}{
 
-A row's `chr` and `end` may be NA:
+A rule's `chr` and `end` may be NA:
 - `chr = NA` states a general rule, matching every chromosome.
 - `end = NA` is an open end, reaching the end of the chromosome.
 

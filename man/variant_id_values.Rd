@@ -15,7 +15,7 @@ variant_id_values(chr, pos, ref, alt, build)
 Character vector of ids.
 }
 \description{
-Shared formatter for the `chr_pos_ref_alt_<build>` id. Rows where any
+Shared formatter for the `chr_pos_ref_alt_<build>` id. Variants where any
 component (`chr`, `pos`, `ref`, `alt`, `build`) is NA get `NA`.
 }
 \keyword{internal}

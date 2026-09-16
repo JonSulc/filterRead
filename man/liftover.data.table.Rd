@@ -27,8 +27,8 @@ accepted by [normalize_build()]).}
 \item{from}{Source build. Defaults to `build(x)`. Pass explicitly to
 override or when `x` carries no `build` attribute.}
 
-\item{drop_unlifted}{If TRUE (default), rows whose coordinates do
-not lift (e.g. fall in a chain gap) are dropped. If FALSE, those
+\item{drop_unlifted}{If TRUE (default), input rows whose coordinates
+do not lift (e.g. fall in a chain gap) are dropped. If FALSE, those
 rows appear with `NA` for `chr` and the coordinate columns.}
 
 \item{multi_match}{How to resolve source positions that overlap more

@@ -16,7 +16,7 @@ A zero-row data.table with the query's columns.
 }
 \description{
 Takes the file's own columns from `head(finterface, 0)`, which reads
-a real row so `fread` infers their types, and adds the columns a
+a real record so `fread` infers their types, and adds the columns a
 positional query on an rsid-indexed file draws from the tabix index.
 }
 \keyword{internal}

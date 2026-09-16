@@ -12,10 +12,10 @@ set_complement(regions, value)
 \arguments{
 \item{regions}{A region_set object}
 
-\item{value}{TRUE if the rows are stored as the set's complement}
+\item{value}{TRUE if the rules are stored as the set's complement}
 }
 \value{
-`is_complement()` returns whether the rows are stored as the set's
+`is_complement()` returns whether the rules are stored as the set's
   complement; `set_complement()` returns `regions`, invisibly.
 }
 \description{

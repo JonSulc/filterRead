@@ -10,7 +10,7 @@ empty_region_set(build = NULL)
 \item{build}{Genome build identifier}
 }
 \value{
-Empty region_set (0 rows)
+Empty region_set (0 rules)
 }
 \description{
 Create empty region_set (no regions)

@@ -10,7 +10,7 @@ chr_has_mixed_na(regions)
 \item{regions}{A region_set object}
 }
 \value{
-TRUE if some rows have NA chr and others don't
+TRUE if some rules have NA chr and others don't
 }
 \description{
 Check if region_set has both NA and non-NA chromosomes

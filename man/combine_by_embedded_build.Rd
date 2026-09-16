@@ -7,10 +7,10 @@
 combine_by_embedded_build(x, parsed)
 }
 \description{
-Each row is constructed in its embedded build (rows with an unparseable id
-default to the first parseable row's build), then the per-build groups are
-recombined through [rbindlist_variant_sets()] targeting the first parseable
-row's build, preserving input row order. Each row keeps its embedded build
-as `defining_build`.
+Each variant enters the set in its embedded build (an unparseable id
+falls back to the first parseable build), then the per-build groups are
+recombined through [rbindlist_variant_sets()] targeting that build,
+preserving input row order. Each variant keeps its embedded build as
+`defining_build`.
 }
 \keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/variant_filter_condition.R
 \name{variant_key_expr}
 \alias{variant_key_expr}
-\title{Awk expression that builds a row's composite variant key}
+\title{Awk expression that builds a record's composite variant key}
 \usage{
 variant_key_expr(finterface)
 }
@@ -13,6 +13,6 @@ variant_key_expr(finterface)
 A string like `$1 "_" $2 "_" $3 "_" $4`.
 }
 \description{
-Awk expression that builds a row's composite variant key
+Awk expression that builds a record's composite variant key
 }
 \keyword{internal}

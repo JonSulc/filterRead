@@ -16,6 +16,6 @@ Column parsing specification, or NULL when the file is not a
 }
 \description{
 Returns the encoded-column parsing specification when the file's
-header and first row describe a GWAS-VCF file.
+header and first record describe a GWAS-VCF file.
 }
 \keyword{internal}

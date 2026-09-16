@@ -2,14 +2,14 @@
 % Please edit documentation in R/file_interface.R
 \name{head.file_interface}
 \alias{head.file_interface}
-\title{Return first rows of a file interface}
+\title{Return first records of a file interface}
 \usage{
 \method{head}{file_interface}(x, nlines = 1, return_only_cmd = FALSE, ..., sep = x$sep)
 }
 \arguments{
 \item{x}{A file_interface object.}
 
-\item{nlines}{Integer. Number of rows to read. Default is 1.}
+\item{nlines}{Integer. Number of records to read. Default is 1.}
 
 \item{return_only_cmd}{Logical. If TRUE, returns the awk command
 string instead of executing it. Useful for debugging or piping
@@ -18,18 +18,18 @@ to other commands. Default is FALSE.}
 \item{...}{Additional arguments passed to data.table::fread().}
 
 \item{sep}{Field separator for the read. Defaults to the separator
-detected for the file: awk preserves it, and the handful of rows a
-read emits is too small a sample to detect it from, since a comma
-inside a single field is enough to make fread split on the wrong
-character.}
+detected for the file: awk preserves it, and the handful of
+records a read emits is too small a sample to detect it from,
+since a comma inside a single field is enough to make fread split
+on the wrong character.}
 }
 \value{
 A data.table containing the first nrows of the file.
 }
 \description{
-S3 method for head() that reads the first n rows from a file (in addition to
-the header) using the file interface. Column names are converted to standard
-column names and transformed if necessary.
+S3 method for head() that reads the first n records from a file (in addition
+to the header) using the file interface. Column names are converted to
+standard column names and transformed if necessary.
 }
 \examples{
 \dontrun{

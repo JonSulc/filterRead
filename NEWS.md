@@ -1,3 +1,22 @@
+# filterRead 2.17.0
+
+* The `genomic_regions` class is now `region_set`, and `variants` is now
+  `variant_set`. The exported constructors and coercions rename with them:
+  `genomic_regions()` is `region_set()`, `as_genomic_regions()` is
+  `as_region_set()`, `new_variants()` is `new_variant_set()`, `as_variants()`
+  is `as_variant_set()`, and `rbindlist_variants()` is
+  `rbindlist_variant_sets()`. The S3 methods on both classes rename to match.
+
+* `check_variant_id()` is now `validate_variant_id()`. It behaves as before,
+  erroring with the offending rows.
+
+* Cached chains are now written as `<from>_to_<to>.chain.rds` rather than
+  `<from>_to_<to>.chain_dt.rds`. Caches written under the old name are no
+  longer read or removed by `clear_chain_cache()`; delete any
+  `*.chain_dt.rds` in your chain directory. Chains missing from the cache are
+  parsed again on the next lift, and downloaded first where the `.over.chain`
+  file is gone too.
+
 # filterRead 2.16.0
 
 * `as_genomic_regions()` no longer accepts a `filter_condition`. The regions a

@@ -16,6 +16,6 @@ Character vector of redundant decoded names.
 }
 \description{
 Returns the decoded names to drop for a non-allele encoded column (those a
-real column provides); empty for any other row.
+real column provides); empty for any other column_info row.
 }
 \keyword{internal}

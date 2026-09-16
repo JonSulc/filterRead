@@ -13,7 +13,7 @@ is_pure_genomic_condition(fcondition)
 Logical indicating whether the condition selects by coordinate alone
 }
 \description{
-A pure genomic condition restricts rows by coordinate and nothing else, so
-its genomic constraint is the whole of what it narrows.
+A pure genomic condition restricts records by coordinate and nothing else,
+so its genomic constraint is the whole of what it narrows.
 }
 \keyword{internal}

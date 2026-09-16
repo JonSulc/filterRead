@@ -32,7 +32,7 @@ A `variant_set` in `target`.
 \description{
 Row-binds a list of variant sets (or data.tables coercible with
 [as_variant_set()]). Inputs in a build other than `target` are lifted to it;
-`target` defaults to the first input's build. Per-row `defining_build` is
-carried through unchanged. An empty `x` returns a 0-row `variant_set` in
+`target` defaults to the first input's build. Per-variant `defining_build`
+is carried through unchanged. An empty `x` returns a 0-row `variant_set` in
 `target`, which must then be supplied (there is no input build to inherit).
 }

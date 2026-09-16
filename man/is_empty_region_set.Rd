@@ -10,7 +10,7 @@ is_empty_region_set(regions)
 \item{regions}{A region_set object}
 }
 \value{
-TRUE if no row can satisfy regions
+TRUE if `regions` selects no position
 }
 \description{
 Check if a region_set selects no position at all

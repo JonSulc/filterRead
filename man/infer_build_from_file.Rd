@@ -17,6 +17,6 @@ infer_build_from_file(finterface, nsnps = 10000, ...)
 The inferred genome build
 }
 \description{
-Reads the first nsnps rows from a file and infers the genome build.
+Reads the first nsnps records from a file and infers the genome build.
 }
 \keyword{internal}

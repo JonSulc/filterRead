@@ -18,8 +18,8 @@ NULL for a full region set}
 A filter_condition object with no expression
 }
 \description{
-A pure genomic condition restricts rows by coordinate and nothing else: it
-carries no expression, so its genomic constraint is the whole of what it
-narrows.
+A pure genomic condition restricts records by coordinate and nothing else:
+it carries no expression, so its genomic constraint is the whole of what
+it narrows.
 }
 \keyword{internal}

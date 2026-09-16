@@ -2,7 +2,7 @@
 % Please edit documentation in R/variant_set_class.R
 \name{select_source_build}
 \alias{select_source_build}
-\title{Choose each row's source build for liftover}
+\title{Choose each variant's source build for liftover}
 \usage{
 select_source_build(x, target, source)
 }
@@ -19,10 +19,10 @@ Character vector of length `nrow(x)`; each element a build name
 }
 \description{
 For `source = "best"` the source is the highest-precedence build with
-non-NA coordinates: an already-recorded target, the
-`defining_build`, the current build, then the newest other recorded build.
-For `"current"` or a build name it is that single build for every row (NA
-where the row has no coordinates in it). Reads recorded coordinates only;
-performs no liftover.
+non-NA coordinates: an already-recorded target, the `defining_build`, the
+current build, then the newest other recorded build. For `"current"` or a
+build name it is that single build for every variant (NA where the variant
+has no coordinates in it). Reads recorded coordinates only; performs no
+liftover.
 }
 \keyword{internal}

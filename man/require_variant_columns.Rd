@@ -17,7 +17,7 @@ require_variant_columns(finterface)
 any is absent. Each must map to a real input column: a coordinate available
 only via an encoded parent (e.g. a `chr:pos` field split into virtual
 `chr`/`pos` with no real column of their own) is rejected, because the
-codegen does not split such a column, so a match would return no rows; a
+codegen does not split such a column, so a match would return no records; a
 coordinate that also has its own real column is accepted. rsid-indexed files,
 which lack `chr`/`pos`, are rejected too.
 }

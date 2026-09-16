@@ -19,7 +19,7 @@
 \item{conditions}{R expression specifying filter conditions. Can
 use column names, comparison operators (&lt;, &gt;, ==, !=, etc.),
 and logical operators (&, |). Examples: \code{pval < 5e-8},
-\code{chr == 1 & pos > 1000000}. If NULL, returns all rows.}
+\code{chr == 1 & pos > 1000000}. If NULL, returns all records.}
 
 \item{nlines}{Optional integer cap on the number of matching lines to
 return. NULL or `integer(0)` means no cap.}
@@ -27,10 +27,10 @@ return. NULL or `integer(0)` means no cap.}
 \item{...}{Additional arguments passed to data.table::fread().}
 
 \item{sep}{Field separator for the read. Defaults to the separator
-detected for the file: awk preserves it, and the handful of rows a
-read emits is too small a sample to detect it from, since a comma
-inside a single field is enough to make fread split on the wrong
-character.}
+detected for the file: awk preserves it, and the handful of
+records a read emits is too small a sample to detect it from,
+since a comma inside a single field is enough to make fread split
+on the wrong character.}
 
 \item{return_only_cmd}{Logical. If TRUE, returns the awk command
 string instead of executing it. Useful for debugging or piping
@@ -38,7 +38,7 @@ to other commands. Default is FALSE.}
 }
 \value{
 If return_only_cmd is FALSE (default), returns a data.table
-  with filtered rows. If return_only_cmd is TRUE, returns a
+  with filtered records. If return_only_cmd is TRUE, returns a
   character string containing the awk command.
 }
 \description{

@@ -21,9 +21,9 @@ A list with `positions` (unique `pos` values) and `keys`
 \description{
 Lifts `variants` to `build`, then formats each `(chr, pos, ref, alt)`
 component to match the file's on-disk representation (chr prefix, allele
-upper-casing, quoting) via [resolve_post_processing()]. Rows missing any
-component (an unmapped `pos` after the lift, or a missing allele) cannot form
-a key and are dropped, with a `warning`. Both allele orderings
+upper-casing, quoting) via [resolve_post_processing()]. Variants missing
+any component (an unmapped `pos` after the lift, or a missing allele)
+cannot form a key and are dropped, with a `warning`. Both allele orderings
 (`chr_pos_ref_alt` and `chr_pos_alt_ref`) are emitted so the awk side stays
 one key, one lookup for efficiency.
 }

@@ -28,7 +28,7 @@ filtering against a build-bearing file requires it (see
 
 \item{chr_prefix}{Prefix to ensure on chromosome names (default "chr").}
 
-\item{complement}{If TRUE the rows describe the coordinates the set
+\item{complement}{If TRUE the rules describe the coordinates the set
 excludes rather than those it covers.}
 
 \item{canonicalize}{If TRUE, reduce the regions to their canonical
@@ -40,7 +40,7 @@ A `region_set` object.
 \description{
 Builds a `region_set` object — the regions a read is narrowed to, in one
 reference build — from parallel vectors. Pass the result as a `[`
-subscript to a `file_interface` to filter its rows by position:
+subscript to a `file_interface` to filter its records by position:
 `finterface[region_set(...)]`. To build regions from an existing
 `data.table` of `chr`/`start`/`end`, use [as_region_set()].
 }

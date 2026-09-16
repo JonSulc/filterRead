@@ -13,7 +13,7 @@ empty_read_result(read_columns)
 A zero-row data.table with those columns.
 }
 \description{
-Stands in for the table a read returns when there is no data row to
+Stands in for the table a read returns when there is no record to
 read. Every column is `logical`; the package declares no type per
 standard column.
 }

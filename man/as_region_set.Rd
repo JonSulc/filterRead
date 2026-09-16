@@ -17,7 +17,7 @@ as_region_set(x, build = NULL, ...)
 
 \item{...}{Additional arguments passed to methods}
 
-\item{complement}{Whether the rows describe the coordinates the set
+\item{complement}{Whether the rules describe the coordinates the set
 excludes (TRUE) rather than those it covers (FALSE). NULL inherits the
 input's `complement` attribute, defaulting to FALSE.}
 

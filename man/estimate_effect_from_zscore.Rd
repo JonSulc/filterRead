@@ -26,8 +26,8 @@ effect_se = 1 / sqrt((sample_size + zscore^2) * 2 * af * (1 - af))
   effect    = zscore * effect_se
 
 All inputs must be the same length, or length 1 to apply that single
-value to every row. NA in any input propagates to NA on both outputs
-for the corresponding row.
+value to every element. NA in any input propagates to NA on both outputs
+at the same index.
 }
 \examples{
 \dontrun{

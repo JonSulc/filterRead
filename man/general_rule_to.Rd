@@ -13,7 +13,7 @@ general_rule_to(end, build = NULL)
 }
 \value{
 region_set holding the one general rule up to the resolved
-  bound, with no rows when the bound lies below every position
+  bound, with no rules when the bound lies below every position
 }
 \description{
 A bound outside the position axis resolves against it: a bound below the

@@ -18,10 +18,10 @@ validate_variant_id(x, build = NULL, parsed = NULL)
 `x`, invisibly.
 }
 \description{
-For every row whose `variant_id` parses (see [parse_variant_id()]), each
-non-NA `chr`/`pos`/`ref`/`alt` value must equal the decoded component and
-the embedded build must equal `build` (compared after canonicalizing known
-synonyms). NA coordinate cells and rows with an unparseable `variant_id`
-impose no constraint. Errors listing the offending rows; otherwise returns
-`x` invisibly.
+For every variant whose `variant_id` parses (see [parse_variant_id()]),
+each non-NA `chr`/`pos`/`ref`/`alt` value must equal the decoded component
+and the embedded build must equal `build` (compared after canonicalizing
+known synonyms). NA coordinate cells and variants with an unparseable
+`variant_id` impose no constraint. Errors listing the offending variants;
+otherwise returns `x` invisibly.
 }

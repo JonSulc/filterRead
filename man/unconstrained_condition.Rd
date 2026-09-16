@@ -12,11 +12,11 @@ unconstrained_condition(build = NULL, context = NULL)
 \item{context}{Environment carrying $finterface and $env for the condition}
 }
 \value{
-A filter_condition object selecting every row
+A filter_condition object selecting every record
 }
 \description{
 What a read given no condition carries: no expression and no genomic
-constraint, so every row matches. The limiting case of a pure genomic
-condition.
+constraint, so every record matches. The limiting case of a pure
+genomic condition.
 }
 \keyword{internal}

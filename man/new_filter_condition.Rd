@@ -29,10 +29,10 @@ A `filter_condition` object with class identifying its type
 }
 \description{
 S3 generic that turns an R expression into a filter_condition - the
-package's internal representation of a row filter that is later compiled
-to awk. Methods are dispatched on the type of `x`; the most common entry
-point is the `[.file_interface` operator, which calls this with a
-quosure produced by `rlang::enquo()`. Pass a `region_set` object
+package's internal representation of a record filter that is later
+compiled to awk. Methods are dispatched on the type of `x`; the most
+common entry point is the `[.file_interface` operator, which calls this
+with a quosure produced by `rlang::enquo()`. Pass a `region_set` object
 to filter on chromosome/position ranges directly.
 }
 \examples{

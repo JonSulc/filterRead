@@ -13,7 +13,7 @@ are_values_quoted(finterface)
 Named logical vector: TRUE for quoted columns
 }
 \description{
-Reads first row with quote="" to preserve quotes, then checks each
-column for presence of double quotes.
+Reads first record with quote="" to preserve quotes, then checks
+each column for presence of double quotes.
 }
 \keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/variant_set_class.R
 \name{liftover.variant_set}
 \alias{liftover.variant_set}
-\title{Lift variants to another genome build, selecting the source per row}
+\title{Lift variants to another genome build, selecting the source per variant}
 \usage{
 \method{liftover}{variant_set}(
   x,
@@ -17,39 +17,40 @@
 
 \item{target}{Target build.}
 
-\item{source}{Which build to lift each row from: `"best"` (default; the
-`defining_build`, chosen per row with fallback), `"current"`
+\item{source}{Which build to lift each variant from: `"best"` (default;
+the `defining_build`, chosen per variant with fallback), `"current"`
 (the current build), or a build name (`"b36"`/`"b37"`/`"b38"` or a
-synonym) to force that build for every row.}
+synonym) to force that build for every variant.}
 
 \item{multi_match}{How a position that maps to several target positions is
-resolved: `"first"` (default, one row per input variant), `"last"`, or
-`"all"` (one output row per target position the source maps to).}
+resolved: `"first"` (default, one output variant per input variant),
+`"last"`, or `"all"` (one output variant per target position the source
+maps to).}
 
 \item{...}{Must be empty; `liftover.variant_set` manages the lift parameters.
 Use [liftover.data.table()] directly for raw liftover options.}
 }
 \value{
 A `variant_set` in the target build. With `multi_match = "all"` a
-  variant that maps to several positions contributes several rows,
-  inserted in input order immediately after one another.
+  variant that maps to several positions contributes one variant per
+  target position, inserted in input order immediately after one another.
 }
 \description{
-With `source = "best"` (default) each row is lifted from its defining
-build -- the `defining_build` it was declared in -- so a b37-declared variant
-lifts from b37 even when currently expressed in another build. Lifting from
-the defining build makes the result independent of intermediate lifts
-(`b38 -> b37 -> b38 -> b36` equals `b38 -> b36`) and round-trip stable.
-The source is the highest-precedence build with non-NA coordinates: an
-already-recorded target, else the
-`defining_build`, else the current build, else the newest other
-recorded build. A row whose source has no mapping at the target is left NA.
-`source = "current"` lifts every row from the current build.
+With `source = "best"` (default) each variant is lifted from its defining
+build -- the `defining_build` it was declared in -- so a b37-declared
+variant lifts from b37 even when currently expressed in another build.
+Lifting from the defining build makes the result independent of
+intermediate lifts (`b38 -> b37 -> b38 -> b36` equals `b38 -> b36`) and
+round-trip stable. The source is the highest-precedence build with non-NA
+coordinates: an already-recorded target, else the `defining_build`, else
+the current build, else the newest other recorded build. A variant whose
+source has no mapping at the target is left NA. `source = "current"` lifts
+every variant from the current build.
 }
 \details{
-`multi_match = "first"` (default) gives one output row per input variant;
-`"all"` keeps every target position the chosen source maps a variant to,
-fanning those out in place. `liftover.variant_set` manages the lift
-parameters itself; for raw liftover options use [liftover.data.table()]
-directly.
+`multi_match = "first"` (default) gives one output variant per input
+variant; `"all"` keeps every target position the chosen source maps a
+variant to, fanning those out in place. `liftover.variant_set` manages the
+lift parameters itself; for raw liftover options use
+[liftover.data.table()] directly.
 }

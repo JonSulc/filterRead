@@ -14,7 +14,7 @@ A region_set selecting the same positions as `regions`, with the
   fewest rows
 }
 \description{
-Compares the input against both stored forms — its rows expanded, and the
+Compares the input against both stored forms — its rules expanded, and the
 complement of its negation expanded — and returns whichever has the fewest
 rows. Output is semantically equivalent to the input - it represents the
 same set of genomic positions.

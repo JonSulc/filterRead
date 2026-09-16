@@ -13,7 +13,8 @@ source_regions(fcondition)
 A region_set object, in the build the condition carries
 }
 \description{
-The smallest set of regions covering every row the condition could select
-when its non-genomic constraints are ignored. Combines the condition's own
-genomic constraint with those of every condition it combines.
+The smallest set of regions covering every record the condition could
+select when its non-genomic constraints are ignored. Combines the
+condition's own genomic constraint with those of every condition it
+combines.
 }

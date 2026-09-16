@@ -10,11 +10,11 @@ has_single_genomic_scope(fcondition)
 \item{fcondition}{A filter_condition object}
 }
 \value{
-Logical indicating whether one region set governs every row
+Logical indicating whether one region set governs every record
 }
 \description{
-One region set governs every row the condition can select, so its source
-regions apply to the condition as a whole rather than separately to each
-condition it combines.
+One region set governs every record the condition can select, so its
+source regions apply to the condition as a whole rather than separately
+to each condition it combines.
 }
 \keyword{internal}
