@@ -1,4 +1,4 @@
-test_that("region_set() refuses a data.table and points at as_region_set", {
+test_that("region_set() errors on a data.table and points at as_region_set", {
   expect_error(
     region_set(
       data.table::data.table(chr = "chr1", start = 1L, end = 2L)

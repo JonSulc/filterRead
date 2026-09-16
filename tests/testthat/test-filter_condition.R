@@ -1782,7 +1782,7 @@ test_that("get_used_columns names no coordinate column without one", {
   )
 })
 
-test_that("genomic_constraint rejects anything but a filter condition", {
+test_that("genomic_constraint errors on anything but a filter condition", {
   expect_error(
     genomic_constraint(as.symbol("chr")),
     "is.filter_condition(fcondition) is not TRUE",

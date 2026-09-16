@@ -66,7 +66,7 @@ test_that("rbindlist_variant_sets accepts data.tables with a build", {
   expect_equal(nrow(out), 2L)
 })
 
-test_that("rbindlist_variant_sets rejects a build-less data.table", {
+test_that("rbindlist_variant_sets errors on a build-less data.table", {
   bare <- data.table::data.table(
     chr = "chr3", pos = 300L, ref = "G", alt = "A"
   )

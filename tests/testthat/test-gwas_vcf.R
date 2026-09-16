@@ -41,29 +41,35 @@ test_that("matches_gwas_vcf_structure identifies a GWAS-VCF file", {
   )
 })
 
-test_that("matches_gwas_vcf_structure rejects a single-sample genotype VCF", {
-  expect_false(
-    matches_gwas_vcf_structure(c(vcf_cols_1_9, "NA12878"), "GT:AD:DP:GQ:PL")
-  )
-})
+test_that(
+  "matches_gwas_vcf_structure holds for no single-sample genotype VCF",
+  {
+    expect_false(
+      matches_gwas_vcf_structure(c(vcf_cols_1_9, "NA12878"), "GT:AD:DP:GQ:PL")
+    )
+  }
+)
 
-test_that("matches_gwas_vcf_structure rejects other column layouts", {
-  expect_false(
-    matches_gwas_vcf_structure(c("CHROM", "POS", "ID", "REF"), "ES:SE")
-  )
-  expect_false(
-    matches_gwas_vcf_structure(
-      c("CHR", vcf_cols_1_9[2:9], "trait-1"),
-      "ES:SE"
+test_that(
+  "matches_gwas_vcf_structure holds only for the GWAS-VCF column layout",
+  {
+    expect_false(
+      matches_gwas_vcf_structure(c("CHROM", "POS", "ID", "REF"), "ES:SE")
     )
-  )
-  expect_false(
-    matches_gwas_vcf_structure(
-      c(vcf_cols_1_9, "trait-1", "trait-2"),
-      "ES:SE"
+    expect_false(
+      matches_gwas_vcf_structure(
+        c("CHR", vcf_cols_1_9[2:9], "trait-1"),
+        "ES:SE"
+      )
     )
-  )
-})
+    expect_false(
+      matches_gwas_vcf_structure(
+        c(vcf_cols_1_9, "trait-1", "trait-2"),
+        "ES:SE"
+      )
+    )
+  }
+)
 
 test_that("matches_gwas_vcf_structure yields FALSE for an NA name", {
   raw_names <- c(vcf_cols_1_9, "trait-1")
@@ -87,7 +93,7 @@ test_that("carries_indicator_key admits a FORMAT with unknown keys", {
   expect_true(carries_indicator_key("ES:GLE:AHAP"))
 })
 
-test_that("carries_indicator_key rejects a FORMAT of only shared keys", {
+test_that("carries_indicator_key holds for no FORMAT of only shared keys", {
   expect_false(carries_indicator_key("AF"))
   expect_false(carries_indicator_key("SS"))
   expect_false(carries_indicator_key("ID"))
@@ -95,19 +101,19 @@ test_that("carries_indicator_key rejects a FORMAT of only shared keys", {
   expect_false(carries_indicator_key("ID:AF:SS"))
 })
 
-test_that("carries_indicator_key rejects a genotype VCF's FORMAT", {
+test_that("carries_indicator_key holds for no genotype VCF FORMAT", {
   expect_false(carries_indicator_key("GT:AD:DP:GQ:PL"))
   expect_false(carries_indicator_key("GT:AD:DP:GQ:PL:AF"))
   expect_false(carries_indicator_key("es:se:lp"))
 })
 
-test_that("carries_indicator_key rejects a FORMAT naming GT", {
+test_that("carries_indicator_key holds for no FORMAT naming GT", {
   expect_false(carries_indicator_key("GT:GQ:AD:DP:VF:NL:SB:NC"))
   expect_false(carries_indicator_key("GT:PS:PQ:SE:NE:PR"))
   expect_false(carries_indicator_key("GT:AD:DP:GQ:PL:ES"))
 })
 
-test_that("carries_indicator_key rejects malformed and missing FORMAT", {
+test_that("carries_indicator_key holds for no malformed or missing FORMAT", {
   expect_false(carries_indicator_key("ES::LP"))
   expect_false(carries_indicator_key("ES:LP:"))
   expect_false(carries_indicator_key(":ES:LP"))
@@ -212,7 +218,7 @@ test_that("an unrecognized FORMAT key is named by the key itself", {
   expect_equal(parsing_info$delimiter, ":")
 })
 
-test_that("get_gwas_vcf_parsing rejects a constructed interface", {
+test_that("get_gwas_vcf_parsing errors on a constructed interface", {
   # head() gives the file's own header only while column_info is
   # absent, which is what the precondition guards.
   non_gwas_vcf_data <- data.table::data.table(

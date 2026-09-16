@@ -27,7 +27,7 @@ test_that("require_variant_columns passes for a full coordinate file", {
   expect_silent(require_variant_columns(fi))
 })
 
-test_that("require_variant_columns rejects encoded coordinate columns", {
+test_that("require_variant_columns errors on an encoded coordinate column", {
   fi <- local_summary_stats_interface(
     encode_columns = summary_stats_standard_names_dt[
       list(input_name = "chr_colon_pos"), on = "input_name"
@@ -51,21 +51,24 @@ test_that("passes when chr/pos coexist with an encoded parent", {
   expect_silent(require_variant_columns(fi))
 })
 
-test_that("rejects a coordinate present only via an encoded parent", {
-  # chr comes only from the encoded chr:pos parent (no real chr column), so it
-  # does not satisfy the requirement; the real pos is fine.
-  fi <- local_file_interface(
-    dt = data.table::data.table(
-      pos = c(100L, 300L),
-      chr_colon_pos = c("1:100", "2:300"),
-      ref = c("A", "G"), alt = c("G", "A"), pval = c(0.1, 0.3)
-    ),
-    build = "b38"
-  )
-  expect_error(require_variant_columns(fi), "chr")
-})
+test_that(
+  "require_variant_columns errors on a coordinate present only via an encoded parent",
+  {
+    # chr comes only from the encoded chr:pos parent (no real chr column), so
+    # it does not satisfy the requirement; the real pos is fine.
+    fi <- local_file_interface(
+      dt = data.table::data.table(
+        pos = c(100L, 300L),
+        chr_colon_pos = c("1:100", "2:300"),
+        ref = c("A", "G"), alt = c("G", "A"), pval = c(0.1, 0.3)
+      ),
+      build = "b38"
+    )
+    expect_error(require_variant_columns(fi), "chr")
+  }
+)
 
-test_that("require_variant_columns rejects rsid-indexed files", {
+test_that("require_variant_columns errors on an rsid-indexed file", {
   fi <- local_rsid_summary_stats_interface(build = "b38")
   expect_error(require_variant_columns(fi), "rsid-indexed")
 })

@@ -33,7 +33,7 @@ test_that("empty initialization works", {
   )
 })
 
-test_that("construction rejects a start that is not a position", {
+test_that("construction errors on a start that is not a position", {
   expect_error(
     new_region_set(chr = "chr1", start = NA_integer_, end = 400),
     "start must be a position of at least 1.\nGot: NA"
@@ -50,7 +50,7 @@ test_that("construction rejects a start that is not a position", {
   )
 })
 
-test_that("construction rejects an end before its start", {
+test_that("construction errors on an end before its start", {
   expect_error(
     region_set(chr = 1, start = 400, end = 1),
     "start must be less than end"
@@ -73,7 +73,7 @@ test_that("construction converts a column it can read", {
   expect_equal(regions$end, 200L)
 })
 
-test_that("construction rejects a column it cannot read", {
+test_that("construction errors on a column it cannot read", {
   expect_error(
     as_region_set(
       data.table::data.table(chr = "chr1", start = "a", end = 400L)
@@ -2044,7 +2044,7 @@ test_that("subtract_rule_set removes what the general rules cover", {
   )
 })
 
-test_that("subtract_rule_set rejects an unrepresentable difference", {
+test_that("subtract_rule_set errors on an unrepresentable difference", {
   expect_error(
     subtract_rule_set(
       data.table::data.table(
@@ -2256,7 +2256,7 @@ test_that(
   }
 )
 
-test_that("source_regions rejects an object that is not a condition", {
+test_that("source_regions errors on an object that is not a condition", {
   expect_error(
     source_regions(new_region_set(chr = 1, build = "b38")),
     "is.filter_condition(fcondition) is not TRUE",

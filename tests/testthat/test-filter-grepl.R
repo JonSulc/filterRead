@@ -113,7 +113,7 @@ test_that("grepl emit uses the ~ operator", {
   expect_match(cmd, "\\$[0-9]+ ~ /\\^ENSG/", fixed = FALSE)
 })
 
-test_that("grepl rejects non-scalar character patterns", {
+test_that("grepl errors on a non-scalar character pattern", {
   dt <- data.table::data.table(
     chr    = "chr1",
     pos    = 100L,

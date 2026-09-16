@@ -356,7 +356,7 @@ test_that("array_loads_from_awk_conditions returns zero rows with no arrays", {
   )
 })
 
-test_that("array_loads_from_awk_conditions rejects unequal lengths", {
+test_that("array_loads_from_awk_conditions errors on unequal lengths", {
   expect_error(
     array_loads_from_awk_conditions(list(
       condition = "x",

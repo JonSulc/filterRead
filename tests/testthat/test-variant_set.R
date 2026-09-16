@@ -299,7 +299,7 @@ test_that("source = 'best', multi_match = 'all' fans out multi-mapped variants i
 })
 
 test_that(
-  "liftover.variant_set rejects forwarded liftover.data.table arguments",
+  "liftover.variant_set errors on a forwarded liftover.data.table argument",
   {
     v <- new_variant_set(
       data.table::data.table(chr = "chr1", pos = 100L, ref = "A", alt = "G"),
