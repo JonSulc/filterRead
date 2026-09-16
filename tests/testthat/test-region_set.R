@@ -909,9 +909,8 @@ test_that("empty_region_set creates valid empty regions", {
 test_that("full_region_set builds a full region set", {
   full <- full_region_set(build = "b38")
   expect_true(is_region_set(full))
-  expect_equal(nrow(full), 1)
+  expect_true(is_full_region_set(full))
   expect_equal(build(full), "b38")
-  expect_true(is.na(full$chr))
 })
 
 test_that("copy_region_set preserves class and attributes", {
@@ -1539,11 +1538,8 @@ test_that("negation of empty region", {
 
 test_that("negating a full region set gives an empty one", {
   full <- full_region_set(build = "b38")
-  negated <- !full
 
-  expect_true(is_complement(negated))
-  expect_equal(nrow(negated), 1)
-  expect_true(is.na(negated$chr))
+  expect_true(is_empty_region_set(!full))
 })
 
 test_that("negation with NA chromosome", {
