@@ -63,16 +63,14 @@ require_variant_columns <- function(finterface) {
 #'   (unique formatted keys, both allele orderings).
 #' @keywords internal
 variant_keyset <- function(variants, finterface, build) {
-  components <- liftover(variants, build)[
-    , .(chr, pos, ref, alt)
-  ][
-    , Map(
-      \(values, column) resolve_post_processing(
-        values, column, finterface, to_write = TRUE
-      ),
-      .SD, names(.SD)
-    )
-  ]
+  components <- liftover(variants, build)[, .(chr, pos, ref, alt)]
+  components <- Map(
+    \(values, column) resolve_post_processing(
+      values, column, finterface, to_write = TRUE
+    ),
+    components, names(components)
+  ) |>
+    data.table::setDT()
 
   n_before <- nrow(components)
   components <- na.omit(components)
