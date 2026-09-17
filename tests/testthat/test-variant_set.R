@@ -771,3 +771,10 @@ test_that("select_source_build returns character for a set with no variants", {
     character(0)
   )
 })
+
+test_that("a := on a variant set prints nothing", {
+  variants <- make_dummy_variants()
+
+  expect_output(print(variants[, tmp := 1]), NA)
+  expect_output(print(variants), "<variant_set: 2 variant\\(s\\), build b38>")
+})

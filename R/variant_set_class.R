@@ -499,9 +499,12 @@ unique.variant_set <- function(x, ...) {
 
 #' @export
 print.variant_set <- function(x, ...) {
-  cat(sprintf(
-    "<variant_set: %d variant(s), build %s>\n",
-    nrow(x), attr(x, "build") %||% "unset"
-  ))
-  NextMethod()
+  if (data.table::shouldPrint(x)) {
+    cat(sprintf(
+      "<variant_set: %d variant(s), build %s>\n",
+      nrow(x), attr(x, "build") %||% "unset"
+    ))
+    NextMethod()
+  }
+  invisible(x)
 }
