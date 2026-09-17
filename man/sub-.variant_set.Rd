@@ -17,5 +17,7 @@ The subset, a `variant_set` or a data.table.
 \description{
 A result holding the coordinate columns keeps the `variant_set` class and
 `variants`' build; one that does not comes back a plain data.table with no
-build. A `j` returning an atomic vector returns that vector as it stands.
+build. Where that result is `variants` itself, as after a `:=`, the
+demotion applies to it in place. A `j` returning an atomic vector returns
+that vector as it stands.
 }

@@ -61,7 +61,6 @@ test_that("class and build travel together across data.table operations", {
   expect_equal(
     class_and_build(variants[, c(.SD, .(new = 1))]), c("variant_set", "b38")
   )
-  expect_equal(class_and_build(variants[, tmp := 1]), c("variant_set", "b38"))
   expect_equal(class_and_build(variants[, .N, by = chr]), c("data.table", NA))
   expect_equal(class_and_build(cbind(variants, plain)), c("variant_set", "b38"))
   expect_equal(class_and_build(cbind(variants, variants)), c("data.table", NA))
@@ -82,6 +81,8 @@ test_that("class and build travel together across data.table operations", {
   renamed <- data.table::copy(variants)
   data.table::setnames(renamed, "ref", "reference")
   expect_equal(class_and_build(renamed), c("variant_set", "b38"))
+
+  expect_equal(class_and_build(variants[, tmp := 1]), c("variant_set", "b38"))
 })
 
 test_that("a coordinate-only subset lifts as the set it came from does", {
