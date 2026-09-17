@@ -212,6 +212,6 @@ add_variant_id <- function(
   dt[
     ,
     variant_id := variant_id_values(chr, pos, ref, alt, build)
-  ]
+  ][]
   invisible(dt)
 }

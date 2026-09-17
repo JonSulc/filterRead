@@ -778,3 +778,21 @@ test_that("a := on a variant set prints nothing", {
   expect_output(print(variants[, tmp := 1]), NA)
   expect_output(print(variants), "<variant_set: 2 variant\\(s\\), build b38>")
 })
+
+test_that("a freshly constructed variant set prints its header", {
+  expect_output(
+    print(make_dummy_variants()),
+    "<variant_set: 2 variant\\(s\\), build b38>"
+  )
+  expect_output(
+    print(unique(make_dummy_variants())),
+    "<variant_set: 2 variant\\(s\\), build b38>"
+  )
+  expect_output(
+    print(new_variant_set(
+      data.table::data.table(variant_id = "chr1_100_A_G_b38"),
+      build = "b38"
+    )),
+    "<variant_set: 1 variant\\(s\\), build b38>"
+  )
+})

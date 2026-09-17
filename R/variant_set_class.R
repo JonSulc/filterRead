@@ -75,7 +75,7 @@ new_variant_set <- function(x, build = NULL) {
 #' @keywords internal
 scaffold_coordinate_columns <- function(x, cols) {
   for (col in cols) {
-    x[, (col) := if (col == "pos") integer() else character()]
+    x[, (col) := if (col == "pos") integer() else character()][]
   }
   x
 }
@@ -117,7 +117,7 @@ finalize_variant_set <- function(v, build) {
   build <- normalize_build(build, allow_null = FALSE, allow_unsupported = TRUE)
   set_build(v, build)
   if (!"defining_build" %in% names(v)) {
-    v[, defining_build := build]
+    v[, defining_build := build][]
   }
   v <- add_variant_id(v, build = build)
   v <- record_build(v, build = build)
@@ -150,13 +150,13 @@ new_variant_set_from_variant_id <- function(x, build) {
     decoded <- parsed[[col]]
     if (col %in% names(x)) {
       existing <- x[[col]]
-      x[, (col) := data.table::fcoalesce(decoded, existing)]
+      x[, (col) := data.table::fcoalesce(decoded, existing)][]
     } else {
-      x[, (col) := decoded]
+      x[, (col) := decoded][]
     }
   }
   computed <- variant_id_values(x$chr, x$pos, x$ref, x$alt, resolved)
-  x[, variant_id := data.table::fcoalesce(variant_id, computed)]
+  x[, variant_id := data.table::fcoalesce(variant_id, computed)][]
   finalize_variant_set(x, resolved)
 }
 
@@ -310,12 +310,12 @@ lift_one_source <- function(variants, from, target, multi_match) {
   variants <- data.table::copy(variants)
   if (is.na(from)) {
     for (col in coordinate_columns()) {
-      variants[, (col) := if (col == "pos") NA_integer_ else NA_character_]
+      variants[, (col) := if (col == "pos") NA_integer_ else NA_character_][]
     }
     return(variants)
   }
   for (col in coordinate_columns()) {
-    variants[, (col) := build_column(variants, col, from)]
+    variants[, (col) := build_column(variants, col, from)][]
   }
   set_build(variants, from)
   liftover.data.table(
@@ -469,7 +469,7 @@ liftover.variant_set <- function(x, target, source = "best",
     work <- data.table::copy(x)
     work[, c(".anchor", ".src") := .(
       seq_len(.N), select_source_build(x, target, source)
-    )]
+    )][]
 
     result <- work[
       ,
@@ -477,7 +477,7 @@ liftover.variant_set <- function(x, target, source = "best",
       by = .src
     ]
     data.table::setorder(result, .anchor)
-    result[, c(".anchor", ".src") := NULL]
+    result[, c(".anchor", ".src") := NULL][]
   }
 
   set_build(result, target)
