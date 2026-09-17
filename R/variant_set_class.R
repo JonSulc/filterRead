@@ -12,8 +12,6 @@ coordinate_columns <- function() {
 
 #' Reclass a data.table as a `variant_set`
 #'
-#' A data.table operation drops the S3 class; this puts it back.
-#'
 #' @param x A data.table holding variants.
 #' @return `x` with class `c("variant_set", "data.table", "data.frame")`.
 #' @keywords internal
@@ -22,7 +20,7 @@ reclass_as_variant_set <- function(x) {
     x, "class",
     c("variant_set", class(data.table::data.table())) |> unique()
   )
-  x[]
+  x
 }
 
 #' Construct a build-aware variant set

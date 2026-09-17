@@ -12,6 +12,6 @@
 #' @importFrom stringr str_detect
 #' @importFrom stringr str_match
 #' @importFrom stringr str_trim
-#' @importFrom utils capture.output download.file head str
+#' @importFrom utils capture.output download.file getS3method head str
 ## usethis namespace: end
 NULL

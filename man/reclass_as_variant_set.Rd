@@ -13,6 +13,6 @@ reclass_as_variant_set(x)
 `x` with class `c("variant_set", "data.table", "data.frame")`.
 }
 \description{
-A data.table operation drops the S3 class; this puts it back.
+Reclass a data.table as a `variant_set`
 }
 \keyword{internal}

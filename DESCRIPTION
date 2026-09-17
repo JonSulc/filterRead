@@ -56,4 +56,5 @@ Collate:
     'variant_filter_condition.R'
     'variant_set_class.R'
     'variant_set_combine.R'
+    'variant_set_ops.R'
     'zzz.R'
