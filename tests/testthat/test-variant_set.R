@@ -758,6 +758,11 @@ test_that("liftover errors where source names an unrecorded build", {
     liftover(variants, "b37", source = "b38"),
     "from b38: it records coordinates in no build"
   )
+  expect_error(
+    liftover(make_dummy_variants(), "b37", source = "b36"),
+    "from b36: it records coordinates in b38.",
+    fixed = TRUE
+  )
 })
 
 test_that("select_source_build returns character for a set with no variants", {
