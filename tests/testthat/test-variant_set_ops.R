@@ -5,6 +5,13 @@ test_that("a subset dropping a coordinate column drops the class and build", {
   expect_null(build(subsetted))
 })
 
+test_that("a subset retyping a coordinate column drops the class and build", {
+  subsetted <- make_dummy_variants()[, .(chr, pos = pos + 1, ref, alt)]
+
+  expect_false(inherits(subsetted, "variant_set"))
+  expect_null(build(subsetted))
+})
+
 test_that("a subset keeps the class where a coordinate column is all NA", {
   variants <- make_dummy_variants()
   variants[, c("ref", "alt") := NA_character_][]
@@ -81,6 +88,7 @@ test_that("class and build travel together across data.table operations", {
   renamed <- data.table::copy(variants)
   data.table::setnames(renamed, "ref", "reference")
   expect_equal(class_and_build(renamed), c("variant_set", "b38"))
+  expect_equal(class_and_build(renamed[1]), c("data.table", NA))
 
   expect_equal(class_and_build(variants[, tmp := 1]), c("variant_set", "b38"))
 })
