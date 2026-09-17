@@ -330,14 +330,14 @@ lift_one_source <- function(variants, from, target, multi_match) {
   )
 }
 
-#' Choose each variant's source build for liftover
+#' Choose each variant's origin build for a lift
 #'
-#' For `source = "best"` the source is the highest-precedence build with
+#' For `source = "best"` the origin is the highest-precedence build with
 #' non-NA coordinates: an already-recorded target, the `defining_build`, the
 #' current build, then the newest other recorded build. For `"current"` or a
 #' build name it is that single build for every variant (NA where the variant
-#' has no coordinates in it). Reads recorded coordinates only; performs no
-#' liftover.
+#' has no coordinates in it). Errors where `source` names no build `x` records
+#' coordinates in. Reads recorded coordinates only; performs no lift.
 #'
 #' @param x A `variant_set`.
 #' @param target Target build.
@@ -346,15 +346,40 @@ lift_one_source <- function(variants, from, target, multi_match) {
 #'   or NA.
 #' @keywords internal
 select_source_build <- function(x, target, source) {
+  recorded <- recorded_builds(x)
+  origin <- if (identical(source, "current")) {
+    build(x)
+  } else if (identical(source, "best")) {
+    recorded
+  } else {
+    normalize_build(source, allow_null = FALSE)
+  }
+  if (length(intersect(origin, recorded)) == 0L) {
+    stop(
+      if (source %in% c("best", "current")) {
+        paste0(
+          "liftover() needs the origin build a variant_set's coordinates ",
+          "are in. State it with `build(variants) <- \"b38\"`."
+        )
+      } else {
+        paste0(
+          "liftover() cannot lift a variant_set from ", source,
+          ": it records coordinates in ",
+          if (length(recorded) == 0L) {
+            "no build"
+          } else {
+            paste(recorded, collapse = ", ")
+          },
+          "."
+        )
+      },
+      call. = FALSE
+    )
+  }
   if (!identical(source, "best")) {
-    s <- if (identical(source, "current")) {
-      build(x)
-    } else {
-      normalize_build(source, allow_null = FALSE)
-    }
-    defined <- !is.na(build_column(x, "chr", s)) &
-      !is.na(build_column(x, "pos", s))
-    return(ifelse(defined, s, NA_character_))
+    defined <- !is.na(build_column(x, "chr", origin)) &
+      !is.na(build_column(x, "pos", origin))
+    return(data.table::fifelse(defined, origin, NA_character_))
   }
 
   source_of <- rep(NA_character_, nrow(x))
@@ -373,7 +398,7 @@ select_source_build <- function(x, target, source) {
     }
   }
 
-  others <- setdiff(recorded_builds(x), c(target, build(x)))
+  others <- setdiff(recorded, c(target, build(x)))
   others <- others[order(match(others, .valid_builds), decreasing = TRUE)]
   for (s in c(build(x), others)) {
     defined <- !is.na(build_column(x, "chr", s)) &

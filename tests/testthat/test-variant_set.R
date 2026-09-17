@@ -731,3 +731,38 @@ test_that("liftover.variant_set validates source on a zero-row table", {
 
   expect_error(liftover(empty, "b38", source = "nonsense"), "[Uu]nknown build")
 })
+
+test_that("liftover errors where no build records the variants' coordinates", {
+  variants <- make_dummy_variants() |> keep_coordinates_only() |> drop_build()
+
+  expect_error(liftover(variants, "b37"), "needs the origin build")
+  expect_error(
+    liftover(variants, "b37", source = "current"), "needs the origin build"
+  )
+})
+
+test_that("liftover lifts from provenance where the set carries no build", {
+  testthat::local_mocked_bindings(
+    get_shared_chain = function(from, to)
+      make_fwd_chain(1L, 1000L, 50L, from, to)
+  )
+  variants <- make_dummy_variants() |> drop_build()
+
+  expect_equal(liftover(variants, "b37", source = "b38")$pos, c(50L, 150L))
+})
+
+test_that("liftover errors where source names an unrecorded build", {
+  variants <- make_dummy_variants() |> keep_coordinates_only() |> drop_build()
+
+  expect_error(
+    liftover(variants, "b37", source = "b38"),
+    "from b38: it records coordinates in no build"
+  )
+})
+
+test_that("select_source_build returns character for a set with no variants", {
+  expect_identical(
+    select_source_build(make_dummy_variants()[0], "b37", "b38"),
+    character(0)
+  )
+})
