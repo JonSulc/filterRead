@@ -728,7 +728,7 @@ get_awk_column_arrays <- function(
   # These need to be split BEFORE condition evaluation
   required_for_if <- column_info[
     get_used_columns(fcondition, finterface),
-    encoding_column |> na.omit() |> c(),
+    encoding_column |> na.omit() |> c() |> unique(),
     on = "name"
   ]
 

@@ -93,3 +93,23 @@ test_that("a build-encoded parent beside real chr/pos keeps only build", {
     fi$column_info[standard_name == "build", bash_index], "encoded1[1]"
   )
 })
+
+test_that("a parent splits once for a condition naming two of its columns", {
+  finterface <- local_file_interface(
+    dt = make_decoded_chr_stats(), build = "b38"
+  )
+  regions <- region_set(
+    chr = "chr1", start = 1L, end = 5000000L, build = "b38"
+  )
+  expect_equal(
+    get_awk_column_arrays(
+      finterface,
+      new_filter_condition(regions, finterface = finterface)
+    )$before_if,
+    c(
+      'split($1, encoded1, ":")',
+      "$2 = toupper($2)",
+      "$3 = toupper($3)"
+    )
+  )
+})
