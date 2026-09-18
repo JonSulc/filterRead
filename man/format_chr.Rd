@@ -4,18 +4,22 @@
 \alias{format_chr}
 \title{Format chromosome names with prefix}
 \usage{
-format_chr(chr, prefix)
+format_chr(chr, prefix, prefixable_regex = CHR_PREFIXABLE_REGEX)
 }
 \arguments{
 \item{chr}{Character vector of chromosome names}
 
-\item{prefix}{Prefix to add (default: "chr")}
+\item{prefix}{Prefix to add}
+
+\item{prefixable_regex}{Regular expression a value must match to take the
+prefix.}
 }
 \value{
 Formatted chromosome names
 }
 \description{
-Ensures all chromosome names have the specified prefix (e.g., "chr").
-A missing name is returned as NA.
+Adds the prefix to the names matching `prefixable_regex` that do not
+already carry it, and returns every other name unchanged. A missing name is
+returned as NA.
 }
 \keyword{internal}

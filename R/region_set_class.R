@@ -279,21 +279,26 @@ is_region_set <- function(
 
 #' Format chromosome names with prefix
 #'
-#' Ensures all chromosome names have the specified prefix (e.g., "chr").
-#' A missing name is returned as NA.
+#' Adds the prefix to the names matching `prefixable_regex` that do not
+#' already carry it, and returns every other name unchanged. A missing name is
+#' returned as NA.
 #'
 #' @param chr Character vector of chromosome names
-#' @param prefix Prefix to add (default: "chr")
+#' @param prefix Prefix to add
+#' @param prefixable_regex Regular expression a value must match to take the
+#'   prefix.
 #' @return Formatted chromosome names
 #' @keywords internal
 format_chr <- function(
   chr,
-  prefix
+  prefix,
+  prefixable_regex = CHR_PREFIXABLE_REGEX
 ) {
   chr <- as.character(chr)
   distinct_chr <- unique(chr)
   formatted <- data.table::fifelse(
-    distinct_chr == "" | grepl(paste0("^", prefix), distinct_chr),
+    grepl(paste0("^", prefix), distinct_chr) |
+      !grepl(prefixable_regex, distinct_chr),
     distinct_chr,
     paste0(prefix, distinct_chr)
   )

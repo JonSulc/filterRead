@@ -210,9 +210,17 @@ summary_stats_standard_names_dt <- data.table::data.table(
   .(input_name = summary_stats_column_names[[standard_name]]),
   by = standard_name
 ]
+
+# Which chromosome values take the prefix. A chromosome name the "chr" prefix
+# is correct on is at most four characters and free of `.` and `_`; a scaffold
+# or alternate sequence name, which takes no prefix, is longer or carries one
+# of those characters. The bound is written out rather than as {1,4} because
+# mawk leaves interval expressions off unless built with interval support.
+CHR_PREFIXABLE_REGEX <- "^[^._][^._]?[^._]?[^._]?$"
+
 summary_stats_standard_names_dt[
   standard_name == "chr",
-  possible_prefixes := .("chr")
+  c("possible_prefixes", "prefixable_regex") := .("chr", CHR_PREFIXABLE_REGEX)
 ][]
 
 summary_stats_encoded_columns_dt <- data.table::data.table(

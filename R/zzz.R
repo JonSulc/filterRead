@@ -41,6 +41,7 @@ utils::globalVariables(c(
   "pos",
   "possible_prefixes",
   "prefix",
+  "prefixable_regex",
   "pval",
   "quoted",
   "recode_columns",

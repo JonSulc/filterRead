@@ -2344,3 +2344,21 @@ test_that("intersection matches a blank chromosome name only to itself", {
   expect_equal((regions & named_only)$chr, "chr1")
   expect_equal((regions & named_and_blank)$chr, c("", "chr1"))
 })
+
+test_that("region_set prefixes a chromosome name and leaves other names", {
+  expect_equal(region_set(chr = "1", build = "b38")$chr, "chr1")
+  expect_equal(
+    region_set(chr = "GL000209.1", build = "b38")$chr, "GL000209.1"
+  )
+  expect_equal(
+    region_set(chr = "chrUn_KI270220v1", build = "b38")$chr,
+    "chrUn_KI270220v1"
+  )
+})
+
+test_that("format_chr reads the rule it is given", {
+  expect_equal(
+    format_chr("GL000209.1", prefix = "chr", prefixable_regex = "."),
+    "chrGL000209.1"
+  )
+})

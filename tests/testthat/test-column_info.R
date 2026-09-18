@@ -17,6 +17,9 @@ test_that("Base column_info works", {
     data.table::data.table(
       standard_name     = c("chr", "pos", "ref", "alt", "effect", "pval"),
       possible_prefixes = c("chr", rep(NA_character_, 5)),
+      prefixable_regex  = c(
+        "^[^._][^._]?[^._]?[^._]?$", rep(NA_character_, 5)
+      ),
       pattern           = NA_character_,
       regex             = NA_character_,
       encoded_names     = list(),
