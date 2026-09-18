@@ -111,7 +111,11 @@ get_column_info <- function(
   column_info <- expand_encoded_columns(column_info)
   # Prefix detection keys on the standard name, which a decoded column
   # carries only once the expansion above has given it a row.
-  add_column_prefixes(column_info, data_to_check, standard_names_dt)
+  add_column_prefixes(
+    column_info,
+    data_to_check,
+    standard_names_dt = standard_names_dt
+  )
   add_chr_prefix(column_info, data_to_check)
 
   # Set final column name (prefer standard_name over input_name)

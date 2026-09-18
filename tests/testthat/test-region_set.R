@@ -2356,7 +2356,7 @@ test_that("region_set prefixes a chromosome name and leaves other names", {
   )
 })
 
-test_that("format_chr reads the rule it is given", {
+test_that("format_chr reads the pattern it is given", {
   expect_equal(
     format_chr("GL000209.1", prefix = "chr", prefixable_regex = "."),
     "chrGL000209.1"
