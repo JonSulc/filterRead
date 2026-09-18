@@ -4,19 +4,32 @@
 \alias{add_column_prefixes}
 \title{Add each column's prefixes to column_info}
 \usage{
-add_column_prefixes(column_info, data_to_check)
+add_column_prefixes(
+  column_info,
+  data_to_check,
+  standard_names_dt = summary_stats_standard_names_dt
+)
 }
 \arguments{
 \item{column_info}{data.table with column metadata (modified in place)}
 
 \item{data_to_check}{Sample data for prefix detection}
+
+\item{standard_names_dt}{Data.table mapping input names to standard names;
+the prefix declarations are read from it by standard name}
 }
 \value{
 Invisible column_info (modified by reference)
 }
 \description{
-Fills in the `prefixable_regex` a declared prefix leaves out, records the
-prefixes a column's values are observed to carry, and warns where a
-column's values do not agree on one.
+Attaches the prefixes a column's standard name declares its values may
+carry, fills in the `prefixable_regex` a declared prefix leaves out, then
+records which of them the sampled values are observed to carry. Warns where
+a column's values do not agree on one.
+}
+\details{
+A column whose values occupy neither a field nor an array element still
+takes the declaration, but nothing is sampled for it, so it records no
+observed prefixes.
 }
 \keyword{internal}

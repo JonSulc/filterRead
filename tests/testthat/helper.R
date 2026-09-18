@@ -508,3 +508,15 @@ expect_read_matches_r <- function(
     info = paste(deparse(fcall), collapse = "")
   )
 }
+
+# Summary statistics whose chromosome and position reach a read only through
+# MarkerName's `%s:%s:SNP` encoding, spelled as the `chr` argument supplies
+# them.
+make_decoded_chr_stats <- function(chr = "chr1") {
+  data.table::data.table(
+    MarkerName = sprintf("%s:%i:SNP", chr, c(1000000L, 2000000L)),
+    ref = c("A", "C"),
+    alt = c("G", "T"),
+    pval = c(0.01, 0.9)
+  )
+}

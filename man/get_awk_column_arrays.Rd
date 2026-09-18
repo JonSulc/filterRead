@@ -15,7 +15,7 @@ columns are needed for condition evaluation)}
 \value{
 List with:
   - before_if: awk split() calls for encoded columns used in conditions
-  - after_if: awk code for column recoding and prefix addition
+  - after_if: awk code for prefix addition and column recoding
   Or NULL if no special column handling needed.
 }
 \description{

@@ -27,6 +27,8 @@ utils::globalVariables(c(
   "group",
   "i.alt",
   "i.end",
+  "i.possible_prefixes",
+  "i.prefixable_regex",
   "i.ref",
   "i.start",
   "idx",

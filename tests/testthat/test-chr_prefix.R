@@ -1,6 +1,7 @@
 test_that("add_chr_prefix adds prefix when chr column has no prefix", {
   column_info <- data.table::data.table(
     standard_name = c("chr", "pos", "ref", "alt"),
+    bash_index = paste0("$", 1:4),
     observed_prefixes = list("", character(0), character(0), character(0))
   )
   data_to_check <- data.table::data.table(
@@ -21,6 +22,7 @@ test_that(
   {
     column_info <- data.table::data.table(
       standard_name = c("chr", "pos", "ref", "alt"),
+      bash_index = paste0("$", 1:4),
       observed_prefixes = list("chr", character(0), character(0), character(0))
     )
     data_to_check <- data.table::data.table(
@@ -39,6 +41,7 @@ test_that(
 test_that("add_chr_prefix does nothing when chr column is absent", {
   column_info <- data.table::data.table(
     standard_name = c("pos", "ref", "alt"),
+    bash_index = paste0("$", 1:3),
     observed_prefixes = list(character(0), character(0), character(0))
   )
   data_to_check <- data.table::data.table(
@@ -237,4 +240,30 @@ test_that("a chr column holding a scaffold name reads it back unchanged", {
     finterface$column_info[name == "chr", observed_prefixes][[1]], ""
   )
   expect_identical(finterface[]$chr, c("chr1", "GL000209.1"))
+})
+
+test_that("a decoded chr carrying the prefix records it and filters", {
+  finterface <- local_file_interface(
+    dt = make_decoded_chr_stats(), build = "b38"
+  )
+  expect_equal(
+    finterface$column_info[name == "chr", observed_prefixes][[1]], "chr"
+  )
+
+  regions <- region_set(
+    chr = "chr1", start = 1L, end = 1500000L, build = "b38"
+  )
+  expect_equal(finterface[regions]$MarkerName, "chr1:1000000:SNP")
+  expect_equal(finterface[chr %in% "chr1"]$pos, c(1000000L, 2000000L))
+})
+
+test_that("a decoded chr carrying no prefix reads back the package's", {
+  finterface <- local_file_interface(
+    dt = make_decoded_chr_stats(chr = "1"), build = "b38"
+  )
+  regions <- region_set(
+    chr = "chr1", start = 1L, end = 1500000L, build = "b38"
+  )
+  expect_identical(finterface[regions]$chr, "chr1")
+  expect_identical(finterface[]$chr, c("chr1", "chr1"))
 })

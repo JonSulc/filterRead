@@ -103,15 +103,16 @@ get_column_info <- function(
   # Sample data for pattern detection
   data_to_check <- head(finterface, nrecords_to_check)
 
-  # Apply detection functions in sequence
   column_info <- filter_regex_matches(column_info, data_to_check)
   add_quoted_column(column_info, finterface)
-  add_column_prefixes(column_info, data_to_check)
-  add_chr_prefix(column_info, data_to_check)
   add_encoding_columns(column_info)
   add_effect_allele_to_encoded_pair(column_info)
   add_allele_matching_to_column_info(column_info)
   column_info <- expand_encoded_columns(column_info)
+  # Prefix detection keys on the standard name, which a decoded column
+  # carries only once the expansion above has given it a row.
+  add_column_prefixes(column_info, data_to_check, standard_names_dt)
+  add_chr_prefix(column_info, data_to_check)
 
   # Set final column name (prefer standard_name over input_name)
   column_info[
@@ -277,20 +278,41 @@ are_values_quoted <- function(
 
 #' Add each column's prefixes to column_info
 #'
-#' Fills in the `prefixable_regex` a declared prefix leaves out, records the
-#' prefixes a column's values are observed to carry, and warns where a
-#' column's values do not agree on one.
+#' Attaches the prefixes a column's standard name declares its values may
+#' carry, fills in the `prefixable_regex` a declared prefix leaves out, then
+#' records which of them the sampled values are observed to carry. Warns where
+#' a column's values do not agree on one.
+#'
+#' A column whose values occupy neither a field nor an array element still
+#' takes the declaration, but nothing is sampled for it, so it records no
+#' observed prefixes.
 #'
 #' @param column_info data.table with column metadata (modified in place)
 #' @param data_to_check Sample data for prefix detection
+#' @param standard_names_dt Data.table mapping input names to standard names;
+#'   the prefix declarations are read from it by standard name
 #'
 #' @return Invisible column_info (modified by reference)
 #' @keywords internal
 add_column_prefixes <- function(
   column_info,
-  data_to_check
+  data_to_check,
+  standard_names_dt = summary_stats_standard_names_dt
 ) {
+  declared_prefixes <- unique(
+    standard_names_dt[
+      !is.na(standard_name),
+      .(standard_name, possible_prefixes, prefixable_regex)
+    ]
+  )
   column_info[
+    # Joined for update: a declaration with no matching column changes
+    # nothing, and no row is ever added.
+    declared_prefixes,
+    c("possible_prefixes", "prefixable_regex") :=
+      .(i.possible_prefixes, i.prefixable_regex),
+    on = "standard_name"
+  ][
     # A prefix declared with no prefixable_regex applies to every value
     # holding at least one character.
     !is.na(possible_prefixes) & is.na(prefixable_regex),
@@ -299,12 +321,20 @@ add_column_prefixes <- function(
     ,
     observed_prefixes := rep(.(character(0)), .N)
   ][
-    !is.na(possible_prefixes),
+    # The chr and pos an rsid-indexed file draws from its index occupy no
+    # field, so there is nothing to sample them from.
+    !is.na(possible_prefixes) & !is.na(bash_index),
     # Wrapped twice: once for the j column, once for the list-column cell.
     observed_prefixes := .(.(resolve_observed_prefixes(
       possible_prefixes,
       prefixable_regex,
-      data_to_check[[input_name]]
+      resolve_column_values(
+        input_name,
+        encoding_column,
+        delimiter,
+        decoded_index,
+        data_to_check
+      )
     ))),
     by = bash_index
   ][]
@@ -413,7 +443,10 @@ add_chr_prefix <- function(
   data_to_check
 ) {
   column_info[
+    # Excludes the chr an rsid-indexed file draws from its index, which
+    # occupies no field.
     standard_name == "chr" &
+      !is.na(bash_index) &
       vapply(observed_prefixes, \(carried) "" %in% carried, logical(1)),
     added_prefix := "chr"
   ][] |>

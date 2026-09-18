@@ -399,6 +399,7 @@ test_that("Encoded columns are correctly detected", {
       before_if = c("$2 = toupper($2)", "$3 = toupper($3)"),
       after_if = c(
         "split($1, encoded1, \"-c|:|-\")",
+        'if (encoded1[2] ~ /^[^._][^._]?[^._]?[^._]?$/) encoded1[2] = "chr"encoded1[2]',
         "$1 = $1 OFS encoded1[1] OFS encoded1[2] OFS encoded1[3]"
       )
     )
@@ -483,6 +484,7 @@ test_that("Encoded columns are correctly detected", {
       before_if = c("$2 = toupper($2)", "$3 = toupper($3)"),
       after_if = c(
         "split($1, encoded1, \"-c|:|-\")",
+        'if (encoded1[2] ~ /^[^._][^._]?[^._]?[^._]?$/) encoded1[2] = "chr"encoded1[2]',
         "$1 = $1 OFS encoded1[1] OFS encoded1[2] OFS encoded1[3]"
       )
     )
@@ -514,7 +516,7 @@ test_that("Encoded columns are correctly parsed and loaded", {
     c("MarkerName", "build", "chr", "pos", "ref", "alt", "effect", "pval")
   )
   expect_true(
-    finterface_enc[chr == 1][, all(chr == 1)]
+    finterface_enc[chr == 1][, all(chr == "chr1")]
   )
 })
 

@@ -290,3 +290,16 @@ test_that("resolve_column_values splits a parent on its delimiter pattern", {
     c("b37-c1:1000-123", "b37-c2:2000-456")
   )
 })
+
+test_that("a decoded column takes the metadata its standard name declares", {
+  finterface <- local_file_interface(
+    dt = make_decoded_chr_stats(), build = "b38"
+  )
+  expect_equal(
+    finterface$column_info[standard_name == "chr", possible_prefixes], "chr"
+  )
+  expect_equal(
+    finterface$column_info[standard_name == "chr", prefixable_regex],
+    CHR_PREFIXABLE_REGEX
+  )
+})

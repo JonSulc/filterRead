@@ -673,7 +673,7 @@ awk_load_file_cmd <- function(
 #'
 #' @return List with:
 #'   - before_if: awk split() calls for encoded columns used in conditions
-#'   - after_if: awk code for column recoding and prefix addition
+#'   - after_if: awk code for prefix addition and column recoding
 #'   Or NULL if no special column handling needed.
 #' @keywords internal
 get_awk_column_arrays <- function(
@@ -784,8 +784,10 @@ get_awk_column_arrays <- function(
     after_if = c(
       after_if_splits,
       allele_uppercase$after_if,
-      recode_code,
-      prefix_code
+      # The recode reads the array element into its output field, so a
+      # prefix assigned after it never reaches the output.
+      prefix_code,
+      recode_code
     )
   )
 }
