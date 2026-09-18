@@ -9,7 +9,8 @@ new_file_interface(
   extra_column_names_dt = NULL,
   standard_names_dt = summary_stats_standard_names_dt,
   gwas_vcf_parsing = TRUE,
-  build = c("auto", "b36", "b37", "b38", "none")
+  build = c("auto", "b36", "b37", "b38", "none"),
+  nrecords_to_check = 500
 )
 }
 \arguments{
@@ -30,6 +31,14 @@ Default is TRUE.}
 \item{build}{Character string specifying genome build (e.g., "b37",
 "b38") for genomic data. If NULL (default), attempts to detect
 from file.}
+
+\item{nrecords_to_check}{Number of records sampled to detect column
+metadata, including encoding and the chromosome prefix. Detection
+sees only these records: a file spelling its chromosomes chr1 for
+the first nrecords_to_check records and 1 below them is detected as
+carrying the prefix throughout, and the records below the sample
+come back spelled as the file holds them. Raise it where the
+leading records may not represent the rest.}
 }
 \value{
 A file_interface object (list with class "file_interface")

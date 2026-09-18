@@ -1185,3 +1185,32 @@ test_that("A condition whose region set is full reads every record", {
     nrow(fixture)
   )
 })
+
+test_that("nrecords_to_check sets how far detection samples", {
+  local_csv_file(
+    "drift.csv",
+    dt = data.table::data.table(
+      chr = c(rep("chr1", 3), rep("2", 5)),
+      pos = seq_len(8) * 1000L,
+      pval = 0.1
+    )
+  )
+
+  sampled_short <- new_file_interface(
+    "drift.csv", build = "b38", nrecords_to_check = 3
+  )
+  expect_equal(
+    sampled_short$column_info[name == "chr", observed_prefixes][[1]], "chr"
+  )
+  expect_identical(sampled_short[]$chr, c(rep("chr1", 3), rep("2", 5)))
+
+  expect_warning(
+    sampled_whole <- new_file_interface("drift.csv", build = "b38"),
+    "agree on a prefix"
+  )
+  expect_equal(
+    sampled_whole$column_info[name == "chr", observed_prefixes][[1]],
+    c("chr", "")
+  )
+  expect_identical(sampled_whole[]$chr, c(rep("chr1", 3), rep("chr2", 5)))
+})

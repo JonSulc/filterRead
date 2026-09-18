@@ -17,6 +17,13 @@
 #' @param build Character string specifying genome build (e.g., "b37",
 #'   "b38") for genomic data. If NULL (default), attempts to detect
 #'   from file.
+#' @param nrecords_to_check Number of records sampled to detect column
+#'   metadata, including encoding and the chromosome prefix. Detection
+#'   sees only these records: a file spelling its chromosomes chr1 for
+#'   the first nrecords_to_check records and 1 below them is detected as
+#'   carrying the prefix throughout, and the records below the sample
+#'   come back spelled as the file holds them. Raise it where the
+#'   leading records may not represent the rest.
 #'
 #' @return A file_interface object (list with class "file_interface")
 #'   containing file metadata including filename, separator, column
@@ -35,7 +42,8 @@ new_file_interface <- function(
   extra_column_names_dt = NULL,
   standard_names_dt = summary_stats_standard_names_dt,
   gwas_vcf_parsing = TRUE,
-  build = c("auto", "b36", "b37", "b38", "none")
+  build = c("auto", "b36", "b37", "b38", "none"),
+  nrecords_to_check = 500
 ) {
   stopifnot(is.character(filename))
   filename <- path.expand(filename)
@@ -75,7 +83,8 @@ new_file_interface <- function(
 
   finterface$column_info <- get_column_info(
     finterface,
-    standard_names_dt = standard_names_dt
+    standard_names_dt = standard_names_dt,
+    nrecords_to_check = nrecords_to_check
   )
 
   finterface$needs_rsid_matching <- needs_rsid_matching(finterface)
