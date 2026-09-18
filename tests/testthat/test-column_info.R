@@ -302,4 +302,45 @@ test_that("a decoded column takes the metadata its standard name declares", {
     finterface$column_info[standard_name == "chr", prefixable_regex],
     CHR_PREFIXABLE_REGEX
   )
+  expect_equal(
+    finterface$column_info[name == "pos", observed_prefixes][[1]], character(0)
+  )
 })
+
+test_that("a caller's standard_names_dt governs a decoded column", {
+  standard_names_dt <- data.table::copy(summary_stats_standard_names_dt)
+  standard_names_dt[standard_name == "chr", possible_prefixes := "ch"][]
+
+  finterface <- local_file_interface(
+    dt = make_decoded_chr_stats(chr = "ch1"),
+    build = "b38",
+    standard_names_dt = standard_names_dt
+  )
+  expect_equal(
+    finterface$column_info[name == "chr", observed_prefixes][[1]], "ch"
+  )
+})
+
+test_that(
+  "a build-encoded parent yields a prefixed chr and an undeclared build",
+  {
+    finterface <- local_file_interface(
+      dt = data.table::data.table(
+        MarkerName = c("b37-c1:1000-123", "b37-c2:2000-456"),
+        pval = c(0.1, 0.2)
+      ),
+      build = "b37"
+    )
+    expect_equal(
+      finterface$column_info[name == "chr", observed_prefixes][[1]], ""
+    )
+    expect_equal(
+      finterface$column_info[name == "build", possible_prefixes], NA_character_
+    )
+    expect_equal(
+      finterface$column_info[name == "build", prefixable_regex], NA_character_
+    )
+    expect_identical(finterface[]$chr, c("chr1", "chr2"))
+    expect_identical(finterface[]$build, c("b37", "b37"))
+  }
+)
