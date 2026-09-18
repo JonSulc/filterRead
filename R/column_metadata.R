@@ -9,7 +9,7 @@
 #   - standard_name: standardized name (chr, pos, pval, rsid, etc.)
 #   - bash_index: awk column reference ($1, $2, etc.)
 #   - quoted: TRUE if values are quoted
-#   - prefix: detected prefix (e.g., "chr")
+#   - observed_prefixes: the prefixes the values carry (e.g., "chr")
 #   - encoded_names: list of names if column contains multiple encoded values
 #   - delimiter: delimiter for encoded columns
 #   - etc.
@@ -106,7 +106,7 @@ get_column_info <- function(
   # Apply detection functions in sequence
   column_info <- filter_regex_matches(column_info, data_to_check)
   add_quoted_column(column_info, finterface)
-  add_prefix_column(column_info, data_to_check)
+  add_column_prefixes(column_info, data_to_check)
   add_chr_prefix(column_info, data_to_check)
   add_encoding_columns(column_info)
   add_effect_allele_to_encoded_pair(column_info)
@@ -275,31 +275,55 @@ are_values_quoted <- function(
   quoted_values
 }
 
-#' Add prefix detection to column info
+#' Add each column's prefixes to column_info
 #'
-#' For columns with possible_prefixes, checks if all values have the prefix.
+#' Fills in the `prefixable_regex` a declared prefix leaves out, records the
+#' prefixes a column's values are observed to carry, and warns where a
+#' column's values do not agree on one.
 #'
 #' @param column_info data.table with column metadata (modified in place)
 #' @param data_to_check Sample data for prefix detection
 #'
 #' @return Invisible column_info (modified by reference)
 #' @keywords internal
-add_prefix_column <- function(
+add_column_prefixes <- function(
   column_info,
   data_to_check
 ) {
   column_info[
+    # A prefix declared with no prefixable_regex applies to every value
+    # holding at least one character.
+    !is.na(possible_prefixes) & is.na(prefixable_regex),
+    prefixable_regex := "."
+  ][
     ,
-    prefix := character(0)
+    observed_prefixes := rep(.(character(0)), .N)
   ][
     !is.na(possible_prefixes),
-    prefix := resolve_single_column_prefix(
+    # Wrapped twice: once for the j column, once for the list-column cell.
+    observed_prefixes := .(.(resolve_observed_prefixes(
       possible_prefixes,
+      prefixable_regex,
       data_to_check[[input_name]]
-    ),
+    ))),
     by = bash_index
-  ][] |>
-    invisible()
+  ][]
+
+  disagreeing <- column_info[
+    vapply(observed_prefixes, \(carried) 1L < length(carried), logical(1)),
+    data.table::fcoalesce(standard_name, input_name)
+  ]
+  if (length(disagreeing) != 0L) {
+    warning(
+      "Columns ", paste(disagreeing, collapse = ", "),
+      " do not agree on a prefix (some values carry it, some do not). ",
+      "A read adds the prefix where it is missing; filtering on them is ",
+      "not supported.",
+      call. = FALSE
+    )
+  }
+
+  invisible(column_info)
 }
 
 #' Resolve a column's values from the sampled records
@@ -331,53 +355,69 @@ resolve_column_values <- function(
     vapply(`[`, character(1), decoded_index)
 }
 
-#' Resolve the prefix every column value carries
+#' Resolve the prefixes a column's values are observed to carry
 #'
 #' @param prefixes Vector of possible prefixes to check
+#' @param prefixable_regex Regular expression a value must match, once any
+#'   declared prefix is removed, to be one the prefix applies to
 #' @param column_data Vector of values from the column
 #'
-#' @return First matching prefix, or NULL if none match
+#' @return The prefixes the values carry: one where they agree, `""` where
+#'   none carries a prefix, and both where they disagree. Empty where there is
+#'   nothing to observe.
 #' @keywords internal
-resolve_single_column_prefix <- function(
+resolve_observed_prefixes <- function(
   prefixes,
+  prefixable_regex,
   column_data
 ) {
-  prefixable_values <- column_data[!is.na(column_data) & column_data != ""]
+  bare_values <- Reduce(
+    \(values, prefix) sub(paste0("^", prefix), "", values),
+    prefixes,
+    init = as.character(column_data)
+  )
+  prefixable <- grepl(prefixable_regex, bare_values)
+  prefixable_values <- column_data[prefixable]
   if (length(prefixable_values) == 0L) {
-    return()
+    return(character(0))
   }
-  prefixes <- sapply(prefixes, \(prefix) {
-    grepl(paste0("^", prefix), prefixable_values) |>
-      all()
+  carried_by_prefix <- lapply(prefixes, \(prefix) {
+    data.table::fifelse(
+      grepl(paste0("^", prefix), prefixable_values),
+      prefix,
+      NA_character_
+    )
   })
-  if (sum(prefixes) == 0) {
-    return()
-  }
-  names(prefixes)[prefixes][1]
+  carried_per_value <- do.call(
+    data.table::fcoalesce, c(carried_by_prefix, list(""))
+  )
+  # Declared order, "" last, so the set does not depend on record order.
+  c(
+    intersect(prefixes, carried_per_value),
+    if ("" %in% carried_per_value) ""
+  )
 }
 
 #' Add "chr" prefix marker for chromosome column
 #'
-#' If chromosome column exists but has no detected prefix, marks it to
-#' have "chr" added during output (for standardization).
+#' Marks a chromosome column whose values are observed to carry no prefix, so
+#' that a read of it returns the package's spelling.
 #'
 #' @param column_info data.table with column metadata (modified in place)
 #' @param data_to_check Sample data (unused, kept for interface consistency)
 #'
-#' @return column_info (modified by reference)
+#' @return Invisible column_info (modified by reference)
 #' @keywords internal
 add_chr_prefix <- function(
   column_info,
   data_to_check
 ) {
-  # This function checks whether the "chr" prefix should be added
-  # to the chr column during output
   column_info[
     standard_name == "chr" &
-      is.na(prefix),
-    add_prefix := "chr",
-    by = prefix
-  ][]
+      vapply(observed_prefixes, \(carried) "" %in% carried, logical(1)),
+    added_prefix := "chr"
+  ][] |>
+    invisible()
 }
 
 
@@ -402,7 +442,7 @@ add_encoding_columns <- function(
   #
   # These columns are consumed by:
   # - awk_codegen.R: get_awk_column_arrays() uses encoding_column,
-  #   split_encoding_column, recode_columns, add_prefix, bash_index,
+  #   split_encoding_column, recode_columns, added_prefix, bash_index,
   #   encoded_names
   # - awk_arrays.R: uses bash_index for column array setup
   # - expand_single_encoded_row(): reads encoded_refs for child bash_index

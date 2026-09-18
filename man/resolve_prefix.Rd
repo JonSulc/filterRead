@@ -9,7 +9,8 @@ resolve_prefix(values, prefix)
 \arguments{
 \item{values}{Vector of values}
 
-\item{prefix}{Prefix to add (or NA if none needed)}
+\item{prefix}{Prefix to add. `NA`, `""` and a zero-length vector each mean
+there is none to add, and the values are returned unchanged.}
 }
 \value{
 Values with prefix added where missing

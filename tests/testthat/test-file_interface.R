@@ -273,12 +273,20 @@ test_that("Prefixes are handled correctly", {
   for (finterface in list(finterface_b, finterface_q, finterface_gz)) {
     data_to_check <- head(finterface, 500)
     expect_equal(
-      resolve_single_column_prefix(prefixes = "chr", data_to_check$chr),
+      resolve_observed_prefixes(
+        prefixes = "chr",
+        prefixable_regex = CHR_PREFIXABLE_REGEX,
+        column_data = data_to_check$chr
+      ),
       "chr"
     )
     expect_equal(
-      resolve_single_column_prefix(prefixes = "incorrect", data_to_check$chr),
-      NULL
+      resolve_observed_prefixes(
+        prefixes = "incorrect",
+        prefixable_regex = CHR_PREFIXABLE_REGEX,
+        column_data = data_to_check$chr
+      ),
+      ""
     )
 
     expect_equal(

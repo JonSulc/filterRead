@@ -36,7 +36,7 @@ resolve_post_processing <- function(
   # Get column metadata for post-processing
   post_processing_to_check <- finterface$column_info[
     column_name,
-    .(standard_name, quoted, prefix),
+    .(standard_name, quoted, observed_prefixes),
     on = "name"
   ]
 
@@ -50,9 +50,20 @@ resolve_post_processing <- function(
     values <- drop_chr_prefix(values)
   }
 
-  # Apply prefix first, then quote handling
+  observed_prefixes <- post_processing_to_check$observed_prefixes[[1]]
+  if (1 < length(observed_prefixes)) {
+    stop(
+      "Filtering on ", column_name, " is not supported: its values do not ",
+      "agree on a prefix (some carry ",
+      paste(encodeString(setdiff(observed_prefixes, ""), quote = "\""),
+            collapse = " or "),
+      ", some carry none), so a literal has no single spelling to match them.",
+      call. = FALSE
+    )
+  }
+
   values |>
-    resolve_prefix(post_processing_to_check$prefix) |>
+    resolve_prefix(observed_prefixes) |>
     resolve_quotes_function(post_processing_to_check$quoted)
 }
 
@@ -62,7 +73,8 @@ resolve_post_processing <- function(
 #' Values already having the prefix are unchanged.
 #'
 #' @param values Vector of values
-#' @param prefix Prefix to add (or NA if none needed)
+#' @param prefix Prefix to add. `NA`, `""` and a zero-length vector each mean
+#'   there is none to add, and the values are returned unchanged.
 #'
 #' @return Values with prefix added where missing
 #' @keywords internal
@@ -73,7 +85,7 @@ resolve_prefix <- function(
   values,
   prefix
 ) {
-  if (is.na(prefix)) {
+  if (length(prefix) == 0L || is.na(prefix) || prefix == "") {
     return(values)
   }
   data.table::fifelse(

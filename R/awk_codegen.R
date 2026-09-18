@@ -686,7 +686,7 @@ get_awk_column_arrays <- function(
   column_info <- finterface$column_info
 
   has_encoded <- !all(sapply(column_info$encoded_names, is.null))
-  has_prefix <- !all(sapply(column_info$add_prefix, is.na))
+  has_prefix <- !all(sapply(column_info$added_prefix, is.na))
   has_alleles <- any(
     column_info$standard_name %in% ALLELE_STANDARD_NAMES,
     na.rm = TRUE
@@ -696,11 +696,20 @@ get_awk_column_arrays <- function(
     return()
   }
 
+  # The carry test costs a measured 7.5% of an unfiltered read, so only a
+  # column whose values disagree on a prefix pays for it.
   prefix_code <- column_info[
-    !is.na(add_prefix),
-    sprintf(
-      'if (%s != "") %s = "%s"%s',
-      bash_index, bash_index, add_prefix, bash_index
+    !is.na(added_prefix),
+    data.table::fifelse(
+      vapply(observed_prefixes, \(carried) 1L < length(carried), logical(1)),
+      sprintf(
+        'if (%1$s !~ /^%2$s/ && %1$s ~ /%3$s/) %1$s = "%2$s"%1$s',
+        bash_index, added_prefix, prefixable_regex
+      ),
+      sprintf(
+        'if (%1$s ~ /%3$s/) %1$s = "%2$s"%1$s',
+        bash_index, added_prefix, prefixable_regex
+      )
     )
   ]
 

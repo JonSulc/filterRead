@@ -1,10 +1,7 @@
 test_that("add_chr_prefix adds prefix when chr column has no prefix", {
   column_info <- data.table::data.table(
     standard_name = c("chr", "pos", "ref", "alt"),
-    prefix = c(
-      NA_character_, NA_character_, NA_character_,
-      NA_character_
-    )
+    observed_prefixes = list("", character(0), character(0), character(0))
   )
   data_to_check <- data.table::data.table(
     chr = c("1", "2", "3"),
@@ -15,8 +12,8 @@ test_that("add_chr_prefix adds prefix when chr column has no prefix", {
 
   add_chr_prefix(column_info, data_to_check)
 
-  expect_equal(column_info[standard_name == "chr", add_prefix], "chr")
-  expect_true(all(is.na(column_info[standard_name != "chr", add_prefix])))
+  expect_equal(column_info[standard_name == "chr", added_prefix], "chr")
+  expect_true(all(is.na(column_info[standard_name != "chr", added_prefix])))
 })
 
 test_that(
@@ -24,7 +21,7 @@ test_that(
   {
     column_info <- data.table::data.table(
       standard_name = c("chr", "pos", "ref", "alt"),
-      prefix = c("chr", NA_character_, NA_character_, NA_character_)
+      observed_prefixes = list("chr", character(0), character(0), character(0))
     )
     data_to_check <- data.table::data.table(
       chr = c("chr1", "chr2", "chr3"),
@@ -35,14 +32,14 @@ test_that(
 
     add_chr_prefix(column_info, data_to_check)
 
-    expect_true(is.na(column_info[standard_name == "chr", add_prefix]))
+    expect_true(is.na(column_info[standard_name == "chr", added_prefix]))
   }
 )
 
 test_that("add_chr_prefix does nothing when chr column is absent", {
   column_info <- data.table::data.table(
     standard_name = c("pos", "ref", "alt"),
-    prefix = c(NA_character_, NA_character_, NA_character_)
+    observed_prefixes = list(character(0), character(0), character(0))
   )
   data_to_check <- data.table::data.table(
     pos = c(100, 200, 300),
@@ -59,7 +56,7 @@ test_that("add_chr_prefix does nothing when chr column is absent", {
       ,
       c(
         .SD,
-        .(add_prefix = NA_character_)
+        .(added_prefix = NA_character_)
       )
     ]
   )
@@ -76,7 +73,9 @@ test_that("awk script correctly generates chr prefix assignment", {
       name = c("chr", "pos"),
       standard_name = c("chr", "pos"),
       bash_index = c("$1", "$2"),
-      add_prefix = c("chr", NA_character_),
+      observed_prefixes = list("", character(0)),
+      added_prefix = c("chr", NA_character_),
+      prefixable_regex = c(CHR_PREFIXABLE_REGEX, NA_character_),
       encoded_names = list(NULL, NULL),
       encoding_column = NA_character_
     )
@@ -96,9 +95,9 @@ test_that(
       suppressMessages() |>
       withr::with_output_sink(new = "/dev/null")
 
-    # Check that add_prefix is set in column_info
+    # Check that added_prefix is set in column_info
     expect_equal(
-      finterface$column_info[name == "chr", add_prefix],
+      finterface$column_info[name == "chr", added_prefix],
       "chr"
     )
 
@@ -117,8 +116,8 @@ test_that("chr prefix not added when already present in file", {
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
 
-  # Check that add_prefix is NOT set when prefix already exists
-  expect_true(is.na(finterface$column_info[name == "chr", add_prefix]))
+  # Check that added_prefix is NOT set when prefix already exists
+  expect_true(is.na(finterface$column_info[name == "chr", added_prefix]))
 
   # Read data and verify chr prefix is preserved (not doubled)
   result <- head(finterface, nlines = 5)
@@ -195,4 +194,47 @@ test_that("a blank chromosome field stays blank when its column is prefixed", {
     build = "b38"
   )
   expect_equal(fi[]$chr, c("chr1", "", "chr2"))
+})
+
+test_that("a chr column disagreeing on the prefix reads back the package's", {
+  expect_warning(
+    finterface <- local_file_interface(
+      dt = data.table::data.table(
+        chr = c("chr1", "2"), pos = c(1000L, 2000L), pval = c(0.1, 0.2)
+      ),
+      build = "b38"
+    ),
+    "agree on a prefix"
+  )
+  expect_equal(
+    finterface$column_info[name == "chr", observed_prefixes][[1]], c("chr", "")
+  )
+  expect_identical(finterface[]$chr, c("chr1", "chr2"))
+})
+
+test_that("a chr column agreeing on the prefix emits a plain assignment", {
+  finterface <- local_file_interface(
+    dt = data.table::data.table(
+      chr = c("1", "2"), pos = c(1000L, 2000L), pval = c(0.1, 0.2)
+    ),
+    build = "b38"
+  )
+  expect_equal(
+    get_awk_column_arrays(finterface)$after_if,
+    'if ($1 ~ /^[^._][^._]?[^._]?[^._]?$/) $1 = "chr"$1'
+  )
+})
+
+test_that("a chr column holding a scaffold name reads it back unchanged", {
+  finterface <- local_file_interface(
+    dt = data.table::data.table(
+      chr = c("1", "GL000209.1"), pos = c(1000L, 2000L),
+      pval = c(0.1, 0.2)
+    ),
+    build = "b38"
+  )
+  expect_equal(
+    finterface$column_info[name == "chr", observed_prefixes][[1]], ""
+  )
+  expect_identical(finterface[]$chr, c("chr1", "GL000209.1"))
 })

@@ -88,17 +88,64 @@ test_that("Quoted column detection works", {
   )
 })
 
-test_that("Prefix detection works", {
+test_that("resolve_observed_prefixes separates a carried prefix from none", {
   summary_stats <- dummy_summary_stats()
-  expect_null(
-    resolve_single_column_prefix(prefixes = "chr", summary_stats[[1]])
+  expect_equal(
+    resolve_observed_prefixes(
+      prefixes = "chr",
+      prefixable_regex = CHR_PREFIXABLE_REGEX,
+      column_data = summary_stats$chr
+    ),
+    ""
   )
 
   summary_stats <- dummy_summary_stats(prefixes = list(chr = "chr"))
   expect_equal(
-    resolve_single_column_prefix(prefixes = "chr", summary_stats[[1]]),
+    resolve_observed_prefixes(
+      prefixes = "chr",
+      prefixable_regex = CHR_PREFIXABLE_REGEX,
+      column_data = summary_stats$chr
+    ),
     "chr"
   )
+})
+
+test_that(
+  "resolve_observed_prefixes reads only the values the prefix applies to",
+  {
+    expect_equal(
+      resolve_observed_prefixes(
+        prefixes = "chr",
+        prefixable_regex = CHR_PREFIXABLE_REGEX,
+        column_data = c("1", "GL000209.1")
+      ),
+      ""
+    )
+    expect_equal(
+      resolve_observed_prefixes(
+        prefixes = "chr",
+        prefixable_regex = CHR_PREFIXABLE_REGEX,
+        column_data = c("chr10", "chr22")
+      ),
+      "chr"
+    )
+    expect_equal(
+      resolve_observed_prefixes(
+        prefixes = "chr",
+        prefixable_regex = CHR_PREFIXABLE_REGEX,
+        column_data = c("GL000209.1", "KI270220.1")
+      ),
+      character(0)
+    )
+  }
+)
+
+test_that("a prefix declared without a prefixable_regex is still observed", {
+  finterface <- local_file_interface(prefix = list(char = "test"))
+  expect_equal(
+    finterface$column_info[name == "char", observed_prefixes][[1]], "test"
+  )
+  expect_equal(finterface$column_info[name == "char", prefixable_regex], ".")
 })
 
 test_that("Encoded columns are detected", {
@@ -133,8 +180,6 @@ test_that("Encoded columns are detected", {
 
   add_quoted_column(column_info, finterface)
 
-  add_prefix_column(column_info, data_to_check)
-
   add_encoding_columns(column_info)
   expect_false(any(is.na(column_info$input_name)))
   expect_true(any(is.na(expand_encoded_columns(column_info)$input_name)))
@@ -167,7 +212,6 @@ test_that("Parsing allele1, allele2, alt works", {
   data_to_check <- head(finterface, 500)
   column_info <- filter_regex_matches(column_info, data_to_check)
   add_quoted_column(column_info, finterface)
-  add_prefix_column(column_info, data_to_check)
   add_encoding_columns(column_info)
   column_info <- expand_encoded_columns(column_info)
 

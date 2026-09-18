@@ -12,10 +12,10 @@ add_chr_prefix(column_info, data_to_check)
 \item{data_to_check}{Sample data (unused, kept for interface consistency)}
 }
 \value{
-column_info (modified by reference)
+Invisible column_info (modified by reference)
 }
 \description{
-If chromosome column exists but has no detected prefix, marks it to
-have "chr" added during output (for standardization).
+Marks a chromosome column whose values are observed to carry no prefix, so
+that a read of it returns the package's spelling.
 }
 \keyword{internal}
