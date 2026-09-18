@@ -217,3 +217,29 @@ test_that("Handling of Chr_Pos works", {
     is.na(filter_regex_matches(column_info, data_to_check)$regex)
   )
 })
+
+test_that("resolve_column_values splits a parent on its delimiter pattern", {
+  data_to_check <- data.table::data.table(
+    MarkerName = c("b37-c1:1000-123", "b37-c2:2000-456")
+  )
+  expect_equal(
+    resolve_column_values(
+      input_name = NA_character_,
+      encoding_column = "MarkerName",
+      delimiter = "-c|:|-",
+      decoded_index = 2L,
+      data_to_check = data_to_check
+    ),
+    c("1", "2")
+  )
+  expect_equal(
+    resolve_column_values(
+      input_name = "MarkerName",
+      encoding_column = NA_character_,
+      delimiter = NA_character_,
+      decoded_index = NA_integer_,
+      data_to_check = data_to_check
+    ),
+    c("b37-c1:1000-123", "b37-c2:2000-456")
+  )
+})

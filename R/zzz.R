@@ -13,6 +13,7 @@ utils::globalVariables(c(
   "chr",
   "chr_is_na",
   "class",
+  "decoded_index",
   "defining_build",
   "delimiter",
   "dq",

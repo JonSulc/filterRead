@@ -302,6 +302,35 @@ add_prefix_column <- function(
     invisible()
 }
 
+#' Resolve a column's values from the sampled records
+#'
+#' A column with an input name has a field of its own. A column without one is
+#' decoded from its parent: the parent's values split on the parent's
+#' delimiter, taken at the column's position among the decoded names. The
+#' delimiter is a pattern, as awk's `split()` reads it.
+#'
+#' @param input_name The column's name in the file, or NA for a decoded column
+#' @param encoding_column The parent column's input name
+#' @param delimiter The parent column's delimiter
+#' @param decoded_index The column's position among the decoded names
+#' @param data_to_check Sample data, keyed on input name
+#'
+#' @return Character vector of the column's sampled values
+#' @keywords internal
+resolve_column_values <- function(
+  input_name,
+  encoding_column,
+  delimiter,
+  decoded_index,
+  data_to_check
+) {
+  if (!is.na(input_name)) {
+    return(as.character(data_to_check[[input_name]]))
+  }
+  strsplit(as.character(data_to_check[[encoding_column]]), delimiter) |>
+    vapply(`[`, character(1), decoded_index)
+}
+
 #' Resolve the prefix every column value carries
 #'
 #' @param prefixes Vector of possible prefixes to check
@@ -479,7 +508,7 @@ expand_encoded_columns <- function(
 
   # The chr/pos column_info rows synthesized below are the only output
   # columns a read cannot obtain from the file itself.
-  column_info[, from_rsid_index := FALSE][]
+  column_info[, from_rsid_index := FALSE][, decoded_index := NA_integer_][]
 
   column_info[
     ,
@@ -553,6 +582,7 @@ expand_single_encoded_row <- function(
       delimiter = delimiter,
       input_index = input_index,
       bash_index = encoded_refs[[1]],
+      decoded_index = seq_along(encoded_names[[1]]),
       quoted = FALSE,
       from_rsid_index = FALSE,
       encoding_column = input_name,
