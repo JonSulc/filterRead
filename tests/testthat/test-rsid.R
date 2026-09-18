@@ -114,6 +114,7 @@ test_that("File reading works", {
 {
   if (FNR == 1) file_idx++
   if (file_idx == 1) {
+    if ($1 !~ /^chr/ && $1 ~ /^[^._][^._]?[^._]?[^._]?$/) $1 = \"chr\"$1
     rsid0[$3]=$1 OFS $2
   }
   else {
@@ -255,9 +256,11 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
 {
   if (FNR == 1) file_idx++
   if (file_idx == 1) {
+    if ($1 !~ /^chr/ && $1 ~ /^[^._][^._]?[^._]?[^._]?$/) $1 = \"chr\"$1
     rsid0[$3]=$1 OFS $2
   }
   else if (file_idx == 2) {
+    if ($1 !~ /^chr/ && $1 ~ /^[^._][^._]?[^._]?[^._]?$/) $1 = \"chr\"$1
     rsid1[$3]=$1 OFS $2
   }
   else {
@@ -363,7 +366,7 @@ test_that("RSID-based position filtering uses the correct build reference", {
   expect_equal(
     rsid37[chr == 19 & 45e6 < pos],
     data.table::data.table(
-      chr = 19,
+      chr = "chr19",
       pos = c(45411941, 45412079),
       rsid = c("rs429358", "rs7412"),
       ref = c("T", "C"),
@@ -380,7 +383,7 @@ test_that("RSID-based position filtering uses the correct build reference", {
   expect_equal(
     rsid37[chr == 15 & pos == 28365618],
     data.table::data.table(
-      chr = 15,
+      chr = "chr15",
       pos = 28365618,
       rsid = "rs12913832",
       ref = "A",
@@ -398,7 +401,7 @@ test_that("RSID-based position filtering uses the correct build reference", {
   expect_equal(
     rsid38[chr == 19 & pos < 45e6],
     data.table::data.table(
-      chr = 19,
+      chr = "chr19",
       pos = c(44908684, 44908822),
       rsid = c("rs429358", "rs7412"),
       ref = c("T", "C"),
@@ -415,7 +418,7 @@ test_that("RSID-based position filtering uses the correct build reference", {
   expect_equal(
     rsid38[chr == 15 & pos == 28120472],
     data.table::data.table(
-      chr = 15,
+      chr = "chr15",
       pos = 28120472,
       rsid = "rs12913832",
       ref = "A",
@@ -617,4 +620,18 @@ test_that("an OR of branches sharing a range issues one tabix query", {
   ]
   expect_match(command, "rsid0", fixed = TRUE)
   expect_false(grepl("rsid1", command, fixed = TRUE))
+})
+
+test_that("a chromosome drawn from the index reads back the package's", {
+  finterface <- local_rsid_summary_stats_interface(build = "b38", chr = 1)
+
+  expect_true(
+    finterface$column_info[from_rsid_index & standard_name == "chr",
+      is.na(added_prefix)
+    ]
+  )
+  expect_identical(
+    unique(finterface[chr == "chr1" & 123 <= pos & pos <= 1234567]$chr),
+    "chr1"
+  )
 })
