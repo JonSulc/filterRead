@@ -2,12 +2,14 @@
 
 filterRead loads and filters large tab/comma-separated genomic files by
 translating R-style conditions into awk, reading a file by scan or by indexed
-read. This glossary fixes the vocabulary of the filtering interface.
+read. This glossary fixes the vocabulary of the filtering interface. An awk
+or shell term it does not list means what POSIX says it means.
 
 Every noun below belongs to one layer. A **file** holds **records**; a
 **query** is built from **conditions**; coordinates live in a **space** of
 **positions**, **intervals** and **regions**, collected into a **region
-set**; and a read **emits** awk **clauses** and tabix **region arguments**.
+set**; and a read **emits** awk **pattern-action pairs** and tabix **region
+arguments**.
 
 The coordinate nouns compose: an interval is a pair of positions, a region is
 an interval on a chromosome, and a rule is a region whose chromosome may be
@@ -329,3 +331,21 @@ file holds. What is observed is what a sample of the file showed, so a file
 that changes spelling below the sample is not seen to.
 _Avoid_: `header_prefix` and `print_prefix`, which name a header line's own
 prefix and awk output text, neither of them a chromosome's spelling
+
+**awk executable**:
+The awk a read runs, held as the shell fragment that invokes it: usually a
+bare name resolved on `PATH`, quoted on the way in where it holds a space,
+and — where `set_awk()` is told not to validate it — anything the shell
+accepts, `busybox awk` among them. `get_awk()` answers with the configured
+one, else `mawk` where it is installed, else `awk`.
+_Avoid_: program (POSIX's word for the instructions the package emits, its
+awk program), command (the whole shell string a read runs, which the package
+builds as `cmd`)
+
+**Portable subset**:
+The part of the awk language the package emits: only constructs that mawk,
+gawk and any other awk executable handle the same way. Where the obvious
+construct falls outside it and a portable alternative is emitted instead, a
+comment in the code that emits it names the construct avoided and why.
+_Avoid_: POSIX awk (the subset is set by what the executables actually do, not
+by the standard)
