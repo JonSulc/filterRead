@@ -520,3 +520,21 @@ make_decoded_chr_stats <- function(chr = "chr1") {
     pval = c(0.01, 0.9)
   )
 }
+
+# A configuration in a temporary directory, so a test that writes one does not
+# open the caller's own. Clears what get_awk() reads, on the way in and on the
+# way out: the loaded configuration and the mawk probe.
+local_config <- function(.local_envir = parent.frame()) {
+  dir <- withr::local_tempdir(.local_envir = .local_envir)
+  withr::local_envvar(
+    R_USER_CONFIG_DIR = dir,
+    .local_envir = .local_envir
+  )
+  clear <- function() {
+    .filterread_env$config_loaded <- FALSE
+    .filterread_env$mawk_found <- NULL
+  }
+  clear()
+  withr::defer(clear(), envir = .local_envir)
+  dir
+}

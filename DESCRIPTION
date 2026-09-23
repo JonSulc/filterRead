@@ -29,6 +29,7 @@ Collate:
     'allele_matching.R'
     'awk_arrays.R'
     'awk_codegen.R'
+    'awk_executable.R'
     'awk_filter_eval.R'
     'build_versioned_columns.R'
     'chain_cache.R'
