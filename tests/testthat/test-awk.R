@@ -1,6 +1,7 @@
 # Integration Tests for AWK Command Compilation
 
 test_that("compile_awk_cmd emits a record cap for a read needing no filter", {
+  local_awk()
   finterface <- list(
     filename = "test.txt",
     gzipped = FALSE,
@@ -34,6 +35,7 @@ test_that("awk_load_file_cmd: gzipped file head", {
 })
 
 test_that("compile_awk_cmd applies both prefixes under a record cap", {
+  local_awk()
   finterface <- list(
     filename = "data.csv",
     gzipped = FALSE,
@@ -58,6 +60,7 @@ test_that("compile_awk_cmd applies both prefixes under a record cap", {
 })
 
 test_that("compile_awk_cmd treats an empty nlines as no record cap", {
+  local_awk()
   finterface <- list(
     filename = "data.csv",
     gzipped = FALSE,
@@ -116,4 +119,28 @@ test_that("tabix path omits FS from BEGIN", {
   begin <- strsplit(cmd, "}", fixed = TRUE)[[1]][1]
   expect_match(begin, "\n  OFS = ", fixed = TRUE)
   expect_no_match(begin, "\n  FS = ", fixed = TRUE)
+})
+
+test_that("a filtered read names the configured executable", {
+  finterface <- local_summary_stats_interface()
+  local_awk("custom-awk")
+  expect_match(
+    finterface[pval < 0.5, return_only_cmd = TRUE],
+    "^custom-awk '"
+  )
+})
+
+test_that("a read-only command names the configured executable", {
+  local_awk("custom-awk")
+  finterface <- list(
+    filename = "test.txt",
+    gzipped = FALSE,
+    comment_prefix = NULL,
+    trim_prefix = NULL,
+    sep = "\t"
+  )
+  expect_match(
+    build_read_only_awk_cmd(finterface, nlines = NULL, skip_header = TRUE),
+    "^custom-awk '"
+  )
 })

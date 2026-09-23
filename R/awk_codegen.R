@@ -181,7 +181,7 @@ compile_awk_cmd <- function(
     array_loads,
     use_command_line_fs
   )
-  cmd <- paste("awk", program_args, awk_file_args)
+  cmd <- paste(get_awk(), program_args, awk_file_args)
   attr(cmd, "additional_files") <- progfile
   cmd
 }
@@ -594,7 +594,8 @@ build_read_only_awk_cmd <- function(
   }
 
   sprintf(
-    "awk '%s' %s",
+    "%s '%s' %s",
+    get_awk(),
     paste(parts, collapse = "\n"),
     wrap_filename(finterface)
   )

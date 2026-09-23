@@ -1,6 +1,7 @@
 # Test Level 2: Component Assemblers
 
 test_that("build_read_only_awk_cmd prints every record, skipping the header where asked", {
+  local_awk()
   finterface <- list(
     filename = "test.txt",
     comment_prefix = NULL,
@@ -34,6 +35,7 @@ test_that("build_read_only_awk_cmd prints every record, skipping the header wher
 })
 
 test_that("build_read_only_awk_cmd drops comment records", {
+  local_awk()
   finterface <- list(
     filename = "test.txt",
     comment_prefix = "^##",
@@ -68,6 +70,7 @@ test_that("build_read_only_awk_cmd drops comment records", {
 })
 
 test_that("build_read_only_awk_cmd trims a prefix from every record", {
+  local_awk()
   finterface <- list(
     filename = "test.txt",
     comment_prefix = NULL,
@@ -89,6 +92,7 @@ test_that("build_read_only_awk_cmd trims a prefix from every record", {
 })
 
 test_that("build_read_only_awk_cmd drops comment records and trims the rest", {
+  local_awk()
   finterface <- list(
     filename = "test.txt",
     comment_prefix = "^##",
@@ -111,6 +115,7 @@ test_that("build_read_only_awk_cmd drops comment records and trims the rest", {
 })
 
 test_that("build_read_only_awk_cmd stops at the record cap", {
+  local_awk()
   finterface <- list(
     filename = "test.txt",
     comment_prefix = NULL,
@@ -147,6 +152,7 @@ test_that("build_read_only_awk_cmd stops at the record cap", {
 })
 
 test_that("build_read_only_awk_cmd counts only records the comment filter keeps", {
+  local_awk()
   finterface <- list(
     filename = "test.txt",
     comment_prefix = "^##",
@@ -187,6 +193,7 @@ test_that("build_read_only_awk_cmd counts only records the comment filter keeps"
 })
 
 test_that("build_read_only_awk_cmd sets FS and OFS to the file's separator", {
+  local_awk()
   finterface <- list(
     filename = "test.txt",
     comment_prefix = NULL,
@@ -207,6 +214,7 @@ test_that("build_read_only_awk_cmd sets FS and OFS to the file's separator", {
 })
 
 test_that("build_read_only_awk_cmd escapes a slash in a trim prefix", {
+  local_awk()
   finterface <- list(
     filename = "test.txt",
     comment_prefix = "^<!--",

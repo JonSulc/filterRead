@@ -538,3 +538,17 @@ local_config <- function(.local_envir = parent.frame()) {
   withr::defer(clear(), envir = .local_envir)
   dir
 }
+
+# The executable a constructed command names. Mocking the resolver keeps a
+# test that pins a command string independent of what the machine carries and
+# of what is configured. A read the test performs runs under it too, so a
+# value no executable answers to is set after any fixture that reads.
+local_awk <- function(
+  executable = "awk",
+  .local_envir = parent.frame()
+) {
+  testthat::local_mocked_bindings(
+    get_awk = function() executable,
+    .env = .local_envir
+  )
+}

@@ -67,6 +67,7 @@ test_that("tabix process substitution works", {
 })
 
 test_that("File reading works", {
+  local_awk()
   finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_true(needs_rsid_matching(finterface))
   expect_no_error(head(finterface))
@@ -240,6 +241,7 @@ test_that("Single genomic scope is correctly identified", {
 })
 
 test_that("Multiple genomic range-other condition combinations can be handled", {
+  local_awk()
   finterface <- local_rsid_summary_stats_interface(build = "b38")
   expect_equal(
     new_filter_condition(

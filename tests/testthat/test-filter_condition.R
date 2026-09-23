@@ -813,6 +813,7 @@ test_that("Parsing to command line works", {
 })
 
 test_that("%in% parsing works", {
+  local_awk()
   finterface <- local_file_interface()
   expect_equal(
     new_filter_condition(

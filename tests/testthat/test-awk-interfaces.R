@@ -57,6 +57,7 @@ test_that("awk_load_file_cmd: gzipped, only_read=FALSE, no processing", {
 })
 
 test_that("awk_load_file_cmd: comment prefix, only_read=TRUE", {
+  local_awk()
   finterface <- list(
     gzipped = FALSE,
     filename = "test.txt",
@@ -90,6 +91,7 @@ test_that("awk_load_file_cmd: comment prefix, only_read=FALSE", {
 })
 
 test_that("awk_load_file_cmd: trim prefix, only_read=TRUE", {
+  local_awk()
   finterface <- list(
     gzipped = FALSE,
     filename = "test.txt",
@@ -111,6 +113,7 @@ test_that("awk_load_file_cmd: trim prefix, only_read=TRUE", {
 })
 
 test_that("awk_load_file_cmd: both prefixes, only_read=TRUE", {
+  local_awk()
   finterface <- list(
     gzipped = FALSE,
     filename = "test.txt",
@@ -133,6 +136,7 @@ test_that("awk_load_file_cmd: both prefixes, only_read=TRUE", {
 })
 
 test_that("awk_load_file_cmd: gzipped with both prefixes, only_read=TRUE", {
+  local_awk()
   finterface <- list(
     gzipped = TRUE,
     filename = "test.txt.gz",
@@ -155,6 +159,7 @@ test_that("awk_load_file_cmd: gzipped with both prefixes, only_read=TRUE", {
 })
 
 test_that("awk_load_file_cmd: nlines only, only_read=TRUE", {
+  local_awk()
   finterface <- list(
     gzipped = FALSE,
     filename = "test.txt",
@@ -191,6 +196,7 @@ test_that("awk_load_file_cmd: nlines only, only_read=FALSE", {
 })
 
 test_that("awk_load_file_cmd: prefixes with nlines, only_read=TRUE", {
+  local_awk()
   finterface <- list(
     gzipped = FALSE,
     filename = "test.txt",
@@ -217,6 +223,7 @@ test_that("awk_load_file_cmd: prefixes with nlines, only_read=TRUE", {
 })
 
 test_that("awk_load_file_cmd: gzipped with prefixes and nlines, only_read=TRUE", {
+  local_awk()
   finterface <- list(
     gzipped = TRUE,
     filename = "test.txt.gz",
@@ -243,6 +250,7 @@ test_that("awk_load_file_cmd: gzipped with prefixes and nlines, only_read=TRUE",
 })
 
 test_that("awk_load_file_cmd: complex patterns", {
+  local_awk()
   finterface <- list(
     gzipped = FALSE,
     filename = "complex.txt",
@@ -276,6 +284,7 @@ test_that("awk_load_file_cmd: special characters in filename", {
 })
 
 test_that("awk_load_file_cmd: edge case with empty patterns", {
+  local_awk()
   finterface <- list(
     gzipped = FALSE,
     filename = "test.txt",
