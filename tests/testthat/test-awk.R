@@ -23,17 +23,6 @@ test_that("compile_awk_cmd emits a record cap for a read needing no filter", {
   )
 })
 
-test_that("awk_load_file_cmd: gzipped file head", {
-  finterface <- list(
-    filename = "test.txt.gz",
-    gzipped = TRUE
-  )
-  expect_equal(
-    awk_load_file_cmd(finterface, nlines = 1, only_read = FALSE),
-    "awk"
-  )
-})
-
 test_that("compile_awk_cmd applies both prefixes under a record cap", {
   local_awk()
   finterface <- list(

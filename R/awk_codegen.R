@@ -113,11 +113,10 @@ compile_awk_cmd <- function(
     column_arrays_after_conditions
   )) {
     return(
-      awk_load_file_cmd(
+      resolve_read_cmd(
         finterface,
         nlines = nlines,
-        skip_header = skip_header,
-        only_read = TRUE
+        skip_header = skip_header
       )
     )
   }
@@ -620,39 +619,32 @@ wrap_filename <- function(finterface) {
 # High-Level Interfaces
 # =============================================================================
 
-#' Get file loading command (entry point for simple reads)
+#' Resolve the command a read loads its file with
 #'
-#' Determines the appropriate command for loading a file. For simple reads
-#' without processing, returns cat/zcat. For reads requiring prefix handling
-#' or line limits, returns a complete awk command.
+#' A read that needs no record altered loads the file with `cat` or `zcat`.
+#' One that skips a header, drops comment records, trims a prefix or caps its
+#' records runs an awk program over it instead.
 #'
 #' @param finterface File interface object
 #' @param nlines Optional output line limit
 #' @param skip_header If TRUE, skip the header line (first non-comment line)
-#' @param only_read If TRUE, this is a read-only operation (no filtering)
 #'
-#' @return Command string: "cat file", "zcat file.gz", or complete awk command
+#' @return Command string: "cat file", "zcat file.gz", or a complete awk
+#'   command
 #' @keywords internal
-awk_load_file_cmd <- function(
+resolve_read_cmd <- function(
   finterface,
   nlines = NULL,
-  skip_header = TRUE,
-  only_read = FALSE
+  skip_header = TRUE
 ) {
   has_prefixes <- !is.null(finterface$comment_prefix) ||
     !is.null(finterface$trim_prefix)
   needs_processing <- has_prefixes || length(nlines) != 0 || skip_header
 
-  if (only_read) {
-    # For only_read cases with processing needed, build complete pipeline
-    if (needs_processing) {
-      return(build_read_only_awk_cmd(finterface, nlines, skip_header))
-    }
-    # Simple case: just cat/zcat the file
-    return(build_file_read_cmd(finterface))
+  if (needs_processing) {
+    return(build_read_only_awk_cmd(finterface, nlines, skip_header))
   }
-  # For filtered reads, caller will build the full awk command
-  "awk"
+  build_file_read_cmd(finterface)
 }
 
 #' Determine column array setup for encoded/prefixed columns

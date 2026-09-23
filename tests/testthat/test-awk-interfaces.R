@@ -1,62 +1,44 @@
 # Test Level 3: High-Level Interfaces
 
-# Test awk_load_file_cmd with various parameter combinations
+test_that(
+  "resolve_read_cmd reads a plain file with cat, and with awk where a header is skipped",
+  {
+    finterface <- list(
+      gzipped = FALSE,
+      filename = "test.txt",
+      comment_prefix = NULL,
+      trim_prefix = NULL
+    )
+    # With skip_header=FALSE, returns simple cat command
+    result <- resolve_read_cmd(finterface, skip_header = FALSE)
+    expect_equal(result, "cat 'test.txt'")
 
-test_that("awk_load_file_cmd: simple case, only_read=TRUE, no processing", {
-  finterface <- list(
-    gzipped = FALSE,
-    filename = "test.txt",
-    comment_prefix = NULL,
-    trim_prefix = NULL
-  )
-  # With skip_header=FALSE, returns simple cat command
-  result <- awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE)
-  expect_equal(result, "cat 'test.txt'")
+    # Default skip_header=TRUE returns awk command with header skip
+    result_skip <- resolve_read_cmd(finterface)
+    expect_match(result_skip, "header_skipped")
+  }
+)
 
-  # Default skip_header=TRUE returns awk command with header skip
-  result_skip <- awk_load_file_cmd(finterface, only_read = TRUE)
-  expect_match(result_skip, "header_skipped")
-})
+test_that(
+  "resolve_read_cmd reads a gzipped file with zcat, and with awk where a header is skipped",
+  {
+    finterface <- list(
+      gzipped = TRUE,
+      filename = "test.txt.gz",
+      comment_prefix = NULL,
+      trim_prefix = NULL
+    )
+    # With skip_header=FALSE, returns simple zcat command
+    result <- resolve_read_cmd(finterface, skip_header = FALSE)
+    expect_equal(result, "zcat 'test.txt.gz'")
 
-test_that("awk_load_file_cmd: simple case, only_read=FALSE, no processing", {
-  finterface <- list(
-    gzipped = FALSE,
-    filename = "test.txt",
-    comment_prefix = NULL,
-    trim_prefix = NULL
-  )
-  result <- awk_load_file_cmd(finterface, only_read = FALSE)
-  expect_equal(result, "awk")
-})
+    # Default skip_header=TRUE returns awk command with header skip
+    result_skip <- resolve_read_cmd(finterface)
+    expect_match(result_skip, "header_skipped")
+  }
+)
 
-test_that("awk_load_file_cmd: gzipped, only_read=TRUE, no processing", {
-  finterface <- list(
-    gzipped = TRUE,
-    filename = "test.txt.gz",
-    comment_prefix = NULL,
-    trim_prefix = NULL
-  )
-  # With skip_header=FALSE, returns simple zcat command
-  result <- awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE)
-  expect_equal(result, "zcat 'test.txt.gz'")
-
-  # Default skip_header=TRUE returns awk command with header skip
-  result_skip <- awk_load_file_cmd(finterface, only_read = TRUE)
-  expect_match(result_skip, "header_skipped")
-})
-
-test_that("awk_load_file_cmd: gzipped, only_read=FALSE, no processing", {
-  finterface <- list(
-    gzipped = TRUE,
-    filename = "test.txt.gz",
-    comment_prefix = NULL,
-    trim_prefix = NULL
-  )
-  result <- awk_load_file_cmd(finterface, only_read = FALSE)
-  expect_equal(result, "awk")
-})
-
-test_that("awk_load_file_cmd: comment prefix, only_read=TRUE", {
+test_that("resolve_read_cmd emits a comment filter", {
   local_awk()
   finterface <- list(
     gzipped = FALSE,
@@ -66,7 +48,7 @@ test_that("awk_load_file_cmd: comment prefix, only_read=TRUE", {
     sep = "\t"
   )
   expect_equal(
-    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
+    resolve_read_cmd(finterface, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -78,19 +60,7 @@ test_that("awk_load_file_cmd: comment prefix, only_read=TRUE", {
   )
 })
 
-test_that("awk_load_file_cmd: comment prefix, only_read=FALSE", {
-  finterface <- list(
-    gzipped = FALSE,
-    filename = "test.txt",
-    comment_prefix = "^##",
-    trim_prefix = NULL,
-    sep = "\t"
-  )
-  result <- awk_load_file_cmd(finterface, only_read = FALSE)
-  expect_equal(result, "awk")
-})
-
-test_that("awk_load_file_cmd: trim prefix, only_read=TRUE", {
+test_that("resolve_read_cmd emits a trim substitution", {
   local_awk()
   finterface <- list(
     gzipped = FALSE,
@@ -100,7 +70,7 @@ test_that("awk_load_file_cmd: trim prefix, only_read=TRUE", {
     sep = "\t"
   )
   expect_equal(
-    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
+    resolve_read_cmd(finterface, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -112,18 +82,20 @@ test_that("awk_load_file_cmd: trim prefix, only_read=TRUE", {
   )
 })
 
-test_that("awk_load_file_cmd: both prefixes, only_read=TRUE", {
-  local_awk()
-  finterface <- list(
-    gzipped = FALSE,
-    filename = "test.txt",
-    comment_prefix = "^##",
-    trim_prefix = "^#",
-    sep = "\t"
-  )
-  expect_equal(
-    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
-    "awk 'BEGIN{
+test_that(
+  "resolve_read_cmd emits a comment filter and a trim substitution together",
+  {
+    local_awk()
+    finterface <- list(
+      gzipped = FALSE,
+      filename = "test.txt",
+      comment_prefix = "^##",
+      trim_prefix = "^#",
+      sep = "\t"
+    )
+    expect_equal(
+      resolve_read_cmd(finterface, skip_header = FALSE),
+      "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
 }
@@ -132,21 +104,24 @@ test_that("awk_load_file_cmd: both prefixes, only_read=TRUE", {
   gsub(/^#/, \"\", $0)
   print $0
 }' 'test.txt'"
-  )
-})
+    )
+  }
+)
 
-test_that("awk_load_file_cmd: gzipped with both prefixes, only_read=TRUE", {
-  local_awk()
-  finterface <- list(
-    gzipped = TRUE,
-    filename = "test.txt.gz",
-    comment_prefix = "^##",
-    trim_prefix = "^#",
-    sep = "\t"
-  )
-  expect_equal(
-    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
-    "awk 'BEGIN{
+test_that(
+  "resolve_read_cmd reads a gzipped file through process substitution",
+  {
+    local_awk()
+    finterface <- list(
+      gzipped = TRUE,
+      filename = "test.txt.gz",
+      comment_prefix = "^##",
+      trim_prefix = "^#",
+      sep = "\t"
+    )
+    expect_equal(
+      resolve_read_cmd(finterface, skip_header = FALSE),
+      "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
 }
@@ -155,10 +130,11 @@ test_that("awk_load_file_cmd: gzipped with both prefixes, only_read=TRUE", {
   gsub(/^#/, \"\", $0)
   print $0
 }' <(zcat 'test.txt.gz')"
-  )
-})
+    )
+  }
+)
 
-test_that("awk_load_file_cmd: nlines only, only_read=TRUE", {
+test_that("resolve_read_cmd emits a record cap", {
   local_awk()
   finterface <- list(
     gzipped = FALSE,
@@ -168,9 +144,7 @@ test_that("awk_load_file_cmd: nlines only, only_read=TRUE", {
     sep = "\t"
   )
   expect_equal(
-    awk_load_file_cmd(
-      finterface, nlines = 100, only_read = TRUE, skip_header = FALSE
-    ),
+    resolve_read_cmd(finterface, nlines = 100, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -183,19 +157,7 @@ test_that("awk_load_file_cmd: nlines only, only_read=TRUE", {
   )
 })
 
-test_that("awk_load_file_cmd: nlines only, only_read=FALSE", {
-  finterface <- list(
-    gzipped = FALSE,
-    filename = "test.txt",
-    comment_prefix = NULL,
-    trim_prefix = NULL,
-    sep = "\t"
-  )
-  result <- awk_load_file_cmd(finterface, nlines = 100, only_read = FALSE)
-  expect_equal(result, "awk")
-})
-
-test_that("awk_load_file_cmd: prefixes with nlines, only_read=TRUE", {
+test_that("resolve_read_cmd emits the prefixes and the record cap together", {
   local_awk()
   finterface <- list(
     gzipped = FALSE,
@@ -205,9 +167,7 @@ test_that("awk_load_file_cmd: prefixes with nlines, only_read=TRUE", {
     sep = "\t"
   )
   expect_equal(
-    awk_load_file_cmd(
-      finterface, nlines = 50, only_read = TRUE, skip_header = FALSE
-    ),
+    resolve_read_cmd(finterface, nlines = 50, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -222,20 +182,20 @@ test_that("awk_load_file_cmd: prefixes with nlines, only_read=TRUE", {
   )
 })
 
-test_that("awk_load_file_cmd: gzipped with prefixes and nlines, only_read=TRUE", {
-  local_awk()
-  finterface <- list(
-    gzipped = TRUE,
-    filename = "test.txt.gz",
-    comment_prefix = "^//",
-    trim_prefix = "^%",
-    sep = ","
-  )
-  expect_equal(
-    awk_load_file_cmd(
-      finterface, nlines = 25, only_read = TRUE, skip_header = FALSE
-    ),
-    "awk 'BEGIN{
+test_that(
+  "resolve_read_cmd emits the prefixes and the record cap for a gzipped file",
+  {
+    local_awk()
+    finterface <- list(
+      gzipped = TRUE,
+      filename = "test.txt.gz",
+      comment_prefix = "^//",
+      trim_prefix = "^%",
+      sep = ","
+    )
+    expect_equal(
+      resolve_read_cmd(finterface, nlines = 25, skip_header = FALSE),
+      "awk 'BEGIN{
   FS = \",\"
   OFS = \",\"
   output_lines = 0
@@ -246,21 +206,24 @@ test_that("awk_load_file_cmd: gzipped with prefixes and nlines, only_read=TRUE",
   gsub(/^%/, \"\", $0)
   if (++output_lines <= max_lines) print $0; else exit
 }' <(zcat 'test.txt.gz')"
-  )
-})
+    )
+  }
+)
 
-test_that("awk_load_file_cmd: complex patterns", {
-  local_awk()
-  finterface <- list(
-    gzipped = FALSE,
-    filename = "complex.txt",
-    comment_prefix = "\\*\\*",
-    trim_prefix = "\\*",
-    sep = "|"
-  )
-  expect_equal(
-    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
-    "awk 'BEGIN{
+test_that(
+  "resolve_read_cmd carries a regex prefix and a pipe separator into the program",
+  {
+    local_awk()
+    finterface <- list(
+      gzipped = FALSE,
+      filename = "complex.txt",
+      comment_prefix = "\\*\\*",
+      trim_prefix = "\\*",
+      sep = "|"
+    )
+    expect_equal(
+      resolve_read_cmd(finterface, skip_header = FALSE),
+      "awk 'BEGIN{
   FS = \"|\"
   OFS = \"|\"
 }
@@ -269,21 +232,22 @@ test_that("awk_load_file_cmd: complex patterns", {
   gsub(/\\*/, \"\", $0)
   print $0
 }' 'complex.txt'"
-  )
-})
+    )
+  }
+)
 
-test_that("awk_load_file_cmd: special characters in filename", {
+test_that("resolve_read_cmd quotes a filename holding spaces", {
   finterface <- list(
     gzipped = TRUE,
     filename = "file with spaces.txt.gz",
     comment_prefix = NULL,
     trim_prefix = NULL
   )
-  result <- awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE)
+  result <- resolve_read_cmd(finterface, skip_header = FALSE)
   expect_equal(result, "zcat 'file with spaces.txt.gz'")
 })
 
-test_that("awk_load_file_cmd: edge case with empty patterns", {
+test_that("resolve_read_cmd emits an empty prefix as an empty regex", {
   local_awk()
   finterface <- list(
     gzipped = FALSE,
@@ -293,7 +257,7 @@ test_that("awk_load_file_cmd: edge case with empty patterns", {
     sep = "\t"
   )
   expect_equal(
-    awk_load_file_cmd(finterface, only_read = TRUE, skip_header = FALSE),
+    resolve_read_cmd(finterface, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
