@@ -93,9 +93,13 @@ regions <- finterface[
 
 ## System Requirements
 
-- R (>= 4.1.0)
-- `awk` (available on most Unix-like systems)
-- `tabix` (for RSID matching functionality)
+- R (>= 4.4.0)
+- `bash`, which every read runs under
+- `awk` (available on most Unix-like systems). `mawk` is used where it is
+  installed, being about twice as fast; use `set_awk()` to choose a different
+  awk executable
+- `zcat`, for gzipped files
+- `tabix` (for RSID matching and build inference)
 
 ### R Package Dependencies
 

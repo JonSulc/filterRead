@@ -24,6 +24,8 @@ Suggests:
     testthat (>= 3.0.0),
     withr
 Config/testthat/edition: 3
+SystemRequirements: bash, awk, zcat, tabix (for rsid matching and build
+    inference)
 RoxygenNote: 7.3.3
 Collate:
     'allele_matching.R'
