@@ -82,18 +82,19 @@ build_awk_file_args <- function(
 #'   condition passes (for output formatting)
 #' @param nlines Optional limit on number of output lines
 #' @param skip_header If TRUE and multi-file, add FNR == 1 skip inside block
-#' @param return_only_cmd If TRUE, return awk inline; if FALSE, use temp file
+#' @param use_progfile Whether to pass the program in a progfile rather than
+#'   inline.
 #'
 #' @return Character string with complete awk command
 #' @keywords internal
-compile_awk_cmds <- function(
+compile_awk_cmd <- function(
   finterface,
   fcondition_awk = NULL,
   column_arrays_before_conditions = NULL,
   column_arrays_after_conditions = get_awk_column_arrays(finterface)$after_if,
   nlines = NULL,
   skip_header = TRUE,
-  return_only_cmd = FALSE
+  use_progfile = TRUE
 ) {
   branches <- fcondition_awk$branches
   array_loads <- fcondition_awk$array_loads
@@ -150,7 +151,7 @@ compile_awk_cmds <- function(
   # For multi-file, header skip is handled inside wrap_main_file_code
   emit_header_skip <- skip_header && !is_multi_file
 
-  awk_script <- paste(
+  awk_program <- paste(
     c(
       build_awk_begin_block(
         finterface$sep,
@@ -165,25 +166,23 @@ compile_awk_cmds <- function(
     collapse = "\n"
   )
 
-  # Write to temp file for long scripts, or use inline
-  temp_awk_file <- NULL
-  if (return_only_cmd) {
-    awk_code <- sprintf("'%s'", awk_script)
+  if (use_progfile) {
+    progfile <- tempfile(fileext = ".awk")
+    writeLines(paste0(awk_program, "\n"), progfile)
+    program_args <- sprintf("-f %s", shQuote(progfile, type = "sh"))
   } else {
-    temp_awk_file <- tempfile(fileext = ".awk")
-    writeLines(paste0(awk_script, "\n"), temp_awk_file)
-    awk_code <- sprintf("-f %s", shQuote(temp_awk_file, type = "sh"))
+    progfile <- NULL
+    program_args <- sprintf("'%s'", awk_program)
   }
 
-  # Build file arguments and assemble final command
   awk_file_args <- build_awk_file_args(
     finterface,
     branches,
     array_loads,
     use_command_line_fs
   )
-  cmd <- paste("awk", awk_code, awk_file_args)
-  attr(cmd, "additional_files") <- temp_awk_file
+  cmd <- paste("awk", program_args, awk_file_args)
+  attr(cmd, "additional_files") <- progfile
   cmd
 }
 
@@ -554,7 +553,7 @@ build_awk_begin_block <- function(
 # =============================================================================
 # These functions combine primitive builders into larger components.
 
-#' Build read-only awk script (no filtering)
+#' Build the awk command for a read that filters nothing
 #'
 #' Creates a complete awk command for reading a file without filtering,
 #' but with optional line limiting and prefix handling.
@@ -565,7 +564,7 @@ build_awk_begin_block <- function(
 #'
 #' @return Complete awk command string
 #' @keywords internal
-build_read_only_awk_script <- function(
+build_read_only_awk_cmd <- function(
   finterface,
   nlines = NULL,
   skip_header = TRUE
@@ -594,7 +593,6 @@ build_read_only_awk_script <- function(
     parts <- c(parts, main_block)
   }
 
-  # Combine all parts into final awk script
   sprintf(
     "awk '%s' %s",
     paste(parts, collapse = "\n"),
@@ -647,7 +645,7 @@ awk_load_file_cmd <- function(
   if (only_read) {
     # For only_read cases with processing needed, build complete pipeline
     if (needs_processing) {
-      return(build_read_only_awk_script(finterface, nlines, skip_header))
+      return(build_read_only_awk_cmd(finterface, nlines, skip_header))
     }
     # Simple case: just cat/zcat the file
     return(build_file_read_cmd(finterface))

@@ -249,7 +249,7 @@ test_that("Multiple genomic range-other condition combinations can be handled", 
       ),
       finterface
     ) |>
-      fcondition_to_awk(return_only_cmd = TRUE),
+      fcondition_to_awk(use_progfile = FALSE),
     structure("awk 'BEGIN{
   OFS = \",\"
 }

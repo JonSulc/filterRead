@@ -4,13 +4,15 @@
 \alias{fcondition_to_awk}
 \title{Convert filter condition to complete awk command}
 \usage{
-fcondition_to_awk(fcondition, nlines = NULL, return_only_cmd = FALSE)
+fcondition_to_awk(fcondition, nlines = NULL, use_progfile = TRUE)
 }
 \arguments{
 \item{fcondition}{A filter_condition object}
 
-\item{return_only_cmd}{If TRUE, return awk code inline; if FALSE (default),
-write awk script to temp file and use `-f`}
+\item{nlines}{Optional limit on number of output lines}
+
+\item{use_progfile}{Whether to pass the program in a progfile rather than
+inline.}
 }
 \value{
 Character string with complete awk command ready for execution

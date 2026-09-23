@@ -65,7 +65,7 @@ test_that("add_chr_prefix does nothing when chr column is absent", {
   )
 })
 
-test_that("awk script correctly generates chr prefix assignment", {
+test_that("get_awk_column_arrays prepends chr to the chromosome field after the condition", {
   finterface <- list(
     filename = "test.txt",
     gzipped = FALSE,

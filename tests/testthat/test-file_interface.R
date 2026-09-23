@@ -635,7 +635,7 @@ test_that("Header is consistently skipped regardless of filter condition", {
   )
 })
 
-test_that("[.file_interface cleans up the awk script tempfile", {
+test_that("[.file_interface removes the progfile", {
   finterface <- local_file_interface()
   before <- list.files(tempdir(), full.names = TRUE)
   result <- finterface[num < 3]
@@ -1044,7 +1044,7 @@ test_that("A header starting with a regex metacharacter is read", {
 
 test_that("A header starting with an apostrophe is detected", {
   # Covers prefix detection only. Building a file_interface on this file
-  # fails further down: the read-only awk script is wrapped in single quotes
+  # fails further down: the read-only awk program is wrapped in single quotes
   # for the shell, which an apostrophe in the trim prefix closes early.
   writeLines(
     c(

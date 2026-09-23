@@ -867,7 +867,7 @@ test_that("%in% parsing works", {
         rlang::quo(char %in% letters[1:5]),
         finterface = finterface
       ) |>
-        fcondition_to_awk(return_only_cmd = TRUE)
+        fcondition_to_awk(use_progfile = FALSE)
     )
   )
 })

@@ -218,15 +218,14 @@ single_rule_to_fc <- function(
 #' command assembly.
 #'
 #' @param fcondition A filter_condition object
-#' @param return_only_cmd If TRUE, return awk code inline; if FALSE (default),
-#'   write awk script to temp file and use `-f`
+#' @inheritParams compile_awk_cmd
 #'
 #' @return Character string with complete awk command ready for execution
 #' @keywords internal
 fcondition_to_awk <- function(
   fcondition,
   nlines = NULL,
-  return_only_cmd = FALSE
+  use_progfile = TRUE
 ) {
   # Determine which columns need array splitting (for encoded columns)
   column_arrays <- get_awk_column_arrays(
@@ -238,13 +237,13 @@ fcondition_to_awk <- function(
   # carry any tempfiles created for %in% matching; expose them on the returned
   # command so callers can clean up after fread consumes them.
   fcondition_awk <- fcondition_and_rsid_to_awk(fcondition)
-  cmd <- compile_awk_cmds(
+  cmd <- compile_awk_cmd(
     finterface = get_file_interface(fcondition),
     fcondition_awk = fcondition_awk,
     column_arrays_before_conditions = column_arrays$before_if,
     column_arrays_after_conditions = column_arrays$after_if,
     nlines = nlines,
-    return_only_cmd = return_only_cmd
+    use_progfile = use_progfile
   )
   attr(cmd, "additional_files") <- c(
     fcondition_awk$array_loads$temp_file,

@@ -1,6 +1,6 @@
 # Integration Tests for AWK Command Compilation
 
-test_that("compile_awk_cmds: simple file interface with only_read", {
+test_that("compile_awk_cmd emits a record cap for a read needing no filter", {
   finterface <- list(
     filename = "test.txt",
     gzipped = FALSE,
@@ -9,7 +9,7 @@ test_that("compile_awk_cmds: simple file interface with only_read", {
     sep = "\t"
   )
   expect_equal(
-    compile_awk_cmds(finterface, nlines = 5, skip_header = FALSE),
+    compile_awk_cmd(finterface, nlines = 5, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -33,7 +33,7 @@ test_that("awk_load_file_cmd: gzipped file head", {
   )
 })
 
-test_that("compile_awk_cmds: complex case with nlines and prefixes", {
+test_that("compile_awk_cmd applies both prefixes under a record cap", {
   finterface <- list(
     filename = "data.csv",
     gzipped = FALSE,
@@ -42,7 +42,7 @@ test_that("compile_awk_cmds: complex case with nlines and prefixes", {
     sep = ","
   )
   expect_equal(
-    compile_awk_cmds(finterface, nlines = 100, skip_header = FALSE),
+    compile_awk_cmd(finterface, nlines = 100, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \",\"
   OFS = \",\"
@@ -57,7 +57,7 @@ test_that("compile_awk_cmds: complex case with nlines and prefixes", {
   )
 })
 
-test_that("compile_awk_cmds: case with empty nlines", {
+test_that("compile_awk_cmd treats an empty nlines as no record cap", {
   finterface <- list(
     filename = "data.csv",
     gzipped = FALSE,
@@ -66,7 +66,7 @@ test_that("compile_awk_cmds: case with empty nlines", {
     sep = ","
   )
   expect_equal(
-    compile_awk_cmds(finterface, nlines = integer(0), skip_header = FALSE),
+    compile_awk_cmd(finterface, nlines = integer(0), skip_header = FALSE),
     "awk 'BEGIN{
   FS = \",\"
   OFS = \",\"

@@ -1,6 +1,6 @@
 # Test Level 2: Component Assemblers
 
-test_that("build_read_only_awk_script with no prefixes or nlines", {
+test_that("build_read_only_awk_cmd prints every record, skipping the header where asked", {
   finterface <- list(
     filename = "test.txt",
     comment_prefix = NULL,
@@ -10,7 +10,7 @@ test_that("build_read_only_awk_script with no prefixes or nlines", {
   )
   
   expect_equal(
-    build_read_only_awk_script(finterface, skip_header = FALSE),
+    build_read_only_awk_cmd(finterface, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -20,7 +20,7 @@ test_that("build_read_only_awk_script with no prefixes or nlines", {
 }' 'test.txt'"
   )
   expect_equal(
-    build_read_only_awk_script(finterface, skip_header = TRUE),
+    build_read_only_awk_cmd(finterface, skip_header = TRUE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -33,7 +33,7 @@ test_that("build_read_only_awk_script with no prefixes or nlines", {
   )
 })
 
-test_that("build_read_only_awk_script with comment prefix only", {
+test_that("build_read_only_awk_cmd drops comment records", {
   finterface <- list(
     filename = "test.txt",
     comment_prefix = "^##",
@@ -42,7 +42,7 @@ test_that("build_read_only_awk_script with comment prefix only", {
     gzipped = FALSE
   )
   expect_equal(
-    build_read_only_awk_script(finterface, skip_header = FALSE),
+    build_read_only_awk_cmd(finterface, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -53,7 +53,7 @@ test_that("build_read_only_awk_script with comment prefix only", {
 }' 'test.txt'"
   )
   expect_equal(
-    build_read_only_awk_script(finterface, skip_header = TRUE),
+    build_read_only_awk_cmd(finterface, skip_header = TRUE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -67,7 +67,7 @@ test_that("build_read_only_awk_script with comment prefix only", {
   )
 })
 
-test_that("build_read_only_awk_script with trim prefix only", {
+test_that("build_read_only_awk_cmd trims a prefix from every record", {
   finterface <- list(
     filename = "test.txt",
     comment_prefix = NULL,
@@ -76,7 +76,7 @@ test_that("build_read_only_awk_script with trim prefix only", {
     gzipped = FALSE
   )
   expect_equal(
-    build_read_only_awk_script(finterface, skip_header = FALSE),
+    build_read_only_awk_cmd(finterface, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -88,7 +88,7 @@ test_that("build_read_only_awk_script with trim prefix only", {
   )
 })
 
-test_that("build_read_only_awk_script with both prefixes", {
+test_that("build_read_only_awk_cmd drops comment records and trims the rest", {
   finterface <- list(
     filename = "test.txt",
     comment_prefix = "^##",
@@ -97,7 +97,7 @@ test_that("build_read_only_awk_script with both prefixes", {
     gzipped = FALSE
   )
   expect_equal(
-    build_read_only_awk_script(finterface, skip_header = FALSE),
+    build_read_only_awk_cmd(finterface, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -110,7 +110,7 @@ test_that("build_read_only_awk_script with both prefixes", {
   )
 })
 
-test_that("build_read_only_awk_script with nlines only", {
+test_that("build_read_only_awk_cmd stops at the record cap", {
   finterface <- list(
     filename = "test.txt",
     comment_prefix = NULL,
@@ -119,7 +119,7 @@ test_that("build_read_only_awk_script with nlines only", {
     gzipped = FALSE
   )
   expect_equal(
-    build_read_only_awk_script(finterface, nlines = 100, skip_header = FALSE),
+    build_read_only_awk_cmd(finterface, nlines = 100, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -131,7 +131,7 @@ test_that("build_read_only_awk_script with nlines only", {
 }' 'test.txt'"
   )
   expect_equal(
-    build_read_only_awk_script(finterface, nlines = 100),
+    build_read_only_awk_cmd(finterface, nlines = 100),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -146,7 +146,7 @@ test_that("build_read_only_awk_script with nlines only", {
   )
 })
 
-test_that("build_read_only_awk_script with prefixes and nlines", {
+test_that("build_read_only_awk_cmd counts only records the comment filter keeps", {
   finterface <- list(
     filename = "test.txt",
     comment_prefix = "^##",
@@ -155,7 +155,7 @@ test_that("build_read_only_awk_script with prefixes and nlines", {
     gzipped = FALSE
   )
   expect_equal(
-    build_read_only_awk_script(finterface, nlines = 100, skip_header = FALSE),
+    build_read_only_awk_cmd(finterface, nlines = 100, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -169,7 +169,7 @@ test_that("build_read_only_awk_script with prefixes and nlines", {
 }' 'test.txt'"
   )
   expect_equal(
-    build_read_only_awk_script(finterface, nlines = 100, skip_header = TRUE),
+    build_read_only_awk_cmd(finterface, nlines = 100, skip_header = TRUE),
     "awk 'BEGIN{
   FS = \"\t\"
   OFS = \"\t\"
@@ -186,7 +186,7 @@ test_that("build_read_only_awk_script with prefixes and nlines", {
   )
 })
 
-test_that("build_read_only_awk_script handles different separators", {
+test_that("build_read_only_awk_cmd sets FS and OFS to the file's separator", {
   finterface <- list(
     filename = "test.txt",
     comment_prefix = NULL,
@@ -195,7 +195,7 @@ test_that("build_read_only_awk_script handles different separators", {
     gzipped = FALSE
   )
   expect_equal(
-    build_read_only_awk_script(finterface, skip_header = FALSE),
+    build_read_only_awk_cmd(finterface, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \",\"
   OFS = \",\"
@@ -206,7 +206,7 @@ test_that("build_read_only_awk_script handles different separators", {
   )
 })
 
-test_that("build_read_only_awk_script with complex patterns", {
+test_that("build_read_only_awk_cmd escapes a slash in a trim prefix", {
   finterface <- list(
     filename = "test.txt",
     comment_prefix = "^<!--",
@@ -215,7 +215,7 @@ test_that("build_read_only_awk_script with complex patterns", {
     gzipped = FALSE
   )
   expect_equal(
-    build_read_only_awk_script(finterface, skip_header = FALSE),
+    build_read_only_awk_cmd(finterface, skip_header = FALSE),
     "awk 'BEGIN{
   FS = \"|\"
   OFS = \"|\"

@@ -444,11 +444,11 @@ head.file_interface <- function(
   has_column_info <- "column_info" %in% names(x)
   effective_nlines <- nlines + !has_column_info
 
-  cmd <- compile_awk_cmds(
+  cmd <- compile_awk_cmd(
     x,
     nlines = effective_nlines,
     skip_header = has_column_info,
-    return_only_cmd = return_only_cmd
+    use_progfile = !return_only_cmd
   )
 
   if (return_only_cmd) {
@@ -582,24 +582,24 @@ empty_read_for_query <- function(
     return(empty_read_for_query(finterface, fcondition))
   }
 
-  command_line <- fcondition_to_awk(
+  cmd <- fcondition_to_awk(
     fcondition,
     nlines = nlines,
-    return_only_cmd = return_only_cmd
+    use_progfile = !return_only_cmd
   )
 
   if (return_only_cmd) {
-    return(command_line)
+    return(cmd)
   }
 
-  additional_files <- attr(command_line, "additional_files")
+  additional_files <- attr(cmd, "additional_files")
   if (length(additional_files) > 0) {
     on.exit(unlink(additional_files), add = TRUE)
   }
 
   result <- withCallingHandlers(
     data.table::fread(
-      cmd = paste("bash -c", shQuote(command_line)),
+      cmd = paste("bash -c", shQuote(cmd)),
       header = FALSE,
       sep = sep,
       ...,
