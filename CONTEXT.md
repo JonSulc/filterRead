@@ -333,19 +333,25 @@ _Avoid_: `header_prefix` and `print_prefix`, which name a header line's own
 prefix and awk output text, neither of them a chromosome's spelling
 
 **awk executable**:
-The awk a read runs, held as the shell fragment that invokes it: usually a
-bare name resolved on `PATH`, quoted on the way in where it holds a space,
-and — where `set_awk()` is told not to validate it — anything the shell
-accepts, `busybox awk` among them. `get_awk()` answers with the configured
-one, else `mawk` where it is installed, else `awk`.
+The implementation of awk a read runs, such as mawk, gawk or busybox awk, as
+the shell invokes it: by name or path, or through shell text that runs one,
+such as `LC_ALL=C gawk`. A session runs one: the configured one, else mawk
+where it is installed, else whichever the shell finds as `awk`. Plain "awk"
+names the language.
 _Avoid_: program (POSIX's word for the instructions the package emits, its
 awk program), command (the whole shell string a read runs, which the package
 builds as `cmd`)
 
 **Portable subset**:
-The part of the awk language the package emits: only constructs that mawk,
-gawk and any other awk executable handle the same way. Where the obvious
-construct falls outside it and a portable alternative is emitted instead, a
-comment in the code that emits it names the construct avoided and why.
+The part of the awk language the package writes into the programs it emits:
+only constructs that mawk, gawk and any other awk executable handle the same
+way. Where the obvious construct falls outside it and a portable alternative
+is written instead, a comment in the code that writes it names the construct
+avoided and why. Two things fall outside it that the package cannot write
+around: a pattern a caller passes through `grepl()` or `%like%`, emitted as
+written, and a comparison on a field whose value the executables type
+differently, such as `0x10`. `set_awk()` and `get_awk()` report which of the
+divergences known between awk executables the awk executable handles
+differently than R.
 _Avoid_: POSIX awk (the subset is set by what the executables actually do, not
 by the standard)
