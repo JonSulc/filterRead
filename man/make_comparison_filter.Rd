@@ -4,16 +4,19 @@
 \alias{make_comparison_filter}
 \title{Create a comparison filter function factory}
 \usage{
-make_comparison_filter(operator)
+make_comparison_filter(comparator, connective = NULL)
 }
 \arguments{
-\item{operator}{The comparison operator string (e.g., "<", "==")}
+\item{comparator}{The comparison operator string (e.g., "<", "==")}
+
+\item{connective}{Awk connective joining the comparisons ("&&" or "||")}
 }
 \value{
-A function that takes var1, var2 and returns a list with condition
+A function that takes left, right and returns a list with condition
 }
 \description{
 Creates a function that builds an awk comparison condition with the
-given operator.
+given comparator. Where an operand holds several spellings of a value, it
+builds one comparison per spelling and joins them with `connective`.
 }
 \keyword{internal}

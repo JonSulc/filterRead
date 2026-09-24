@@ -47,13 +47,13 @@ require_variant_columns <- function(finterface) {
 
 #' Build the position set and both-orderings key set for a variant set
 #'
-#' Lifts `variants` to `build`, then formats each `(chr, pos, ref, alt)`
-#' component to match the file's on-disk representation (chr prefix, allele
-#' upper-casing, quoting) via [resolve_post_processing()]. Variants missing
-#' any component (an unmapped `pos` after the lift, or a missing allele)
-#' cannot form a key and are dropped, with a `warning`. Both allele orderings
-#' (`chr_pos_ref_alt` and `chr_pos_alt_ref`) are emitted so the awk side stays
-#' one key, one lookup for efficiency.
+#' Lifts `variants` to `build`, then spells each `(chr, pos, ref, alt)`
+#' component as the file holds it. Each variant takes a key in every
+#' chromosome spelling the file may hold, so a prefixed file and a bare one
+#' match alike. Variants missing any component (an unmapped `pos` after the
+#' lift, or a missing allele) cannot form a key and are dropped, with a
+#' `warning`. Both allele orderings (`chr_pos_ref_alt` and `chr_pos_alt_ref`)
+#' are emitted.
 #'
 #' @param variants A `variant_set` object.
 #' @param finterface A file_interface object.
@@ -64,14 +64,6 @@ require_variant_columns <- function(finterface) {
 #' @keywords internal
 variant_keyset <- function(variants, finterface, build) {
   components <- liftover(variants, build)[, .(chr, pos, ref, alt)]
-  components <- Map(
-    \(values, column) resolve_post_processing(
-      values, column, finterface, to_write = TRUE
-    ),
-    components, names(components)
-  ) |>
-    data.table::setDT()
-
   n_before <- nrow(components)
   components <- na.omit(components)
   if (nrow(components) < n_before) {
@@ -81,6 +73,15 @@ variant_keyset <- function(variants, finterface, build) {
       call. = FALSE
     )
   }
+
+  components <- Map(
+    \(values, column) resolve_post_processing(
+      values, column, finterface, to_write = TRUE
+    ),
+    components, names(components)
+  )
+  components <- lapply(components, rep_len, length(components$chr)) |>
+    data.table::setDT()
 
   list(
     positions = unique(components$pos),

@@ -1,13 +1,13 @@
-# =============================================================================
-# Value Post-Processing
-# =============================================================================
+# Value Post-Processing ----
 # These functions transform R values to match file format expectations:
-# - Adding prefixes (e.g., "chr" for chromosome values)
+# - Spelling a value as the file may hold it
 # - Handling quoted values (escaping quotes for awk)
 
 #' Apply post-processing to values for condition matching
 #'
-#' Orchestrates prefix and quote handling based on column metadata.
+#' Orchestrates spelling and quote handling based on column metadata. A
+#' literal arrives in the package's spelling or in the file's, so any prefix
+#' the column declares is dropped from it before it is spelled for the file.
 #'
 #' @param values Vector of values to process
 #' @param column_symbol Symbol representing the column being matched
@@ -15,7 +15,8 @@
 #' @param to_write If TRUE, use write mode for quotes (for temp files)
 #' @param resolve_quotes_function Quote handling function to use
 #'
-#' @return Processed values ready for awk condition or file writing
+#' @return Processed values ready for awk condition or file writing, one per
+#'   spelling the file may hold them in
 #' @keywords internal
 resolve_post_processing <- function(
   values,
@@ -33,66 +34,58 @@ resolve_post_processing <- function(
     return(values)
   }
 
-  # Get column metadata for post-processing
-  post_processing_to_check <- finterface$column_info[
+  column <- finterface$column_info[
     column_name,
-    .(standard_name, quoted, observed_prefixes),
+    .(standard_name, quoted, possible_prefixes, dropped_prefix),
     on = "name"
   ]
 
-  # Allele columns are upper-cased in awk so RHS literals must match.
-  if (isTRUE(post_processing_to_check$standard_name %in%
-    ALLELE_STANDARD_NAMES) && is.character(values)) {
+  # Allele columns are upper-cased in awk, so a literal compared against one
+  # is upper-cased too.
+  if (isTRUE(column$standard_name %in% ALLELE_STANDARD_NAMES) &&
+    is.character(values)) {
     values <- toupper(values)
   }
 
-  if (isTRUE(post_processing_to_check$standard_name == "chr")) {
-    values <- drop_chr_prefix(values)
-  }
+  # A column declaring nothing leaves the values as they came, which is what
+  # keeps a numeric literal numeric for resolve_quotes().
+  values <- Reduce(
+    \(carried, prefix) drop_prefix(carried, prefix),
+    column$possible_prefixes[[1]],
+    init = values
+  )
 
-  observed_prefixes <- post_processing_to_check$observed_prefixes[[1]]
-  if (1 < length(observed_prefixes)) {
-    stop(
-      "Filtering on ", column_name, " is not supported: its values do not ",
-      "agree on a prefix (some carry ",
-      paste(encodeString(setdiff(observed_prefixes, ""), quote = "\""),
-            collapse = " or "),
-      ", some carry none), so a literal has no single spelling to match them.",
-      call. = FALSE
-    )
-  }
-
-  values |>
-    resolve_prefix(observed_prefixes) |>
-    resolve_quotes_function(post_processing_to_check$quoted)
+  resolve_spelling(values, column) |>
+    resolve_quotes_function(column$quoted)
 }
 
-#' Add prefix to values if missing
+#' Spell values as the file may hold them
 #'
-#' Ensures values have the expected prefix (e.g., "chr" for chromosomes).
-#' Values already having the prefix are unchanged.
+#' A chromosome is returned bare and again under every prefix its column
+#' declares. Any other column's values are returned under its `dropped_prefix`,
+#' or unchanged where that is NA.
 #'
-#' @param values Vector of values
-#' @param prefix Prefix to add. `NA`, `""` and a zero-length vector each mean
-#'   there is none to add, and the values are returned unchanged.
+#' @param values Values in the package's spelling.
+#' @param column The `column_info` row of the column being matched.
 #'
-#' @return Values with prefix added where missing
+#' @return The values, once per spelling.
 #' @keywords internal
-#'
-#' @examples
-#' # resolve_prefix(c("1", "chr2"), "chr") returns c("chr1", "chr2")
-resolve_prefix <- function(
+resolve_spelling <- function(
   values,
-  prefix
+  column
 ) {
-  if (length(prefix) == 0L || is.na(prefix) || prefix == "") {
+  if (isTRUE(column$standard_name == "chr")) {
+    return(c(
+      values,
+      unlist(lapply(
+        column$possible_prefixes[[1]], paste0, values, recycle0 = TRUE
+      ))
+    ))
+  }
+  if (is.na(column$dropped_prefix)) {
     return(values)
   }
-  data.table::fifelse(
-    values == "" | grepl(paste0("^", prefix), values),
-    as.character(values),
-    paste0(prefix, values)
-  )
+  paste0(column$dropped_prefix, values, recycle0 = TRUE)
 }
 
 #' Format values for awk condition (with quote escaping)

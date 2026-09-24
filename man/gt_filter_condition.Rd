@@ -4,15 +4,15 @@
 \alias{gt_filter_condition}
 \title{Build awk greater-than condition}
 \usage{
-gt_filter_condition(var1, var2)
+gt_filter_condition(left, right)
 }
 \arguments{
-\item{var1}{Left operand (column ref or value)}
+\item{left}{Left operand (column ref or value)}
 
-\item{var2}{Right operand (column ref or value)}
+\item{right}{Right operand (column ref or value)}
 }
 \value{
-List with `condition` element: "var1 > var2"
+List with `condition` element: "left > right"
 }
 \description{
 Build awk greater-than condition

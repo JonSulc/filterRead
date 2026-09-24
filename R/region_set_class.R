@@ -315,17 +315,25 @@ copy_region_set <- function(regions) {
     as_region_set(canonicalize = FALSE)
 }
 
-#' Remove prefix from chromosome names
+#' Drop a prefix from values that carry it
 #'
-#' @param chr Character vector of chromosome names
-#' @param chr_prefix Prefix to remove (defaul: "chr")
-#' @return Chromosome names without prefix
+#' The prefix is a literal string, not a pattern: a value carrying it loses
+#' exactly those characters, and every other value is returned unchanged.
+#'
+#' @param x Character vector of values
+#' @param prefix Prefix to drop
+#' @return The values without the prefix
 #' @keywords internal
-drop_chr_prefix <- function(
-  chr,
-  chr_prefix = "chr"
+drop_prefix <- function(
+  x,
+  prefix = "chr"
 ) {
-  gsub(paste0("^", chr_prefix), "", chr)
+  x <- as.character(x)
+  data.table::fifelse(
+    startsWith(x, prefix),
+    substring(x, nchar(prefix) + 1L),
+    x
+  )
 }
 
 #' Check if a region_set selects every position

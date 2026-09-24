@@ -4,14 +4,14 @@
 \alias{combine_filter_condition}
 \title{Generic condition combiner}
 \usage{
-combine_filter_condition(fcondition1, fcondition2, operation)
+combine_filter_condition(fcondition1, fcondition2, connective)
 }
 \arguments{
 \item{fcondition1}{First condition list}
 
 \item{fcondition2}{Second condition list}
 
-\item{operation}{Awk operator string ("&&" or "||")}
+\item{connective}{Awk connective joining the conditions ("&&" or "||")}
 }
 \value{
 Combined condition list with:

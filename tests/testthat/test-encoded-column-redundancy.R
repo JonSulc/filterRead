@@ -33,13 +33,16 @@ test_that("a fully-redundant encoded parent is demoted to a plain column", {
   expect_true(is.na(parent$split_encoding_column))
 })
 
-test_that("resolve_post_processing works with a redundant encoded column", {
-  fi <- local_file_interface(dt = real_and_encoded_dt(), build = "b38")
-  expect_equal(
-    resolve_post_processing(c("chr1", "chr2"), "chr", fi, to_write = TRUE),
-    c("chr1", "chr2")
-  )
-})
+test_that(
+  "resolve_post_processing spells chr bare and prefixed by a redundant parent",
+  {
+    fi <- local_file_interface(dt = real_and_encoded_dt(), build = "b38")
+    expect_equal(
+      resolve_post_processing(c("chr1", "chr2"), "chr", fi, to_write = TRUE),
+      c("1", "2", "chr1", "chr2")
+    )
+  }
+)
 
 test_that("positional filtering works with a redundant encoded column", {
   fi <- local_file_interface(dt = real_and_encoded_dt(), build = "b38")

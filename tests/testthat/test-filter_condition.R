@@ -1437,16 +1437,18 @@ test_that("an OR of two purely positional branches runs", {
         (chr == "chr2" & 250 <= pos & pos <= 450)
     ),
     expected_awk_condition = paste0(
-      '$1 == "chr1" && 150 <= $2 && $2 <= 350 || ',
-      '$1 == "chr2" && 250 <= $2 && $2 <= 450'
+      '($1 == "1" || $1 == "chr1") && 150 <= $2 && $2 <= 350 || ',
+      '($1 == "2" || $1 == "chr2") && 250 <= $2 && $2 <= 450'
     )
   )
   expect_read_matches_r(
     finterface,
     quote((chr == "chr1" | chr == "chr2") & (pos <= 200 | 400 <= pos)),
     expected_awk_condition = paste0(
-      '($1 == "chr1" && $2 <= 200 || $1 == "chr1" && 400 <= $2 || ',
-      '$1 == "chr2" && $2 <= 200 || $1 == "chr2" && 400 <= $2)'
+      '(($1 == "1" || $1 == "chr1") && $2 <= 200 || ',
+      '($1 == "1" || $1 == "chr1") && 400 <= $2 || ',
+      '($1 == "2" || $1 == "chr2") && $2 <= 200 || ',
+      '($1 == "2" || $1 == "chr2") && 400 <= $2)'
     )
   )
 })
@@ -1525,12 +1527,12 @@ test_that("a parenthesized chromosome or position test filters the read", {
   expect_read_matches_r(
     finterface,
     quote((chr == "chr1")),
-    expected_awk_condition = '$1 == "chr1"'
+    expected_awk_condition = '($1 == "1" || $1 == "chr1")'
   )
   expect_read_matches_r(
     finterface,
     quote((chr == "chr1") | (pval < 0.5)),
-    expected_awk_condition = '$1 == "chr1" || ($5 < 0.5)'
+    expected_awk_condition = '($1 == "1" || $1 == "chr1") || ($5 < 0.5)'
   )
   expect_read_matches_r(
     finterface,
@@ -1540,7 +1542,10 @@ test_that("a parenthesized chromosome or position test filters the read", {
   expect_read_matches_r(
     finterface,
     quote(pval < 0.05 & (chr == "chr1" | chr == "chr2")),
-    expected_awk_condition = '$5 < 0.05 && ($1 == "chr1" || $1 == "chr2")'
+    expected_awk_condition = paste0(
+      '$5 < 0.05 && ',
+      '(($1 == "1" || $1 == "chr1") || ($1 == "2" || $1 == "chr2"))'
+    )
   )
 })
 
@@ -1584,7 +1589,10 @@ test_that("an OR branch repeating its partner's constraint emits both", {
   expect_read_matches_r(
     finterface,
     quote(chr == "chr1" | chr == "chr1" & pval < 0.5),
-    expected_awk_condition = '$1 == "chr1" || $5 < 0.5 && $1 == "chr1"'
+    expected_awk_condition = paste0(
+      '($1 == "1" || $1 == "chr1") || ',
+      '$5 < 0.5 && ($1 == "1" || $1 == "chr1")'
+    )
   )
   expect_read_matches_r(
     finterface,
@@ -1604,7 +1612,8 @@ test_that("a genomic constraint beside a parenthesized OR filters the read", {
   expect_read_matches_r(
     finterface,
     quote(chr == "chr1" & (ref == "A" | alt == "G")),
-    expected_awk_condition = '(($3 == "A" || $4 == "G")) && $1 == "chr1"'
+    expected_awk_condition =
+      '(($3 == "A" || $4 == "G")) && ($1 == "1" || $1 == "chr1")'
   )
 })
 
@@ -1617,7 +1626,10 @@ test_that("a region_set beside a parenthesized OR filters the read", {
   )
   expect_match(
     finterface[regions & (ref == "A" | alt == "G"), return_only_cmd = TRUE],
-    'if ((($3 == "A" || $4 == "G")) && $1 == "chr1" && $2 <= 250) {',
+    paste0(
+      'if ((($3 == "A" || $4 == "G")) && ($1 == "1" || $1 == "chr1") && ',
+      '$2 <= 250) {'
+    ),
     fixed = TRUE
   )
   result <- finterface[regions & (ref == "A" | alt == "G")]
@@ -1635,7 +1647,7 @@ test_that("a repeated constraint is emitted once, not at every node", {
     ),
     expected_awk_condition = paste0(
       '((($3 == "A" || $4 == "G")) && (($5 < 0.5 || $4 == "T"))) && ',
-      '$1 == "chr1"'
+      '($1 == "1" || $1 == "chr1")'
     )
   )
 })
@@ -1654,7 +1666,8 @@ test_that("a repeated region_set is emitted once", {
     ],
     paste0(
       'if ((($3 == "A" || $4 == "G") && ($5 < 0.5 || $4 == "T")) && ',
-      '($1 == "chr1" && $2 <= 250 || $1 == "chr2" && $2 <= 250)) {'
+      '(($1 == "1" || $1 == "chr1") && $2 <= 250 || ',
+      '($1 == "2" || $1 == "chr2") && $2 <= 250)) {'
     ),
     fixed = TRUE
   )

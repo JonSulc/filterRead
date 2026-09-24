@@ -7,8 +7,7 @@
 post_process(x, finterface)
 }
 \arguments{
-\item{x}{A `filter_condition` (any subclass) or a `region_set`
-object.}
+\item{x}{A `filter_condition` (any subclass).}
 
 \item{finterface}{The associated file_interface. Defaults to the one
 stored in the object's `context` attribute.}
@@ -21,15 +20,11 @@ The same kind of object, post-processed in place. Atomic and
 }
 \description{
 S3 generic that walks a filter_condition tree and applies value
-transformations needed for awk: quoting string literals, prepending
-chromosome prefixes, and similar adjustments that depend on the
-file_interface's column metadata. Comparison atoms (`<`, `<=`, `>`, `>=`)
-pass through unchanged; equality (`==`, `!=`) and membership (`%in%`)
-atoms evaluate their right-hand side and run it through
-[resolve_post_processing()]. The `region_set` method normalizes
-chromosome values (strips any `"chr"` prefix, then re-applies the file's
-actual prefix and quoting from `column_info`) so the awk pattern matches
-the file's format.
+transformations needed for awk: quoting string literals and similar
+adjustments that depend on the file_interface's column metadata.
+Comparison atoms (`<`, `<=`, `>`, `>=`) pass through unchanged; equality
+(`==`, `!=`) and membership (`%in%`) atoms evaluate their right-hand side
+and run it through [resolve_post_processing()].
 }
 \examples{
 \dontrun{

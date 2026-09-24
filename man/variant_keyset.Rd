@@ -19,12 +19,12 @@ A list with `positions` (unique `pos` values) and `keys`
   (unique formatted keys, both allele orderings).
 }
 \description{
-Lifts `variants` to `build`, then formats each `(chr, pos, ref, alt)`
-component to match the file's on-disk representation (chr prefix, allele
-upper-casing, quoting) via [resolve_post_processing()]. Variants missing
-any component (an unmapped `pos` after the lift, or a missing allele)
-cannot form a key and are dropped, with a `warning`. Both allele orderings
-(`chr_pos_ref_alt` and `chr_pos_alt_ref`) are emitted so the awk side stays
-one key, one lookup for efficiency.
+Lifts `variants` to `build`, then spells each `(chr, pos, ref, alt)`
+component as the file holds it. Each variant takes a key in every
+chromosome spelling the file may hold, so a prefixed file and a bare one
+match alike. Variants missing any component (an unmapped `pos` after the
+lift, or a missing allele) cannot form a key and are dropped, with a
+`warning`. Both allele orderings (`chr_pos_ref_alt` and `chr_pos_alt_ref`)
+are emitted.
 }
 \keyword{internal}

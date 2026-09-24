@@ -256,7 +256,7 @@ expand_region_set <- function(
     full_chrs <- empty_region_set(build = build(regions))
   } else {
     full_chrs <- new_region_set(
-      chr = setdiff(ordered_chr, drop_chr_prefix(regions$chr)),
+      chr = setdiff(ordered_chr, drop_prefix(regions$chr)),
       build = build(regions)
     )
   }

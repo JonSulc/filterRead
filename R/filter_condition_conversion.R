@@ -83,58 +83,70 @@ is_column_symbol <- function(
 #' Create a comparison filter function factory
 #'
 #' Creates a function that builds an awk comparison condition with the
-#' given operator.
+#' given comparator. Where an operand holds several spellings of a value, it
+#' builds one comparison per spelling and joins them with `connective`.
 #'
-#' @param operator The comparison operator string (e.g., "<", "==")
-#' @return A function that takes var1, var2 and returns a list with condition
+#' @param comparator The comparison operator string (e.g., "<", "==")
+#' @param connective Awk connective joining the comparisons ("&&" or "||")
+#' @return A function that takes left, right and returns a list with condition
 #' @keywords internal
-make_comparison_filter <- function(operator) {
-  function(var1, var2) {
-    list(condition = sprintf("%s %s %s", var1, operator, var2))
+make_comparison_filter <- function(comparator, connective = NULL) {
+  function(left, right) {
+    conditions <- sprintf("%s %s %s", left, comparator, right)
+    list(condition = if (length(conditions) == 1L) {
+      conditions
+    } else {
+      sprintf(
+        "(%s)",
+        paste(conditions, collapse = paste0(" ", connective, " "))
+      )
+    })
   }
 }
 
 #' Build awk less-than condition
-#' @param var1 Left operand (column ref or value)
-#' @param var2 Right operand (column ref or value)
-#' @return List with `condition` element: "var1 < var2"
+#' @param left Left operand (column ref or value)
+#' @param right Right operand (column ref or value)
+#' @return List with `condition` element: "left < right"
 #' @keywords internal
 lt_filter_condition <- make_comparison_filter("<")
 
 #' Build awk less-than-or-equal condition
-#' @param var1 Left operand (column ref or value)
-#' @param var2 Right operand (column ref or value)
-#' @return List with `condition` element: "var1 <= var2"
+#' @param left Left operand (column ref or value)
+#' @param right Right operand (column ref or value)
+#' @return List with `condition` element: "left <= right"
 #' @keywords internal
 lte_filter_condition <- make_comparison_filter("<=")
 
 #' Build awk greater-than condition
-#' @param var1 Left operand (column ref or value)
-#' @param var2 Right operand (column ref or value)
-#' @return List with `condition` element: "var1 > var2"
+#' @param left Left operand (column ref or value)
+#' @param right Right operand (column ref or value)
+#' @return List with `condition` element: "left > right"
 #' @keywords internal
 gt_filter_condition <- make_comparison_filter(">")
 
 #' Build awk greater-than-or-equal condition
-#' @param var1 Left operand (column ref or value)
-#' @param var2 Right operand (column ref or value)
-#' @return List with `condition` element: "var1 >= var2"
+#' @param left Left operand (column ref or value)
+#' @param right Right operand (column ref or value)
+#' @return List with `condition` element: "left >= right"
 #' @keywords internal
 gte_filter_condition <- make_comparison_filter(">=")
 
 #' Build awk equality condition
-#' @param var1 Left operand (column ref or value)
-#' @param var2 Right operand (column ref or value)
-#' @return List with `condition` element: "var1 == var2"
+#' @param left Left operand (column ref, or value in one or more spellings)
+#' @param right Right operand (column ref, or value in one or more spellings)
+#' @return List with `condition` element: "left == right", or one comparison
+#'   per spelling joined with `||`
 #' @keywords internal
-eq_filter_condition <- make_comparison_filter("==")
+eq_filter_condition <- make_comparison_filter("==", "||")
 
 #' Build awk not-equal condition
-#' @param var1 Left operand (column ref or value)
-#' @param var2 Right operand (column ref or value)
-#' @return List with `condition` element: "var1 != var2"
+#' @param left Left operand (column ref, or value in one or more spellings)
+#' @param right Right operand (column ref, or value in one or more spellings)
+#' @return List with `condition` element: "left != right", or one comparison
+#'   per spelling joined with `&&`
 #' @keywords internal
-neq_filter_condition <- make_comparison_filter("!=")
+neq_filter_condition <- make_comparison_filter("!=", "&&")
 
 #' Build awk regex-match condition for grepl
 #'
@@ -241,7 +253,7 @@ or_filter_condition <- function(
 #'
 #' @param fcondition1 First condition list
 #' @param fcondition2 Second condition list
-#' @param operation Awk operator string ("&&" or "||")
+#' @param connective Awk connective joining the conditions ("&&" or "||")
 #'
 #' @return Combined condition list with:
 #'   - condition: combined condition string, or NULL when neither operand
@@ -252,7 +264,7 @@ or_filter_condition <- function(
 combine_filter_condition <- function(
   fcondition1,
   fcondition2,
-  operation
+  connective
 ) {
   conditions <- c(fcondition1$condition, fcondition2$condition)
   list(
@@ -261,7 +273,7 @@ combine_filter_condition <- function(
       fcondition2$variable_arrays
     ),
     condition = if (length(conditions) != 0L) {
-      paste(conditions, collapse = paste0(" ", operation, " "))
+      paste(conditions, collapse = paste0(" ", connective, " "))
     },
     additional_files = c(
       fcondition1$additional_files,

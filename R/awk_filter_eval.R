@@ -138,11 +138,10 @@ eval_region_set_from_fc <- function(
   finterface,
   column_indices
 ) {
-  gconstraint <- genomic_constraint(fcondition)
-  if (is_unconstrained(gconstraint)) {
+  regions <- genomic_constraint(fcondition)
+  if (is_unconstrained(regions)) {
     return()
   }
-  regions <- post_process(gconstraint, finterface = finterface)
   # An empty region set matches nothing on an RSID-indexed file as on any
   # other, so that is checked before the RSID bail below.
   if (is_empty_region_set(regions)) {
@@ -157,7 +156,8 @@ eval_region_set_from_fc <- function(
     ,
     single_rule_to_fc(
       .(chr = chr, start = start, end = end),
-      column_indices
+      column_indices,
+      finterface
     ),
     by = .I # Could be improved if vectorized
   ][, -"I"] |>
@@ -183,16 +183,22 @@ eval_region_set_from_fc <- function(
 #'
 #' @param rule List with chr, start, end (chr and end possibly NA)
 #' @param column_indices Named list with chr and pos column refs
+#' @param finterface File interface the chromosome is spelled against
 #'
-#' @return Character string like `$1 == "1" && 1000 <= $2 && $2 <= 2000`
+#' @return Character string like
+#'   `($1 == "1" || $1 == "chr1") && 1000 <= $2 && $2 <= 2000`
 #' @keywords internal
 single_rule_to_fc <- function(
   rule,
-  column_indices
+  column_indices,
+  finterface
 ) {
   all_fc <- c(
     if (!is.na(rule$chr)) {
-      eq_filter_condition(column_indices$chr, rule$chr)
+      eq_filter_condition(
+        column_indices$chr,
+        resolve_post_processing(rule$chr, "chr", finterface)
+      )
     },
     if (1L < rule$start) {
       lte_filter_condition(rule$start, column_indices$pos)

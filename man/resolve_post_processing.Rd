@@ -24,9 +24,12 @@ resolve_post_processing(
 \item{resolve_quotes_function}{Quote handling function to use}
 }
 \value{
-Processed values ready for awk condition or file writing
+Processed values ready for awk condition or file writing, one per
+  spelling the file may hold them in
 }
 \description{
-Orchestrates prefix and quote handling based on column metadata.
+Orchestrates spelling and quote handling based on column metadata. A
+literal arrives in the package's spelling or in the file's, so any prefix
+the column declares is dropped from it before it is spelled for the file.
 }
 \keyword{internal}

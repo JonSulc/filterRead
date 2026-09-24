@@ -4,15 +4,16 @@
 \alias{neq_filter_condition}
 \title{Build awk not-equal condition}
 \usage{
-neq_filter_condition(var1, var2)
+neq_filter_condition(left, right)
 }
 \arguments{
-\item{var1}{Left operand (column ref or value)}
+\item{left}{Left operand (column ref, or value in one or more spellings)}
 
-\item{var2}{Right operand (column ref or value)}
+\item{right}{Right operand (column ref, or value in one or more spellings)}
 }
 \value{
-List with `condition` element: "var1 != var2"
+List with `condition` element: "left != right", or one comparison
+  per spelling joined with `&&`
 }
 \description{
 Build awk not-equal condition

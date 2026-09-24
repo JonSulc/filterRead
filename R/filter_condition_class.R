@@ -698,18 +698,13 @@ format.filter_condition <- function(
 #' Post-process a filter_condition before awk compilation
 #'
 #' S3 generic that walks a filter_condition tree and applies value
-#' transformations needed for awk: quoting string literals, prepending
-#' chromosome prefixes, and similar adjustments that depend on the
-#' file_interface's column metadata. Comparison atoms (`<`, `<=`, `>`, `>=`)
-#' pass through unchanged; equality (`==`, `!=`) and membership (`%in%`)
-#' atoms evaluate their right-hand side and run it through
-#' [resolve_post_processing()]. The `region_set` method normalizes
-#' chromosome values (strips any `"chr"` prefix, then re-applies the file's
-#' actual prefix and quoting from `column_info`) so the awk pattern matches
-#' the file's format.
+#' transformations needed for awk: quoting string literals and similar
+#' adjustments that depend on the file_interface's column metadata.
+#' Comparison atoms (`<`, `<=`, `>`, `>=`) pass through unchanged; equality
+#' (`==`, `!=`) and membership (`%in%`) atoms evaluate their right-hand side
+#' and run it through [resolve_post_processing()].
 #'
-#' @param x A `filter_condition` (any subclass) or a `region_set`
-#'   object.
+#' @param x A `filter_condition` (any subclass).
 #' @param finterface The associated file_interface. Defaults to the one
 #'   stored in the object's `context` attribute.
 #' @return The same kind of object, post-processed in place. Atomic and
@@ -788,18 +783,6 @@ post_process.in_filter_condition <- function(
     resolve_post_processing(x[[2]], finterface, to_write = TRUE)
   x
 }
-#' @export
-post_process.region_set <- function(
-  x,
-  finterface
-) {
-  copy_region_set(x)[
-    !is.na(chr),
-    chr := resolve_post_processing(chr, "chr", finterface)
-  ][] |>
-    as_region_set(complement = is_complement(x))
-}
-
 #' @export
 print.filter_condition <- function(
   x,

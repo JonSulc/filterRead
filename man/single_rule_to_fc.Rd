@@ -4,15 +4,18 @@
 \alias{single_rule_to_fc}
 \title{Convert one rule to an awk condition}
 \usage{
-single_rule_to_fc(rule, column_indices)
+single_rule_to_fc(rule, column_indices, finterface)
 }
 \arguments{
 \item{rule}{List with chr, start, end (chr and end possibly NA)}
 
 \item{column_indices}{Named list with chr and pos column refs}
+
+\item{finterface}{File interface the chromosome is spelled against}
 }
 \value{
-Character string like `$1 == "1" && 1000 <= $2 && $2 <= 2000`
+Character string like
+  `($1 == "1" || $1 == "chr1") && 1000 <= $2 && $2 <= 2000`
 }
 \description{
 Creates the awk condition for one rule: chr equality and position bounds.

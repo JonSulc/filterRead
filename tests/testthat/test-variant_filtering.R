@@ -82,7 +82,10 @@ test_that("variant_keyset builds both allele orderings, upper-cased", {
     build = "b38"
   )
   ks <- variant_keyset(v, fi, "b38")
-  expect_setequal(ks$keys, c("chr1_100_A_G", "chr1_100_G_A"))
+  expect_setequal(
+    ks$keys,
+    c("1_100_A_G", "chr1_100_A_G", "1_100_G_A", "chr1_100_G_A")
+  )
   expect_equal(ks$positions, 100L)
 })
 
@@ -101,7 +104,10 @@ test_that("variant_keyset matches a bare-chr file's representation", {
     build = "b38"
   )
   ks <- variant_keyset(v, fi, "b38")
-  expect_setequal(ks$keys, c("1_100_A_G", "1_100_G_A"))
+  expect_setequal(
+    ks$keys,
+    c("1_100_A_G", "chr1_100_A_G", "1_100_G_A", "chr1_100_G_A")
+  )
 })
 
 test_that("variant_keyset drops incomplete variants with a warning", {
@@ -116,7 +122,10 @@ test_that("variant_keyset drops incomplete variants with a warning", {
     build = "b38"
   )
   expect_warning(ks <- variant_keyset(v, fi, "b38"), "dropped")
-  expect_setequal(ks$keys, c("chr1_100_A_G", "chr1_100_G_A"))
+  expect_setequal(
+    ks$keys,
+    c("1_100_A_G", "chr1_100_A_G", "1_100_G_A", "chr1_100_G_A")
+  )
   expect_equal(ks$positions, 100L)
 })
 
