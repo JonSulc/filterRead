@@ -96,8 +96,11 @@ regions <- finterface[
 - R (>= 4.4.0)
 - `bash`, which every read runs under
 - `awk` (available on most Unix-like systems). `mawk` is used where it is
-  installed, being about twice as fast; use `set_awk()` to choose a different
-  awk executable
+  installed, having read files about twice as fast as gawk in testing; use
+  `set_awk()` to choose a different awk executable. Some awk executables
+  select different records than R would in a few known cases, such as older
+  mawk not supporting regex intervals like `{3}`; the package tells you when
+  the one in use does
 - `zcat`, for gzipped files
 - `tabix` (for RSID matching and build inference)
 

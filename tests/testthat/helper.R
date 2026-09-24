@@ -522,21 +522,36 @@ make_decoded_chr_stats <- function(chr = "chr1") {
 }
 
 # A configuration in a temporary directory, so a test that writes one does not
-# open the caller's own. Clears what get_awk() reads, on the way in and on the
-# way out: the loaded configuration and the mawk probe.
+# open the caller's own. Clears what get_awk() reads on the way in, the loaded
+# configuration and the session's awk executable, and restores both on the way
+# out, so the reads that follow neither see the test's configuration nor probe
+# the awk executable again.
 local_config <- function(.local_envir = parent.frame()) {
   dir <- withr::local_tempdir(.local_envir = .local_envir)
   withr::local_envvar(
     R_USER_CONFIG_DIR = dir,
     .local_envir = .local_envir
   )
-  clear <- function() {
-    .filterread_env$config_loaded <- FALSE
-    .filterread_env$mawk_found <- NULL
-  }
-  clear()
-  withr::defer(clear(), envir = .local_envir)
+  found <- mget(
+    c("config_data", "config_loaded", "awk"),
+    envir = .filterread_env,
+    ifnotfound = list(NULL)
+  )
+  .filterread_env$config_loaded <- FALSE
+  .filterread_env$awk <- NULL
+  withr::defer(list2env(found, envir = .filterread_env), envir = .local_envir)
   dir
+}
+
+# A symlink to the machine's awk inside a new directory of a temporary
+# directory, so a test can name an awk executable whose path the shell must
+# have quoted, or one it can remove.
+local_awk_symlink <- function(dir_name, .local_envir = parent.frame()) {
+  dir <- file.path(withr::local_tempdir(.local_envir = .local_envir), dir_name)
+  dir.create(dir)
+  executable <- file.path(dir, "awk")
+  file.symlink(Sys.which("awk"), executable)
+  executable
 }
 
 # The executable a constructed command names. Mocking the resolver keeps a

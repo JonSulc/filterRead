@@ -72,6 +72,7 @@ makeActiveBinding(
     } else if (!.filterread_env$config_loaded) {
       .filterread_env$config_data <- read_config()
       .filterread_env$config_loaded <- TRUE
+      .filterread_env$awk <- NULL
     }
     .filterread_env$config_data
   },

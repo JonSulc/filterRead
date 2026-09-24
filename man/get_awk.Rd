@@ -7,9 +7,10 @@
 get_awk()
 }
 \value{
-Character string: the shell fragment a read invokes awk with.
+Character string: the awk executable, as the shell invokes it.
 }
 \description{
-The configured executable, or `mawk` where it is installed, or `awk`.
-Whether mawk is installed is checked once a session.
+The configured executable, or `mawk` where it is installed, or `awk`. The
+answer is resolved once a session, and resolving it reports the known
+divergences between it and R.
 }

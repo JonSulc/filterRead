@@ -4,18 +4,20 @@
 \alias{set_awk}
 \title{Set the awk executable a read runs}
 \usage{
-set_awk(executable, validate = TRUE)
+set_awk(executable, quote = TRUE)
 }
 \arguments{
 \item{executable}{The awk to run: a name found on `PATH`, or a path to one.
-Where `validate` is FALSE, any shell fragment that invokes awk, such as
-`"busybox awk"`. NULL clears the setting.}
+Where `quote` is FALSE, shell text that invokes awk, such as
+`"LC_ALL=C gawk"`. NULL clears the setting.}
 
-\item{validate}{Whether to check that `executable` is installed.}
+\item{quote}{Whether to quote `executable` for the shell, taking it as one
+path or name.}
 }
 \value{
 The configuration, invisibly.
 }
 \description{
-The setting persists across sessions.
+The awk executable is run once, to check that it runs awk and to report the
+known divergences between it and R. The setting persists across sessions.
 }
