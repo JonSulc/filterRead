@@ -26,7 +26,7 @@ new_region_set(
 filtering against a build-bearing file requires it (see
 [as_region_set()] and the file-interface `[` method).}
 
-\item{chr_prefix}{Prefix to ensure on chromosome names (default "chr").}
+\item{chr_prefix}{Prefix to drop from chromosome names (default "chr").}
 
 \item{complement}{If TRUE the rules describe the coordinates the set
 excludes rather than those it covers.}
@@ -38,8 +38,8 @@ form: sorted and pairwise disjoint.}
 A `region_set` object.
 }
 \description{
-Constructor for region_set. Validates inputs, formats chromosome
-names, and optionally reduces the regions to their canonical form.
+Constructor for region_set. Validates inputs, drops the chromosome
+prefix, and optionally reduces the regions to their canonical form.
 }
 \section{NA semantics}{
 

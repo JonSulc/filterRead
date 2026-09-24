@@ -1,6 +1,6 @@
 test_that("liftover.data.table maps APOE rs429358 b37 -> b38", {
   dt <- data.table::data.table(
-    chr    = "chr19",
+    chr    = "19",
     pos    = 45411941L,
     rsid   = "rs429358",
     effect = 0.4
@@ -8,7 +8,7 @@ test_that("liftover.data.table maps APOE rs429358 b37 -> b38", {
   build(dt) <- "b37"
 
   lifted <- liftover(dt, "b38")
-  expect_equal(lifted$chr, "chr19")
+  expect_equal(lifted$chr, "19")
   expect_equal(lifted$pos, 44908684L)
   expect_equal(lifted$rsid, "rs429358")
   expect_equal(lifted$effect, 0.4)
@@ -17,7 +17,7 @@ test_that("liftover.data.table maps APOE rs429358 b37 -> b38", {
 
 test_that("liftover.data.table b37 -> b38 -> b37 round-trip", {
   dt <- data.table::data.table(
-    chr = "chr19",
+    chr = "19",
     pos = c(45411941L, 45412079L)
   )
   build(dt) <- "b37"
@@ -29,7 +29,7 @@ test_that("liftover.data.table b37 -> b38 -> b37 round-trip", {
 })
 
 test_that("liftover.data.table on the same build is a build-only no-op", {
-  dt <- data.table::data.table(chr = "chr1", pos = 100L)
+  dt <- data.table::data.table(chr = "1", pos = 100L)
   build(dt) <- "b37"
 
   result <- liftover(dt, "b37")
@@ -39,12 +39,12 @@ test_that("liftover.data.table on the same build is a build-only no-op", {
 })
 
 test_that("liftover.data.table errors when no build is set or supplied", {
-  dt <- data.table::data.table(chr = "chr19", pos = 45411941L)
+  dt <- data.table::data.table(chr = "19", pos = 45411941L)
   expect_error(liftover(dt, "b38"), "without a source build")
 })
 
 test_that("liftover.data.table accepts an explicit `from` build", {
-  dt <- data.table::data.table(chr = "chr19", pos = 45411941L)
+  dt <- data.table::data.table(chr = "19", pos = 45411941L)
   result <- liftover(dt, target = "b38", from = "b37")
   expect_equal(result$pos, 44908684L)
   expect_equal(build(result), "b38")
@@ -68,7 +68,7 @@ test_that(
   "liftover.data.table drops or NA-fills rows in chain gaps per drop_unlifted",
   {
     dt <- data.table::data.table(
-      chr  = c("chr19", "chr1"),
+      chr  = c("19", "1"),
       pos  = c(45411941L, 1L),
       rsid = c("rs429358", "gap")
     )
@@ -88,7 +88,7 @@ test_that(
 
 test_that("liftover.data.table accepts start/end ranges", {
   dt <- data.table::data.table(
-    chr   = "chr19",
+    chr   = "19",
     start = 45411941L,
     end   = 45412079L
   )
@@ -101,9 +101,9 @@ test_that("liftover.data.table accepts start/end ranges", {
 })
 
 test_that("liftover.data.table accepts start-only or end-only", {
-  start_only <- data.table::data.table(chr = "chr19", start = 45411941L)
+  start_only <- data.table::data.table(chr = "19", start = 45411941L)
   build(start_only) <- "b37"
-  end_only <- data.table::data.table(chr = "chr19", end = 45411941L)
+  end_only <- data.table::data.table(chr = "19", end = 45411941L)
   build(end_only) <- "b37"
 
   result_start <- liftover(start_only, "b38")
@@ -118,7 +118,7 @@ test_that(
   "liftover.data.table errors when both pos and start/end are supplied",
   {
     dt <- data.table::data.table(
-      chr   = "chr19",
+      chr   = "19",
       pos   = 45411941L,
       start = 45411941L,
       end   = 45411941L
@@ -129,7 +129,7 @@ test_that(
 )
 
 test_that("liftover.data.table errors when no coordinate column is present", {
-  dt <- data.table::data.table(chr = "chr19", rsid = "rs1")
+  dt <- data.table::data.table(chr = "19", rsid = "rs1")
   build(dt) <- "b37"
   expect_error(
     liftover(dt, "b38"),
@@ -139,7 +139,7 @@ test_that("liftover.data.table errors when no coordinate column is present", {
 
 test_that("liftover.data.table preserves non-coordinate columns", {
   dt <- data.table::data.table(
-    chr       = c("chr19", "chr19"),
+    chr       = c("19", "19"),
     pos       = c(45411941L, 45412079L),
     ref       = c("T", "C"),
     alt       = c("C", "T"),
@@ -163,16 +163,16 @@ test_that("lift_chain_overlap reverse-complements named allele columns on minus-
     start   = c(100L, 200L),
     end     = c(199L, 299L),
     width   = c(100L, 100L),
-    chr     = c("chr1", "chr1"),
+    chr     = c("1", "1"),
     offset  = c(-1000L, 5000L),
-    new_chr = c("chr1", "chr1"),
+    new_chr = c("1", "1"),
     rev     = c(FALSE, TRUE)
   )
   data.table::setkey(chain, chr, start, end)
 
   positions <- data.table::data.table(
     I     = 1:2,
-    chr   = c("chr1", "chr1"),
+    chr   = c("1", "1"),
     start = c(150L, 250L),
     end   = c(150L, 250L),
     ref   = c("A", "A"),
@@ -200,7 +200,7 @@ test_that("liftover.data.table reverse-complements alleles across a minus-strand
   # Synthetic chain mapping chr1[100,300] (b37) onto chr1 reverse strand (b38).
   rev_chain <- data.table::data.table(
     start = 100L, end = 300L, width = 201L,
-    chr = "chr1", offset = 5000L, new_chr = "chr1", rev = TRUE
+    chr = "1", offset = 5000L, new_chr = "1", rev = TRUE
   )
   data.table::setkey(rev_chain, chr, start, end)
   data.table::setattr(rev_chain, "from", "b37")
@@ -209,7 +209,7 @@ test_that("liftover.data.table reverse-complements alleles across a minus-strand
     get_shared_chain = function(from, to) rev_chain
   )
 
-  dt <- data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C")
+  dt <- data.table::data.table(chr = "1", pos = 200L, ref = "A", alt = "C")
   build(dt) <- "b37"
 
   lifted <- liftover(dt, "b38")
@@ -223,11 +223,11 @@ test_that("the round-trip cache restores recorded ref/alt, not just chr/pos", {
   # complement T/C in b38. Both builds are recorded, so lifting b38 -> b37
   # must restore the b37 representation (A/G at pos 100) from the cache.
   dt <- data.table::data.table(
-    chr     = "chr1", pos     = 5000L,
+    chr     = "1", pos     = 5000L,
     ref     = "T",    alt     = "C",      # current view: b38 (RC of b37)
-    chr_b37 = "chr1", pos_b37 = 100L,
+    chr_b37 = "1", pos_b37 = 100L,
     ref_b37 = "A",    alt_b37 = "G",      # recorded b37
-    chr_b38 = "chr1", pos_b38 = 5000L,
+    chr_b38 = "1", pos_b38 = 5000L,
     ref_b38 = "T",    alt_b38 = "C"
   )
   build(dt) <- "b38"
@@ -248,9 +248,9 @@ test_that("multi_match = 'all' duplicates a variant that maps to two chain block
       start   = c(100L, 120L),
       end     = c(200L, 180L),
       width   = c(101L, 61L),
-      chr     = c("chr1", "chr1"),
+      chr     = c("1", "1"),
       offset  = c(50L, 30L),
-      new_chr = c("chr1", "chr1"),
+      new_chr = c("1", "1"),
       rev     = c(FALSE, FALSE)
     )
     data.table::setkey(ch, chr, start, end)
@@ -262,7 +262,7 @@ test_that("multi_match = 'all' duplicates a variant that maps to two chain block
     get_shared_chain = function(from, to) overlapping_blocks()
   )
 
-  dt <- data.table::data.table(chr = "chr1", pos = 150L, id = "x")
+  dt <- data.table::data.table(chr = "1", pos = 150L, id = "x")
   build(dt) <- "b37"
 
   # The blocks are ordered (100, 200) then (120, 180), so "first" resolves
@@ -280,7 +280,7 @@ test_that("drop_unlifted = FALSE preserves NA-input rows, not just chain-gap row
   fwd_chain <- function() {
     ch <- data.table::data.table(
       start = 100L, end = 200L, width = 101L,
-      chr = "chr1", offset = 50L, new_chr = "chr1", rev = FALSE
+      chr = "1", offset = 50L, new_chr = "1", rev = FALSE
     )
     data.table::setkey(ch, chr, start, end)
     data.table::setattr(ch, "from", "b37")
@@ -292,7 +292,7 @@ test_that("drop_unlifted = FALSE preserves NA-input rows, not just chain-gap row
   )
 
   dt <- data.table::data.table(
-    chr = c("chr1", "chr1", "chr1"),
+    chr = c("1", "1", "1"),
     pos = c(150L, 5000L, NA_integer_),   # liftable, chain-gap, NA-input
     id  = c("a", "b", "c")
   )
@@ -308,7 +308,7 @@ test_that("drop_unlifted = FALSE fans out multi-mappings and keeps unmapped rows
   overlapping_blocks <- function() {
     ch <- data.table::data.table(
       start = c(100L, 120L), end = c(200L, 180L), width = c(101L, 61L),
-      chr = "chr1", offset = c(50L, 30L), new_chr = "chr1", rev = FALSE
+      chr = "1", offset = c(50L, 30L), new_chr = "1", rev = FALSE
     )
     data.table::setkey(ch, chr, start, end)
     data.table::setattr(ch, "from", "b37")
@@ -320,7 +320,7 @@ test_that("drop_unlifted = FALSE fans out multi-mappings and keeps unmapped rows
   )
 
   dt <- data.table::data.table(
-    chr = c("chr1", "chr1"), pos = c(150L, 5000L), id = c("x", "y")
+    chr = c("1", "1"), pos = c(150L, 5000L), id = c("x", "y")
   )
   build(dt) <- "b37"
 
@@ -334,7 +334,7 @@ test_that("use_cache = FALSE bypasses the round-trip cache and re-lifts", {
   fwd_chain <- function() {
     ch <- data.table::data.table(
       start = 100L, end = 300L, width = 201L,
-      chr = "chr1", offset = 50L, new_chr = "chr1", rev = FALSE
+      chr = "1", offset = 50L, new_chr = "1", rev = FALSE
     )
     data.table::setkey(ch, chr, start, end)
     data.table::setattr(ch, "from", "b38")
@@ -347,7 +347,7 @@ test_that("use_cache = FALSE bypasses the round-trip cache and re-lifts", {
 
   # Bogus recorded b37 columns: the cache would return them verbatim.
   dt <- data.table::data.table(
-    chr = "chr1", pos = 200L, chr_b37 = "chrXX", pos_b37 = 999999L
+    chr = "1", pos = 200L, chr_b37 = "XX", pos_b37 = 999999L
   )
   build(dt) <- "b38"
 
@@ -385,7 +385,7 @@ test_that("liftover.data.table returns integer pos through a parser-built chain"
     get_shared_chain = function(from, to) chain_via_parser(from, to)
   )
 
-  dt <- data.table::data.table(chr = "chr1", pos = 2000L)
+  dt <- data.table::data.table(chr = "1", pos = 2000L)
   build(dt) <- "b38"
 
   lifted <- liftover(dt, "b37")
@@ -399,7 +399,7 @@ test_that("liftover returns a table that keeps its over-allocation", {
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )
-  dt <- data.table::data.table(chr = "chr1", pos = c(100L, 20000L))
+  dt <- data.table::data.table(chr = "1", pos = c(100L, 20000L))
   build(dt) <- "b37"
 
   expect_true(
@@ -408,7 +408,7 @@ test_that("liftover returns a table that keeps its over-allocation", {
 
   # No coordinate survives the NA filter, so the lift returns before the
   # chain join.
-  unliftable <- data.table::data.table(chr = "chr1", pos = NA_integer_)
+  unliftable <- data.table::data.table(chr = "1", pos = NA_integer_)
   build(unliftable) <- "b37"
   expect_true(
     data.table::truelength(
@@ -423,7 +423,7 @@ test_that("liftover leaves the caller's table alone", {
       make_fwd_chain(1L, 10000L, 50L, from, to)
     }
   )
-  dt <- data.table::data.table(chr = "chr1", pos = 100L, id = "x")
+  dt <- data.table::data.table(chr = "1", pos = 100L, id = "x")
   build(dt) <- "b37"
 
   lifted <- liftover(dt, "b38", retain_builds = TRUE)

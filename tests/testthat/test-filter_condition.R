@@ -1510,7 +1510,7 @@ test_that("format() reports the regions a condition constrains", {
       rlang::quo(pval < 0.5 & chr == 1),
       finterface
     )),
-    "{chr1",
+    "{1",
     fixed = TRUE
   )
   expect_equal(
@@ -1518,7 +1518,7 @@ test_that("format() reports the regions a condition constrains", {
       rlang::quo((chr == 1 & pval < 0.05) | (chr == 3 & pval < 0.05)),
       finterface
     )),
-    "(pval < 0.05) {chr1:1-} | (pval < 0.05) {chr3:1-}"
+    "(pval < 0.05) {1:1-} | (pval < 0.05) {3:1-}"
   )
 })
 

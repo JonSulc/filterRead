@@ -97,7 +97,7 @@ test_that("initialization works", {
   expect_equal(
     regions,
     data.table::data.table(
-      chr = "chr1",
+      chr = "1",
       start = 21,
       end = 42
     ),
@@ -124,7 +124,7 @@ test_that("initialization works", {
   expect_equal(
     regions,
     data.table::data.table(
-      chr = "chr1",
+      chr = "1",
       start = 42,
       end = NA_integer_
     ),
@@ -486,7 +486,7 @@ test_that("constructor keeps a blank chromosome name", {
   )
   expect_equal(
     new_region_set(chr = c("1", ""))$chr,
-    c("", "chr1")
+    c("", "1")
   )
 })
 
@@ -504,7 +504,7 @@ test_that("constructor allows length-1 recycling", {
     end = c(150, 250)
   )
   expect_equal(nrow(regions), 2)
-  expect_equal(unique(regions$chr), "chr1")
+  expect_equal(unique(regions$chr), "1")
 })
 
 test_that("addition with empty regions works", {
@@ -919,11 +919,11 @@ test_that("copy_region_set preserves class and attributes", {
 
   expect_true(is_region_set(copied))
   expect_equal(build(copied), "b38")
-  expect_equal(copied$chr, "chr1")
+  expect_equal(copied$chr, "1")
 
   # Verify it's a copy (modifying original doesn't affect copy)
   gr[, chr := "2"]
-  expect_equal(copied$chr, "chr1")
+  expect_equal(copied$chr, "1")
 })
 
 # Edge case tests for NULL/NA handling
@@ -1094,7 +1094,7 @@ test_that("`!` marks a directly stored set as its complement", {
   negated <- !regions
   expect_true(is_complement(negated))
   expect_equal(nrow(negated), 1)
-  expect_equal(negated$chr, "chr1")
+  expect_equal(negated$chr, "1")
   expect_equal(negated$start, 100)
   expect_equal(negated$end, 200)
 })
@@ -1302,7 +1302,7 @@ test_that("set difference with different chromosomes returns A unchanged", {
 
   result <- region_a - region_b
   expect_equal(nrow(result), 1)
-  expect_equal(result$chr, "chr1")
+  expect_equal(result$chr, "1")
 })
 
 # Union with complement-stored regions tests ---------------------------------
@@ -1479,7 +1479,7 @@ test_that("a single complement-stored rule expands to its complement", {
   # Should have rules for chr2-chr22 (21 rules) plus chr1:1-99 and chr1:201-end
   expect_true(nrow(expanded) >= 23)
   # Check chr1 portions exist
-  chr1_rows <- expanded[chr == "chr1"]
+  chr1_rows <- expanded[chr == "1"]
   expect_equal(nrow(chr1_rows), 2)
   expect_equal(chr1_rows$start, c(1L, 201L))
   expect_equal(chr1_rows$end, c(99L, NA))
@@ -1570,7 +1570,7 @@ test_that("a single-position complement-stored region works", {
 
   expanded <- expand_region_set(regions)
   expect_false(is_complement(expanded))
-  chr1_rows <- expanded[chr == "chr1"]
+  chr1_rows <- expanded[chr == "1"]
   expect_equal(nrow(chr1_rows), 2)
   expect_equal(chr1_rows$start, c(1L, 101L))
   expect_equal(chr1_rows$end[1], 99)
@@ -1592,11 +1592,13 @@ test_that("a multi-rule complement-stored set expands to its complement", {
 
   # Should exclude both chr1:100-200 and chr2:300-400
   # Check chr1 doesn't include 100-200
-  chr1_rows <- expanded[chr == "chr1"]
+  chr1_rows <- expanded[chr == "1"]
+  expect_equal(nrow(chr1_rows), 2L)
   expect_true(all(chr1_rows$end < 100 | chr1_rows$start > 200))
 
   # Check chr2 doesn't include 300-400
-  chr2_rows <- expanded[chr == "chr2"]
+  chr2_rows <- expanded[chr == "2"]
+  expect_equal(nrow(chr2_rows), 2L)
   expect_true(all(chr2_rows$end < 300 | chr2_rows$start > 400))
 })
 
@@ -1612,7 +1614,7 @@ test_that("a complement-stored region at a chromosome start expands", {
 
   expanded <- expand_region_set(complemented)
   expect_false(is_complement(expanded))
-  chr1_rows <- expanded[chr == "chr1"]
+  chr1_rows <- expanded[chr == "1"]
   # Should only have one rule for chr1 (101 to end), no rule for before
   expect_equal(nrow(chr1_rows), 1)
   expect_equal(chr1_rows$start, 101)
@@ -1631,7 +1633,7 @@ test_that("a complement-stored region at a chromosome end expands", {
 
   expanded <- expand_region_set(complemented)
   expect_false(is_complement(expanded))
-  chr1_rows <- expanded[chr == "chr1"]
+  chr1_rows <- expanded[chr == "1"]
   # Should only have one rule for chr1 (1 to 999), no rule for after
   expect_equal(nrow(chr1_rows), 1)
   expect_equal(chr1_rows$start, 1L)
@@ -1770,7 +1772,7 @@ test_that("compact returns original when already compact", {
 
   compacted <- compact(region)
   expect_equal(nrow(compacted), 1)
-  expect_equal(compacted$chr, "chr1")
+  expect_equal(compacted$chr, "1")
   expect_equal(compacted$start, 100)
   expect_equal(compacted$end, 200)
 })
@@ -2231,7 +2233,7 @@ test_that("absorption keeps a complement-stored set complemented", {
 
   expect_true(is_complement(regions))
   expect_equal(build(regions), "b38")
-  expect_equal(regions$chr, c(NA, "chr1", "chr1"))
+  expect_equal(regions$chr, c(NA, "1", "1"))
   expect_equal(regions$start, c(100L, 1L, 201L))
   expect_equal(regions$end, c(200L, 99L, 1000L))
 })
@@ -2331,7 +2333,7 @@ test_that("as_region_set keeps a blank chromosome name", {
     ),
     build = "b38"
   )
-  expect_equal(regions$chr, c("", "chr1"))
+  expect_equal(regions$chr, c("", "1"))
 })
 
 test_that("intersection matches a blank chromosome name only to itself", {
@@ -2341,24 +2343,17 @@ test_that("intersection matches a blank chromosome name only to itself", {
                            build = "b38")
   named_and_blank <- region_set(chr = c("", "1"), start = 1500L,
                                 end = 2500L, build = "b38")
-  expect_equal((regions & named_only)$chr, "chr1")
-  expect_equal((regions & named_and_blank)$chr, c("", "chr1"))
+  expect_equal((regions & named_only)$chr, "1")
+  expect_equal((regions & named_and_blank)$chr, c("", "1"))
 })
 
-test_that("region_set prefixes a chromosome name and leaves other names", {
-  expect_equal(region_set(chr = "1", build = "b38")$chr, "chr1")
+test_that("region_set drops a chromosome's prefix and leaves other names", {
+  expect_equal(region_set(chr = c("chr1", "1"), build = "b38")$chr, "1")
   expect_equal(
     region_set(chr = "GL000209.1", build = "b38")$chr, "GL000209.1"
   )
   expect_equal(
     region_set(chr = "chrUn_KI270220v1", build = "b38")$chr,
-    "chrUn_KI270220v1"
-  )
-})
-
-test_that("format_chr reads the pattern it is given", {
-  expect_equal(
-    format_chr("GL000209.1", prefix = "chr", prefixable_regex = "."),
-    "chrGL000209.1"
+    "Un_KI270220v1"
   )
 })

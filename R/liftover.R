@@ -286,10 +286,10 @@ parse_chain_blocks <- function(
       cumsum(shift(dt, n = 1L, type = "lag", fill = 0L))
   ][
     ,
-    chr := chain_header$tName
+    chr := drop_prefix(chain_header$tName)
   ][
     ,
-    new_chr := chain_header$qName
+    new_chr := drop_prefix(chain_header$qName)
   ][
     ,
     rev := chain_header$qStrand == "-"
@@ -478,9 +478,10 @@ lift_chain_overlap <- function(
 #' round-trip drift).
 #'
 #' @param x A data.table with `chr` plus one or more of `pos`, `start`,
-#'   `end` in the source build's coordinate system. The input is not
-#'   modified; the lifted result is returned. `pos` and `start`/`end`
-#'   are mutually exclusive.
+#'   `end` in the source build's coordinate system. `chr` takes the bare
+#'   spelling (`"1"`); a prefixed name (`"chr1"`) matches no chain block.
+#'   The input is not modified; the lifted result is returned. `pos` and
+#'   `start`/`end` are mutually exclusive.
 #' @param target Target build (`"b36"`, `"b37"`, `"b38"`, or any synonym
 #'   accepted by [normalize_build()]).
 #' @param from Source build. Defaults to `build(x)`. Pass explicitly to
@@ -571,7 +572,7 @@ liftover.data.table <- function(
 
   positions <- data.table::data.table(
     I     = seq_len(nrow(x_work)),
-    chr   = format_chr(x_work$chr, prefix = "chr"),
+    chr   = x_work$chr,
     start = x_work[[coord_cols$start]],
     end   = x_work[[coord_cols$end]]
   )

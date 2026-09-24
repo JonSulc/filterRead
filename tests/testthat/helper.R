@@ -418,7 +418,7 @@ switch_alt_ref_to_a1_a2 <- function(summary_stats) {
 make_fwd_chain <- function(lo, hi, offset, from, to) {
   ch <- data.table::data.table(
     start = lo, end = hi, width = hi - lo + 1L,
-    chr = "chr1", offset = offset, new_chr = "chr1", rev = FALSE
+    chr = "1", offset = offset, new_chr = "1", rev = FALSE
   )
   data.table::setkey(ch, chr, start, end)
   data.table::setattr(ch, "from", from)

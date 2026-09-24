@@ -165,11 +165,12 @@ test_that("full chromosome liftover works", {
     to = "b38"
   )
   expected <- chain[
-    "chr1",
+    "1",
     .(chr, start, end)
   ] |>
     as_region_set() |>
     liftover(chain)
+  expect_true(nrow(expected) != 0L)
   expect_equal(
     liftover(
       regions,
@@ -571,7 +572,7 @@ test_that("lifting leaves the shared chain untouched", {
   }
   before <- fingerprint(get_shared_chain("b37", "b38"))
 
-  dt <- data.table::data.table(chr = "chr1", pos = 200L, ref = "A", alt = "C")
+  dt <- data.table::data.table(chr = "1", pos = 200L, ref = "A", alt = "C")
   build(dt) <- "b37"
   liftover(dt, "b38")
   liftover(
@@ -696,8 +697,8 @@ test_that("parse_chain_file produces a keyed data.table with expected columns", 
   )
   expect_equal(data.table::key(result), c("chr", "start", "end"))
   expect_equal(nrow(result), 3)
-  expect_true(all(result$chr == "chr1"))
-  expect_true(all(result$new_chr == "chr20"))
+  expect_true(all(result$chr == "1"))
+  expect_true(all(result$new_chr == "20"))
   expect_true(all(!result$rev))
 })
 
@@ -719,8 +720,8 @@ test_that("parse_chain_file handles multiple chains separated by blank line", {
   )
   result <- parse_chain_file(tmp)
   expect_equal(nrow(result), 6)
-  expect_setequal(unique(result$chr), c("chr1", "chr2"))
-  expect_setequal(unique(result$new_chr), c("chr20", "chr21"))
+  expect_setequal(unique(result$chr), c("1", "2"))
+  expect_setequal(unique(result$new_chr), c("20", "21"))
 })
 
 test_that("parse_chain_blocks handles a single-block chain on forward strand", {
@@ -737,8 +738,8 @@ test_that("parse_chain_blocks handles a single-block chain on forward strand", {
   expect_equal(result$start, 101L)
   expect_equal(result$end, 190L)
   expect_equal(result$offset, 60L)
-  expect_equal(result$chr, "chr1")
-  expect_equal(result$new_chr, "chr20")
+  expect_equal(result$chr, "1")
+  expect_equal(result$new_chr, "20")
   expect_false(result$rev)
 })
 

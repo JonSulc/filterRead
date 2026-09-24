@@ -115,10 +115,6 @@ liftover.region_set <- function(
     },
     by = chr_is_na
   ][, -"chr_is_na"]
-  expanded_x[
-    !grepl("^chr", chr),
-    chr := paste0("chr", chr)
-  ][]
 
   lift_chain_overlap(
     # An open end is one the overlap join has no notion of; the sentinel
@@ -256,7 +252,7 @@ expand_region_set <- function(
     full_chrs <- empty_region_set(build = build(regions))
   } else {
     full_chrs <- new_region_set(
-      chr = setdiff(ordered_chr, drop_prefix(regions$chr)),
+      chr = setdiff(ordered_chr, regions$chr),
       build = build(regions)
     )
   }

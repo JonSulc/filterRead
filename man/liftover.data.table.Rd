@@ -17,9 +17,10 @@
 }
 \arguments{
 \item{x}{A data.table with `chr` plus one or more of `pos`, `start`,
-`end` in the source build's coordinate system. The input is not
-modified; the lifted result is returned. `pos` and `start`/`end`
-are mutually exclusive.}
+`end` in the source build's coordinate system. `chr` takes the bare
+spelling (`"1"`); a prefixed name (`"chr1"`) matches no chain block.
+The input is not modified; the lifted result is returned. `pos` and
+`start`/`end` are mutually exclusive.}
 
 \item{target}{Target build (`"b36"`, `"b37"`, `"b38"`, or any synonym
 accepted by [normalize_build()]).}

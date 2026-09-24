@@ -146,34 +146,6 @@ test_that("chr prefix works with filtering conditions", {
   expect_true(all(result$pval < 0.05))
 })
 
-test_that("format_chr prefixes only the values that lack the prefix", {
-  expect_equal(
-    format_chr(c("1", "chr1", NA, "2", "1"), prefix = "chr"),
-    c("chr1", "chr1", NA, "chr2", "chr1")
-  )
-})
-
-test_that("format_chr treats the prefix as a regular expression", {
-  expect_equal(
-    format_chr(c("1", "c.r1", "chr2"), prefix = "c.r"),
-    c("c.r1", "c.r1", "chr2")
-  )
-})
-
-test_that("format_chr does not prefix a blank chromosome name", {
-  expect_equal(
-    format_chr(c("1", "", "2"), prefix = "chr"),
-    c("chr1", "", "chr2")
-  )
-})
-
-test_that("format_chr coerces non-character input", {
-  expect_equal(format_chr(c(1L, 2L, NA), prefix = "chr"),
-               c("chr1", "chr2", NA))
-  expect_equal(format_chr(factor(c("1", "2")), prefix = "chr"),
-               c("chr1", "chr2"))
-})
-
 test_that("a blank chromosome field leaves the other names unchanged", {
   fi <- local_file_interface(
     dt = data.table::data.table(
@@ -309,5 +281,12 @@ test_that("an inconsistently prefixed column other than chr errors", {
       build = "b38"
     ),
     "on some values and not others"
+  )
+})
+
+test_that("region_set drops the prefix it is given", {
+  expect_equal(
+    region_set(chr = c("ch1", "chr2"), chr_prefix = "ch", build = "b38")$chr,
+    c("1", "r2")
   )
 })

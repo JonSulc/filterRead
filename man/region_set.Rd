@@ -26,7 +26,7 @@ region_set(
 filtering against a build-bearing file requires it (see
 [as_region_set()] and the file-interface `[` method).}
 
-\item{chr_prefix}{Prefix to ensure on chromosome names (default "chr").}
+\item{chr_prefix}{Prefix to drop from chromosome names (default "chr").}
 
 \item{complement}{If TRUE the rules describe the coordinates the set
 excludes rather than those it covers.}

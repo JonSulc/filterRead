@@ -71,8 +71,8 @@ build_versioned_column <- function(dt, base, build) {
 #'
 #' Inverse of [add_variant_id()]: `chr_pos_ref_alt_<build>` decodes into its
 #' five components. Only the chromosome may hold `_`, so a name such as
-#' `1_KI270706v1_random` decodes whole. The chromosome and the build tag come
-#' back as the id spells them, and an element that does not match the
+#' `1_KI270706v1_random` decodes whole. The chromosome comes back bare, the
+#' build tag as the id writes it, and an element that does not match the
 #' structure decodes to an all-NA row.
 #'
 #' @param variant_ids Character vector of variant ids.
@@ -84,7 +84,7 @@ parse_variant_id <- function(variant_ids) {
   chr_is_underscore_free <- grepl(
     "^[^_]+_[0-9]+_[^_]+_[^_]+_[^_]+$", variant_ids, perl = TRUE
   )
-  if (all(chr_is_underscore_free) && length(variant_ids) != 0L) {
+  decoded <- if (all(chr_is_underscore_free) && length(variant_ids) != 0L) {
     parse_underscore_free_chr_variant_id(variant_ids)
   } else if (!any(chr_is_underscore_free)) {
     parse_underscored_chr_variant_id(variant_ids)
@@ -99,6 +99,7 @@ parse_variant_id <- function(variant_ids) {
       which(!chr_is_underscore_free)
     ))]
   }
+  decoded[, chr := drop_prefix(chr)][]
 }
 
 #' Decode variant ids whose chromosome holds no `_`
@@ -239,7 +240,7 @@ validate_variant_id <- function(x, build = NULL, parsed = NULL) {
 #' Construct variant_id from chr / pos / ref / alt
 #'
 #' Adds a `variant_id` column shaped as `chr_pos_ref_alt_<build>`
-#' (e.g. `chr1_12345_A_G_b38`). Variants where any of `chr`, `pos`, `ref`, or
+#' (e.g. `1_12345_A_G_b38`). Variants where any of `chr`, `pos`, `ref`, or
 #' `alt` is NA get `NA` for `variant_id`. Modifies `dt` by reference.
 #'
 #' @param dt A data.table with `chr`, `pos`, `ref`, `alt` columns.

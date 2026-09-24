@@ -38,12 +38,8 @@ as_region_set.data.frame <- function(
   complement <- complement %||% is_complement(x) %||% FALSE
   regions <- data.table::as.data.table(x) |>
     data.table::copy()
-  if ("chr" %in% names(regions) && !is.character(regions$chr)) {
-    data.table::set(
-      regions,
-      j = "chr",
-      value = as.character(regions$chr)
-    )
+  if ("chr" %in% names(regions)) {
+    data.table::set(regions, j = "chr", value = drop_prefix(regions$chr))
   }
   for (col in intersect(c("start", "end"), names(regions))) {
     value <- regions[[col]]

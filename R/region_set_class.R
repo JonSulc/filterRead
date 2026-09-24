@@ -30,7 +30,7 @@
 #'   "b37", "b38", or a synonym). Optional at construction, but positional
 #'   filtering against a build-bearing file requires it (see
 #'   [as_region_set()] and the file-interface `[` method).
-#' @param chr_prefix Prefix to ensure on chromosome names (default "chr").
+#' @param chr_prefix Prefix to drop from chromosome names (default "chr").
 #' @param canonicalize If TRUE, reduce the regions to their canonical
 #'   form: sorted and pairwise disjoint.
 #' @param complement If TRUE the rules describe the coordinates the set
@@ -74,8 +74,8 @@ region_set <- function(
 
 #' Create a new region_set object
 #'
-#' Constructor for region_set. Validates inputs, formats chromosome
-#' names, and optionally reduces the regions to their canonical form.
+#' Constructor for region_set. Validates inputs, drops the chromosome
+#' prefix, and optionally reduces the regions to their canonical form.
 #'
 #' @inheritParams region_set
 #'
@@ -122,7 +122,7 @@ new_region_set <- function(
   }
 
   data.table::data.table(
-    chr = format_chr(chr, prefix = chr_prefix),
+    chr = drop_prefix(chr, prefix = chr_prefix),
     start = start,
     end = end
   ) |>
@@ -275,34 +275,6 @@ is_region_set <- function(
   x
 ) {
   inherits(x, "region_set")
-}
-
-#' Format chromosome names with prefix
-#'
-#' Adds the prefix to the names matching `prefixable_regex` that do not
-#' already carry it, and returns every other name unchanged. A missing name is
-#' returned as NA.
-#'
-#' @param chr Character vector of chromosome names
-#' @param prefix Prefix to add
-#' @param prefixable_regex Regular expression a value must match to take the
-#'   prefix.
-#' @return Formatted chromosome names
-#' @keywords internal
-format_chr <- function(
-  chr,
-  prefix,
-  prefixable_regex = CHR_PREFIXABLE_REGEX
-) {
-  chr <- as.character(chr)
-  distinct_chr <- unique(chr)
-  formatted <- data.table::fifelse(
-    grepl(paste0("^", prefix), distinct_chr) |
-      !grepl(prefixable_regex, distinct_chr),
-    distinct_chr,
-    paste0(prefix, distinct_chr)
-  )
-  formatted[data.table::chmatch(chr, distinct_chr)]
 }
 
 #' Deep copy region_set

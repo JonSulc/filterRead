@@ -93,17 +93,17 @@ test_that("add_variant_id leaves existing variant_id alone unless overwrite", {
 
 test_that("liftover retain_builds = TRUE keeps source- and target-build snapshots", {
   dt <- data.table::data.table(
-    chr = "chr19",
+    chr = "19",
     pos = 45411941L
   )
   build(dt) <- "b37"
 
   lifted <- liftover(dt, "b38", retain_builds = TRUE)
-  expect_equal(lifted$chr, "chr19")
+  expect_equal(lifted$chr, "19")
   expect_equal(lifted$pos, 44908684L)
-  expect_equal(lifted$chr_b37, "chr19")
+  expect_equal(lifted$chr_b37, "19")
   expect_equal(lifted$pos_b37, 45411941L)
-  expect_equal(lifted$chr_b38, "chr19")
+  expect_equal(lifted$chr_b38, "19")
   expect_equal(lifted$pos_b38, 44908684L)
 })
 
@@ -112,15 +112,15 @@ test_that("liftover reuses cached target-build columns verbatim", {
   # the chain would produce. If liftover honors the cache, the
   # returned chr/pos must take those exact bogus values.
   dt <- data.table::data.table(
-    chr     = "chr19",
+    chr     = "19",
     pos     = 44908684L,
-    chr_b37 = "chrXX",
+    chr_b37 = "XX",
     pos_b37 = 999999L
   )
   build(dt) <- "b38"
 
   back <- liftover(dt, "b37")
-  expect_equal(back$chr, "chrXX")
+  expect_equal(back$chr, "XX")
   expect_equal(back$pos, 999999L)
   expect_equal(build(back), "b37")
   expect_true(data.table::truelength(back) != 0L)
@@ -128,9 +128,9 @@ test_that("liftover reuses cached target-build columns verbatim", {
 
 test_that("cache hit avoids the chain lookup entirely", {
   dt <- data.table::data.table(
-    chr     = "chr19",
+    chr     = "19",
     pos     = 44908684L,
-    chr_b37 = "chr19",
+    chr_b37 = "19",
     pos_b37 = 45411941L
   )
   build(dt) <- "b38"

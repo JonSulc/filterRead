@@ -6,7 +6,7 @@ test_that("parse_variant_id decodes ids, mitochondria, non-native, NAs rest", {
     "rs123", "not_a_variant", NA
   ))
   expect_equal(out$chr, c(
-    "chr5", "chrMT", "chr2",
+    "5", "MT", "2",
     "GL000209.1", "1_KI270706v1_random", "foo_123",
     NA, NA, NA
   ))
@@ -26,7 +26,7 @@ test_that("parse_variant_id decodes ids, mitochondria, non-native, NAs rest", {
 
 test_that("parse_variant_id round-trips add_variant_id output", {
   dt <- data.table::data.table(
-    chr = c("chr1", "chrX"), pos = c(100L, 200L),
+    chr = c("1", "X"), pos = c(100L, 200L),
     ref = c("A", "C"), alt = c("G", "T")
   )
   add_variant_id(dt, build = "b37")
@@ -60,7 +60,7 @@ test_that("add_variant_id and record_build accept a non-native build", {
 
 test_that("validate_variant_id passes consistent variants and skips NA cells", {
   dt <- data.table::data.table(
-    chr = c("chr5", NA), pos = c(49861645L, NA),
+    chr = c("5", NA), pos = c(49861645L, NA),
     ref = c("A", NA), alt = c("G", NA),
     variant_id = c("chr5_49861645_A_G_b38", "chr1_10_A_T_b38")
   )
@@ -69,7 +69,7 @@ test_that("validate_variant_id passes consistent variants and skips NA cells", {
 
 test_that("validate_variant_id treats synonyms and native builds as equal", {
   dt <- data.table::data.table(
-    chr = "chr5", pos = 49861645L, ref = "A", alt = "G",
+    chr = "5", pos = 49861645L, ref = "A", alt = "G",
     variant_id = "chr5_49861645_A_G_b38"
   )
   expect_invisible(validate_variant_id(dt, "hg38"))
@@ -77,7 +77,7 @@ test_that("validate_variant_id treats synonyms and native builds as equal", {
 
 test_that("validate_variant_id accepts a non-native build", {
   dt <- data.table::data.table(
-    chr = "chr2", pos = 3000L, ref = "C", alt = "T",
+    chr = "2", pos = 3000L, ref = "C", alt = "T",
     variant_id = "chr2_3000_C_T_dahu42"
   )
   expect_invisible(validate_variant_id(dt, "dahu42"))
@@ -85,7 +85,7 @@ test_that("validate_variant_id accepts a non-native build", {
 
 test_that("validate_variant_id errors on a coordinate mismatch", {
   dt <- data.table::data.table(
-    chr = "chr6", pos = 49861645L, ref = "A", alt = "G",
+    chr = "6", pos = 49861645L, ref = "A", alt = "G",
     variant_id = "chr5_49861645_A_G_b38"
   )
   expect_error(validate_variant_id(dt, "b38"), "disagree")
@@ -93,7 +93,7 @@ test_that("validate_variant_id errors on a coordinate mismatch", {
 
 test_that("validate_variant_id reads the default build from the object", {
   dt <- data.table::data.table(
-    chr = "chr5", pos = 49861645L, ref = "A", alt = "G",
+    chr = "5", pos = 49861645L, ref = "A", alt = "G",
     variant_id = "chr5_49861645_A_G_b38"
   )
   data.table::setattr(dt, "build", "b38")
@@ -102,7 +102,7 @@ test_that("validate_variant_id reads the default build from the object", {
 
 test_that("validate_variant_id errors on a build mismatch", {
   dt <- data.table::data.table(
-    chr = "chr5", pos = 49861645L, ref = "A", alt = "G",
+    chr = "5", pos = 49861645L, ref = "A", alt = "G",
     variant_id = "chr5_49861645_A_G_b38"
   )
   expect_error(validate_variant_id(dt, "b37"), "build")
@@ -110,7 +110,7 @@ test_that("validate_variant_id errors on a build mismatch", {
 
 test_that("validate_variant_id imposes no constraint for unparseable ids", {
   dt <- data.table::data.table(
-    chr = "chr5", pos = 49861645L, ref = "A", alt = "G",
+    chr = "5", pos = 49861645L, ref = "A", alt = "G",
     variant_id = "rs999"
   )
   expect_invisible(validate_variant_id(dt, "b38"))

@@ -456,7 +456,7 @@ get_tabix_process_substitution <- function(
   regions <- sprintf(
     sprintf(
       "%s%s",
-      drop_prefix(chr),
+      chr,
       ifelse(start == 1L & is.na(end),
         "",
         sprintf(
