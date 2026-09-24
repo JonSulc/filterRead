@@ -69,33 +69,94 @@ build_versioned_column <- function(dt, base, build) {
 
 #' Decode variant_id strings into coordinate columns
 #'
-#' Inverse of [add_variant_id()]: decodes `chr_pos_ref_alt_<build>` strings
-#' into a table of `chr`, `pos`, `ref`, `alt`, and `build`. The build is any
-#' non-`_` tag (validity is enforced only at liftover). An element that does
-#' not match the structure yields an all-NA row.
+#' Inverse of [add_variant_id()]: `chr_pos_ref_alt_<build>` decodes into its
+#' five components. Only the chromosome may hold `_`, so a name such as
+#' `1_KI270706v1_random` decodes whole. The chromosome and the build tag come
+#' back as the id spells them, and an element that does not match the
+#' structure decodes to an all-NA row.
 #'
-#' @param x Character vector of variant ids.
+#' @param variant_ids Character vector of variant ids.
 #' @return A `data.table` with columns `chr`, `pos` (integer), `ref`, `alt`,
-#'   and `build`, one row per element of `x`.
+#'   and `build`, one row per element of `variant_ids`.
 #' @export
-parse_variant_id <- function(x) {
-  x <- as.character(x)
-  pattern <- "^chr[0-9XYMTxymt]+_[0-9]+_[^_]+_[^_]+_[^_]+$"
-  out <- data.table::data.table(
-    chr   = rep(NA_character_, length(x)),
-    pos   = rep(NA_integer_,   length(x)),
-    ref   = rep(NA_character_, length(x)),
-    alt   = rep(NA_character_, length(x)),
-    build = rep(NA_character_, length(x))
+parse_variant_id <- function(variant_ids) {
+  variant_ids <- as.character(variant_ids)
+  chr_is_underscore_free <- grepl(
+    "^[^_]+_[0-9]+_[^_]+_[^_]+_[^_]+$", variant_ids, perl = TRUE
   )
-  valid <- !is.na(x) & grepl(pattern, x)
-  if (any(valid)) {
-    parts <- data.table::tstrsplit(x[valid], "_", fixed = TRUE)
-    out[valid, c("chr", "pos", "ref", "alt", "build") := .(
-      parts[[1]], as.integer(parts[[2]]), parts[[3]], parts[[4]], parts[[5]]
+  if (all(chr_is_underscore_free) && length(variant_ids) != 0L) {
+    parse_underscore_free_chr_variant_id(variant_ids)
+  } else if (!any(chr_is_underscore_free)) {
+    parse_underscored_chr_variant_id(variant_ids)
+  } else {
+    data.table::rbindlist(list(
+      parse_underscore_free_chr_variant_id(
+        variant_ids[chr_is_underscore_free]
+      ),
+      parse_underscored_chr_variant_id(variant_ids[!chr_is_underscore_free])
+    ))[order(c(
+      which(chr_is_underscore_free),
+      which(!chr_is_underscore_free)
+    ))]
+  }
+}
+
+#' Decode variant ids whose chromosome holds no `_`
+#'
+#' Every `_` in an id separates two components.
+#'
+#' @param variant_ids Character vector of variant ids.
+#' @return A `data.table` with columns `chr`, `pos` (integer), `ref`, `alt`,
+#'   and `build`, one row per element of `variant_ids`.
+#' @keywords internal
+parse_underscore_free_chr_variant_id <- function(variant_ids) {
+  data.table::tstrsplit(
+    variant_ids, "_",
+    fixed = TRUE,
+    type.convert = list(as.integer = 2L),
+    names = c("chr", "pos", "ref", "alt", "build")
+  ) |>
+    data.table::setDT()
+}
+
+#' Decode variant ids whose chromosome may hold `_`
+#'
+#' The last four `_`-separated components are the position, the reference
+#' allele, the alternate allele and the build; everything before them is the
+#' chromosome. An id that does not fit decodes to an all-NA row.
+#'
+#' @param variant_ids Character vector of variant ids.
+#' @return A `data.table` with columns `chr`, `pos` (integer), `ref`, `alt`,
+#'   and `build`, one row per element of `variant_ids`.
+#' @keywords internal
+parse_underscored_chr_variant_id <- function(variant_ids) {
+  decoded <- data.table::data.table(
+    chr   = rep(NA_character_, length(variant_ids)),
+    pos   = rep(NA_integer_,   length(variant_ids)),
+    ref   = rep(NA_character_, length(variant_ids)),
+    alt   = rep(NA_character_, length(variant_ids)),
+    build = rep(NA_character_, length(variant_ids))
+  )
+  trailing_components_start <- regexpr(
+    "_[0-9]+_[^_]+_[^_]+_[^_]+$", variant_ids, perl = TRUE
+  )
+  decodable <- !is.na(trailing_components_start) &
+    1L < trailing_components_start
+  if (any(decodable)) {
+    decodable_ids <- variant_ids[decodable]
+    chr_separator_position <- trailing_components_start[decodable]
+    trailing_components <- data.table::tstrsplit(
+      substring(decodable_ids, chr_separator_position + 1L), "_", fixed = TRUE
+    )
+    decoded[decodable, c("chr", "pos", "ref", "alt", "build") := .(
+      substr(decodable_ids, 1L, chr_separator_position - 1L),
+      as.integer(trailing_components[[1]]),
+      trailing_components[[2]],
+      trailing_components[[3]],
+      trailing_components[[4]]
     )]
   }
-  out[]
+  decoded[]
 }
 
 #' Build variant_id values from coordinate vectors

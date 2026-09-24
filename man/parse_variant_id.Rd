@@ -4,18 +4,19 @@
 \alias{parse_variant_id}
 \title{Decode variant_id strings into coordinate columns}
 \usage{
-parse_variant_id(x)
+parse_variant_id(variant_ids)
 }
 \arguments{
-\item{x}{Character vector of variant ids.}
+\item{variant_ids}{Character vector of variant ids.}
 }
 \value{
 A `data.table` with columns `chr`, `pos` (integer), `ref`, `alt`,
-  and `build`, one row per element of `x`.
+  and `build`, one row per element of `variant_ids`.
 }
 \description{
-Inverse of [add_variant_id()]: decodes `chr_pos_ref_alt_<build>` strings
-into a table of `chr`, `pos`, `ref`, `alt`, and `build`. The build is any
-non-`_` tag (validity is enforced only at liftover). An element that does
-not match the structure yields an all-NA row.
+Inverse of [add_variant_id()]: `chr_pos_ref_alt_<build>` decodes into its
+five components. Only the chromosome may hold `_`, so a name such as
+`1_KI270706v1_random` decodes whole. The chromosome and the build tag come
+back as the id spells them, and an element that does not match the
+structure decodes to an all-NA row.
 }

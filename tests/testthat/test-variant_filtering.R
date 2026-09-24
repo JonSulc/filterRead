@@ -392,3 +392,21 @@ test_that("finterface[v] emits the match branch exactly once", {
   )
   expect_equal(length(attr(cmd, "additional_files")), 2L)
 })
+
+test_that("a variant set matches a chromosome holding an underscore", {
+  finterface <- local_file_interface(
+    dt = data.table::data.table(
+      chr  = c("1_KI270706v1_random", "2"),
+      pos  = c(1000L, 2000L),
+      ref  = c("A", "C"),
+      alt  = c("G", "T"),
+      pval = c(0.1, 0.2)
+    ),
+    build = "b38"
+  )
+  variants <- new_variant_set(
+    data.table::data.table(variant_id = "1_KI270706v1_random_1000_A_G_b38"),
+    build = "b38"
+  )
+  expect_equal(finterface[variants]$pos, 1000L)
+})
