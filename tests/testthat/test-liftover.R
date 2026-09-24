@@ -453,10 +453,10 @@ test_that("liftover() accepts build synonyms as target", {
 # Tests for chain file primitives ----
 
 local_chain_path <- function(.local_envir = parent.frame()) {
+  local_config(.local_envir = .local_envir)
   tmp <- withr::local_tempdir(.local_envir = .local_envir)
-  prev <- get_chain_path(warn = FALSE)
   set_chain_path(tmp)
-  withr::defer(set_chain_path(prev), envir = .local_envir)
+  withr::defer(invalidate_chain_cache(), envir = .local_envir)
   tmp
 }
 
