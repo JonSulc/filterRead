@@ -298,7 +298,9 @@ are_values_quoted <- function(
 #' Attaches the prefixes a column's standard name declares its values may
 #' carry, fills in the `prefixable_regex` a declared prefix leaves out, then
 #' records which of them the sampled values are observed to carry. Warns where
-#' a column's values do not agree on one.
+#' a chromosome column's values carry its prefix inconsistently, and errors
+#' where any other column's do or where a column carries more than one
+#' declared prefix.
 #'
 #' A column whose values occupy neither a field nor an array element still
 #' takes the declaration, but nothing is sampled for it, so it records no
@@ -317,14 +319,13 @@ add_column_prefixes <- function(
   standard_names_dt = summary_stats_standard_names_dt
 ) {
   declared_prefixes <- unique(
-    standard_names_dt[
-      !is.na(standard_name),
-      .(standard_name, possible_prefixes, prefixable_regex)
-    ]
-  )
+    standard_names_dt[!is.na(standard_name)],
+    by = "standard_name"
+  )[
+    ,
+    .(standard_name, possible_prefixes, prefixable_regex)
+  ]
   column_info[
-    # Joined for update: a declaration with no matching column changes
-    # nothing, and no row is ever added.
     declared_prefixes,
     c("possible_prefixes", "prefixable_regex") :=
       .(i.possible_prefixes, i.prefixable_regex),
@@ -332,7 +333,7 @@ add_column_prefixes <- function(
   ][
     # A prefix declared with no prefixable_regex applies to every value
     # holding at least one character.
-    !is.na(possible_prefixes) & is.na(prefixable_regex),
+    lengths(possible_prefixes) != 0L & is.na(prefixable_regex),
     prefixable_regex := "."
   ][
     ,
@@ -340,10 +341,9 @@ add_column_prefixes <- function(
   ][
     # The chr and pos an rsid-indexed file draws from its index occupy no
     # field, so there is nothing to sample them from.
-    !is.na(possible_prefixes) & !is.na(bash_index),
-    # Wrapped twice: once for the j column, once for the list-column cell.
+    lengths(possible_prefixes) != 0L & !is.na(bash_index),
     observed_prefixes := .(.(resolve_observed_prefixes(
-      possible_prefixes,
+      possible_prefixes[[1]],
       prefixable_regex,
       resolve_column_values(
         input_name,
@@ -353,6 +353,24 @@ add_column_prefixes <- function(
         data_to_check
       )
     ))),
+    by = bash_index
+  ][
+    ,
+    dropped_prefix := NA_character_
+  ][
+    lengths(possible_prefixes) != 0L & !is.na(bash_index),
+    dropped_prefix := resolve_dropped_prefix(
+      possible_prefixes[[1]],
+      resolve_column_values(
+        input_name,
+        encoding_column,
+        delimiter,
+        decoded_index,
+        data_to_check
+      ),
+      column = data.table::fcoalesce(standard_name, input_name),
+      allow_inconsistent = isTRUE(standard_name == "chr")
+    ),
     by = bash_index
   ][]
 
@@ -443,6 +461,54 @@ resolve_observed_prefixes <- function(
     intersect(prefixes, carried_per_value),
     if ("" %in% carried_per_value) ""
   )
+}
+
+#' Resolve the prefix a read drops from a column
+#'
+#' A column carries one of the prefixes its standard name declares, or none.
+#' Carrying two of them errors, and so does carrying one inconsistently unless
+#' `allow_inconsistent`.
+#'
+#' @param prefixes The prefixes the column's standard name declares.
+#' @param values The column's sampled values.
+#' @param column The column's name, for the messages.
+#' @param allow_inconsistent TRUE to accept a column carrying the prefix on
+#'   some values and not others.
+#'
+#' @return The prefix the values carry, or NA where they carry none.
+#' @keywords internal
+resolve_dropped_prefix <- function(
+  prefixes,
+  values,
+  column,
+  allow_inconsistent
+) {
+  carried <- Filter(
+    \(prefix) any(startsWith(values, prefix), na.rm = TRUE),
+    prefixes
+  )
+  if (length(carried) == 0L) {
+    return(NA_character_)
+  }
+  if (1L < length(carried)) {
+    stop(
+      "Column ", column, " carries more than one declared prefix (",
+      paste(encodeString(carried, quote = "\""), collapse = " and "),
+      "), so a read has no single prefix to drop.",
+      call. = FALSE
+    )
+  }
+  if (!allow_inconsistent &&
+    !all(startsWith(values, carried), na.rm = TRUE)) {
+    stop(
+      "Column ", column, " carries the prefix ",
+      encodeString(carried, quote = "\""),
+      " on some values and not others, so a read would return it in two ",
+      "spellings.",
+      call. = FALSE
+    )
+  }
+  carried
 }
 
 #' Add "chr" prefix marker for chromosome column

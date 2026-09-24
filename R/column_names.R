@@ -220,7 +220,8 @@ CHR_PREFIXABLE_REGEX <- "^[^._][^._]?[^._]?[^._]?$"
 
 summary_stats_standard_names_dt[
   standard_name == "chr",
-  c("possible_prefixes", "prefixable_regex") := .("chr", CHR_PREFIXABLE_REGEX)
+  c("possible_prefixes", "prefixable_regex") :=
+    .(.("chr"), CHR_PREFIXABLE_REGEX)
 ][]
 
 summary_stats_encoded_columns_dt <- data.table::data.table(

@@ -25,7 +25,9 @@ Invisible column_info (modified by reference)
 Attaches the prefixes a column's standard name declares its values may
 carry, fills in the `prefixable_regex` a declared prefix leaves out, then
 records which of them the sampled values are observed to carry. Warns where
-a column's values do not agree on one.
+a chromosome column's values carry its prefix inconsistently, and errors
+where any other column's do or where a column carries more than one
+declared prefix.
 }
 \details{
 A column whose values occupy neither a field nor an array element still

@@ -17,6 +17,7 @@ utils::globalVariables(c(
   "defining_build",
   "delimiter",
   "dq",
+  "dropped_prefix",
   "dt",
   "effect",
   "effect_se",

@@ -98,10 +98,12 @@ test_that(
       suppressMessages() |>
       withr::with_output_sink(new = "/dev/null")
 
-    # Check that added_prefix is set in column_info
     expect_equal(
       finterface$column_info[name == "chr", added_prefix],
       "chr"
+    )
+    expect_true(
+      is.na(finterface$column_info[name == "chr", dropped_prefix])
     )
 
     # Read data and verify chr prefix is added
@@ -119,8 +121,11 @@ test_that("chr prefix not added when already present in file", {
     suppressMessages() |>
     withr::with_output_sink(new = "/dev/null")
 
-  # Check that added_prefix is NOT set when prefix already exists
   expect_true(is.na(finterface$column_info[name == "chr", added_prefix]))
+  expect_equal(finterface$column_info[name == "chr", dropped_prefix], "chr")
+  expect_true(
+    all(is.na(finterface$column_info[name != "chr", dropped_prefix]))
+  )
 
   # Read data and verify chr prefix is preserved (not doubled)
   result <- head(finterface, nlines = 5)
@@ -210,8 +215,10 @@ test_that("a chr column disagreeing on the prefix reads back the package's", {
     "agree on a prefix"
   )
   expect_equal(
-    finterface$column_info[name == "chr", observed_prefixes][[1]], c("chr", "")
+    finterface$column_info[name == "chr", observed_prefixes],
+    list(c("chr", ""))
   )
+  expect_equal(finterface$column_info[name == "chr", dropped_prefix], "chr")
   expect_identical(finterface[]$chr, c("chr1", "chr2"))
 })
 
@@ -266,4 +273,41 @@ test_that("a decoded chr carrying no prefix reads back the package's", {
   )
   expect_identical(finterface[regions]$chr, "chr1")
   expect_identical(finterface[]$chr, c("chr1", "chr1"))
+})
+
+test_that("a chr column carrying two declared prefixes errors", {
+  declarations <- data.table::copy(summary_stats_standard_names_dt)
+  declarations[
+    standard_name == "chr",
+    possible_prefixes := .(.(c("chr", "Chr")))
+  ][]
+  expect_error(
+    local_file_interface(
+      dt = data.table::data.table(
+        chr = c("chr1", "Chr2"), pos = c(1000L, 2000L), pval = c(0.1, 0.2)
+      ),
+      standard_names_dt = declarations,
+      build = "b38"
+    ),
+    "carries more than one declared prefix"
+  )
+})
+
+test_that("an inconsistently prefixed column other than chr errors", {
+  declarations <- data.table::copy(summary_stats_standard_names_dt)
+  declarations[
+    standard_name == "rsid",
+    possible_prefixes := .(.("rs"))
+  ][]
+  expect_error(
+    local_file_interface(
+      dt = data.table::data.table(
+        chr = c("1", "2"), pos = c(1000L, 2000L),
+        rsid = c("rs1", "2"), pval = c(0.1, 0.2)
+      ),
+      standard_names_dt = declarations,
+      build = "b38"
+    ),
+    "on some values and not others"
+  )
 })

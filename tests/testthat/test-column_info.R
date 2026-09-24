@@ -16,7 +16,7 @@ test_that("Base column_info works", {
     ],
     data.table::data.table(
       standard_name     = c("chr", "pos", "ref", "alt", "effect", "pval"),
-      possible_prefixes = c("chr", rep(NA_character_, 5)),
+      possible_prefixes = c(list("chr"), rep(list(NULL), 5)),
       prefixable_regex  = c(
         "^[^._][^._]?[^._]?[^._]?$", rep(NA_character_, 5)
       ),
@@ -315,7 +315,8 @@ test_that("a decoded column takes the metadata its standard name declares", {
     dt = make_decoded_chr_stats(), build = "b38"
   )
   expect_equal(
-    finterface$column_info[standard_name == "chr", possible_prefixes], "chr"
+    finterface$column_info[standard_name == "chr", possible_prefixes],
+    list("chr")
   )
   expect_equal(
     finterface$column_info[standard_name == "chr", prefixable_regex],
@@ -328,7 +329,10 @@ test_that("a decoded column takes the metadata its standard name declares", {
 
 test_that("a caller's standard_names_dt governs a decoded column", {
   standard_names_dt <- data.table::copy(summary_stats_standard_names_dt)
-  standard_names_dt[standard_name == "chr", possible_prefixes := "ch"][]
+  standard_names_dt[
+    standard_name == "chr",
+    possible_prefixes := .(.(c("ch", "Ch")))
+  ][]
 
   finterface <- local_file_interface(
     dt = make_decoded_chr_stats(chr = "ch1"),
@@ -336,8 +340,13 @@ test_that("a caller's standard_names_dt governs a decoded column", {
     standard_names_dt = standard_names_dt
   )
   expect_equal(
-    finterface$column_info[name == "chr", observed_prefixes][[1]], "ch"
+    finterface$column_info[name == "chr", possible_prefixes],
+    list(c("ch", "Ch"))
   )
+  expect_equal(
+    finterface$column_info[name == "chr", observed_prefixes], list("ch")
+  )
+  expect_equal(finterface$column_info[name == "chr", dropped_prefix], "ch")
 })
 
 test_that(
@@ -354,7 +363,7 @@ test_that(
       finterface$column_info[name == "chr", observed_prefixes][[1]], ""
     )
     expect_equal(
-      finterface$column_info[name == "build", possible_prefixes], NA_character_
+      finterface$column_info[name == "build", possible_prefixes], list(NULL)
     )
     expect_equal(
       finterface$column_info[name == "build", prefixable_regex], NA_character_

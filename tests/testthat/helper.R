@@ -189,12 +189,15 @@ local_file_interface <- function(
   if (!is.null(prefix)) {
     standard_names_dt <- standard_names_dt[
       data.table::data.table(
-        input_name        = names(prefix),
-        standard_name     = names(prefix),
-        possible_prefixes = unlist(prefix)
+        input_name    = names(prefix),
+        standard_name = names(prefix)
       ),
-      on = c("input_name", "standard_name", "possible_prefixes")
+      on = c("input_name", "standard_name")
     ]
+    standard_names_dt[
+      ,
+      possible_prefixes := .(unname(prefix[standard_name]))
+    ][]
   }
   new_file_interface(
     filename,
