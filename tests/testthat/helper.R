@@ -473,8 +473,6 @@ test_in_fc <- function(
 # An eight-record fixture whose chromosome, position, allele and p-value
 # columns each select a different subset, so a constraint dropped from the
 # emitted awk changes the record set rather than passing unnoticed.
-# Chromosomes are stored prefixed, as a read returns them, so a condition
-# holds the same values on either side of the comparison.
 dummy_fixed_summary_stats <- function() {
   data.table::data.table(
     chr  = rep(c("chr1", "chr2"), each = 4),

@@ -2,7 +2,7 @@
 % Please edit documentation in R/column_metadata.R
 \name{add_column_prefixes}
 \alias{add_column_prefixes}
-\title{Add each column's prefixes to column_info}
+\title{Add each column's prefix to column_info}
 \usage{
 add_column_prefixes(
   column_info,
@@ -23,15 +23,12 @@ Invisible column_info (modified by reference)
 }
 \description{
 Attaches the prefixes a column's standard name declares its values may
-carry, fills in the `prefixable_regex` a declared prefix leaves out, then
-records which of them the sampled values are observed to carry. Warns where
-a chromosome column's values carry its prefix inconsistently, and errors
-where any other column's do or where a column carries more than one
-declared prefix.
+carry, and records the one the sampled values carry as `dropped_prefix`. A
+read drops what `dropped_prefix` names.
 }
 \details{
 A column whose values occupy neither a field nor an array element still
 takes the declaration, but nothing is sampled for it, so it records no
-observed prefixes.
+dropped prefix.
 }
 \keyword{internal}

@@ -4,10 +4,14 @@
 \alias{column_class_overrides}
 \title{Pull fread `colClasses` overrides from column_info}
 \usage{
-column_class_overrides(finterface)
+column_class_overrides(finterface, add_rsid_genomic_columns = TRUE)
 }
 \arguments{
 \item{finterface}{File interface object.}
+
+\item{add_rsid_genomic_columns}{FALSE where the read leaves out the chr/pos
+columns an rsid-indexed file draws from the tabix index, so the positions
+count only the columns the file itself carries.}
 }
 \value{
 Named list of integer vectors, or NULL if no overrides
@@ -16,7 +20,7 @@ Named list of integer vectors, or NULL if no overrides
 \description{
 Returns a list keyed by R class, with each entry holding the
 positional indices of the output columns that should be read as
-that class (e.g. REGENIE `EXTRA` pinned to character). Uses
+that class (e.g. `chr` and REGENIE `EXTRA` pinned to character). Uses
 positions because fread parses `colClasses` against the input
 stream's header, and awk strips the header before fread sees it.
 Returns NULL when no overrides apply.

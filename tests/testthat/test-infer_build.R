@@ -44,7 +44,7 @@ test_that("build_can_be_inferred returns FALSE with missing columns", {
 
 test_that("get_tabix_query generates correct query format", {
   summary_stats <- data.table::data.table(
-    chr = c("chr1", "chr2"),
+    chr = c("1", "2"),
     pos = c(12345, 67890),
     ref = c("A", "C"),
     alt = c("G", "T")
@@ -54,22 +54,6 @@ test_that("get_tabix_query generates correct query format", {
     get_tabix_query(summary_stats, "/path/to/ref.vcf.gz"),
     "tabix '/path/to/ref.vcf.gz' 1:12345-12345 2:67890-67890"
   )
-})
-
-test_that("get_tabix_query strips chr prefix correctly", {
-  summary_stats <- data.table::data.table(
-    chr = c("chr1", "chr22", "chrX"),
-    pos = c(100, 200, 300),
-    ref = c("A", "C", "G"),
-    alt = c("T", "G", "A")
-  )
-
-  query <- get_tabix_query(summary_stats, "/path/to/ref.vcf.gz")
-
-  expect_match(query, "1:100-100")
-  expect_match(query, "22:200-200")
-  expect_match(query, "X:300-300")
-  expect_no_match(query, "chr")
 })
 
 test_that("infer_build returns NA for data without required columns", {
@@ -89,7 +73,7 @@ test_that("infer_build with return_build_match returns data.table", {
 
   dt <- dummy_summary_stats(
     nrows = 100,
-    chr = 1,
+    chr = "1",
     start = 1000,
     end = 10000,
     random_names = FALSE
@@ -115,7 +99,7 @@ test_that("infer_build without return_build_match returns character", {
 
   dt <- dummy_summary_stats(
     nrows = 100,
-    chr = 1,
+    chr = "1",
     start = 1000,
     end = 10000,
     random_names = FALSE
@@ -136,7 +120,7 @@ test_that("infer_build prints informative message", {
 
   dt <- dummy_summary_stats(
     nrows = 50,
-    chr = 1,
+    chr = "1",
     start = 1000,
     end = 10000,
     random_names = FALSE
@@ -191,7 +175,7 @@ test_that(
 
     finterface <- local_summary_stats_interface(
       nrows = 50,
-      chr = 1,
+      chr = "1",
       start = 1000,
       end = 10000,
       random_names = FALSE
@@ -246,20 +230,15 @@ test_that("get_tabix_matches counts matches correctly", {
 
   skip_if_not(file.exists(ref_filename), "dbSNP reference file not found")
 
-  dt <- dummy_summary_stats(
-    nrows = 50,
-    chr = 1,
-    start = 10000,
-    end = 20000,
-    random_names = FALSE
+  # rs540538026 is chr1:13110 G>A in b37; nothing sits at 13111.
+  dt <- data.table::data.table(
+    chr = c("1", "1"),
+    pos = c(13110L, 13111L),
+    ref = c("G", "G"),
+    alt = c("A", "A")
   )
 
-  result <- get_tabix_matches(dt, ref_filename) |>
-    suppressWarnings()
-
-  expect_type(result, "double")
-  expect_true(result >= 0)
-  expect_true(result <= nrow(dt))
+  expect_equal(get_tabix_matches(dt, ref_filename), 1)
 })
 
 test_that("infer_build correctly matches all reference variants", {

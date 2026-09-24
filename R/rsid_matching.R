@@ -609,12 +609,10 @@ fcondition_and_rsid_to_awk <- function(
       awk_code_block = sprintf(
         paste0(
           "if (file_idx == %i) {\n",
-          "  if ($1 !~ /^chr/ && $1 ~ /%s/) $1 = \"chr\"$1\n",
           "  rsid%i[$3]=$1 OFS $2\n",
           "}"
         ),
         index + 1L,
-        CHR_PREFIXABLE_REGEX,
         index
       ),
       # Prefix to prepend chr/pos to output lines

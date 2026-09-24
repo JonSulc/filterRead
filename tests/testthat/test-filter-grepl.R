@@ -146,7 +146,7 @@ test_that("grepl on chr is treated as non-genomic and falls through to awk", {
     withr::with_output_sink(new = "/dev/null")
 
   result <- finterface[grepl("^chr[0-9]+$", chr)]
-  expect_equal(sort(result$chr), c("chr1", "chr10"))
+  expect_equal(sort(result$chr), c("1", "10"))
 })
 
 test_that("is_regex_filter_condition errors on unexpected input types", {

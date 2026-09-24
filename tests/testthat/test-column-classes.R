@@ -23,7 +23,7 @@ test_that("EXTRA is read as character even when it is NA on most records", {
   expect_equal(result$EXTRA[5], "REGENIE_FLAG_VALUE")
 })
 
-test_that("column_class_overrides returns the EXTRA pin", {
+test_that("column_class_overrides pins chr and EXTRA to character", {
   dt <- data.table::data.table(
     chr   = "chr1",
     pos   = 100L,
@@ -38,16 +38,11 @@ test_that("column_class_overrides returns the EXTRA pin", {
 
   overrides <- column_class_overrides(finterface)
   expect_named(overrides, "character")
-  # EXTRA is the last output column in the fixture.
-  expect_equal(
-    overrides$character,
-    length(column_names(finterface))
-  )
+  expect_equal(overrides$character, c(1L, 5L))
 })
 
 test_that("column_class_overrides is NULL when no overrides apply", {
   dt <- data.table::data.table(
-    chr    = "chr1",
     pos    = 100L,
     ref    = "A",
     alt    = "G",
@@ -94,5 +89,22 @@ test_that("Two REGENIE-shaped files rbind cleanly after read", {
   combined <- rbind(fi1[], fi2[])
   expect_equal(nrow(combined), 5)
   expect_type(combined$EXTRA, "character")
-  expect_equal(combined[chr == "chr4", EXTRA], "SOME_TAG")
+  expect_equal(combined[chr == "4", EXTRA], "SOME_TAG")
+})
+
+test_that("EXTRA is read as character from an rsid-indexed file", {
+  dt <- data.table::data.table(
+    rsid  = c("rs429358", "rs7412"),
+    ref   = c("T", "C"),
+    alt   = c("C", "T"),
+    EXTRA = c(NA, NA),
+    pval  = c(0.1, 0.2)
+  )
+  local_csv_file("data.csv", dt = dt)
+  finterface <- new_file_interface("data.csv", build = "b37") |>
+    suppressMessages() |>
+    withr::with_output_sink(new = "/dev/null")
+
+  expect_type(finterface[pval < 1]$EXTRA, "character")
+  expect_type(finterface[]$EXTRA, "character")
 })

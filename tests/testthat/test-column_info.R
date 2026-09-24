@@ -17,14 +17,11 @@ test_that("Base column_info works", {
     data.table::data.table(
       standard_name     = c("chr", "pos", "ref", "alt", "effect", "pval"),
       possible_prefixes = c(list("chr"), rep(list(NULL), 5)),
-      prefixable_regex  = c(
-        "^[^._][^._]?[^._]?[^._]?$", rep(NA_character_, 5)
-      ),
+      class             = c("character", rep(NA_character_, 5)),
       pattern           = NA_character_,
       regex             = NA_character_,
       encoded_names     = list(),
       delimiter         = NA_character_,
-      class             = NA_character_,
       input_index       = 1:6,
       bash_index        = paste0("$", 1:6)
     )
@@ -107,64 +104,55 @@ test_that("a column is quoted where every value it carries is", {
   )
 })
 
-test_that("resolve_observed_prefixes separates a carried prefix from none", {
+test_that("resolve_dropped_prefix separates a carried prefix from none", {
   summary_stats <- dummy_summary_stats()
   expect_equal(
-    resolve_observed_prefixes(
+    resolve_dropped_prefix(
       prefixes = "chr",
-      prefixable_regex = CHR_PREFIXABLE_REGEX,
-      column_data = summary_stats$chr
+      values = as.character(summary_stats$chr),
+      column = "chr",
+      allow_inconsistent = TRUE
     ),
-    ""
+    NA_character_
   )
 
   summary_stats <- dummy_summary_stats(prefixes = list(chr = "chr"))
   expect_equal(
-    resolve_observed_prefixes(
+    resolve_dropped_prefix(
       prefixes = "chr",
-      prefixable_regex = CHR_PREFIXABLE_REGEX,
-      column_data = summary_stats$chr
+      values = summary_stats$chr,
+      column = "chr",
+      allow_inconsistent = TRUE
     ),
     "chr"
   )
 })
 
-test_that(
-  "resolve_observed_prefixes reads only the values the prefix applies to",
-  {
-    expect_equal(
-      resolve_observed_prefixes(
-        prefixes = "chr",
-        prefixable_regex = CHR_PREFIXABLE_REGEX,
-        column_data = c("1", "GL000209.1")
-      ),
-      ""
-    )
-    expect_equal(
-      resolve_observed_prefixes(
-        prefixes = "chr",
-        prefixable_regex = CHR_PREFIXABLE_REGEX,
-        column_data = c("chr10", "chr22")
-      ),
-      "chr"
-    )
-    expect_equal(
-      resolve_observed_prefixes(
-        prefixes = "chr",
-        prefixable_regex = CHR_PREFIXABLE_REGEX,
-        column_data = c("GL000209.1", "KI270220.1")
-      ),
-      character(0)
-    )
-  }
-)
-
-test_that("a prefix declared without a prefixable_regex is still observed", {
-  finterface <- local_file_interface(prefix = list(char = "test"))
+test_that("resolve_dropped_prefix finds the prefix beside a scaffold name", {
   expect_equal(
-    finterface$column_info[name == "char", observed_prefixes][[1]], "test"
+    resolve_dropped_prefix(
+      prefixes = "chr",
+      values = c("chr10", "GL000209.1"),
+      column = "chr",
+      allow_inconsistent = TRUE
+    ),
+    "chr"
   )
-  expect_equal(finterface$column_info[name == "char", prefixable_regex], ".")
+  expect_equal(
+    resolve_dropped_prefix(
+      prefixes = "chr",
+      values = c("GL000209.1", "KI270220.1"),
+      column = "chr",
+      allow_inconsistent = TRUE
+    ),
+    NA_character_
+  )
+})
+
+test_that("a declared prefix is dropped whatever else the declaration holds", {
+  finterface <- local_file_interface(prefix = list(char = "test"))
+  expect_equal(finterface$column_info[name == "char", dropped_prefix], "test")
+  expect_equal(finterface[]$char, letters[1:6])
 })
 
 test_that("Encoded columns are detected", {
@@ -319,12 +307,10 @@ test_that("a decoded column takes the metadata its standard name declares", {
     list("chr")
   )
   expect_equal(
-    finterface$column_info[standard_name == "chr", prefixable_regex],
-    CHR_PREFIXABLE_REGEX
+    finterface$column_info[standard_name == "chr", class],
+    "character"
   )
-  expect_equal(
-    finterface$column_info[name == "pos", observed_prefixes][[1]], character(0)
-  )
+  expect_true(is.na(finterface$column_info[name == "pos", dropped_prefix]))
 })
 
 test_that("a caller's standard_names_dt governs a decoded column", {
@@ -343,14 +329,11 @@ test_that("a caller's standard_names_dt governs a decoded column", {
     finterface$column_info[name == "chr", possible_prefixes],
     list(c("ch", "Ch"))
   )
-  expect_equal(
-    finterface$column_info[name == "chr", observed_prefixes], list("ch")
-  )
   expect_equal(finterface$column_info[name == "chr", dropped_prefix], "ch")
 })
 
 test_that(
-  "a build-encoded parent yields a prefixed chr and an undeclared build",
+  "a build-encoded parent yields a bare chr and an undeclared build",
   {
     finterface <- local_file_interface(
       dt = data.table::data.table(
@@ -359,16 +342,11 @@ test_that(
       ),
       build = "b37"
     )
-    expect_equal(
-      finterface$column_info[name == "chr", observed_prefixes][[1]], ""
-    )
+    expect_true(is.na(finterface$column_info[name == "chr", dropped_prefix]))
     expect_equal(
       finterface$column_info[name == "build", possible_prefixes], list(NULL)
     )
-    expect_equal(
-      finterface$column_info[name == "build", prefixable_regex], NA_character_
-    )
-    expect_identical(finterface[]$chr, c("chr1", "chr2"))
+    expect_identical(finterface[]$chr, c("1", "2"))
     expect_identical(finterface[]$build, c("b37", "b37"))
   }
 )

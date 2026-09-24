@@ -15,17 +15,17 @@ columns are needed for condition evaluation)}
 \value{
 List with:
   - before_if: awk split() calls for encoded columns used in conditions
-  - after_if: awk code for prefix addition and column recoding
+  - after_if: awk code that drops prefixes and recodes columns
   Or NULL if no special column handling needed.
 }
 \description{
 Analyzes file interface to determine which columns need splitting (for
-encoded values like "A;B") or prefix addition. Returns awk code to be
+encoded values like "A;B") or a dropped prefix. Returns awk code to be
 executed before and after condition evaluation.
 }
 \details{
 Encoded columns are split into arrays before condition checks (if needed
-for filtering), then recombined after. Prefixes are added after filtering.
+for filtering), then recombined after. Prefixes are dropped after filtering.
 Allele columns (ref/alt/allele1/allele2) are upper-cased before the if so
 filter conditions and the printed output both see canonical values.
 }

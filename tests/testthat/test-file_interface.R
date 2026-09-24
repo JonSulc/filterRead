@@ -271,23 +271,8 @@ test_that("Prefixes are handled correctly", {
   )
 
   for (finterface in list(finterface_b, finterface_q, finterface_gz)) {
-    data_to_check <- head(finterface, 500)
-    expect_equal(
-      resolve_observed_prefixes(
-        prefixes = "chr",
-        prefixable_regex = CHR_PREFIXABLE_REGEX,
-        column_data = data_to_check$chr
-      ),
-      "chr"
-    )
-    expect_equal(
-      resolve_observed_prefixes(
-        prefixes = "incorrect",
-        prefixable_regex = CHR_PREFIXABLE_REGEX,
-        column_data = data_to_check$chr
-      ),
-      ""
-    )
+    expect_equal(finterface$column_info[name == "chr", dropped_prefix], "chr")
+    expect_equal(unique(head(finterface, 500)$chr), "1")
 
     expect_equal(
       finterface[chr == 1],
@@ -353,7 +338,7 @@ test_that("Commented lines are correctly ignored", {
   # Verify comments were skipped and # prefix was trimmed
   expect_equal(names(result)[1], "chr")
   expect_equal(nrow(result), 1)
-  expect_equal(result$chr, "chr1")
+  expect_equal(result$chr, "1")
   expect_equal(result$pos, 10177)
 })
 
@@ -399,7 +384,6 @@ test_that("Encoded columns are correctly detected", {
       before_if = c("$2 = toupper($2)", "$3 = toupper($3)"),
       after_if = c(
         "split($1, encoded1, \"-c|:|-\")",
-        'if (encoded1[2] ~ /^[^._][^._]?[^._]?[^._]?$/) encoded1[2] = "chr"encoded1[2]',
         "$1 = $1 OFS encoded1[1] OFS encoded1[2] OFS encoded1[3]"
       )
     )
@@ -484,7 +468,6 @@ test_that("Encoded columns are correctly detected", {
       before_if = c("$2 = toupper($2)", "$3 = toupper($3)"),
       after_if = c(
         "split($1, encoded1, \"-c|:|-\")",
-        'if (encoded1[2] ~ /^[^._][^._]?[^._]?[^._]?$/) encoded1[2] = "chr"encoded1[2]',
         "$1 = $1 OFS encoded1[1] OFS encoded1[2] OFS encoded1[3]"
       )
     )
@@ -516,7 +499,7 @@ test_that("Encoded columns are correctly parsed and loaded", {
     c("MarkerName", "build", "chr", "pos", "ref", "alt", "effect", "pval")
   )
   expect_true(
-    finterface_enc[chr == 1][, all(chr == "chr1")]
+    finterface_enc[chr == 1][, all(chr == "1")]
   )
 })
 
@@ -808,7 +791,7 @@ test_that("A record of only character fields is read as data", {
 
   first_row <- head(finterface, 1)
   expect_equal(nrow(first_row), 1L)
-  expect_equal(first_row$chr, "chr1")
+  expect_equal(first_row$chr, "1")
   expect_equal(
     vapply(first_row, class, character(1)),
     c(chr = "character", ref = "character", alt = "character")
@@ -1190,7 +1173,7 @@ test_that("nrecords_to_check sets how far detection samples", {
   local_csv_file(
     "drift.csv",
     dt = data.table::data.table(
-      chr = c(rep("chr1", 3), rep("2", 5)),
+      chr = c(rep("1", 3), rep("chr2", 5)),
       pos = seq_len(8) * 1000L,
       pval = 0.1
     )
@@ -1199,20 +1182,14 @@ test_that("nrecords_to_check sets how far detection samples", {
   sampled_short <- new_file_interface(
     "drift.csv", build = "b38", nrecords_to_check = 3
   )
-  expect_equal(
-    sampled_short$column_info[name == "chr", observed_prefixes][[1]], "chr"
-  )
-  expect_identical(sampled_short[]$chr, c(rep("chr1", 3), rep("2", 5)))
+  expect_true(is.na(sampled_short$column_info[name == "chr", dropped_prefix]))
+  expect_identical(sampled_short[]$chr, c(rep("1", 3), rep("chr2", 5)))
 
-  expect_warning(
-    sampled_whole <- new_file_interface("drift.csv", build = "b38"),
-    "agree on a prefix"
-  )
+  sampled_whole <- new_file_interface("drift.csv", build = "b38")
   expect_equal(
-    sampled_whole$column_info[name == "chr", observed_prefixes][[1]],
-    c("chr", "")
+    sampled_whole$column_info[name == "chr", dropped_prefix], "chr"
   )
-  expect_identical(sampled_whole[]$chr, c(rep("chr1", 3), rep("chr2", 5)))
+  expect_identical(sampled_whole[]$chr, c(rep("1", 3), rep("2", 5)))
 })
 
 test_that("a quoted encoded column decodes like an unquoted one", {
@@ -1225,7 +1202,7 @@ test_that("a quoted encoded column decodes like an unquoted one", {
     build = "b37"
   )
   records <- finterface[]
-  expect_equal(records$chr, c("chr1", "chr2"))
+  expect_equal(records$chr, c("1", "2"))
   expect_equal(records$pos, c(100L, 200L))
   expect_equal(records$chr_colon_pos, c("1:100", "2:200"))
 })

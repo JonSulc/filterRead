@@ -78,7 +78,7 @@ test_that("a partially-redundant parent keeps only the surviving child", {
   expect_equal(parent$recode_columns, "$2 = $2 OFS encoded1[2]")
   result <- fi[pos < 250]
   expect_equal(nrow(result), 1L)
-  expect_equal(result$chr, "chr1")
+  expect_equal(result$chr, "1")
 })
 
 test_that("a build-encoded parent beside real chr/pos keeps only build", {

@@ -9,7 +9,7 @@
 #   - standard_name: standardized name (chr, pos, pval, rsid, etc.)
 #   - bash_index: awk column reference ($1, $2, etc.)
 #   - quoted: TRUE if values are quoted
-#   - observed_prefixes: the prefixes the values carry (e.g., "chr")
+#   - dropped_prefix: the prefix a read drops from the values (e.g., "chr")
 #   - encoded_names: list of names if column contains multiple encoded values
 #   - delimiter: delimiter for encoded columns
 #   - etc.
@@ -125,7 +125,7 @@ get_column_info <- function(
     data_to_check,
     standard_names_dt = standard_names_dt
   )
-  add_chr_prefix(column_info, data_to_check)
+  add_column_classes(column_info, standard_names_dt = standard_names_dt)
 
   # Set final column name (prefer standard_name over input_name)
   column_info[
@@ -293,18 +293,15 @@ are_values_quoted <- function(
   quoted_values
 }
 
-#' Add each column's prefixes to column_info
+#' Add each column's prefix to column_info
 #'
 #' Attaches the prefixes a column's standard name declares its values may
-#' carry, fills in the `prefixable_regex` a declared prefix leaves out, then
-#' records which of them the sampled values are observed to carry. Warns where
-#' a chromosome column's values carry its prefix inconsistently, and errors
-#' where any other column's do or where a column carries more than one
-#' declared prefix.
+#' carry, and records the one the sampled values carry as `dropped_prefix`. A
+#' read drops what `dropped_prefix` names.
 #'
 #' A column whose values occupy neither a field nor an array element still
 #' takes the declaration, but nothing is sampled for it, so it records no
-#' observed prefixes.
+#' dropped prefix.
 #'
 #' @param column_info data.table with column metadata (modified in place)
 #' @param data_to_check Sample data for prefix detection
@@ -323,41 +320,18 @@ add_column_prefixes <- function(
     by = "standard_name"
   )[
     ,
-    .(standard_name, possible_prefixes, prefixable_regex)
+    .(standard_name, possible_prefixes)
   ]
   column_info[
     declared_prefixes,
-    c("possible_prefixes", "prefixable_regex") :=
-      .(i.possible_prefixes, i.prefixable_regex),
+    possible_prefixes := i.possible_prefixes,
     on = "standard_name"
-  ][
-    # A prefix declared with no prefixable_regex applies to every value
-    # holding at least one character.
-    lengths(possible_prefixes) != 0L & is.na(prefixable_regex),
-    prefixable_regex := "."
-  ][
-    ,
-    observed_prefixes := rep(.(character(0)), .N)
-  ][
-    # The chr and pos an rsid-indexed file draws from its index occupy no
-    # field, so there is nothing to sample them from.
-    lengths(possible_prefixes) != 0L & !is.na(bash_index),
-    observed_prefixes := .(.(resolve_observed_prefixes(
-      possible_prefixes[[1]],
-      prefixable_regex,
-      resolve_column_values(
-        input_name,
-        encoding_column,
-        delimiter,
-        decoded_index,
-        data_to_check
-      )
-    ))),
-    by = bash_index
   ][
     ,
     dropped_prefix := NA_character_
   ][
+    # The chr and pos an rsid-indexed file draws from its index occupy no
+    # field, so there is nothing to sample them from.
     lengths(possible_prefixes) != 0L & !is.na(bash_index),
     dropped_prefix := resolve_dropped_prefix(
       possible_prefixes[[1]],
@@ -372,23 +346,38 @@ add_column_prefixes <- function(
       allow_inconsistent = isTRUE(standard_name == "chr")
     ),
     by = bash_index
-  ][]
+  ][] |>
+    invisible()
+}
 
-  disagreeing <- column_info[
-    vapply(observed_prefixes, \(carried) 1L < length(carried), logical(1)),
-    data.table::fcoalesce(standard_name, input_name)
-  ]
-  if (length(disagreeing) != 0L) {
-    warning(
-      "Columns ", paste(disagreeing, collapse = ", "),
-      " do not agree on a prefix (some values carry it, some do not). ",
-      "A read adds the prefix where it is missing; filtering on them is ",
-      "not supported.",
-      call. = FALSE
-    )
-  }
-
-  invisible(column_info)
+#' Add each column's declared class to column_info
+#'
+#' Sets `class` on every column whose standard name declares one, a decoded
+#' column and a column drawn from an rsid index included.
+#'
+#' @param column_info data.table with column metadata (modified in place)
+#' @param standard_names_dt Data.table mapping input names to standard names;
+#'   the class declarations are read from it by standard name
+#'
+#' @return Invisible column_info (modified by reference)
+#' @keywords internal
+add_column_classes <- function(
+  column_info,
+  standard_names_dt = summary_stats_standard_names_dt
+) {
+  declared_classes <- standard_names_dt[
+    ,
+    c("standard_name", "class")
+  ][
+    !is.na(standard_name) & !is.na(class)
+  ] |>
+    unique(by = "standard_name")
+  column_info[
+    declared_classes,
+    class := i.class,
+    on = "standard_name"
+  ][] |>
+    invisible()
 }
 
 #' Resolve a column's values from the sampled records
@@ -418,49 +407,6 @@ resolve_column_values <- function(
   }
   strsplit(as.character(data_to_check[[encoding_column]]), delimiter) |>
     vapply(`[`, character(1), decoded_index)
-}
-
-#' Resolve the prefixes a column's values are observed to carry
-#'
-#' @param prefixes Vector of possible prefixes to check
-#' @param prefixable_regex Regular expression a value must match, once any
-#'   declared prefix is removed, to be one the prefix applies to
-#' @param column_data Vector of values from the column
-#'
-#' @return The prefixes the values carry: one where they agree, `""` where
-#'   none carries a prefix, and both where they disagree. Empty where there is
-#'   nothing to observe.
-#' @keywords internal
-resolve_observed_prefixes <- function(
-  prefixes,
-  prefixable_regex,
-  column_data
-) {
-  bare_values <- Reduce(
-    \(values, prefix) sub(paste0("^", prefix), "", values),
-    prefixes,
-    init = as.character(column_data)
-  )
-  prefixable <- grepl(prefixable_regex, bare_values)
-  prefixable_values <- column_data[prefixable]
-  if (length(prefixable_values) == 0L) {
-    return(character(0))
-  }
-  carried_by_prefix <- lapply(prefixes, \(prefix) {
-    data.table::fifelse(
-      grepl(paste0("^", prefix), prefixable_values),
-      prefix,
-      NA_character_
-    )
-  })
-  carried_per_value <- do.call(
-    data.table::fcoalesce, c(carried_by_prefix, list(""))
-  )
-  # Declared order, "" last, so the set does not depend on record order.
-  c(
-    intersect(prefixes, carried_per_value),
-    if ("" %in% carried_per_value) ""
-  )
 }
 
 #' Resolve the prefix a read drops from a column
@@ -511,32 +457,6 @@ resolve_dropped_prefix <- function(
   carried
 }
 
-#' Add "chr" prefix marker for chromosome column
-#'
-#' Marks a chromosome column whose values are observed to carry no prefix, so
-#' that a read of it returns the package's spelling.
-#'
-#' @param column_info data.table with column metadata (modified in place)
-#' @param data_to_check Sample data (unused, kept for interface consistency)
-#'
-#' @return Invisible column_info (modified by reference)
-#' @keywords internal
-add_chr_prefix <- function(
-  column_info,
-  data_to_check
-) {
-  column_info[
-    # Excludes the chr an rsid-indexed file draws from its index, which
-    # occupies no field.
-    standard_name == "chr" &
-      !is.na(bash_index) &
-      vapply(observed_prefixes, \(carried) "" %in% carried, logical(1)),
-    added_prefix := "chr"
-  ][] |>
-    invisible()
-}
-
-
 #' Set up encoding columns for split/recode operations
 #'
 #' For columns containing multiple delimited values, generates awk code
@@ -558,7 +478,7 @@ add_encoding_columns <- function(
   #
   # These columns are consumed by:
   # - awk_codegen.R: get_awk_column_arrays() uses encoding_column,
-  #   split_encoding_column, recode_columns, added_prefix, bash_index,
+  #   split_encoding_column, recode_columns, dropped_prefix, bash_index,
   #   encoded_names
   # - awk_arrays.R: uses bash_index for column array setup
   # - expand_single_encoded_row(): reads encoded_refs for child bash_index
@@ -789,26 +709,33 @@ column_names <- function(
 #'
 #' Returns a list keyed by R class, with each entry holding the
 #' positional indices of the output columns that should be read as
-#' that class (e.g. REGENIE `EXTRA` pinned to character). Uses
+#' that class (e.g. `chr` and REGENIE `EXTRA` pinned to character). Uses
 #' positions because fread parses `colClasses` against the input
 #' stream's header, and awk strips the header before fread sees it.
 #' Returns NULL when no overrides apply.
 #'
 #' @param finterface File interface object.
+#' @param add_rsid_genomic_columns FALSE where the read leaves out the chr/pos
+#'   columns an rsid-indexed file draws from the tabix index, so the positions
+#'   count only the columns the file itself carries.
 #' @return Named list of integer vectors, or NULL if no overrides
 #'   apply.
 #' @keywords internal
-column_class_overrides <- function(finterface) {
+column_class_overrides <- function(
+  finterface,
+  add_rsid_genomic_columns = TRUE
+) {
   col_info <- finterface$column_info
-  if (is.null(col_info) || !"class" %in% names(col_info)) {
+  if (is.null(col_info)) {
     return(NULL)
   }
-  output_cols <- data.table::copy(col_info)
-  if (!"class" %in% names(output_cols) ||
-    all(is.na(output_cols$class))) {
+  if (!add_rsid_genomic_columns) {
+    col_info <- col_info[!(from_rsid_index)]
+  }
+  output_cols <- col_info[, "class"][, idx := seq_len(.N)][]
+  if (all(is.na(output_cols$class))) {
     return(NULL)
   }
-  output_cols[, idx := seq_len(.N)]
-  matches <- output_cols[!is.na(class), .(idx, class)]
+  matches <- output_cols[!is.na(class)]
   split(matches$idx, matches$class)
 }

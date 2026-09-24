@@ -59,7 +59,7 @@ get_tabix_query <- function(
     shQuote(ref_filename, type = "sh"),
     unique(summary_stats[, .(chr, pos)])[
       ,
-      sprintf("%s:%s-%s", substring(chr, 4), pos, pos) |>
+      sprintf("%s:%s-%s", chr, pos, pos) |>
         paste(collapse = " ")
     ]
   )
@@ -184,11 +184,6 @@ get_tabix_matches <- function(
   if (nrow(hits) == 0) {
     return(0)
   }
-
-  hits[
-    ,
-    chr := paste0("chr", chr)
-  ][]
 
   filtered_hits <- data.table::rbindlist(
     list(

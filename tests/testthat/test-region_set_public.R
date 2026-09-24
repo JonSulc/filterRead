@@ -23,7 +23,7 @@ test_that("finterface[region_set(...)] returns in-range records", {
   )
   result <- fi[regions]
   expect_equal(result$pos, 200L)
-  expect_equal(result$chr, "chr1")
+  expect_equal(result$chr, "1")
 })
 
 test_that("empty region_set matches nothing without awk", {
@@ -147,7 +147,7 @@ test_that("a blank chromosome name selects records whose chromosome is blank", {
   with_named <- region_set(chr = c("", "1"), start = 1L, end = 350L,
                            build = "b38")
   result <- fi[with_named]
-  expect_equal(result$chr, c("chr1", ""))
+  expect_equal(result$chr, c("1", ""))
   expect_equal(result$pos, c(100L, 200L))
 
   every_chr <- region_set(chr = NA_character_, start = 1L, end = 350L,
@@ -169,5 +169,5 @@ test_that("chr %in% a vector holding a blank chromosome name reads", {
   )
   chromosomes <- c("1", "")
   result <- fi[chr %in% chromosomes]
-  expect_equal(result$chr, c("chr1", ""))
+  expect_equal(result$chr, c("1", ""))
 })

@@ -352,7 +352,7 @@ test_that("finterface[v] keeps positions on the right chromosome", {
   )
   result <- fi[v]
   expect_equal(nrow(result), 1)
-  expect_equal(result$chr, "chr2")
+  expect_equal(result$chr, "2")
 })
 
 test_that("finterface[v] matches on a tab-separated file", {

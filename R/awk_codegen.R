@@ -650,11 +650,11 @@ resolve_read_cmd <- function(
 #' Determine column array setup for encoded/prefixed columns
 #'
 #' Analyzes file interface to determine which columns need splitting (for
-#' encoded values like "A;B") or prefix addition. Returns awk code to be
+#' encoded values like "A;B") or a dropped prefix. Returns awk code to be
 #' executed before and after condition evaluation.
 #'
 #' Encoded columns are split into arrays before condition checks (if needed
-#' for filtering), then recombined after. Prefixes are added after filtering.
+#' for filtering), then recombined after. Prefixes are dropped after filtering.
 #' Allele columns (ref/alt/allele1/allele2) are upper-cased before the if so
 #' filter conditions and the printed output both see canonical values.
 #'
@@ -664,7 +664,7 @@ resolve_read_cmd <- function(
 #'
 #' @return List with:
 #'   - before_if: awk split() calls for encoded columns used in conditions
-#'   - after_if: awk code for prefix addition and column recoding
+#'   - after_if: awk code that drops prefixes and recodes columns
 #'   Or NULL if no special column handling needed.
 #' @keywords internal
 get_awk_column_arrays <- function(
@@ -677,7 +677,7 @@ get_awk_column_arrays <- function(
   column_info <- finterface$column_info
 
   has_encoded <- !all(sapply(column_info$encoded_names, is.null))
-  has_prefix <- !all(sapply(column_info$added_prefix, is.na))
+  has_prefix <- !all(is.na(column_info$dropped_prefix))
   has_alleles <- any(
     column_info$standard_name %in% ALLELE_STANDARD_NAMES,
     na.rm = TRUE
@@ -687,26 +687,18 @@ get_awk_column_arrays <- function(
     return()
   }
 
-  # The carry test costs a measured 7.5% of an unfiltered read, so only a
-  # column whose values disagree on a prefix pays for it.
   prefix_code <- column_info[
-    !is.na(added_prefix),
-    data.table::fifelse(
-      vapply(observed_prefixes, \(carried) 1L < length(carried), logical(1)),
-      sprintf(
-        'if (%1$s !~ /^%2$s/ && %1$s ~ /%3$s/) %1$s = "%2$s"%1$s',
-        bash_index, added_prefix, prefixable_regex
-      ),
-      sprintf(
-        'if (%1$s ~ /%3$s/) %1$s = "%2$s"%1$s',
-        bash_index, added_prefix, prefixable_regex
-      )
+    !is.na(dropped_prefix),
+    drop_prefix_code(
+      prefix = dropped_prefix,
+      bash_index = bash_index,
+      quoted = quoted
     )
   ]
 
   if (!has_encoded) {
     # No encoded columns: native allele toupper goes before the if so
-    # conditions see canonical values; prefix addition stays in after_if.
+    # conditions see canonical values; the prefix drop stays in after_if.
     return(
       list(
         before_if = build_allele_uppercase_code(column_info)$before_if,
@@ -776,10 +768,42 @@ get_awk_column_arrays <- function(
       after_if_splits,
       allele_uppercase$after_if,
       # The recode reads the array element into its output field, so a
-      # prefix assigned after it never reaches the output.
+      # prefix dropped after it stays in the output.
       prefix_code,
       recode_code
     )
+  )
+}
+
+#' Awk code that drops the prefix a column's values carry
+#'
+#' A quoted column's values stay quoted.
+#'
+#' @param prefix The prefix a read drops from the column.
+#' @param bash_index The column's awk field or array element.
+#' @param quoted TRUE where the column's values are quoted in the file.
+#'
+#' @return Character vector of awk statements, one per column.
+#' @keywords internal
+drop_prefix_code <- function(
+  prefix,
+  bash_index,
+  quoted
+) {
+  prefix <- escape_extended_regex(prefix) |>
+    escape_awk_regex_delimiter()
+  pattern <- data.table::fifelse(
+    quoted,
+    sprintf('^"%s', prefix),
+    sprintf("^%s", prefix)
+  )
+  replacement <- data.table::fifelse(quoted, '"\\""', '""')
+  # A substitution on $0 instead of $1 assigns no field, so awk does not need
+  # to rebuild the record.
+  data.table::fifelse(
+    bash_index == "$1",
+    sprintf("sub(/%s/, %s)", pattern, replacement),
+    sprintf("sub(/%s/, %s, %s)", pattern, replacement, bash_index)
   )
 }
 

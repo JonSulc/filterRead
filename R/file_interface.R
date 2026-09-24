@@ -432,8 +432,8 @@ head.file_interface <- function(
   sep = x$sep
 ) {
   # nlines = 0 cannot be served via awk: empty fread input warns and
-  # returns NULL. column_info does not record column types, so read one
-  # record to let fread infer them, then drop it.
+  # returns NULL. column_info records a type only where one is declared,
+  # so read one record to let fread infer the rest, then drop it.
   if (nlines == 0 && !return_only_cmd) {
     return(head(x, 1L, ...)[0])
   }
@@ -472,7 +472,10 @@ head.file_interface <- function(
       header = FALSE,
       sep = sep,
       col.names = read_columns,
-      colClasses = column_class_overrides(x),
+      colClasses = column_class_overrides(
+        x,
+        add_rsid_genomic_columns = FALSE
+      ),
       ...
     ),
     warning = muffle_empty_read_warning
@@ -511,9 +514,8 @@ empty_read_for_query <- function(
     return(from_file)
   }
   # chr and pos reach a result from the tabix index rather than from
-  # the file, so no read of the file supplies their types. The index
-  # holds raw chromosome names, so chr is a character string; positions
-  # are always digits.
+  # the file, so no read of the file supplies their types. chr is
+  # declared character, and positions are always digits.
   index_types <- list(chr = character(0), pos = integer(0))
   cbind(
     data.table::setDT(index_types[index_columns]),
@@ -608,7 +610,10 @@ empty_read_for_query <- function(
         finterface,
         add_rsid_genomic_columns = has_genomic_condition(fcondition)
       ),
-      colClasses = column_class_overrides(finterface)
+      colClasses = column_class_overrides(
+        finterface,
+        add_rsid_genomic_columns = has_genomic_condition(fcondition)
+      )
     ),
     warning = muffle_empty_read_warning
   )
