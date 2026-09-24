@@ -56,17 +56,47 @@ test_that("set_awk errors on anything but one executable", {
   expect_error(set_awk(""), "one character string")
 })
 
-test_that("probe_awk finds each divergence where gawk shows it", {
+test_that("probe_awk finds only the divergences gawk shows", {
   skip_if_not(nzchar(Sys.which("gawk")))
-  expect_equal(
-    probe_awk("gawk --traditional"),
-    "an interval `{n}` in a regex pattern"
-  )
   expect_equal(
     probe_awk("gawk --posix"),
     "a hex value such as `0x10` in a field, read as a number"
   )
   expect_equal(probe_awk("gawk"), character(0))
+})
+
+test_that("probe_awk finds the interval divergence in gawk --traditional", {
+  skip_if_not(nzchar(Sys.which("gawk")))
+  version_line <- system2("gawk", "--version", stdout = TRUE)[1L]
+  version <- regmatches(version_line, regexpr("[0-9]+\\.[0-9]+", version_line))
+  skip_if(
+    package_version("5.2") <= package_version(version),
+    "gawk 5.2 accepts an interval under --traditional"
+  )
+  expect_equal(
+    probe_awk("gawk --traditional"),
+    "an interval `{n}` in a regex pattern"
+  )
+})
+
+test_that("probe_awk ignores what the shell writes to stderr", {
+  awk_executable <- paste("echo noise >&2;", shQuote(Sys.which("awk")))
+  expect_no_error(probe_awk(awk_executable))
+})
+
+test_that("probe_awk errors on output that does not answer each probe once", {
+  expect_error(
+    probe_awk("printf 'filterRead-probe\\n1\\n'; true"),
+    "Could not run the awk executable"
+  )
+  expect_error(
+    probe_awk("printf 'filterRead-probe\\n1\\n1\\n1\\n1\\n'; true"),
+    "Could not run the awk executable"
+  )
+  expect_error(
+    probe_awk("printf 'filterRead-probe\\n1\\n1\\nnoise\\n'; true"),
+    "Could not run the awk executable"
+  )
 })
 
 test_that("the default prefers mawk, else awk", {
@@ -130,6 +160,7 @@ test_that("get_awk warns on an executable that no longer runs", {
 
 test_that("set_awk(NULL) returns to the default and keeps the other settings", {
   local_config()
+  local_mocked_bindings(invalidate_chain_cache = function() NULL)
   default <- suppressMessages(get_awk())
   chain_path <- withr::local_tempdir()
   set_chain_path(chain_path)

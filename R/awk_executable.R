@@ -94,7 +94,7 @@ resolve_awk_executable <- function(
 #' @param awk_executable The awk executable, as the shell invokes it.
 #' @return Character vector naming the divergences the awk executable shows,
 #'   empty where it agrees with R on every probe. Errors where it does not
-#'   run awk.
+#'   print the sentinel and one answer per probe.
 #' @keywords internal
 probe_awk <- function(awk_executable) {
   program <- paste0(
@@ -102,18 +102,30 @@ probe_awk <- function(awk_executable) {
     paste0("  print (", AWK_R_DIVERGENCE_PROBES, ")\n", collapse = ""),
     "}"
   )
-  cmd <- paste(awk_executable, shQuote(program), "2>&1; true")
-  output <- suppressWarnings(
-    system2("bash", c("-c", shQuote(cmd)), stdout = TRUE, stderr = TRUE)
-  )
-  if (!identical(output[1L], "filterRead-probe")) {
+  cmd <- paste(awk_executable, shQuote(program), "; true")
+  stderr_file <- tempfile()
+  on.exit(unlink(stderr_file), add = TRUE)
+  output <- suppressWarnings(system2(
+    "bash", c("-c", shQuote(cmd)),
+    stdout = TRUE, stderr = stderr_file
+  ))
+  answers <- output[-1L]
+  answers_each_probe <- identical(output[1L], "filterRead-probe") &&
+    length(answers) == length(AWK_R_DIVERGENCE_PROBES) &&
+    all(answers %in% c("0", "1"))
+  if (!answers_each_probe) {
+    printed <- c(readLines(stderr_file), output)
     stop(
       "Could not run the awk executable\n  ", awk_executable, "\n",
-      if (length(output) == 0L) "It printed nothing." else output[1L],
+      if (length(printed) == 0L) {
+        "It printed nothing."
+      } else {
+        paste(printed, collapse = "\n")
+      },
       call. = FALSE
     )
   }
-  names(AWK_R_DIVERGENCE_PROBES)[output[-1L] != "1"]
+  names(AWK_R_DIVERGENCE_PROBES)[answers == "0"]
 }
 
 #' Report the divergences between an awk executable and R

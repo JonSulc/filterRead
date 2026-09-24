@@ -12,7 +12,7 @@ probe_awk(awk_executable)
 \value{
 Character vector naming the divergences the awk executable shows,
   empty where it agrees with R on every probe. Errors where it does not
-  run awk.
+  print the sentinel and one answer per probe.
 }
 \description{
 Runs the awk executable under `bash -c`, as a read does, over one awk
