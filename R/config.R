@@ -60,24 +60,30 @@ normalize_build <- function(build, allow_null = TRUE,
   canonical
 }
 
-# Create an active binding: this function is run when filterread_env$config is
-# accessed
-makeActiveBinding(
-  "config",
-  \(new) {
-    if (!missing(new)) {
-      .filterread_env$config_data <- new
-      .filterread_env$config_loaded <- TRUE
-      save_config(new)
-    } else if (!.filterread_env$config_loaded) {
-      .filterread_env$config_data <- read_config()
-      .filterread_env$config_loaded <- TRUE
-      .filterread_env$awk <- NULL
-    }
-    .filterread_env$config_data
-  },
-  env = .filterread_env
-)
+#' Bind the configuration to `.filterread_env$config`
+#'
+#' Reading `config` loads the configuration from disk the first time, and
+#' again after `config_loaded` is cleared; assigning it saves it.
+#'
+#' @keywords internal
+bind_config <- function() {
+  makeActiveBinding(
+    "config",
+    \(new) {
+      if (!missing(new)) {
+        .filterread_env$config_data <- new
+        .filterread_env$config_loaded <- TRUE
+        save_config(new)
+      } else if (!.filterread_env$config_loaded) {
+        .filterread_env$config_data <- read_config()
+        .filterread_env$config_loaded <- TRUE
+        .filterread_env$awk <- NULL
+      }
+      .filterread_env$config_data
+    },
+    env = .filterread_env
+  )
+}
 
 #' Get filterRead configuration directory
 #' @keywords internal

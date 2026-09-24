@@ -58,3 +58,10 @@ utils::globalVariables(c(
   "x.end",
   "x.start"
 ))
+
+# Bind the configuration at load, so an installed package reads the file on
+# disk: installation would store a binding made at the top level of a file as
+# the value it held when the package was built.
+.onLoad <- function(libname, pkgname) {
+  bind_config()
+}
