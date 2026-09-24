@@ -22,6 +22,7 @@ utils::globalVariables(c(
   "effect_se",
   "encoded_column_index",
   "encoded_names",
+  "encoded_refs",
   "encoding_column",
   "end",
   "from_rsid_index",
