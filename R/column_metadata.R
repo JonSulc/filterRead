@@ -119,7 +119,7 @@ get_column_info <- function(
   add_allele_matching_to_column_info(column_info)
   column_info <- expand_encoded_columns(column_info)
   # Prefix detection keys on the standard name, which a decoded column
-  # carries only once the expansion above has given it a row.
+  # carries only once the expansion above has given it a `column_info` row.
   add_column_prefixes(
     column_info,
     data_to_check,

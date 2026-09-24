@@ -73,7 +73,7 @@ build_versioned_column <- function(dt, base, build) {
 #' five components. Only the chromosome may hold `_`, so a name such as
 #' `1_KI270706v1_random` decodes whole. The chromosome comes back bare, the
 #' build tag as the id writes it, and an element that does not match the
-#' structure decodes to an all-NA row.
+#' structure decodes to NA in every column.
 #'
 #' @param variant_ids Character vector of variant ids.
 #' @return A `data.table` with columns `chr`, `pos` (integer), `ref`, `alt`,
@@ -124,7 +124,7 @@ parse_underscore_free_chr_variant_id <- function(variant_ids) {
 #'
 #' The last four `_`-separated components are the position, the reference
 #' allele, the alternate allele and the build; everything before them is the
-#' chromosome. An id that does not fit decodes to an all-NA row.
+#' chromosome. An id that does not fit decodes to NA in every column.
 #'
 #' @param variant_ids Character vector of variant ids.
 #' @return A `data.table` with columns `chr`, `pos` (integer), `ref`, `alt`,

@@ -18,5 +18,5 @@ Inverse of [add_variant_id()]: `chr_pos_ref_alt_<build>` decodes into its
 five components. Only the chromosome may hold `_`, so a name such as
 `1_KI270706v1_random` decodes whole. The chromosome comes back bare, the
 build tag as the id writes it, and an element that does not match the
-structure decodes to an all-NA row.
+structure decodes to NA in every column.
 }

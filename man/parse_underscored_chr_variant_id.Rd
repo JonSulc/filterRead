@@ -16,6 +16,6 @@ A `data.table` with columns `chr`, `pos` (integer), `ref`, `alt`,
 \description{
 The last four `_`-separated components are the position, the reference
 allele, the alternate allele and the build; everything before them is the
-chromosome. An id that does not fit decodes to an all-NA row.
+chromosome. An id that does not fit decodes to NA in every column.
 }
 \keyword{internal}

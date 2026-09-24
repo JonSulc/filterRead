@@ -33,11 +33,7 @@ Default is TRUE.}
 from file.}
 
 \item{nrecords_to_check}{Number of records sampled to detect column
-metadata, including encoding and the chromosome prefix. Detection
-sees only these records: a file spelling its chromosomes chr1 for
-the first nrecords_to_check records and 1 below them is detected as
-carrying the prefix throughout, and the records below the sample
-come back spelled as the file holds them. Raise it where the
+metadata, such as encoding and the chromosome prefix. Raise it where the
 leading records may not represent the rest.}
 }
 \value{
