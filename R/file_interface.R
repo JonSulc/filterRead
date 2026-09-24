@@ -454,6 +454,7 @@ head.file_interface <- function(
   if (return_only_cmd) {
     return(cmd)
   }
+  on.exit(unlink(attr(cmd, "additional_files")), add = TRUE)
 
   if (!has_column_info) {
     return(
