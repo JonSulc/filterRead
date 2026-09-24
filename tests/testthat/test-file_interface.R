@@ -1214,3 +1214,18 @@ test_that("nrecords_to_check sets how far detection samples", {
   )
   expect_identical(sampled_whole[]$chr, c(rep("chr1", 3), rep("chr2", 5)))
 })
+
+test_that("a quoted encoded column decodes like an unquoted one", {
+  finterface <- local_file_interface(
+    dt = data.table::data.table(
+      chr_colon_pos = c("1:100", "2:200"),
+      pval = c(0.01, 0.2)
+    ),
+    quote = TRUE,
+    build = "b37"
+  )
+  records <- finterface[]
+  expect_equal(records$chr, c("chr1", "chr2"))
+  expect_equal(records$pos, c(100L, 200L))
+  expect_equal(records$chr_colon_pos, c("1:100", "2:200"))
+})

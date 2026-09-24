@@ -4,17 +4,19 @@
 \alias{add_quoted_column}
 \title{Add quoted column indicator}
 \usage{
-add_quoted_column(column_info, finterface)
+add_quoted_column(column_info, finterface, nrecords_to_check = 500)
 }
 \arguments{
 \item{column_info}{data.table with column metadata (modified in place)}
 
 \item{finterface}{File interface for reading data}
+
+\item{nrecords_to_check}{Number of records sampled}
 }
 \value{
 Invisible column_info (modified by reference)
 }
 \description{
-Detects whether column values are quoted (surrounded by double quotes).
+Add quoted column indicator
 }
 \keyword{internal}

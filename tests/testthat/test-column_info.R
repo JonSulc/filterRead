@@ -88,6 +88,25 @@ test_that("Quoted column detection works", {
   )
 })
 
+test_that("a column is quoted where every value it carries is", {
+  local_csv_file(
+    filename = "sparse.csv",
+    dt = data.table::data.table(
+      chr_colon_pos = c(NA_character_, "2:200"),
+      pval = c(0.01, 0.2)
+    ),
+    quote = TRUE
+  )
+  finterface <- structure(
+    list(filename = "sparse.csv", gzipped = FALSE, sep = ","),
+    class = c("file_interface", "list")
+  )
+  expect_equal(
+    are_values_quoted(finterface),
+    c(chr_colon_pos = TRUE, pval = FALSE)
+  )
+})
+
 test_that("resolve_observed_prefixes separates a carried prefix from none", {
   summary_stats <- dummy_summary_stats()
   expect_equal(

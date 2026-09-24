@@ -2,22 +2,23 @@
 % Please edit documentation in R/column_metadata.R
 \name{encoded_array_refs}
 \alias{encoded_array_refs}
-\title{Awk references to elements of an encoded column's split array}
+\title{Awk references to an encoded column's decoded values}
 \usage{
-encoded_array_refs(encoded_column_index, positions)
+encoded_array_refs(encoded_column_index, positions, quoted = FALSE)
 }
 \arguments{
-\item{encoded_column_index}{Integer identifying the awk array
-(`encoded<index>`).}
+\item{encoded_column_index}{The parent's index among the encoded columns.}
 
-\item{positions}{Integer positions within the array.}
+\item{positions}{The decoded values' positions among the decoded names.}
+
+\item{quoted}{TRUE where the parent's values are quoted in the file.}
 }
 \value{
 Character vector of awk array references.
 }
 \description{
-Builds the `encoded<index>[<position>]` references used in the split/recode
-awk and stored in the parent's `encoded_refs` column. Returns one reference
-per position; recode callers join them with `OFS`.
+A quoted parent is split on its quotes as well as its delimiter, so its
+decoded values start at the second element. `quoted` shifts the references
+onto them.
 }
 \keyword{internal}

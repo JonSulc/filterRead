@@ -43,19 +43,28 @@ is_non_allele_encoded_column <- function(encoded_names) {
     !any(encoded_names %in% ALLELE_STANDARD_NAMES)
 }
 
-#' Awk references to elements of an encoded column's split array
+#' Awk references to an encoded column's decoded values
 #'
-#' Builds the `encoded<index>[<position>]` references used in the split/recode
-#' awk and stored in the parent's `encoded_refs` column. Returns one reference
-#' per position; recode callers join them with `OFS`.
+#' A quoted parent is split on its quotes as well as its delimiter, so its
+#' decoded values start at the second element. `quoted` shifts the references
+#' onto them.
 #'
-#' @param encoded_column_index Integer identifying the awk array
-#'   (`encoded<index>`).
-#' @param positions Integer positions within the array.
+#' @param encoded_column_index The parent's index among the encoded columns.
+#' @param positions The decoded values' positions among the decoded names.
+#' @param quoted TRUE where the parent's values are quoted in the file.
+#'
 #' @return Character vector of awk array references.
 #' @keywords internal
-encoded_array_refs <- function(encoded_column_index, positions) {
-  sprintf("encoded%i[%i]", encoded_column_index, positions)
+encoded_array_refs <- function(
+  encoded_column_index,
+  positions,
+  quoted = FALSE
+) {
+  sprintf(
+    "encoded%i[%i]",
+    encoded_column_index,
+    positions + as.integer(isTRUE(quoted))
+  )
 }
 
 #' Decoded names of an encoded column that a real column already supplies
@@ -104,7 +113,7 @@ get_column_info <- function(
   data_to_check <- head(finterface, nrecords_to_check)
 
   column_info <- filter_regex_matches(column_info, data_to_check)
-  add_quoted_column(column_info, finterface)
+  add_quoted_column(column_info, finterface, nrecords_to_check)
   add_encoding_columns(column_info)
   add_effect_allele_to_encoded_pair(column_info)
   add_allele_matching_to_column_info(column_info)
@@ -242,39 +251,43 @@ resolve_single_column_regex <- function(
 
 #' Add quoted column indicator
 #'
-#' Detects whether column values are quoted (surrounded by double quotes).
-#'
 #' @param column_info data.table with column metadata (modified in place)
 #' @param finterface File interface for reading data
+#' @param nrecords_to_check Number of records sampled
 #'
 #' @return Invisible column_info (modified by reference)
 #' @keywords internal
 add_quoted_column <- function(
   column_info,
-  finterface
+  finterface,
+  nrecords_to_check = 500
 ) {
   column_info[
     ,
-    quoted := are_values_quoted(finterface)[input_name]
+    quoted := are_values_quoted(finterface, nrecords_to_check)[input_name]
   ][] |>
     invisible()
 }
 
 #' Detect which columns have quoted values
 #'
-#' Reads first record with quote="" to preserve quotes, then checks
-#' each column for presence of double quotes.
+#' A column is quoted where every value it carries is. A value a record does
+#' not carry is written unquoted, so it is read as evidence of neither.
 #'
 #' @param finterface File interface object
+#' @param nrecords_to_check Number of records sampled
 #'
 #' @return Named logical vector: TRUE for quoted columns
 #' @keywords internal
 are_values_quoted <- function(
-  finterface
+  finterface,
+  nrecords_to_check = 500
 ) {
-  quoted_values <- head(finterface, nlines = 1, quote = "") |>
-    sapply(stringr::str_detect, "\"")
-  # Clean column names (remove any quotes from names)
+  quoted_values <- head(finterface, nlines = nrecords_to_check, quote = "") |>
+    sapply(\(values) {
+      carried <- values[!is.na(values) & nzchar(values)]
+      length(carried) != 0L && all(stringr::str_detect(carried, "\""))
+    })
   names(quoted_values) <- names(quoted_values) |>
     stringr::str_replace_all("\"", "")
   quoted_values
@@ -526,7 +539,13 @@ add_encoding_columns <- function(
         "split(%s, encoded%i, \"%s\")",
         bash_index,
         encoded_column_index,
-        delimiter
+        # Adding the column's quotes to the set of delimiters drops them at the
+        # same time
+        data.table::fifelse(
+          !is.na(quoted) & quoted,
+          paste0(delimiter, "|\\\""),
+          delimiter
+        )
       )
     ][
       !sapply(delimiter, is.na),
@@ -541,7 +560,7 @@ add_encoding_columns <- function(
           "%s = %s OFS %s",
           bash_index,
           bash_index,
-          encoded_array_refs(encoded_column_index, positions) |>
+          encoded_array_refs(encoded_column_index, positions, quoted) |>
             paste(collapse = " OFS ")
         )
       },
@@ -551,7 +570,8 @@ add_encoding_columns <- function(
       encoded_refs := Map(
         encoded_array_refs,
         encoded_column_index,
-        lapply(encoded_names, seq_along)
+        lapply(encoded_names, seq_along),
+        quoted
       )
     ][]
   }

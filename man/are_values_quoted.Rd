@@ -4,16 +4,18 @@
 \alias{are_values_quoted}
 \title{Detect which columns have quoted values}
 \usage{
-are_values_quoted(finterface)
+are_values_quoted(finterface, nrecords_to_check = 500)
 }
 \arguments{
 \item{finterface}{File interface object}
+
+\item{nrecords_to_check}{Number of records sampled}
 }
 \value{
 Named logical vector: TRUE for quoted columns
 }
 \description{
-Reads first record with quote="" to preserve quotes, then checks
-each column for presence of double quotes.
+A column is quoted where every value it carries is. A value a record does
+not carry is written unquoted, so it is read as evidence of neither.
 }
 \keyword{internal}
